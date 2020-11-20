@@ -42,5 +42,5 @@ RUN sudo /bin/sh -c 'echo "deb [trusted=yes] http://packages.ros.org/ros/ubuntu 
     && rosdep update
 
 
-COPY docker/entrypoint.sh /entrypoint.sh
+COPY base/docker/entrypoint.sh  /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

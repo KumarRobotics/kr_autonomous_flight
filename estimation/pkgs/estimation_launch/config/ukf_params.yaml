@@ -1,0 +1,23 @@
+alpha: 0.1
+beta:  2.0
+kappa: 0.0
+
+noise_std:
+  process:
+    acc:
+      x: 5.0
+      y: 5.0
+      z: 5.0
+    gyro:
+      x: 0.50 
+      y: 0.50
+      z: 0.50
+    acc_bias:
+      x: 0.01
+      y: 0.01
+      z: 0.01
+    gyro_bias:
+      x: 0.01
+      y: 0.01
+      z: 0.01
+  vio_yaw_drift: 0.01

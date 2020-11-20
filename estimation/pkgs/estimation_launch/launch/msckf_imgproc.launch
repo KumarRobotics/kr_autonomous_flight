@@ -1,0 +1,30 @@
+<launch>
+    <arg name="cam0" default="cam_left"/>
+    <arg name="cam1" default="cam_right"/>
+    <arg name="image" default="image_raw"/>
+    <arg name="imu" default="imu"/>
+
+    <!-- don't use a default, user must provide one -->
+    <arg name="calibration_file"/>
+
+    <node pkg="nodelet" type="nodelet" name="image_processor" args="standalone msckf_vio/ImageProcessorNodelet" output="screen">
+        <rosparam command="load" file="$(arg calibration_file)"/>
+
+        <param name="grid_row" value="4"/>
+        <param name="grid_col" value="5"/>
+        <param name="grid_min_feature_num" value="2"/>
+        <param name="grid_max_feature_num" value="3"/>
+        <param name="pyramid_levels" value="3"/>
+        <param name="patch_size" value="15"/>
+        <param name="fast_threshold" value="10"/>
+        <param name="max_iteration" value="30"/>
+        <param name="track_precision" value="0.01"/>
+        <param name="ransac_threshold" value="3"/>
+        <param name="stereo_threshold" value="5"/>
+
+        <remap from="~imu" to="$(arg imu)"/>
+        <remap from="~cam0_image" to="$(arg cam0)/$(arg image)"/>
+        <remap from="~cam1_image" to="$(arg cam1)/$(arg image)"/>
+    </node>
+
+</launch>

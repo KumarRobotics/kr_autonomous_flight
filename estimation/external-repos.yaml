@@ -1,0 +1,11 @@
+repositories:
+  msckf_vio:
+    type: git
+    url: https://github.com/KumarRobotics/msckf_vio
+    version: e3a39a95b57da376924aa22b46637b60f68f504c
+
+  kr_math:
+    type: git
+    url: https://github.com/KumarRobotics/kr_utils/tree/master/kr_math
+    version: 4a0117ee0d926eed0cd2aa0a412be35fe909a2db
+

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+  <arg name="robot" default="$(env EMU_ROBOT_NAME)"/>
+  <arg name="world_frame_id" default="world"/>
+  <arg name="robot_frame_id" default="base_link"/>
+  <arg name="cam_frame_id" default="odom"/>
+  <arg name="odom_out" default="odom"/>
+
+  <group ns="$(arg robot)">
+    <node pkg="nodelet" type="nodelet" name="fla_ukf" args="standalone fla_ukf/FLAUKFNodelet" clear_params="true" output="screen">
+      <rosparam file="$(find fla_ukf)/config/params.yaml"/>
+
+      <remap from="~imu" to="sync/imu/imu"/>
+      <remap from="~height" to="mavros/distance_sensor/lidarlite_pub"/>
+      <remap from="~vio_odom" to="vio/odom"/>
+      <remap from="~odom_out" to="$(arg odom_out)"/>
+
+      <param name="world_frame_id" value="$(arg world_frame_id)"/>
+      <param name="robot_frame_id" value="$(arg robot_frame_id)"/>
+      <param name="cam_frame_id" value="$(arg cam_frame_id)"/>
+      <param name="enable_laser" value="false"/>
+      <param name="enable_cam" value="false"/>
+      <param name="enable_velodyne" value="false"/>
+      <param name="enable_gps" value="false"/>
+      <param name="enable_height" value="false"/>
+      <param name="enable_mag" value="false"/>
+      <param name="enable_vio_odom" value="true"/>
+      <param name="enable_yaw" value="false"/>
+    </node>
+
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="$(arg robot)_base_link_camera_tf" args="0 0 0 0 0 1.26 $(arg cam_frame_id) $(arg robot_frame_id)"/>
+
+    <!-- <node pkg="tf2_ros" type="static_transform_publisher" -->
+    <!-- name="fla3_base_link_camera_tf" -->
+    <!-- args="0 0 0 0 0 0 $(arg cam_frame_id) $(arg robot_frame_id)" /> -->
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="stereo_rig_link_broadcaster" args="0 0 0 0 0 0 world vision" />
+
+  </group>
+</launch>

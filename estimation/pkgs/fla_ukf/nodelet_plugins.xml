@@ -1,0 +1,7 @@
+<library path="lib/libfla_ukf_nodelet">
+  <class name="fla_ukf/FLAUKFNodelet" type="FLAUKFNodelet" base_class_type="nodelet::Nodelet">
+    <description>
+      A 12 state UKF consisting of position, velocity, orientation, accelerometer biases
+    </description>
+  </class>
+</library>

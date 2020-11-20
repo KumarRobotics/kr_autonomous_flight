@@ -20,7 +20,7 @@ RUN apt update \
 RUN export DEBIAN_FRONTEND=noninteractive \
     && sudo apt update \
     && sudo -E apt install -y tzdata \
-    && sudo ln -fs /usr/share/zoneinfo/America/Los_Angeles /etc/localtime \
+    && sudo ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime \
     && sudo dpkg-reconfigure --frontend noninteractive tzdata \
     && sudo apt clean
 
@@ -42,5 +42,5 @@ RUN sudo /bin/sh -c 'echo "deb [trusted=yes] http://packages.ros.org/ros/ubuntu 
     && rosdep update
 
 
-COPY base/docker/entrypoint.sh  /entrypoint.sh
+COPY base/docker/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

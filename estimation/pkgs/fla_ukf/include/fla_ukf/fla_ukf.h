@@ -1,13 +1,15 @@
-#ifndef FLA_UKF_H
-#define FLA_UKF_H
+// Copyright 2016 KumarRobotics - Kartik Mohta
+#ifndef ESTIMATION_PKGS_FLA_UKF_INCLUDE_FLA_UKF_FLA_UKF_H_
+#define ESTIMATION_PKGS_FLA_UKF_INCLUDE_FLA_UKF_FLA_UKF_H_
 
+#include <Eigen/Core>
+#include <ros/ros.h>
 #include <array>
 #include <deque>
-#include <ros/ros.h>
-#include <Eigen/Core>
+#include <utility>
+#include <vector>
 
-class FLAUKF
-{
+class FLAUKF {
  public:
   using Scalar_t = double;
 
@@ -36,7 +38,8 @@ class FLAUKF
   static constexpr std::array<unsigned int, 1> meas_height_idx_{{2}};
   static constexpr unsigned int meas_height_count_ = meas_height_idx_.size();
 
-  static constexpr std::array<unsigned int, 6> meas_gps_idx_{{0,1,2,3,4,5}};
+  static constexpr std::array<unsigned int, 6> meas_gps_idx_{
+      {0, 1, 2, 3, 4, 5}};
   static constexpr unsigned int meas_gps_count_ = meas_gps_idx_.size();
 
   static constexpr std::array<unsigned int, 1> meas_yaw_idx_{{8}};
@@ -120,8 +123,7 @@ class FLAUKF
   template <typename T>
   Mat<state_count_ + T::RowsAtCompileTime,
       2 * (state_count_ + T::RowsAtCompileTime) + 1>
-  GenerateSigmaPoints(const T &Rn)
-  {
+  GenerateSigmaPoints(const T &Rn) {
     constexpr int noise_count = T::RowsAtCompileTime;
     constexpr int L = state_count_ + noise_count;
 
@@ -132,7 +134,7 @@ class FLAUKF
     xaa.template topRows<state_count_>() = xa_;
     Mat<L, L> Paa = Mat<L, L>::Zero();
     Paa.template block<state_count_, state_count_>(0, 0) = Pa_;
-    if(noise_count > 0)
+    if (noise_count > 0)
       Paa.template block<noise_count, noise_count>(state_count_, state_count_) =
         Rn;
 
@@ -186,4 +188,4 @@ class FLAUKF
 #endif
 };
 
-#endif
+#endif // ESTIMATION_PKGS_FLA_UKF_INCLUDE_FLA_UKF_FLA_UKF_H_

@@ -1,34 +1,36 @@
+// Copyright 2016 KumarRobotics - Kartik Mohta
 #include "fla_ukf/fla_ukf.h"
-#include <Eigen/Geometry>
 #include <angles/angles.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <nodelet/nodelet.h>
-#include <queue>
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
 #include <sensor_msgs/Range.h>
-#include <std_msgs/Bool.h>
 #include <tf2/utils.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
+#include <std_msgs/Bool.h>
+#include <Eigen/Geometry>
+#include <algorithm>
+#include <memory>
+#include <queue>
+#include <string>
 
-class FLAUKFNodelet : public nodelet::Nodelet
-{
+class FLAUKFNodelet : public nodelet::Nodelet {
  public:
   FLAUKFNodelet();
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW; // Need this since we have FLAUKF which
                                    // needs aligned pointer
-
  private:
   void onInit(void) override;
   void imu_callback(const sensor_msgs::Imu::ConstPtr &msg);
-  void cam_callback(
-      const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg);
+  void
+  cam_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg);
   void velodyne_callback(
       const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg);
   void laser_callback(const nav_msgs::Odometry::ConstPtr &msg);
@@ -71,33 +73,24 @@ class FLAUKFNodelet : public nodelet::Nodelet
   bool publish_tf_ = false;
 };
 
-FLAUKFNodelet::FLAUKFNodelet()
-{
-}
+FLAUKFNodelet::FLAUKFNodelet() {}
 
-void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg)
-{
-  if(!static_transforms_initialized_)
-  {
+void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {
+  if (!static_transforms_initialized_) {
     geometry_msgs::TransformStamped transform_cam_body, transform_world_vision,
         transform_velodyne_body;
-    try
-    {
+    try {
       transform_cam_body = tf_buffer_.lookupTransform(
           cam_frame_id_, robot_frame_id_, ros::Time(0)); // Used for front IMU
-      if(enable_cam_ || enable_vio_odom_)
-      {
+      if (enable_cam_ || enable_vio_odom_) {
         transform_world_vision = tf_buffer_.lookupTransform(
             world_frame_id_, vision_frame_id_, ros::Time(0));
       }
-      if(enable_velodyne_)
-      {
+      if (enable_velodyne_) {
         transform_velodyne_body = tf_buffer_.lookupTransform(
             velodyne_frame_id_, robot_frame_id_, ros::Time(0));
       }
-    }
-    catch(tf2::TransformException &ex)
-    {
+    } catch (tf2::TransformException &ex) {
       ROS_WARN("%s", ex.what());
       return;
     }
@@ -110,11 +103,10 @@ void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg)
   }
 
   imu_queue_.push(*msg);
-  if(imu_queue_.size() <= cam_delay_)
+  if (imu_queue_.size() <= cam_delay_)
     return;
 
-  if(msg->header.stamp - last_vio_timestamp_ >= ros::Duration(0.5))
-  {
+  if (msg->header.stamp - last_vio_timestamp_ >= ros::Duration(0.5)) {
     ROS_WARN_THROTTLE(0.05, "========= DANGER!!! DANGER!!! No recent VIO "
                             "messages received =========");
   }
@@ -133,30 +125,25 @@ void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg)
   u.segment<3>(0) = T_body_cam_.rotation() * u.segment<3>(0);
   u.segment<3>(3) = T_body_cam_.rotation() * u.segment<3>(3);
 
-  if(imu_calib_count_ < imu_calib_limit_) // Gravity calibration
-  {
+  if (imu_calib_count_ < imu_calib_limit_) { // Gravity calibration
     imu_calib_count_++;
     acc_gravity_ += u.segment<3>(0);
-  }
-  else if(imu_calib_count_ == imu_calib_limit_) // Save gravity norm
-  {
+  } else if (imu_calib_count_ == imu_calib_limit_) { // Save gravity norm
     imu_calib_count_++;
     acc_gravity_ /= imu_calib_limit_;
     double g = acc_gravity_.norm();
 
     ROS_INFO("Setting gravity to %f", g);
     fla_ukf_.SetGravity(g);
-  }
-  else if(fla_ukf_.ProcessUpdate(u, imu_msg.header.stamp))
-  {
+  } else if (fla_ukf_.ProcessUpdate(u, imu_msg.header.stamp)) {
     auto odom_ukf_msg = boost::make_shared<nav_msgs::Odometry>();
     odom_ukf_msg->header.stamp = imu_msg.header.stamp;
     odom_ukf_msg->header.frame_id = world_frame_id_;
     odom_ukf_msg->child_frame_id = robot_frame_id_;
     auto x = fla_ukf_.GetState();
 #if ENABLE_VIO_YAW_OFFSET
-    ROS_INFO_STREAM_THROTTLE(
-        0.1, "VIO Yaw offset: " << x(15) * 180 / M_PI << " deg");
+    ROS_INFO_STREAM_THROTTLE(0.1, "VIO Yaw offset: " << x(15) * 180 / M_PI
+                                                     << " deg");
 #endif
     // ROS_INFO_STREAM("t_world_body (filter): " <<
     // x.segment<3>(0).transpose());
@@ -179,40 +166,40 @@ void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg)
     odom_ukf_msg->twist.twist.angular.y = u(4);
     odom_ukf_msg->twist.twist.angular.z = u(5);
     auto P = fla_ukf_.GetStateCovariance();
-    for(int j = 0; j < 6; j++)
-      for(int i = 0; i < 6; i++)
+    for (int j = 0; j < 6; j++)
+      for (int i = 0; i < 6; i++)
         odom_ukf_msg->pose.covariance[i + j * 6] =
             P((i < 3) ? i : i + 3, (j < 3) ? j : j + 3);
     // Publish Msg
     pub_ukf_odom_.publish(odom_ukf_msg);
 
-    if(publish_tf_)
-    {
-        // Publish TF
-        geometry_msgs::TransformStamped transform_msg;
-        transform_msg.header = odom_ukf_msg->header;
-        transform_msg.child_frame_id = odom_ukf_msg->child_frame_id;
-        transform_msg.transform.translation.x = odom_ukf_msg->pose.pose.position.x;
-        transform_msg.transform.translation.y = odom_ukf_msg->pose.pose.position.y;
-        transform_msg.transform.translation.z = odom_ukf_msg->pose.pose.position.z;
-        transform_msg.transform.rotation = odom_ukf_msg->pose.pose.orientation;
-        tf_broadcaster_.sendTransform(transform_msg);
+    if (publish_tf_) {
+      // Publish TF
+      geometry_msgs::TransformStamped transform_msg;
+      transform_msg.header = odom_ukf_msg->header;
+      transform_msg.child_frame_id = odom_ukf_msg->child_frame_id;
+      transform_msg.transform.translation.x =
+          odom_ukf_msg->pose.pose.position.x;
+      transform_msg.transform.translation.y =
+          odom_ukf_msg->pose.pose.position.y;
+      transform_msg.transform.translation.z =
+          odom_ukf_msg->pose.pose.position.z;
+      transform_msg.transform.rotation = odom_ukf_msg->pose.pose.orientation;
+      tf_broadcaster_.sendTransform(transform_msg);
     }
   }
 }
 
 void FLAUKFNodelet::velodyne_callback(
-    const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg)
-{
-  if(!height_measurement_received_)
+    const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg) {
+  if (!height_measurement_received_)
     NODELET_ERROR_THROTTLE(1, "No height measurement received!");
 
   // Reset height_measurement_received_ to check for height measurements between
   // each camera pose
   height_measurement_received_ = false;
 
-  if(!T_world_velodyneMap_)
-  {
+  if (!T_world_velodyneMap_) {
     auto x = fla_ukf_.GetState();
     const Eigen::Vector3d translation{x(0), x(1), x(2)};
     const Eigen::Quaterniond rotation =
@@ -237,7 +224,8 @@ void FLAUKFNodelet::velodyne_callback(
   const Eigen::Quaterniond q_world_body(T_world_body.rotation());
   const Eigen::Vector3d t_world_body(T_world_body.translation());
 
-  Eigen::Vector3d rpy = q_world_body.toRotationMatrix().eulerAngles(2, 1, 0).reverse();
+  Eigen::Vector3d rpy =
+      q_world_body.toRotationMatrix().eulerAngles(2, 1, 0).reverse();
 
   // Assemble measurement
   FLAUKF::MeasCamVec z;
@@ -249,10 +237,8 @@ void FLAUKFNodelet::velodyne_callback(
   z(5) = rpy(2);
   // Assemble measurement covariance
   FLAUKF::MeasCamCov RnVelodyne(FLAUKF::MeasCamCov::Zero());
-  for(int i = 0; i < 6; i++)
-  {
-    for(int j = 0; j < 6; j++)
-    {
+  for (int i = 0; i < 6; i++) {
+    for (int j = 0; j < 6; j++) {
       const double cov_multiplier = ((i < 3) ? 5 : 25) * ((j < 3) ? 5 : 25);
       RnVelodyne(i, j) = cov_multiplier * msg->pose.covariance[j + i * 6];
     }
@@ -260,14 +246,13 @@ void FLAUKFNodelet::velodyne_callback(
   std::cout << "RnVelodyne: " << RnVelodyne.diagonal().transpose() << std::endl;
 
   // Measurement update
-  if(fla_ukf_.MeasurementUpdateCam(z, RnVelodyne, msg->header.stamp))
+  if (fla_ukf_.MeasurementUpdateCam(z, RnVelodyne, msg->header.stamp))
     ignore_laser_ = true;
 }
 
 void FLAUKFNodelet::cam_callback(
-    const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg)
-{
-  if(!height_measurement_received_)
+    const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg) {
+  if (!height_measurement_received_)
     NODELET_ERROR_THROTTLE(1, "No height measurement received!");
 
   // Reset height_measurement_received_ to check for height measurements between
@@ -296,7 +281,8 @@ void FLAUKFNodelet::cam_callback(
   double roll = std::atan2(2 * (q[0] * q[1] + q[2] * q[3]),
                            1 - 2 * (q[1] * q[1] + q[2] * q[2]));
 #endif
-  const Eigen::Vector3d rpy = q_world_body.toRotationMatrix().eulerAngles(2, 1, 0).reverse();
+  const Eigen::Vector3d rpy =
+      q_world_body.toRotationMatrix().eulerAngles(2, 1, 0).reverse();
 
   // Assemble measurement
   FLAUKF::MeasCamVec z;
@@ -316,8 +302,8 @@ void FLAUKFNodelet::cam_callback(
   RnCam(5, 5) = 0.07;
 #if 0
   // NOTE(Kartik): SVO has junk covariance right now
-  for(int i = 0; i < 6; i++)
-    for(int j = 0; j < 6; j++)
+  for (int i = 0; i < 6; i++)
+    for (int j = 0; j < 6; j++)
       RnCam(i, j) = msg->pose.covariance[j + i * 6];
 #endif
 
@@ -329,10 +315,9 @@ void FLAUKFNodelet::laser_toggle_callback(const std_msgs::Bool::ConstPtr &msg) {
   ROS_INFO_STREAM("Ignore laser: " << ignore_height_);
 }
 
-void FLAUKFNodelet::laser_callback(const nav_msgs::Odometry::ConstPtr &msg)
-{
+void FLAUKFNodelet::laser_callback(const nav_msgs::Odometry::ConstPtr &msg) {
   // NODELET_INFO("laser_callback");
-  if(ignore_laser_)
+  if (ignore_laser_)
     return;
 
   FLAUKF::MeasLaserVec z;
@@ -343,10 +328,8 @@ void FLAUKFNodelet::laser_callback(const nav_msgs::Odometry::ConstPtr &msg)
 
   // Assemble measurement covariance
   FLAUKF::MeasLaserCov RnLaser{FLAUKF::MeasLaserCov::Zero()};
-  for(int i = 0; i < 3; i++)
-  {
-    for(int j = 0; j < 3; j++)
-    {
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
       int row_idx = (i < 2) ? i : i + 1; // Skip 3rd row
       int col_idx = (j < 2) ? j : j + 1; // Skip 3rd col
       RnLaser(i, j) = msg->pose.covariance[row_idx + col_idx * 6];
@@ -356,32 +339,28 @@ void FLAUKFNodelet::laser_callback(const nav_msgs::Odometry::ConstPtr &msg)
   fla_ukf_.MeasurementUpdateLaser(z, RnLaser, msg->header.stamp);
 }
 
-void FLAUKFNodelet::height_callback(const sensor_msgs::Range::ConstPtr &msg)
-{
-  if(ignore_height_)
+void FLAUKFNodelet::height_callback(const sensor_msgs::Range::ConstPtr &msg) {
+  if (ignore_height_)
     return;
-  //NODELET_INFO("height_callback, range: %f", msg->range);
+  // NODELET_INFO("height_callback, range: %f", msg->range);
   height_measurement_received_ = true;
 
   float range = msg->range;
   float range_std_dev = 0.05;
 
-  if(!takeoff_detected_ && range > takeoff_detection_threshold_)
-  {
+  if (!takeoff_detected_ && range > takeoff_detection_threshold_) {
     takeoff_detected_ = true;
     ROS_WARN_STREAM("Takeoff detected! range: " << range);
   }
 
-  if(!takeoff_detected_)
-  {
+  if (!takeoff_detected_) {
     range = 0.0;
     range_std_dev = 0.2;
   }
 
   // Ignore very high and low range measurement
-  if(msg->range < std::min(0.9 * msg->max_range, 20.0) &&
-     msg->range > std::max(1.1 * msg->min_range, 0.2))
-  {
+  if (msg->range < std::min(0.9 * msg->max_range, 20.0) &&
+      msg->range > std::max(1.1 * msg->min_range, 0.2)) {
     FLAUKF::MeasHeightVec z;
     z(0) = range;
     // ROS_INFO_STREAM("Height meas: " << z(0));
@@ -393,8 +372,7 @@ void FLAUKFNodelet::height_callback(const sensor_msgs::Range::ConstPtr &msg)
   }
 }
 
-void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
-{
+void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg) {
   last_vio_timestamp_ = msg->header.stamp;
 
   Eigen::Isometry3d T_vision_cam;
@@ -412,7 +390,8 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
       T_world_vision_.linear() * v_vision_cam; // Ignoring the (omega \times r)
                                                // since r_cam_body is small
 
-  const Eigen::Vector3d rpy = q_world_body.toRotationMatrix().eulerAngles(2, 1, 0).reverse();
+  const Eigen::Vector3d rpy =
+      q_world_body.toRotationMatrix().eulerAngles(2, 1, 0).reverse();
   // ROS_INFO_STREAM("t_world_body (vio): " << t_world_body.transpose());
   // ROS_INFO_STREAM("rpy_world_body (vio): " << 180/M_PI * rpy.transpose());
 
@@ -431,25 +410,21 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
   // Assemble measurement covariance
   FLAUKF::MeasVioCov RnVio(FLAUKF::MeasVioCov::Zero());
   // Pose covariance
-  for(int i = 0; i < 3; i++)
-  {
-    for(int j = 0; j < 3; j++)
-    {
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
       const int row_idx = i + 3;
       const int col_idx = j + 3;
 
       // Remove cross covariance with Z and increase Z covariance
-      //const double cov_multiplier = (i == 2 || j == 2) ? 0 : 1;
-      //const double cov_inflater  = (i == 2 && j == 2) ? 100 : 0;
+      // const double cov_multiplier = (i == 2 || j == 2) ? 0 : 1;
+      // const double cov_inflater  = (i == 2 && j == 2) ? 100 : 0;
 
       RnVio(row_idx, col_idx) = msg->pose.covariance[i * 6 + j];
     }
   }
   // Linear velocity covariance
-  for(int i = 0; i < 3; i++)
-  {
-    for(int j = 0; j < 3; j++)
-    {
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
       RnVio(i, j) = msg->twist.covariance[i * 6 + j];
     }
   }
@@ -469,49 +444,42 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
   // Assemble measurement covariance
   FLAUKF::MeasVioCov RnVio(FLAUKF::MeasVioCov::Zero());
   // Pose covariance
-  for(int i = 0; i < 6; i++)
-  {
-    for(int j = 0; j < 6; j++)
-    {
+  for (int i = 0; i < 6; i++) {
+    for (int j = 0; j < 6; j++) {
       const int row_idx = (i < 3) ? i : i + 3;
       const int col_idx = (j < 3) ? j : j + 3;
 
       // Remove cross covariance with Z and increase Z covariance
       const double cov_multiplier = (i == 2 || j == 2) ? 0 : 1;
-      const double cov_inflater  = (i == 2 && j == 2) ? 100 : 0;
+      const double cov_inflater = (i == 2 && j == 2) ? 100 : 0;
 
       RnVio(row_idx, col_idx) =
           cov_multiplier * msg->pose.covariance[i * 6 + j] + cov_inflater;
     }
   }
   // Linear velocity covariance
-  for(int i = 0; i < 3; i++)
-  {
-    for(int j = 0; j < 3; j++)
-    {
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
       RnVio(3 + i, 3 + j) = msg->twist.covariance[i * 6 + j];
     }
   }
 
-  for(int k = 0; k < 2; ++k) // Only need to check for position X/Y
-  {
+  for (int k = 0; k < 2; ++k) { // Only need to check for position X/Y
     // Keep the VIO covariance within a reasonable band so that we don't trust
     // it too much or too less
     double const vio_pos_min_std = 1.0;
     double const vio_pos_max_std = 3.0;
 
     double scale_factor = 1;
-    if(RnVio(k, k) == 0)
+    if (RnVio(k, k) == 0)
       RnVio(k, k) = vio_pos_min_std * vio_pos_min_std;
-    else if(RnVio(k, k) > vio_pos_max_std * vio_pos_max_std)
+    else if (RnVio(k, k) > vio_pos_max_std * vio_pos_max_std)
       scale_factor = vio_pos_max_std / std::sqrt(RnVio(k, k));
-    else if(RnVio(k, k) < vio_pos_min_std * vio_pos_min_std)
+    else if (RnVio(k, k) < vio_pos_min_std * vio_pos_min_std)
       scale_factor = vio_pos_min_std / std::sqrt(RnVio(k, k));
 
-    if(scale_factor != 1)
-    {
-      for(int i = 0; i < RnVio.rows(); ++i)
-      {
+    if (scale_factor != 1) {
+      for (int i = 0; i < RnVio.rows(); ++i) {
         RnVio(i, k) *= scale_factor;
         RnVio(k, i) *= scale_factor;
       }
@@ -520,12 +488,11 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
 #endif
 
   // Measurement update
-  if(fla_ukf_.MeasurementUpdateVio(z, RnVio, msg->header.stamp))
+  if (fla_ukf_.MeasurementUpdateVio(z, RnVio, msg->header.stamp))
     ignore_laser_ = true;
 }
 
-void FLAUKFNodelet::gps_callback(const nav_msgs::Odometry::ConstPtr &msg)
-{
+void FLAUKFNodelet::gps_callback(const nav_msgs::Odometry::ConstPtr &msg) {
   // NODELET_INFO("gps_callback");
 
   FLAUKF::MeasGpsVec z;
@@ -538,10 +505,8 @@ void FLAUKFNodelet::gps_callback(const nav_msgs::Odometry::ConstPtr &msg)
 
   // Assemble measurement covariance
   FLAUKF::MeasGpsCov RnGps{FLAUKF::MeasGpsCov::Zero()};
-  for(int i = 0; i < 3; i++)
-  {
-    for(int j = 0; j < 3; j++)
-    {
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
       RnGps(i, j) = msg->pose.covariance[i * 6 + j];
       RnGps(i + 3, j + 3) = msg->twist.covariance[i * 6 + j];
     }
@@ -550,9 +515,8 @@ void FLAUKFNodelet::gps_callback(const nav_msgs::Odometry::ConstPtr &msg)
 }
 
 void FLAUKFNodelet::mag_callback(
-    const sensor_msgs::MagneticField::ConstPtr &msg)
-{
-  if(!static_transforms_initialized_)
+    const sensor_msgs::MagneticField::ConstPtr &msg) {
+  if (!static_transforms_initialized_)
     return;
 
   auto x = fla_ukf_.GetState();
@@ -574,16 +538,12 @@ void FLAUKFNodelet::mag_callback(
   // NODELET_INFO_STREAM_THROTTLE(1, "Yaw from mag: " <<
   // angles::to_degrees(z(0)));
 
-  if(mag_buffer_count_ < mag_buffer_size_)
-  {
+  if (mag_buffer_count_ < mag_buffer_size_) {
     mag_buffer_[mag_buffer_count_] = mag_vec_i;
     mag_buffer_count_++;
-  }
-  else
-  {
+  } else {
     Eigen::Vector3d avg_mag_vec_i(0, 0, 0);
-    for(size_t i = 0; i < mag_buffer_size_; i++)
-    {
+    for (size_t i = 0; i < mag_buffer_size_; i++) {
       avg_mag_vec_i += mag_buffer_[i];
     }
     avg_mag_vec_i /= mag_buffer_size_;
@@ -620,13 +580,12 @@ void FLAUKFNodelet::mag_callback(
   FLAUKF::MeasYawCov RnYaw{FLAUKF::MeasYawCov::Zero()};
   RnYaw(0, 0) = angles::from_degrees(10) * angles::from_degrees(10);
 
-  if(enable_mag_)
+  if (enable_mag_)
     fla_ukf_.MeasurementUpdateYaw(z, RnYaw, msg->header.stamp);
 }
 
 void FLAUKFNodelet::yaw_callback(
-    const geometry_msgs::QuaternionStamped::ConstPtr &msg)
-{
+    const geometry_msgs::QuaternionStamped::ConstPtr &msg) {
   // Get the transform through tf.
   geometry_msgs::TransformStamped stamped_transform_msg =
       tf_buffer_.lookupTransform(msg->header.frame_id, robot_frame_id_,
@@ -639,7 +598,8 @@ void FLAUKFNodelet::yaw_callback(
   Eigen::Quaterniond q_world_sensor;
   tf2::convert(msg->quaternion, q_world_sensor);
   const Eigen::Quaterniond q_world_body = q_world_sensor * q_sensor_body;
-  const Eigen::Vector3d rpy = q_world_body.toRotationMatrix().eulerAngles(2, 1, 0).reverse();
+  const Eigen::Vector3d rpy =
+      q_world_body.toRotationMatrix().eulerAngles(2, 1, 0).reverse();
 
   FLAUKF::MeasYawVec z;
 
@@ -653,8 +613,7 @@ void FLAUKFNodelet::yaw_callback(
   fla_ukf_.MeasurementUpdateYaw(z, RnYaw, msg->header.stamp);
 }
 
-void FLAUKFNodelet::onInit(void)
-{
+void FLAUKFNodelet::onInit(void) {
   ros::NodeHandle n(getPrivateNodeHandle());
 
   n.param("enable_laser", enable_laser_, true);
@@ -745,18 +704,17 @@ void FLAUKFNodelet::onInit(void)
 
   sub_imu_ = n.subscribe("imu", 10, &FLAUKFNodelet::imu_callback, this,
                          ros::TransportHints().tcpNoDelay());
-  if(enable_cam_)
+  if (enable_cam_)
     sub_cam_ = n.subscribe("pose_cam", 10, &FLAUKFNodelet::cam_callback, this,
                            ros::TransportHints().tcpNoDelay());
-  if(enable_velodyne_)
+  if (enable_velodyne_)
     sub_velodyne_ =
         n.subscribe("pose_velodyne", 10, &FLAUKFNodelet::velodyne_callback,
                     this, ros::TransportHints().tcpNoDelay());
-  if(enable_laser_)
+  if (enable_laser_)
     sub_laser_ = n.subscribe("laser_odom", 10, &FLAUKFNodelet::laser_callback,
                              this, ros::TransportHints().tcpNoDelay());
-  if(enable_height_)
-  {
+  if (enable_height_) {
     sub_height_ = n.subscribe("height", 10, &FLAUKFNodelet::height_callback,
                               this, ros::TransportHints().tcpNoDelay());
     sub_height_toggle_ = n.subscribe("use_downward_lidar", 10,
@@ -764,18 +722,17 @@ void FLAUKFNodelet::onInit(void)
                                      this, ros::TransportHints().tcpNoDelay());
   }
 
-  if(enable_gps_)
+  if (enable_gps_)
     sub_gps_ = n.subscribe("gps_odom", 10, &FLAUKFNodelet::gps_callback, this,
                            ros::TransportHints().tcpNoDelay());
   // Always enable mag subscriber so that we publish the mag yaw
   sub_mag_ = n.subscribe("mag", 10, &FLAUKFNodelet::mag_callback, this,
                          ros::TransportHints().tcpNoDelay());
-  if(enable_vio_odom_)
+  if (enable_vio_odom_)
     sub_vio_odom_ =
         n.subscribe("vio_odom", 10, &FLAUKFNodelet::vio_odom_callback, this,
                     ros::TransportHints().tcpNoDelay());
-  if(enable_yaw_)
-  {
+  if (enable_yaw_) {
     sub_yaw_ = n.subscribe("yaw", 10, &FLAUKFNodelet::yaw_callback, this,
                            ros::TransportHints().tcpNoDelay());
   }

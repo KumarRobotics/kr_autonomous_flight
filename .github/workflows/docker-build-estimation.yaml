@@ -3,7 +3,7 @@ name: docker-build-estimation
 on:
   workflow_run:
     workflows: ["docker-build-base"]
-    branches: [master gh_actions]
+    branches: [master]
     types:
       - completed
 

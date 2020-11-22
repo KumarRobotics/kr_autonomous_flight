@@ -1,8 +1,11 @@
 name: docker-build-base
 
+# Only build base when any of the files in the base directory are modified
 on:
   push:
-    branches: [master, gh_actions]
+    paths:
+    - 'base/**'
+    branches: [master]
 
 jobs:
   main:

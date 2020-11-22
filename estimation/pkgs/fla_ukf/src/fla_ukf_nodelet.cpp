@@ -3,7 +3,6 @@
 #include <angles/angles.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
-#include <kr_math/SO3.hpp>
 #include <nav_msgs/Odometry.h>
 #include <nodelet/nodelet.h>
 #include <queue>
@@ -238,7 +237,7 @@ void FLAUKFNodelet::velodyne_callback(
   const Eigen::Quaterniond q_world_body(T_world_body.rotation());
   const Eigen::Vector3d t_world_body(T_world_body.translation());
 
-  Eigen::Vector3d rpy = kr::quatToEulerZYX(q_world_body);
+  Eigen::Vector3d rpy = q_world_body.toRotationMatrix().eulerAngles(2, 1, 0).reverse();
 
   // Assemble measurement
   FLAUKF::MeasCamVec z;
@@ -297,7 +296,7 @@ void FLAUKFNodelet::cam_callback(
   double roll = std::atan2(2 * (q[0] * q[1] + q[2] * q[3]),
                            1 - 2 * (q[1] * q[1] + q[2] * q[2]));
 #endif
-  const Eigen::Vector3d rpy = kr::quatToEulerZYX(q_world_body);
+  const Eigen::Vector3d rpy = q_world_body.toRotationMatrix().eulerAngles(2, 1, 0).reverse();
 
   // Assemble measurement
   FLAUKF::MeasCamVec z;
@@ -413,7 +412,7 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg)
       T_world_vision_.linear() * v_vision_cam; // Ignoring the (omega \times r)
                                                // since r_cam_body is small
 
-  const Eigen::Vector3d rpy = kr::quatToEulerZYX(q_world_body);
+  const Eigen::Vector3d rpy = q_world_body.toRotationMatrix().eulerAngles(2, 1, 0).reverse();
   // ROS_INFO_STREAM("t_world_body (vio): " << t_world_body.transpose());
   // ROS_INFO_STREAM("rpy_world_body (vio): " << 180/M_PI * rpy.transpose());
 
@@ -640,7 +639,7 @@ void FLAUKFNodelet::yaw_callback(
   Eigen::Quaterniond q_world_sensor;
   tf2::convert(msg->quaternion, q_world_sensor);
   const Eigen::Quaterniond q_world_body = q_world_sensor * q_sensor_body;
-  const Eigen::Vector3d rpy = kr::quatToEulerZYX(q_world_body);
+  const Eigen::Vector3d rpy = q_world_body.toRotationMatrix().eulerAngles(2, 1, 0).reverse();
 
   FLAUKF::MeasYawVec z;
 

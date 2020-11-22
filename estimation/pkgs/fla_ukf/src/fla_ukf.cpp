@@ -2,7 +2,6 @@
 #include <cmath>
 #include <Eigen/Cholesky>
 #include <Eigen/Geometry>
-#include <kr_math/SO3.hpp>
 #include <angles/angles.h>
 
 FLAUKF::FLAUKF()
@@ -173,7 +172,6 @@ void FLAUKF::GenerateWeights(unsigned int L)
 
 static FLAUKF::Mat<3, 3> rpy_to_R(const FLAUKF::Vec<3> &rpy)
 {
-  // TODO(Kartik): Use kr_math functions
   return FLAUKF::Mat<3, 3>{
       Eigen::AngleAxis<FLAUKF::Scalar_t>(rpy(2), FLAUKF::Vec<3>::UnitZ()) *
       Eigen::AngleAxis<FLAUKF::Scalar_t>(rpy(1), FLAUKF::Vec<3>::UnitY()) *
@@ -182,12 +180,34 @@ static FLAUKF::Mat<3, 3> rpy_to_R(const FLAUKF::Vec<3> &rpy)
 
 static FLAUKF::Vec<3> R_to_rpy(const FLAUKF::Mat<3, 3> &R)
 {
-  // TODO(Kartik): Use kr_math functions
   FLAUKF::Vec<3> rpy;
   rpy(0) = std::atan2(R(2, 1), R(2, 2));
   rpy(1) = -std::asin(R(2, 0));
   rpy(2) = std::atan2(R(1, 0), R(0, 0));
   return rpy;
+}
+
+/**
+ * Copied from https://github.com/KumarRobotics/kr_utils/blob/master/kr_math/include/kr_math/SO3.hpp
+ *
+ *  @brief Create a skew-symmetric matrix from a 3-element vector.
+ *  @note Performs the operation:
+ *  w   ->  [  0 -w3  w2]
+ *          [ w3   0 -w1]
+ *          [-w2  w1   0]
+ */
+FLAUKF::Mat<3, 3> skewSymmetric(const FLAUKF::Vec<3>& w) {
+  FLAUKF::Mat<3, 3> W;
+  W(0, 0) = 0;
+  W(0, 1) = -w(2);
+  W(0, 2) = w(1);
+  W(1, 0) = w(2);
+  W(1, 1) = 0;
+  W(1, 2) = -w(0);
+  W(2, 0) = -w(1);
+  W(2, 1) = w(0);
+  W(2, 2) = 0;
+  return W;
 }
 
 FLAUKF::StateVec FLAUKF::ProcessModel(const StateVec &x, const InputVec &u,
@@ -202,7 +222,7 @@ FLAUKF::StateVec FLAUKF::ProcessModel(const StateVec &x, const InputVec &u,
 
   // Rotation
   const Vec<3> omega = u.segment<3>(3) - x.segment<3>(12) + w.segment<3>(3);
-  const Mat<3, 3> dR = Mat<3, 3>::Identity() + kr::skewSymmetric(omega) * dt;
+  const Mat<3, 3> dR = Mat<3, 3>::Identity() + skewSymmetric(omega) * dt;
   const Mat<3, 3> Rt = R * dR;
 
   // State

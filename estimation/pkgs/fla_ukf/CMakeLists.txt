@@ -7,7 +7,6 @@ add_definitions(-D VIO_NO_POSITION=0 -D ENABLE_VIO_YAW_OFFSET=0)
 find_package(
   catkin REQUIRED
   COMPONENTS eigen_conversions
-             kr_math
              nav_msgs
              nodelet
              roscpp

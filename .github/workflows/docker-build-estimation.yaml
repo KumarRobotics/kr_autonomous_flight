@@ -1,11 +1,17 @@
 name: docker-build-estimation
 
+# Build estimation when "base" changes, or when any files in the estimation
+# folder are modified
 on:
   workflow_run:
     workflows: ["docker-build-base"]
     branches: [master]
     types:
       - completed
+  push:
+    paths:
+    - 'estimation/**'
+    branches: [master]
 
 jobs:
   main:

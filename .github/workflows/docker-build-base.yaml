@@ -1,4 +1,4 @@
-name: ci
+name: docker-build-base
 
 on:
   push:

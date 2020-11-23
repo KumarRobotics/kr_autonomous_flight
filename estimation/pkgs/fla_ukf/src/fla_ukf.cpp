@@ -1,11 +1,12 @@
+// Copyright 2016 KumarRobotics - Kartik Mohta
 #include "fla_ukf/fla_ukf.h"
-#include <cmath>
 #include <Eigen/Cholesky>
 #include <Eigen/Geometry>
 #include <angles/angles.h>
+#include <cmath>
+#include <utility>
 
-FLAUKF::FLAUKF()
-{
+FLAUKF::FLAUKF() {
   // Init State
   xa_.setZero();
 
@@ -61,54 +62,32 @@ constexpr std::array<unsigned int, 6> FLAUKF::meas_vio_idx_;
 constexpr std::array<unsigned int, 9> FLAUKF::meas_vio_idx_;
 #endif
 
-const FLAUKF::StateVec &FLAUKF::GetState() const
-{
-  return xa_;
-}
+const FLAUKF::StateVec &FLAUKF::GetState() const { return xa_; }
 
-const FLAUKF::StateCov &FLAUKF::GetStateCovariance() const
-{
-  return Pa_;
-}
+const FLAUKF::StateCov &FLAUKF::GetStateCovariance() const { return Pa_; }
 
-void FLAUKF::SetGravity(Scalar_t _g)
-{
-  g_ = _g;
-}
+void FLAUKF::SetGravity(Scalar_t _g) { g_ = _g; }
 
-void FLAUKF::SetCurrentFloorHeight(Scalar_t h)
-{
-  curr_floor_height_ = h;
-}
+void FLAUKF::SetCurrentFloorHeight(Scalar_t h) { curr_floor_height_ = h; }
 
-void FLAUKF::SetFloorChangeThreshold(Scalar_t t)
-{
+void FLAUKF::SetFloorChangeThreshold(Scalar_t t) {
   floor_change_threshold_ = t;
 }
 
-void FLAUKF::SetFloorMergeThreshold(Scalar_t t)
-{
-  floor_merge_threshold_ = t;
-}
+void FLAUKF::SetFloorMergeThreshold(Scalar_t t) { floor_merge_threshold_ = t; }
 
-void FLAUKF::SetImuCovariance(const ProcNoiseCov &_Rv)
-{
-  Rv_ = _Rv;
-}
+void FLAUKF::SetImuCovariance(const ProcNoiseCov &_Rv) { Rv_ = _Rv; }
 
-void FLAUKF::SetParameters(Scalar_t _alpha, Scalar_t _beta, Scalar_t _kappa)
-{
+void FLAUKF::SetParameters(Scalar_t _alpha, Scalar_t _beta, Scalar_t _kappa) {
   alpha_ = _alpha;
   beta_ = _beta;
   kappa_ = _kappa;
 }
 
-bool FLAUKF::ProcessUpdate(const InputVec &u, const ros::Time &time)
-{
+bool FLAUKF::ProcessUpdate(const InputVec &u, const ros::Time &time) {
   // Init Time
   Scalar_t dt;
-  if(!init_process_ || !init_meas_)
-  {
+  if (!init_process_ || !init_meas_) {
     init_process_ = true;
     prev_proc_update_time_ = time;
     return false;
@@ -129,16 +108,15 @@ bool FLAUKF::ProcessUpdate(const InputVec &u, const ros::Time &time)
   const Mat<proc_noise_count_, 2 *L_proc + 1> Wa =
       Xaa.bottomRows<proc_noise_count_>();
 
-  for(unsigned int k = 0; k < Xa.cols(); k++)
+  for (unsigned int k = 0; k < Xa.cols(); k++)
     Xa.col(k) = ProcessModel(Xa.col(k), u, Wa.col(k), dt);
 
   // Handle jump between +pi and -pi !
   const Scalar_t minYaw = Xa.row(8).minCoeff();
   const Scalar_t maxYaw = Xa.row(8).maxCoeff();
-  if(std::abs(minYaw - maxYaw) > M_PI)
-  {
-    for(unsigned int k = 0; k < Xa.cols(); k++)
-      if(Xa(8, k) < 0)
+  if (std::abs(minYaw - maxYaw) > M_PI) {
+    for (unsigned int k = 0; k < Xa.cols(); k++)
+      if (Xa(8, k) < 0)
         Xa(8, k) += 2 * M_PI;
   }
 
@@ -147,39 +125,34 @@ bool FLAUKF::ProcessUpdate(const InputVec &u, const ros::Time &time)
 
   // Covariance
   Pa_.setZero();
-  for(unsigned int k = 0; k < Xa.cols(); k++)
-  {
+  for (unsigned int k = 0; k < Xa.cols(); k++) {
     const StateVec d = Xa.col(k) - xa_;
     Pa_.noalias() += wc_(k) * d * d.transpose();
   }
   return true;
 }
 
-void FLAUKF::GenerateWeights(unsigned int L)
-{
+void FLAUKF::GenerateWeights(unsigned int L) {
   lambda_ = alpha_ * alpha_ * (L + kappa_) - L;
   wm_.resize(1, 2 * L + 1);
   wc_.resize(1, 2 * L + 1);
   wm_(0) = lambda_ / (L + lambda_);
   wc_(0) = lambda_ / (L + lambda_) + (1 - alpha_ * alpha_ + beta_);
-  for(unsigned int k = 1; k <= 2 * L; k++)
-  {
+  for (unsigned int k = 1; k <= 2 * L; k++) {
     wm_(k) = 1 / (2 * (L + lambda_));
     wc_(k) = 1 / (2 * (L + lambda_));
   }
   gamma_ = std::sqrt(L + lambda_);
 }
 
-static FLAUKF::Mat<3, 3> rpy_to_R(const FLAUKF::Vec<3> &rpy)
-{
+static FLAUKF::Mat<3, 3> rpy_to_R(const FLAUKF::Vec<3> &rpy) {
   return FLAUKF::Mat<3, 3>{
       Eigen::AngleAxis<FLAUKF::Scalar_t>(rpy(2), FLAUKF::Vec<3>::UnitZ()) *
       Eigen::AngleAxis<FLAUKF::Scalar_t>(rpy(1), FLAUKF::Vec<3>::UnitY()) *
       Eigen::AngleAxis<FLAUKF::Scalar_t>(rpy(0), FLAUKF::Vec<3>::UnitX())};
 }
 
-static FLAUKF::Vec<3> R_to_rpy(const FLAUKF::Mat<3, 3> &R)
-{
+static FLAUKF::Vec<3> R_to_rpy(const FLAUKF::Mat<3, 3> &R) {
   FLAUKF::Vec<3> rpy;
   rpy(0) = std::atan2(R(2, 1), R(2, 2));
   rpy(1) = -std::asin(R(2, 0));
@@ -188,7 +161,8 @@ static FLAUKF::Vec<3> R_to_rpy(const FLAUKF::Mat<3, 3> &R)
 }
 
 /**
- * Copied from https://github.com/KumarRobotics/kr_utils/blob/master/kr_math/include/kr_math/SO3.hpp
+ * Copied from
+ * https://github.com/KumarRobotics/kr_utils/blob/master/kr_math/include/kr_math/SO3.hpp
  *
  *  @brief Create a skew-symmetric matrix from a 3-element vector.
  *  @note Performs the operation:
@@ -196,7 +170,7 @@ static FLAUKF::Vec<3> R_to_rpy(const FLAUKF::Mat<3, 3> &R)
  *          [ w3   0 -w1]
  *          [-w2  w1   0]
  */
-FLAUKF::Mat<3, 3> skewSymmetric(const FLAUKF::Vec<3>& w) {
+FLAUKF::Mat<3, 3> skewSymmetric(const FLAUKF::Vec<3> &w) {
   FLAUKF::Mat<3, 3> W;
   W(0, 0) = 0;
   W(0, 1) = -w(2);
@@ -211,8 +185,7 @@ FLAUKF::Mat<3, 3> skewSymmetric(const FLAUKF::Vec<3>& w) {
 }
 
 FLAUKF::StateVec FLAUKF::ProcessModel(const StateVec &x, const InputVec &u,
-                                      const ProcNoiseVec &w, Scalar_t dt)
-{
+                                      const ProcNoiseVec &w, Scalar_t dt) {
   const Mat<3, 3> R = rpy_to_R(x.segment<3>(6));
   const Vec<3> ag(0, 0, g_);
 
@@ -239,14 +212,11 @@ FLAUKF::StateVec FLAUKF::ProcessModel(const StateVec &x, const InputVec &u,
 
 bool FLAUKF::MeasurementUpdateLaser(const MeasLaserVec &z,
                                     const MeasLaserCov &RnLaser,
-                                    const ros::Time &time)
-{
+                                    const ros::Time &time) {
   // Init
-  if(!init_process_ || !init_meas_)
-  {
+  if (!init_process_ || !init_meas_) {
     std::cout << "MeasurementUpdateLaser:" << std::endl;
-    for(unsigned int i = 0; i < meas_laser_count_; ++i)
-    {
+    for (unsigned int i = 0; i < meas_laser_count_; ++i) {
       xa_(meas_laser_idx_[i]) = z(i);
       std::cout << "z(" << i << "): " << z(i) << std::endl;
     }
@@ -257,8 +227,7 @@ bool FLAUKF::MeasurementUpdateLaser(const MeasLaserVec &z,
   // Get Measurement
   Mat<meas_laser_count_, state_count_> H;
   H.setZero();
-  for(unsigned int i = 0; i < meas_laser_count_; ++i)
-  {
+  for (unsigned int i = 0; i < meas_laser_count_; ++i) {
     H(i, meas_laser_idx_[i]) = 1;
   }
   MeasLaserCov S = H * Pa_ * H.transpose() + RnLaser;
@@ -278,14 +247,11 @@ bool FLAUKF::MeasurementUpdateLaser(const MeasLaserVec &z,
 }
 
 bool FLAUKF::MeasurementUpdateCam(const MeasCamVec &z, const MeasCamCov &RnCam,
-                                  const ros::Time &time)
-{
+                                  const ros::Time &time) {
   // Init
-  if(!init_process_ || !init_meas_)
-  {
+  if (!init_process_ || !init_meas_) {
     std::cout << "MeasurementUpdateCam:" << std::endl;
-    for(unsigned int i = 0; i < meas_cam_count_; ++i)
-    {
+    for (unsigned int i = 0; i < meas_cam_count_; ++i) {
       xa_(meas_cam_idx_[i]) = z(i);
       std::cout << "z(" << i << "): " << z(i) << std::endl;
     }
@@ -297,8 +263,7 @@ bool FLAUKF::MeasurementUpdateCam(const MeasCamVec &z, const MeasCamCov &RnCam,
   // Get Measurement
   Mat<meas_cam_count_, state_count_> H;
   H.setZero();
-  for(unsigned int i = 0; i < meas_cam_count_; ++i)
-  {
+  for (unsigned int i = 0; i < meas_cam_count_; ++i) {
     H(i, meas_cam_idx_[i]) = 1;
   }
   MeasCamCov S = H * Pa_ * H.transpose() + RnCam;
@@ -321,7 +286,7 @@ bool FLAUKF::MeasurementUpdateCam(const MeasCamVec &z, const MeasCamCov &RnCam,
   const Mat<state_count_, 2 *L + 1> Xa = Xaa.topRows<state_count_>();
   Mat<meas_cam_count_, 2 * L + 1> Za;
   // Mean
-  for(unsigned int k = 0; k < Xa.cols(); k++)
+  for (unsigned int k = 0; k < Xa.cols(); k++)
     Za.col(k) = MeasurementModelCam(Xa.col(k));
 
   MeasCamVec z_pred =
@@ -332,8 +297,7 @@ bool FLAUKF::MeasurementUpdateCam(const MeasCamVec &z, const MeasCamCov &RnCam,
   Mat<state_count_, meas_cam_count_> Pxz;
   Pzz.setZero();
   Pxz.setZero();
-  for(unsigned int k = 0; k < Xa.cols(); k++)
-  {
+  for (unsigned int k = 0; k < Xa.cols(); k++) {
     const MeasCamVec d_z = Za.col(k) - z_pred;
     const StateVec d_x = Xa.col(k) - xa_;
     Pzz.noalias() += wc_(k) * d_z * d_z.transpose();
@@ -365,8 +329,7 @@ bool FLAUKF::MeasurementUpdateCam(const MeasCamVec &z, const MeasCamCov &RnCam,
   return true;
 }
 
-FLAUKF::MeasCamVec FLAUKF::MeasurementModelCam(const StateVec &x)
-{
+FLAUKF::MeasCamVec FLAUKF::MeasurementModelCam(const StateVec &x) {
   MeasCamVec z;
   z.segment<3>(0) = x.segment<3>(0);
   z.segment<3>(3) = x.segment<3>(6);
@@ -376,10 +339,9 @@ FLAUKF::MeasCamVec FLAUKF::MeasurementModelCam(const StateVec &x)
 
 bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
                                      const MeasHeightCov &RnHeight,
-                                     const ros::Time &time)
-{
+                                     const ros::Time &time) {
   // ROS_INFO("GOT HEIGHT");
-  if(!init_process_ || !init_meas_)
+  if (!init_process_ || !init_meas_)
     return false;
 
   constexpr unsigned int L = state_count_;
@@ -390,7 +352,7 @@ bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
   const Mat<state_count_, 2 *L + 1> Xa = Xaa.topRows<state_count_>();
   Mat<meas_height_count_, 2 * L + 1> Za;
   // Mean
-  for(unsigned int k = 0; k < Xa.cols(); k++)
+  for (unsigned int k = 0; k < Xa.cols(); k++)
     Za.col(k) = MeasurementModelHeight(Xa.col(k));
 
   MeasHeightVec z_pred =
@@ -399,15 +361,14 @@ bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
   const Scalar_t h_meas = z(0) * std::cos(xa_(7)) * std::cos(xa_(6));
 
   // Filter out very low or very high measurements
-  if(h_meas < 0.2 || h_meas > 20)
+  if (h_meas < 0.2 || h_meas > 20)
     return false;
 
 #if 0
   const Scalar_t h_prev =
       height_hist_.size() > 0 ? height_hist_.back().second : h_meas;
 
-  if(std::abs(h_meas - h_prev) > floor_change_threshold_ / 4.0)
-  {
+  if (std::abs(h_meas - h_prev) > floor_change_threshold_ / 4.0) {
     ROS_WARN_THROTTLE(1, "Height measurement changing too fast, ignoring!");
     return false;
   }
@@ -417,14 +378,12 @@ bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
 
 #if 0
   // Remove old height estimates
-  while((time - height_hist_[0].first).toSec() > height_hist_duration_)
-  {
+  while ((time - height_hist_[0].first).toSec() > height_hist_duration_) {
     height_hist_.pop_front();
   }
 #else
   // Remove old height estimates
-  while(height_hist_.size() > height_hist_length_)
-  {
+  while (height_hist_.size() > height_hist_length_) {
     height_hist_.pop_front();
   }
 #endif
@@ -434,10 +393,9 @@ bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
   // const Scalar_t h_pred = z_pred(0) * std::cos(xa_(7)) * std::cos(xa_(6));
   // const Scalar_t h_pred = xa_(2) - curr_floor_height_;
   const Scalar_t h_ref = height_hist_[0].second;
-  //ROS_INFO_STREAM("z: " << z(0) << ", h_meas: " << h_meas
+  // ROS_INFO_STREAM("z: " << z(0) << ", h_meas: " << h_meas
   //                      << ", h_ref: " << h_ref);
-  if(std::abs(h_ref - h_meas) >= floor_change_threshold_)
-  {
+  if (std::abs(h_ref - h_meas) >= floor_change_threshold_) {
     ROS_WARN("----- Floor Level Changed -----");
     height_hist_ = decltype(height_hist_)(); // Clear queue
     height_hist_.push_back(std::make_pair(time, h_meas));
@@ -446,10 +404,9 @@ bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
 
     // Merge floor heights which are close to each other
     bool set_to_known_floor_height = false;
-    for(const auto &floor_height : known_floor_heights_)
-    {
-      if(std::abs(curr_floor_height_ - floor_height) < floor_merge_threshold_)
-      {
+    for (const auto &floor_height : known_floor_heights_) {
+      if (std::abs(curr_floor_height_ - floor_height) <
+          floor_merge_threshold_) {
         ROS_WARN_STREAM("Setting current floor height to known floor height: "
                         << floor_height);
         curr_floor_height_ = floor_height;
@@ -457,13 +414,13 @@ bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
         break;
       }
     }
-    if(!set_to_known_floor_height)
+    if (!set_to_known_floor_height)
       known_floor_heights_.push_back(curr_floor_height_);
 
     ROS_WARN("New floor height: %f", curr_floor_height_);
 
     // Recalculate z_pred
-    for(unsigned int k = 0; k < Xa.cols(); k++)
+    for (unsigned int k = 0; k < Xa.cols(); k++)
       Za.col(k) = MeasurementModelHeight(Xa.col(k));
 
     z_pred =
@@ -476,8 +433,7 @@ bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
   Mat<state_count_, meas_height_count_> Pxz;
   Pzz.setZero();
   Pxz.setZero();
-  for(unsigned int k = 0; k < Xa.cols(); k++)
-  {
+  for (unsigned int k = 0; k < Xa.cols(); k++) {
     const MeasHeightVec d_z = Za.col(k) - z_pred;
     const StateVec d_x = Xa.col(k) - xa_;
     Pzz.noalias() += wc_(k) * d_z * d_z.transpose();
@@ -492,8 +448,7 @@ bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
   return true;
 }
 
-FLAUKF::MeasHeightVec FLAUKF::MeasurementModelHeight(const StateVec &x)
-{
+FLAUKF::MeasHeightVec FLAUKF::MeasurementModelHeight(const StateVec &x) {
   // d = z/(cos(theta)*cos(phi))
   MeasHeightVec z;
   z(0) = (x(2) - curr_floor_height_) / (std::cos(x(7)) * std::cos(x(6)));
@@ -501,14 +456,11 @@ FLAUKF::MeasHeightVec FLAUKF::MeasurementModelHeight(const StateVec &x)
 }
 
 bool FLAUKF::MeasurementUpdateGps(const MeasGpsVec &z, const MeasGpsCov &RnGps,
-                                  const ros::Time &time)
-{
+                                  const ros::Time &time) {
   // Init
-  if(!init_process_ || !init_meas_)
-  {
+  if (!init_process_ || !init_meas_) {
     std::cout << "MeasurementUpdateGps:" << std::endl;
-    for(unsigned int i = 0; i < meas_gps_count_; ++i)
-    {
+    for (unsigned int i = 0; i < meas_gps_count_; ++i) {
       xa_(meas_gps_idx_[i]) = z(i);
       std::cout << "z(" << i << "): " << z(i) << std::endl;
     }
@@ -519,8 +471,7 @@ bool FLAUKF::MeasurementUpdateGps(const MeasGpsVec &z, const MeasGpsCov &RnGps,
   // Get Measurement
   Mat<meas_gps_count_, state_count_> H;
   H.setZero();
-  for(unsigned int i = 0; i < meas_gps_count_; ++i)
-  {
+  for (unsigned int i = 0; i < meas_gps_count_; ++i) {
     H(i, meas_gps_idx_[i]) = 1;
   }
   MeasGpsCov S = H * Pa_ * H.transpose() + RnGps;
@@ -537,14 +488,11 @@ bool FLAUKF::MeasurementUpdateGps(const MeasGpsVec &z, const MeasGpsCov &RnGps,
 }
 
 bool FLAUKF::MeasurementUpdateYaw(const MeasYawVec &z, const MeasYawCov &RnYaw,
-                                  const ros::Time &time)
-{
+                                  const ros::Time &time) {
   // Init
-  if(!init_process_ || !init_meas_)
-  {
+  if (!init_process_ || !init_meas_) {
     std::cout << "MeasurementUpdateYaw:" << std::endl;
-    for(unsigned int i = 0; i < meas_yaw_count_; ++i)
-    {
+    for (unsigned int i = 0; i < meas_yaw_count_; ++i) {
       xa_(meas_yaw_idx_[i]) = z(i);
       std::cout << "z(" << i << "): " << z(i) << std::endl;
     }
@@ -554,8 +502,7 @@ bool FLAUKF::MeasurementUpdateYaw(const MeasYawVec &z, const MeasYawCov &RnYaw,
   // Get Measurement
   Mat<meas_yaw_count_, state_count_> H;
   H.setZero();
-  for(unsigned int i = 0; i < meas_yaw_count_; ++i)
-  {
+  for (unsigned int i = 0; i < meas_yaw_count_; ++i) {
     H(i, meas_yaw_idx_[i]) = 1;
   }
   MeasYawCov S = H * Pa_ * H.transpose() + RnYaw;
@@ -574,15 +521,12 @@ bool FLAUKF::MeasurementUpdateYaw(const MeasYawVec &z, const MeasYawCov &RnYaw,
 }
 
 bool FLAUKF::MeasurementUpdateVio(const MeasVioVec &z, const MeasVioCov &RnVio,
-                                  const ros::Time &time)
-{
+                                  const ros::Time &time) {
   // Init
-  if(!init_process_ || !init_meas_)
-  {
+  if (!init_process_ || !init_meas_) {
     std::cout << "MeasurementUpdateVio:" << std::endl;
     std::cout << "z:" << z.transpose() << std::endl;
-    for(unsigned int i = 0; i < meas_vio_count_; ++i)
-    {
+    for (unsigned int i = 0; i < meas_vio_count_; ++i) {
       xa_(meas_vio_idx_[i]) = z(i);
     }
     init_meas_ = true;
@@ -597,7 +541,7 @@ bool FLAUKF::MeasurementUpdateVio(const MeasVioVec &z, const MeasVioCov &RnVio,
   const Mat<state_count_, 2 *L + 1> Xa = Xaa.topRows<state_count_>();
   Mat<meas_vio_count_, 2 * L + 1> Za;
   // Mean
-  for(unsigned int k = 0; k < Xa.cols(); k++)
+  for (unsigned int k = 0; k < Xa.cols(); k++)
     Za.col(k) = MeasurementModelVio(Xa.col(k));
 
   MeasVioVec z_pred =
@@ -608,8 +552,7 @@ bool FLAUKF::MeasurementUpdateVio(const MeasVioVec &z, const MeasVioCov &RnVio,
   Mat<state_count_, meas_vio_count_> Pxz;
   Pzz.setZero();
   Pxz.setZero();
-  for(unsigned int k = 0; k < Xa.cols(); k++)
-  {
+  for (unsigned int k = 0; k < Xa.cols(); k++) {
     const MeasVioVec d_z = Za.col(k) - z_pred;
     const StateVec d_x = Xa.col(k) - xa_;
     Pzz.noalias() += wc_(k) * d_z * d_z.transpose();
@@ -651,8 +594,7 @@ bool FLAUKF::MeasurementUpdateVio(const MeasVioVec &z, const MeasVioCov &RnVio,
 #else // Linear update
   Mat<meas_vio_count_, state_count_> H;
   H.setZero();
-  for(unsigned int i = 0; i < meas_vio_count_; ++i)
-  {
+  for (unsigned int i = 0; i < meas_vio_count_; ++i) {
     H(i, meas_vio_idx_[i]) = 1;
   }
 
@@ -698,8 +640,7 @@ bool FLAUKF::MeasurementUpdateVio(const MeasVioVec &z, const MeasVioCov &RnVio,
 }
 
 #if ENABLE_VIO_YAW_OFFSET
-FLAUKF::MeasVioVec FLAUKF::MeasurementModelVio(const StateVec &x)
-{
+FLAUKF::MeasVioVec FLAUKF::MeasurementModelVio(const StateVec &x) {
   MeasVioVec z;
 
   auto const vio_yaw_offset = x(15);

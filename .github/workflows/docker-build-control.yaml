@@ -11,13 +11,18 @@ on:
   push:
     paths:
     - 'control/**'
-    branches: [master, control_in_repo]
+    branches: [master]
 
 jobs:
   main:
     runs-on: ubuntu-18.04
 
     steps:
+      -
+        # This action is now required because we are building with context,
+        # required to clone a third party repo
+        name: Checkout
+        uses: actions/checkout@v2
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -31,6 +36,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
+        # Clone quadrotor_control into this repo before building
         name: Checkout quadrotor_control repo
         uses: actions/checkout@v2
         with:
@@ -43,6 +49,7 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v2
         with:
+          context: .
           push: true
           tags: kumarrobotics/autonomy:control
           file: ./control/Dockerfile

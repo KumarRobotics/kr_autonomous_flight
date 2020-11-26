@@ -1,0 +1,5 @@
+repositories:
+  msckf_vio:
+    type: git
+    url: https://github.com/KumarRobotics/quadrotor_control
+    version: d1785452e104b9be707f00aaf91b941c1715dc8f

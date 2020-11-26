@@ -1,7 +1,7 @@
 name: docker-build-control
 
-# Build estimation when "base" changes, or when any files in the estimation
-# folder are modified
+# Build control when "base" changes, or when any files in the control folder are
+# modified
 on:
   workflow_run:
     workflows: ["docker-build-base"]
@@ -45,7 +45,7 @@ jobs:
         with:
           push: true
           tags: kumarrobotics/autonomy:control
-          file: ./estimation/Dockerfile
+          file: ./control/Dockerfile
           # platforms: linux/amd64,linux/arm64
       -
         name: Image digest

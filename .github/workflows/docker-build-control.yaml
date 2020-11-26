@@ -53,7 +53,7 @@ jobs:
           push: true
           tags: kumarrobotics/autonomy:control
           file: ./control/Dockerfile
-          # platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64
       -
         name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

@@ -19,6 +19,7 @@
 #include <memory>
 #include <queue>
 #include <string>
+#include <limits>
 
 class FLAUKFNodelet : public nodelet::Nodelet {
  public:
@@ -73,8 +74,53 @@ class FLAUKFNodelet : public nodelet::Nodelet {
   bool publish_tf_ = false;
 };
 
-FLAUKFNodelet::FLAUKFNodelet() {}
+/**
+ * Copied from
+ * https://github.com/KumarRobotics/kr_utils/blob/master/kr_math/include/kr_math/SO3.hpp
+ *
+ * @brief Get the roll, pitch, yaw angles from a quaternion.
+ * @param q Quaternion.
+ * @return 3x1 Vector with elements [roll,pitch,yaw] about [x,y,z] axes.
+ *
+ * @note Assumes quaternion represents rotation of the form:
+ * (world) = Rz * Ry * Rx (body).
+ *
+ */
+template <typename T>
+FLAUKF::Vec<3> quatToEulerZYX(const Eigen::Quaternion<T>& q) {
+  T q0 = q.w(), q1 = q.x(), q2 = q.y(), q3 = q.z();
 
+  T sth = 2 * (q0 * q2 - q1 * q3);
+  if (sth > 1) {
+    sth = 1;
+  } else if (sth < -1) {
+    sth = -1;
+  }
+
+  const T theta = std::asin(sth);
+  const T cth = std::sqrt(static_cast<T>(1) - sth * sth);
+
+  T phi, psi;
+  if (cth < std::numeric_limits<T>::epsilon() * 10) {
+    phi = std::atan2(2 * (q1 * q2 - q0 * q3),
+                     q0 * q0 - q1 * q1 + q2 * q2 - q3 * q3);
+    psi = 0;
+  } else {
+    phi = std::atan2(2 * (q0 * q1 + q2 * q3),
+                     q0 * q0 - q1 * q1 - q2 * q2 + q3 * q3);
+    psi = std::atan2(2 * (q1 * q2 + q0 * q3),
+                     q0 * q0 + q1 * q1 - q2 * q2 - q3 * q3);
+  }
+
+  FLAUKF::Vec<3> rpy;
+  rpy[0] = phi;    //  x, [-pi,pi]
+  rpy[1] = theta;  //  y, [-pi/2,pi/2]
+  rpy[2] = psi;    //  z, [-pi,pi]
+  return rpy;
+}
+
+
+FLAUKFNodelet::FLAUKFNodelet() {}
 void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {
   if (!static_transforms_initialized_) {
     geometry_msgs::TransformStamped transform_cam_body, transform_world_vision,
@@ -224,8 +270,7 @@ void FLAUKFNodelet::velodyne_callback(
   const Eigen::Quaterniond q_world_body(T_world_body.rotation());
   const Eigen::Vector3d t_world_body(T_world_body.translation());
 
-  Eigen::Vector3d rpy =
-      q_world_body.toRotationMatrix().eulerAngles(2, 1, 0).reverse();
+  Eigen::Vector3d rpy = quatToEulerZYX(q_world_body);
 
   // Assemble measurement
   FLAUKF::MeasCamVec z;
@@ -281,8 +326,7 @@ void FLAUKFNodelet::cam_callback(
   double roll = std::atan2(2 * (q[0] * q[1] + q[2] * q[3]),
                            1 - 2 * (q[1] * q[1] + q[2] * q[2]));
 #endif
-  const Eigen::Vector3d rpy =
-      q_world_body.toRotationMatrix().eulerAngles(2, 1, 0).reverse();
+  const Eigen::Vector3d rpy = quatToEulerZYX(q_world_body);
 
   // Assemble measurement
   FLAUKF::MeasCamVec z;
@@ -390,8 +434,8 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg) {
       T_world_vision_.linear() * v_vision_cam; // Ignoring the (omega \times r)
                                                // since r_cam_body is small
 
-  const Eigen::Vector3d rpy =
-      q_world_body.toRotationMatrix().eulerAngles(2, 1, 0).reverse();
+  const Eigen::Vector3d rpy = quatToEulerZYX(q_world_body);
+
   // ROS_INFO_STREAM("t_world_body (vio): " << t_world_body.transpose());
   // ROS_INFO_STREAM("rpy_world_body (vio): " << 180/M_PI * rpy.transpose());
 

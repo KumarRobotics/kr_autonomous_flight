@@ -24,19 +24,20 @@ RUN apt update \
     liblapack-dev \
     python-catkin-tools \
     libv4l-dev \
-    python-igraph \ 
+    python-igraph \
     libceres-dev \
     python3-pip \
-    && pip3 install -U pyyaml 
+    && pip3 install -U pyyaml
 
-RUN mkdir -p /root/calibration_ws/src 
+RUN mkdir -p /root/calibration_ws/src
 WORKDIR /root/calibration_ws
-COPY pkgs src/pkg
-COPY external-repos.yaml src/
-RUN vcs import --input src/external-repos.yaml src/ \
-    && catkin init && catkin config --extend /opt/ros/melodic && catkin build -j16 -DCMAKE_BUILD_TYPE=RelWithDebInfo 
+COPY calibration/pkgs src/pkg
+COPY calibration/external-repos.yaml src/
 
+RUN catkin init && catkin config --extend /opt/ros/melodic
+RUN vcs import --input src/external-repos.yaml src/
+RUN catkin build -j4 -DCMAKE_BUILD_TYPE=Release
 
-RUN usermod -aG dialout $(whoami)
-COPY docker/entrypoint.sh /entrypoint.sh
+# RUN usermod -aG dialout $(whoami)
+COPY calibration/docker/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

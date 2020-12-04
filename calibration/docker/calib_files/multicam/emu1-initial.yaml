@@ -1,0 +1,19 @@
+cam0:
+  camera_model: pinhole
+  intrinsics: [605.054, 604.66, 641.791, 508.728]
+  distortion_model: equidistant
+  distortion_coeffs: [-0.0146915, 0.000370396, -0.00425216, 0.0015107]
+  resolution: [1280, 1024]
+  rostopic: /emu1/sync/cam0/image_raw
+cam1:
+  T_cn_cnm1:
+  - [ -0.99999965648, -0.00013331925,  0.00081808159, -0.19946344647]
+  - [ 0.00013388601,  -0.99999975107, -0.00069277676, -0.00005674605]
+  - [-0.00081798903,  0.00069288605,  0.99999942540,  0.00010022941]
+  - [ 0.00000000000,  0.00000000000,  0.00000000000,  1.00000000000]
+  camera_model: pinhole
+  intrinsics: [605.097, 604.321, 698.772, 573.558]
+  distortion_model: equidistant
+  distortion_coeffs: [-0.0146155, -0.00291494, -0.000681981, 0.000221855]
+  resolution: [1280, 1024]
+  rostopic: /emu1/sync/cam1/image_raw

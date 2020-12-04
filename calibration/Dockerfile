@@ -35,8 +35,8 @@ COPY calibration/pkgs src/pkg
 COPY calibration/external-repos.yaml src/
 
 RUN catkin init && catkin config --extend /opt/ros/melodic
-RUN vcs import --input src/external-repos.yaml src/
-RUN catkin build -j4 -DCMAKE_BUILD_TYPE=Release
+RUN vcs import --recursive --input src/external-repos.yaml src/
+RUN catkin build -j2 --no-status -DCMAKE_BUILD_TYPE=Release
 
 # RUN usermod -aG dialout $(whoami)
 COPY calibration/docker/entrypoint.sh /entrypoint.sh

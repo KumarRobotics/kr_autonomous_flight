@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package>
+    <name>calibration_launch</name>
+    <version>0.0.0</version>
+    <description>The calibration_launch package</description>
+
+    <maintainer email="chenste@seas.upenn.edu">steven</maintainer>
+
+    <license>MIT</license>
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <export>
+    </export>
+</package>

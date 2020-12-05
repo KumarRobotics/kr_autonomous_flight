@@ -1,0 +1,28 @@
+<launch>
+  <arg name="calib_dir" default="/root/calib_files"/>
+  <arg name="robot" default="$(optenv ROBOT_NAME quadrotor)"/>
+  <arg name="record_bag" default="false"/>
+  <node pkg="nodelet" type="nodelet"
+    name="multicam_calibration" args="standalone multicam_calibration/CalibrationNodelet"
+    clear_params="true" output="screen">
+    <rosparam file="$(arg calib_dir)/aprilgrid.yaml"/>
+    <rosparam file="$(arg calib_dir)/multicam/$(arg robot)-initial.yaml"/>
+    <param name="use_approximate_sync" value="true"/>
+    <param name="calib_dir" value="$(arg calib_dir)/multicam"/>
+    <param name="latest_link_name" value="$(arg robot)-latest.yaml"/>
+    <param name="output_filename" value="$(arg robot)"/>
+    <param name="record_bag" value="$(arg record_bag)"/>
+
+    <!--
+	You can just perform the calibration from an extracted corners file (~/.ros/corners.csv)
+	This is useful for debugging a calibration because you can quickly rerun with e.g. a
+	different initial starting guess.
+	<param name="corners_file" value="corners_example.csv"/>
+    -->
+    <!--
+	ATTENTION:  Do not remap.
+	The topics subscribed to are specified in the $(arg device)-initial.yaml file.
+	Edit the topic names there.
+    -->
+  </node>
+</launch>

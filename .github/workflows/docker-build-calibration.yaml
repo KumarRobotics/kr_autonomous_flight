@@ -17,8 +17,6 @@ on:
     - 'calibration/**'
     branches: [master]
   workflow_dispatch:
-    tags:
-      description: 'Build tags'
   schedule:
     - cron: '0 0 * * 0'
 

@@ -2,6 +2,10 @@ name: docker-build-calibration
 
 # Build calibration when "base" changes, or when any files in the calibration
 # folder are modified
+# As it is highly improvable that we change code inside the calibration folder,
+# it is good to trigger a build once a week to take into account changes in the
+# third party repos.
+# Additionally, it is good to have a manual trigger button for the build
 on:
   workflow_run:
     workflows: ["docker-build-base"]
@@ -12,6 +16,11 @@ on:
     paths:
     - 'calibration/**'
     branches: [master]
+  workflow_dispatch:
+    tags:
+      description: 'Build tags'
+  schedule:
+    - cron: '0 0 * * 0'
 
 jobs:
   main:

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 if [ -f /root/control_ws/devel/setup.bash ]; then
     echo "Setting up control_ws"

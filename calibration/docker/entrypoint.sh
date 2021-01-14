@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 if [ -f /root/calibration_ws/devel/setup.bash ]; then
     echo "Setting up calibration_ws"

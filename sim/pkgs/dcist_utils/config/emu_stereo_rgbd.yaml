@@ -1,0 +1,69 @@
+$(arg robot):
+    type: Quadrotor
+    frame_id: base_link
+    position: {x: $(arg x), y: $(arg y), z: $(arg z)}
+    orientation: {r: 0, p: 0, y: 0}
+    sensors:
+        RGBCamera_Left: 
+            topic: cam_left/image_raw
+            type: RGBCamera
+            frame_id: cam_left
+            position: {x: 0.1, y: 0.1, z: 0.0}
+            orientation: {r: 0, p: 0, y: 0}
+            configure:
+              width: $(arg cam_width) 
+              height: $(arg cam_height)
+              farClipPlane: 100
+            features:
+              detection:
+                 type: ObjectDetection
+                 topic: cam_left/detection
+                 frame_id: cam_left
+              semantic_camera:
+                 topic: cam_left/semantic_image
+                 type: SemanticCamera
+                 frame_id: cam_left
+                 configure:
+                   width: $(arg semantic_width) 
+                   height: $(arg semantic_height)
+                   farClipPlane: 15
+        RGBCamera_Right: 
+            topic: cam_right/image_raw
+            type: RGBCamera
+            frame_id: cam_right
+            position: {x: 0.1, y: -0.1, z: 0.0}
+            orientation: {r: 0, p: 0, y: 0}
+            configure:
+              width: $(arg cam_width) 
+              height: $(arg cam_height)
+              farClipPlane: 100
+            features:
+              detection:
+                 type: ObjectDetection
+                 topic: cam_right/detection
+                 frame_id: cam_right
+              semantic_camera:
+                 topic: cam_right/semantic_image
+                 type: SemanticCamera
+                 frame_id: cam_right
+                 configure:
+                   width: $(arg semantic_width) 
+                   height: $(arg semantic_height)
+                   farClipPlane: 15
+        DepthCamera: 
+            topic: DepthCamera/image_raw
+            type: DepthCamera
+            frame_id: DepthCamera
+            position: {x: 0.1, y: 0.0, z: 0.0}
+            orientation: {r: 0, p: 0, y: 0}
+            configure:
+                width: $(arg depth_width) 
+                height: $(arg depth_height)
+                farClipPlane: 30
+                targetFrameRate: 10
+        IMU:
+            type: Imu
+            topic: imu
+            frame_id: imu
+            position: {x: 0, y: 0, z: 0}
+            orientation: {r: 0, p: 0, y: 0}

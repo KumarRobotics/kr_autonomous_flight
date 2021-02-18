@@ -1,0 +1,7 @@
+<launch>
+    <!-- launches the unity ros simulator -->
+    <include file="$(find arl_unity_ros)/launch/simulator.launch">
+        <arg name="param_file" value="$(find dcist_demo)/config/overpasscity_demo.yaml"/>
+        <arg name="launch_unity" value="true"/>
+    </include>
+</launch>

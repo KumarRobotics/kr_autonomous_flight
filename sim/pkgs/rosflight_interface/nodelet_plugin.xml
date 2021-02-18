@@ -1,0 +1,7 @@
+<library path="lib/libso3cmd_to_rosflight_nodelet">
+  <class name="rosflight_interface/SO3CmdToRosflight" type="SO3CmdToRosflight" base_class_type="nodelet::Nodelet">
+    <description>
+      This reformats an so3_command and publishes it on compatabile rosflight topics
+    </description>
+  </class>
+</library>

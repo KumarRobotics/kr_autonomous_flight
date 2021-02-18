@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>dcist_demo</name>
+  <version>0.0.0</version>
+  <description>The dcist_demo package</description>
+
+  <maintainer email="quchao@seas.upenn.edu">chao</maintainer>
+
+  <license>TODO</license>
+
+  <depend>roscpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf2_eigen</depend>
+  <depend>tf2_ros</depend>
+  <depend>mav_high_level_msgs</depend>
+  <depend>arl_unity_ros</depend>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <export>
+  </export>
+</package>

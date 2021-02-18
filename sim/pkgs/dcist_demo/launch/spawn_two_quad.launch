@@ -1,0 +1,21 @@
+<launch>
+    <include file="$(find dcist_demo)/launch/spawn_quad.launch">
+        <arg name="robot" value="quad1"/>
+        <arg name="mavlink_port" value="14560"/>
+        <arg name="firmware_bind_port" default="14525"/>
+        <arg name="firmware_remote_port" value="14520"/>
+        <arg name="x" value="5.0"/>
+        <arg name="y" value="2.0"/>
+        <arg name="z" value="2.0"/>
+    </include>
+
+    <include file="$(find dcist_demo)/launch/spawn_quad.launch">
+        <arg name="robot" value="quad2"/>
+        <arg name="mavlink_port" value="14561"/>
+        <arg name="firmware_bind_port" default="14526"/>
+        <arg name="firmware_remote_port" value="14521"/>
+        <arg name="x" value="-20.0"/>
+        <arg name="y" value="2.0"/>
+        <arg name="z" value="2.0"/>
+    </include>
+</launch>

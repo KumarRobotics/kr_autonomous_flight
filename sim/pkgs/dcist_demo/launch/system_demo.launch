@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <arg name="robot" default="quadrotor"/>
+    <arg name="mapper_config" default="$(find dcist_demo)/config/mapper_demo.yaml"/>
+
+    <!-- Controller -->
+
+    <include file="$(find control_launch)/launch/control.launch">
+        <arg name="robot" value="$(arg robot)"/>
+    </include>
+
+    <!-- Mapper and Planner -->
+    <include file="$(find map_plan_launch)/launch/map_plan.launch">
+        <arg name="robot" value="$(arg robot)"/>
+        <arg name="cloud" value="DepthCamera/points"/>
+        <arg name="mapper_config" value="$(arg mapper_config)"/>
+    </include>
+
+    <!-- State machine -->
+    <include file="$(find state_machine_launch)/launch/state_machine.launch">
+        <arg name="robot" value="$(arg robot)"/>
+    </include>
+</launch>

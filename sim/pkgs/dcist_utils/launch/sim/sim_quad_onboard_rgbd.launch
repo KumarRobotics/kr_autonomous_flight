@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <arg name="robot" default="$(optenv ROBOT_NAME quadrotor)"/>
+    <arg name="odom" default="ukf_odom"/>
+    <!-- <arg name="odom" default="/unity_command/ground_truth/$(arg robot)/odom"/> -->
+
+    <!-- launches the unity ros simulator -->
+    <include file="$(find arl_unity_ros)/launch/simulator.launch">
+        <!-- <arg name="param_file" value="$(find arl_unity_ros)/config/overpasscity.yaml"/> -->
+        <arg name="param_file" value="$(find arl_unity_ros)/config/floodedgrounds.yaml"/>
+        <arg name="launch_unity" value="false"/>
+    </include>
+
+
+    <!-- spawns a quadrotor  -->
+    <include file="$(find dcist_utils)/launch/sim/quadrotor.launch">
+        <arg name="robot" value="$(arg robot)"/>
+        <arg name="description" value="$(find dcist_utils)/config/emu_stereo_rgbd.yaml"/>
+    </include>
+
+    <!-- visualize detections -->
+   <node pkg="arl_unity_ros" type="visualize_detections.py" name="$(arg robot)_visualize_detections"/>
+
+    <!-- propagate TrueState -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="tf_TrueState_propagate" args="0 0 0 0 0 0 ground_truth/$(arg robot)/base_link $(arg robot)/TrueState"/>
+    
+    <!-- launches rosflight and quadrotor_control related nodes, need to provide odom -->
+    <group ns="$(arg robot)">
+        <include file="$(find dcist_utils)/launch/sim/rosflight.launch">
+        </include>
+
+        <include file="$(find dcist_utils)/launch/rosflight_interface.launch">
+        </include>
+
+        <node pkg="tf2_ros" type="static_transform_publisher" name="tf_map_odom" args="0 0 0 0 0 0 $(arg robot)/map $(arg robot)/odom"/>
+        <include file="$(find dcist_utils)/launch/odom2tf.launch">
+            <arg name="odom" value="$(arg odom)"/>
+            <arg name="robot" value="$(arg robot)"/>
+        </include>
+    </group>
+</launch>

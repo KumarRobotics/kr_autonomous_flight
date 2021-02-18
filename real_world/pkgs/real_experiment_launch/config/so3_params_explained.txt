@@ -1,0 +1,15 @@
+gains:
+  pos: {x: 7.4, y: 7.4, z: 10.4} # position gains
+  vel: {x: 4.8, y: 4.8, z: 6.0} # velocity gains
+  ki:  {x: 0.00, y: 0.00, z: 0.00} # position error integral gains
+  kib: {x: 0.00, y: 0.00, z: 0.00} # body-frame position error integral gains, NOT used in actual control calculation, not influential
+  rot: {x: 1.5, y: 1.5, z: 1.0} # rotation gains, only used in so3_trpy_control, NOT used in so3_control, not influential
+  ang: {x: 0.13, y: 0.13, z: 0.1} # angular velocity gains, only used in so3_trpy_control, NOT used in so3_control, not influential
+
+corrections: # corrections are only used in so3_trpy_control, NOT used in so3_control, not influential
+  kf: 0.0e-08
+  r: 0.0
+  p: 0.0
+
+max_pos_int:   0.5 #  position error integral term limit, if ki=0, this term is not influential
+max_pos_int_b: 0.5 # body-frame position error integral term limit, NOT used in actual control calculation, not influential

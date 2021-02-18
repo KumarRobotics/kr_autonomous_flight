@@ -1,0 +1,15 @@
+gains:
+  pos: { x: 4.3, y: 4.3, z: 5.8 }
+  vel: { x: 2.8, y: 2.8, z: 4.0 }
+  ki: { x: 0.01, y: 0.01, z: 0.1 }
+  kib: { x: 0.00, y: 0.00, z: 0.00 }
+  rot: { x: 1.5, y: 1.5, z: 1.0 }
+  ang: { x: 0.13, y: 0.13, z: 0.05 }
+
+corrections:
+  kf: 0.0e-08
+  r: 0.0
+  p: 0.0
+
+max_pos_int: 0.5
+max_pos_int_b: 0.5

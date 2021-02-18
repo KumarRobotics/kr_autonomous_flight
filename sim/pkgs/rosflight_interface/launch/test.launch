@@ -1,0 +1,29 @@
+<launch>
+  <arg name="robot" default="/"/>
+  <arg name="odom" default="odom"/>
+  <arg name="so3_cmd" default="so3_cmd"/>
+  <arg name="num_props" default="4"/>
+  <arg name="kf" default="2.137145e-6"/>
+  <arg name="lin_cof_a" default="0.0015"/>
+  <arg name="lin_int_b" default="-1.5334"/>
+
+  <group ns="$(arg robot)">
+    <node pkg="nodelet"
+      type="nodelet"
+      args="standalone rosflight_interface/SO3CmdToRosflight"
+      name="so3cmd_to_rosflight"
+      required="true"
+      clear_params="true"
+      output="screen">
+      <param name="num_props" value="$(arg num_props)"/>
+      <param name="kf" value="$(arg kf)"/>
+      <param name="lin_cof_a" value="$(arg lin_cof_a)"/>
+      <param name="lin_int_b" value="$(arg lin_int_b)"/>
+      <remap from="~odom" to="$(arg odom)"/>
+      <remap from="~so3_cmd" to="$(arg so3_cmd)"/>
+      <remap from="~imu" to="rosflight/imu/data" />
+      <remap from="~attitude_raw" to="mavros/setpoint_raw/attitude" />
+      <remap from="~odom_pose" to="mavros/vision_pose/pose" />
+    </node>
+  </group>
+</launch>

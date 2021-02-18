@@ -1,0 +1,24 @@
+<package format="2">
+  <name>rosflight_interface</name>
+  <version>0.1.0</version>
+  <description>mavros_interface</description>
+
+  <maintainer email="jonathan.r.fink3.civ@mail.mil">Jon Fink</maintainer>
+  <license>BSD</license>
+
+  <!-- Dependencies which this package needs to build itself. -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Dependencies needed to compile and run this package. -->
+  <depend>roscpp</depend>
+  <depend>nav_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>kr_mav_msgs</depend>
+  <depend>rosflight_msgs</depend>
+  <depend>nodelet</depend>
+
+  <export>
+    <nodelet plugin="${prefix}/nodelet_plugin.xml"/>
+  </export>
+
+</package>

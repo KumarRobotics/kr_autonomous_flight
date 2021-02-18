@@ -1,0 +1,10 @@
+unity_command:
+  initial_commands: [
+    '$(arg unity_namespace)Settings set_frame_rate 30',
+    '$(arg unity_namespace)Clock realtime false',
+    '$(arg unity_namespace)Spawner load $(find lejeune_emout)/unity/overpasscity_cardetection',
+    '$(arg unity_namespace)Spawner scene OverpassCity',
+    '$(arg unity_namespace)Settings configure GuaranteeFrameRate:true'
+  ]
+
+use_sim_time: true

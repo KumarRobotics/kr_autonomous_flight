@@ -1,0 +1,6 @@
+# Request a parameter value
+
+string name # the name of the parameter value to retrieve
+---
+bool exists # whether the request parameter exists
+float64 value # the value of the requested parameter

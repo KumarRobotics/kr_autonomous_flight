@@ -1,0 +1,30 @@
+<launch>
+    <arg name="robot"/>
+
+    <!-- x corresponds to z in Unity simulator, y corresponds to -x, z corresponds to y -->
+    <arg name="x" default="50.0"/>
+    <arg name="y" default="-30.0"/>
+    <arg name="z" default="5.0"/>
+
+    <arg name="cam_width" default="320"/>
+    <arg name="cam_height" default="240"/>
+    <arg name="semantic_width" default="960"/>
+    <arg name="semantic_height" default="720"/>
+    <arg name="depth_width" default="960"/>
+    <arg name="depth_height" default="720"/>
+    <arg name="use_enhanced_yaml" default="true"/>
+
+    <arg name="description" default="$(find arl_unity_ros_air)/config/quadrotor_yaml.yaml"/>
+
+    <!-- Skip spawn robot launch to get mavlink_port argument available to rosparam -->
+    <arg name="unity_namespace" default="Simulation/"/>
+    <rosparam ns="spawn" file="$(arg description)" subst_value="true"/>
+
+    <node pkg="arl_unity_ros" type="spawn_yaml_robot.py" name="spawn_yaml_$(arg robot)" output="screen">
+        <rosparam command="load" file="$(arg description)" subst_value="true" if="$(arg use_enhanced_yaml)"/>
+    </node>
+
+    <node pkg="arl_unity_ros" type="spawn_robot.py" name="spawn_$(arg robot)" output="screen">
+        <rosparam command="load" file="$(arg description)" subst_value="true" unless="$(arg use_enhanced_yaml)"/>
+    </node>
+</launch>

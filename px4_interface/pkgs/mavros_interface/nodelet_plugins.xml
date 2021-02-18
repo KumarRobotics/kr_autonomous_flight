@@ -1,0 +1,7 @@
+<library path="lib/libso3cmd_to_mavros_nodelet">
+  <class name="mavros_interface/SO3CmdToMavros" type="SO3CmdToMavros" base_class_type="nodelet::Nodelet">
+    <description>
+      This reformats an so3_command and publishes it on compatabile mavros topics
+    </description>
+  </class>
+</library>

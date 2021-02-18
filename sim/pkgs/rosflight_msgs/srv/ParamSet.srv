@@ -1,0 +1,6 @@
+# Set a parameter value
+
+string name # the name of the parameter to set
+float64 value # the value to set the parameter to
+---
+bool exists # whether the requested parameter exists

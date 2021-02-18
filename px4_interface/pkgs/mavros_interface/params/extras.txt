@@ -1,0 +1,10 @@
+mavlink stop-all
+mavlink start -r 800000 -d /dev/ttyACM0 -m config -x
+mavlink start -d /dev/ttyS2 -b 921600 -m custom -r 90000 -x
+mavlink stream -d /dev/ttyS2 -s ATTITUDE -r 100
+mavlink stream -d /dev/ttyS2 -s HIGHRES_IMU -r 100
+mavlink stream -d /dev/ttyS2 -s RC_CHANNELS -r 10
+mavlink stream -d /dev/ttyS2 -s LOCAL_POSITION_NED -r 10
+mavlink stream -d /dev/ttyS2 -s DISTANCE_SENSOR -r 100
+mavlink stream -d /dev/ttyS2 -s SYS_STATUS -r 10
+mavlink stream -d /dev/ttyS2 -s GPS_RAW_INT -r 10

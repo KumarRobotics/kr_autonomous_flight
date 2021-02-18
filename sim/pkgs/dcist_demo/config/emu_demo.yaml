@@ -1,0 +1,59 @@
+$(arg robot):
+  type: Quadrotor
+  frame_id: base_link
+  position: { x: $(arg x), y: $(arg y), z: $(arg z) }
+  orientation: { r: 0, p: 0, y: 0 }
+  sensors:
+    $(arg rgb_cam)_Left:
+      topic: $(arg rgb_cam)_Left/image_raw
+      type: RGBCamera
+      frame_id: $(arg rgb_cam)_Left
+      position: { x: 0.1, y: 0.1, z: 0.0 }
+      orientation: { r: 0, p: 0, y: 0 }
+      configure:
+        width: $(arg rgb_cam_width)
+        height: $(arg rgb_cam_height)
+        farClipPlane: 100
+        targetFrameRate: $(arg cam_fps)
+
+    $(arg rgb_cam)_Right:
+      topic: $(arg rgb_cam)_Right/image_raw
+      type: RGBCamera
+      frame_id: $(arg rgb_cam)_Right
+      position: { x: 0.1, y: -0.1, z: 0.0 }
+      orientation: { r: 0, p: 0, y: 0 }
+      configure:
+        width: $(arg rgb_cam_width)
+        height: $(arg rgb_cam_height)
+        farClipPlane: 100
+        targetFrameRate: $(arg cam_fps)
+
+    $(arg depth_cam):
+      topic: $(arg depth_cam)/image_raw
+      type: DepthCamera
+      frame_id: $(arg depth_cam)
+      position: { x: 0.1, y: 0.1, z: 0.0 }
+      orientation: { r: 0, p: 0, y: 0 }
+      configure:
+        width: $(arg depth_cam_width)
+        height: $(arg depth_cam_height)
+        farClipPlane: 30
+        targetFrameRate: $(arg cam_fps)
+      features:
+        detection:
+          type: ObjectDetection
+          topic: $(arg depth_cam)/detection
+          frame_id: $(arg depth_cam)
+
+    IMU:
+      type: Imu
+      topic: imu
+      frame_id: imu
+      position: { x: 0, y: 0, z: 0 }
+      orientation: { r: 0, p: 0, y: 0 }
+
+    QuadrotorMavlink:
+      type: None
+      configure:
+        remote_host: $(arg quadrotor_host)
+        port: $(arg mavlink_port)

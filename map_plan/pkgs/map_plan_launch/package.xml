@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package>
+    <name>map_plan_launch</name>
+    <version>0.0.0</version>
+    <description>The mapper_planner_launch package</description>
+
+    <maintainer email="quchao@seas.upenn.edu">chao</maintainer>
+    <maintainer email="chenste@seas.upenn.edu">chao</maintainer>
+
+    <license>UPenn</license>
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <export>
+    </export>
+</package>

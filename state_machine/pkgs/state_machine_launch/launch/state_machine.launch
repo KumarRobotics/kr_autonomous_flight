@@ -1,0 +1,15 @@
+<launch>
+    <arg name="robot" default="$(optenv ROBOT_NAME quadrotor)"/>
+    <arg name="takeoff_height" default="2"/>
+    <arg name="max_horizon" default="5"/>
+
+    <group ns="$(arg robot)">
+        <include file="$(find state_machine_launch)/launch/smach.launch">
+            <arg name="takeoff_height" value="$(arg takeoff_height)"/>
+        </include>
+
+        <include file="$(find state_machine_launch)/launch/replanner.launch">
+            <arg name="max_horizon" value="$(arg max_horizon)"/>
+        </include>
+    </group>
+</launch>

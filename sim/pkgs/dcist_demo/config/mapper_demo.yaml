@@ -1,0 +1,15 @@
+origin_x: -25
+origin_y: -75
+origin_z: -1
+range_x: 100
+range_y: 100
+range_z: 10
+resolution: 0.5
+max_range: 30.0
+robot_r: 0.5
+robot_h: 0.5
+
+local:
+  dim_x: 24.0
+  dim_y: 24.0
+  dim_z: 8.0

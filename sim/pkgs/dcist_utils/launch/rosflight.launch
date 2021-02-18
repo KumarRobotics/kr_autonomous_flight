@@ -1,0 +1,42 @@
+<launch>
+
+  <!--
+      Understanding the following ports:
+
+      - The mavlink_port is used for bidirectional communication
+        between the mavlink component in unity and the unity_rosflight
+        (firmware) node below.
+
+      - The firmware_bind port is for communication from rosflight_io
+        INTO unity_rosflight (firmware)
+
+      - The firmware_remote_port is for communication from
+        unity_rosflight (firmware) INTO rosflight_io
+  -->
+
+  <arg name="mavlink_port" default="14560" />
+  <arg name="firmware_bind_port" default="14525"/>
+  <arg name="firmware_remote_port" default="14520"/>
+
+  <!-- Launch per quadrotor nodes in namespace -->
+
+  <node pkg="rosflight" type="rosflight_io" name="rosflight_io" output="screen" ns="rosflight">
+    <param name="udp" value="true"/>
+    <param name="bind_port" value="$(arg firmware_remote_port)"/>
+    <param name="remote_port" value="$(arg firmware_bind_port)"/>
+  </node>
+
+  <node pkg="arl_unity_ros_air" type="unity_rosflight" name="unity_rosflight" output="screen">
+    <param name="~memory_dir" value="$(find arl_unity_ros_air)/config/rosflight_memory" />
+
+    <param name="mavlink_port" value="$(arg mavlink_port)"/>
+    <param name="firmware_bind_port" value="$(arg firmware_bind_port)"/>
+    <param name="firmware_remote_port" value="$(arg firmware_remote_port)"/>
+  </node>
+
+  <node pkg="arl_unity_ros_air" type="rc_sim" name="rc_sim" output="screen">
+    <remap from="~RC" to="unity_rosflight/RC" />
+  </node>
+
+  <node pkg="arl_unity_ros_air" type="calibrate_imu.py" name="calibrate_imu"/>
+</launch>

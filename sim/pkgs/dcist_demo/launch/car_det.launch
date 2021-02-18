@@ -1,0 +1,13 @@
+<launch>
+    <arg name="robot" default="quad2"/>
+
+    <node pkg="dcist_demo" name="car_det" type="car_det_node" output="screen">
+        <remap from="~detection" to="detection"/>
+        <remap from="~pose" to="car_pose"/>
+        <remap from="~path" to="/$(arg robot)/waypoints"/>
+        <remap from="~state_trigger" to="/$(arg robot)/state_trigger"/>
+
+        <param name="class_id" type="int" value="0"/>
+        <param name="object_id" type="int" value="1"/>
+    </node>
+</launch>

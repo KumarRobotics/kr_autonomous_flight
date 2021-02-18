@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<launch>
+    <arg name="robot" default="quadrotor"/>
+    <arg name="odom" default="/unity_command/ground_truth/$(arg robot)/odom"/>
+
+    <!-- x corresponds to z in Unity simulator, y corresponds to -x, z corresponds to y -->
+    <arg name="x" default="0.0"/>
+    <arg name="y" default="2.0"/>
+    <arg name="z" default="2.0"/>
+
+    <arg name="cam_fps" default="30"/>
+    <arg name="rgb_cam" default="RGBCamera"/>
+    <arg name="rgb_cam_width" default="480"/>
+    <arg name="rgb_cam_height" default="320"/>
+    <arg name="depth_cam" default="DepthCamera"/>
+    <arg name="depth_cam_width" default="$(arg rgb_cam_width)"/>
+    <arg name="depth_cam_height" default="$(arg rgb_cam_height)"/>
+
+    <arg name="simulator_host" default="localhost"/>
+    <arg name="quadrotor_host" default="localhost"/>
+
+    <arg name="mavlink_port" default="14560"/>
+    <arg name="firmware_bind_port" default="14525"/>
+    <arg name="firmware_remote_port" default="14520"/>
+    <arg name="description" default="$(find dcist_demo)/config/emu_demo.yaml"/>
+
+    <!-- Launch per quadrotor nodes in namespace -->
+    <group ns="$(arg robot)">
+        <!-- Spawns the robot with sensors -->
+        <rosparam ns="spawn" file="$(arg description)" subst_value="true"/>
+        <node pkg="arl_unity_ros" type="spawn_yaml_robot.py" name="spawner" output="screen"/>
+
+        <node pkg="rosflight" type="rosflight_io" name="rosflight_io" output="screen" ns="rosflight">
+            <param name="udp" value="true"/>
+
+            <param name="bind_host" value="$(arg quadrotor_host)"/>
+            <param name="bind_port" value="$(arg firmware_remote_port)"/>
+
+            <param name="remote_host" value="$(arg quadrotor_host)"/>
+            <param name="remote_port" value="$(arg firmware_bind_port)"/>
+        </node>
+
+        <node pkg="arl_unity_ros_air" type="unity_rosflight" name="unity_rosflight" output="screen">
+            <param name="~memory_dir" value="$(find arl_unity_ros_air)/config/rosflight_memory"/>
+            <param name="mavlink_port" value="$(arg mavlink_port)"/>
+            <param name="firmware_bind_port" value="$(arg firmware_bind_port)"/>
+            <param name="firmware_remote_port" value="$(arg firmware_remote_port)"/>
+
+            <param name="quadrotor_host" value="$(arg quadrotor_host)"/>
+            <param name="simulator_host" value="$(arg simulator_host)"/>
+        </node>
+
+        <node pkg="arl_unity_ros_air" type="rc_sim" name="$(arg robot)_rc_sim" output="screen">
+            <remap from="~RC" to="/$(arg robot)/unity_rosflight/RC"/>
+        </node>
+
+        <node pkg="arl_unity_ros_air" type="calibrate_imu.py" name="$(arg robot)_calibrate_imu"/>
+
+        <!-- Takes odom (gt or vio) and publishes it as tf -->
+        <node pkg="tf2_ros" type="static_transform_publisher" name="tf_map_odom" args="0 0 0 0 0 0 $(arg robot)/map $(arg robot)/odom"/>
+        <include file="$(find dcist_utils)/launch/odom2tf.launch">
+            <arg name="odom" value="$(arg odom)"/>
+            <arg name="robot" value="$(arg robot)"/>
+        </include>
+
+        <include file="$(find dcist_utils)/launch/rosflight_interface.launch">
+        </include>
+
+        <group ns="$(arg depth_cam)">
+            <include file="$(find dcist_demo)/launch/depth_to_cloud.launch"/>
+            <include file="$(find dcist_demo)/launch/car_det.launch"/>
+        </group>
+    </group>
+</launch>

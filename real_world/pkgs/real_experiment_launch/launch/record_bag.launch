@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="dir" default="/root/bags/"/>
+  <node pkg="rosbag" type="record" name="recorder" args="
+    --lz4
+    -o $(arg dir)falcon4
+  /quadrotor/image_processor/debug_stereo_image_throttled 
+  /quadrotor/odom_throttled_high
+  /quadrotor/odom_on_detection
+  /quadrotor/voxel_map
+  /quadrotor/vio/odom
+  /quadrotor/tpplanner/path_array
+	/quadrotor/trackers_manager/sg  
+  /quadrotor/so3_control/cmd_viz
+  /edgetpu_semantic_segmenter/output/image
+  /detection_proc/detections
+  /ovc/rgb/image_raw_throttled
+  /tf
+	/tf_static
+  /rosout
+	/rosout_agg
+    "
+    output="screen"/>
+</launch>

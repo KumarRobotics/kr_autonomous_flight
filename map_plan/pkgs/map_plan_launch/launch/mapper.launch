@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <arg name="cloud" default="lidar"/>
+    <arg name="map_frame" default="map"/>
+    <!-- lidar_frame arg is only used when real_robot is true, otherwise the mapper will just use the same frame as the point cloud in simulator -->
+    <arg name="lidar_frame" default=""/>
+    <arg name="real_robot" default="false"/>
+    <arg name="mapper_config"/>
+    <!-- <arg name="prefix" value="nice -n 1"/> -->
+    <arg name="prefix" value=""/>
+
+
+    <!-- use nice to set low priority for mapper -->
+    <node pkg="mapper" name="mapper" type="local_global_mapper" output="screen" launch-prefix="$(arg prefix)">
+        <remap from="~cloud" to="$(arg cloud)"/>
+        <remap from="~voxel_map" to="voxel_map"/>
+        <remap from="~local_cloud" to="local_cloud"/> 
+        
+        <param name="real_robot" value="$(arg real_robot)"/>
+        <param name="debug" value="false"/>
+        <param name="map_frame" value="$(arg map_frame)"/>
+        <param name="lidar_frame" value="$(arg lidar_frame)"/>
+
+        <!-- <rosparam file="$(find map_plan_launch)/config/mapper.yaml"/> -->
+        <rosparam file="$(arg mapper_config)"/>
+    </node>
+</launch>

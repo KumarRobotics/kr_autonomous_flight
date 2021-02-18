@@ -1,0 +1,22 @@
+<launch>
+  <arg name="robot" default="$(optenv ROBOT_NAME quadrotor)"/>
+  <!-- remap topic ns to viz_ns arg to enable display with variable robot names -->
+  <!-- if this is changed, from default, you will also have to change the corresponding .rviz -->
+  <arg name="viz_ns" default="robot"/>
+
+  <group ns="$(arg robot)">
+    <node pkg="rqt_gui" type="rqt_gui" name="rqt_gui_buttons" output="screen" args="--perspective-file $(find client_launch)/config/client_gui.perspective">
+      <remap from="robot" to="$(arg robot)"/>
+      <!-- <remap from="odom" to="odom"/> -->
+      <!-- <remap from="position_cmd" to="position_cmd"/>
+      <remap from="state_trigger" to="state_trigger"/>
+      <remap from="motors" to="motors"/> -->
+    </node>
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find client_launch)/rviz/client.rviz -f $(arg robot)/map" respawn="false">
+      <remap from="/$(arg viz_ns)/voxel_map" to="voxel_map"/>
+      <remap from="/$(arg viz_ns)/trackers_manager/sg" to="trackers_manager/sg"/>
+      <remap from="/$(arg viz_ns)/tpplanner/path_array" to="tpplanner/path_array"/>
+      <remap from="/$(arg viz_ns)/odom" to="odom"/>
+    </node>
+  </group>
+</launch>

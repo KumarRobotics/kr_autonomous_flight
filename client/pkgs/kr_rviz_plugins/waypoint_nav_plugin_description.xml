@@ -1,0 +1,9 @@
+<library path="lib/libkr_waypoint_nav_plugin">
+  <class name="kr_rviz_plugins/WaypointNav"
+         type="kr_rviz_plugins::WaypointNavTool"
+         base_class_type="rviz::Tool">
+    <description>
+      Tool for planting waypoints on the ground plane in rviz.
+    </description>
+  </class>
+</library>

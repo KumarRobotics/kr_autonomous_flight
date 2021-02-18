@@ -26,8 +26,8 @@ trajectory_tracker:
   max_pos_error: 2.0  # maximum tracker position error (in xy plane) allowed, default 1.0
 
 trajectory_planner:
-  debug: true # default false
-  verbose: true # default false
+  debug: false # default false
+  verbose: false # default false
   use_yaw: false # default false
   yaw_speed: 0.2 # default 0.2
   use_lambda: true # pose error checking

@@ -2,10 +2,10 @@
 // Implementation File
 // Look at polynomial_basis.h for documentation
 #include <traj_opt_pro/polynomial_basis.h>
+
 #include <boost/math/special_functions/factorials.hpp>
 #include <boost/pointer_cast.hpp>
 #include <boost/range/irange.hpp>
-
 #include <iostream>
 #include <stdexcept>
 #include <vector>

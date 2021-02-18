@@ -16,9 +16,9 @@ ros::Publisher map_pub;
 ros::Publisher local_cloud_pub;
 
 bool debug_;
-std::string map_frame_;  // map frame
+std::string map_frame_;    // map frame
 std::string lidar_frame_;  // map frame
-vec_Vec3i ns_;           // inflation array
+vec_Vec3i ns_;             // inflation array
 double robot_r_, robot_h_, max_range_;
 double local_dim_x_, local_dim_y_, local_dim_z_;
 int counter_ = 0;
@@ -30,17 +30,18 @@ void processCloud(const sensor_msgs::PointCloud& cloud) {
   static TFListener tf_listener;
   geometry_msgs::Pose pose_map_cloud;
 
-  int output = tf_listener.getPose(cloud.header.stamp, lidar_frame_, map_frame_, pose_map_cloud);
+  int output = tf_listener.getPose(cloud.header.stamp, lidar_frame_, map_frame_,
+                                   pose_map_cloud);
   if (!output) {
-    ROS_WARN("Failed to get transform from %s to %s",
-             lidar_frame_.c_str(), map_frame_.c_str());
+    ROS_WARN("Failed to get transform from %s to %s", lidar_frame_.c_str(),
+             map_frame_.c_str());
     return;
   }
 
   const Aff3f T_m_c = toTF(pose_map_cloud);
 
   ros::Time t0 = ros::Time::now();
-  double min_range = 1.5; // points within this distance will be discarded
+  double min_range = 1.5;  // points within this distance will be discarded
   std::cout << "min voxelize range of point cloud:" << min_range << std::endl;
   double min_range_squared;
   min_range_squared = min_range * min_range;
@@ -125,7 +126,7 @@ int main(int argc, char** argv) {
   nh.param("map_frame", map_frame_, std::string("map"));
   nh.param("lidar_frame", lidar_frame_, std::string("lidar"));
   nh.param("debug", debug_, true);
-  
+
   ros::Subscriber cloud_sub = nh.subscribe("cloud", 1, cloudCallback);
   ros::Subscriber map_info_sub = nh.subscribe("map_info", 1, mapInfoCallback);
 
@@ -136,7 +137,6 @@ int main(int argc, char** argv) {
       nh.advertise<sensor_msgs::PointCloud>("local_cloud", 1, true);
 
   time_pub = nh.advertise<sensor_msgs::Temperature>("/timing/mapper", 1);
-
 
   double horizon_fov;
   int width, height;

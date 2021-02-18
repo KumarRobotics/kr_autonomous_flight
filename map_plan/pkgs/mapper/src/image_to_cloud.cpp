@@ -1,23 +1,21 @@
-#include <algorithm>
-#include <limits>
+#include <depth_image_proc/depth_traits.h>
+#include <eigen_conversions/eigen_msg.h>
+#include <image_geometry/pinhole_camera_model.h>
+#include <mapper/pcl_utils.h>
+#include <mapper/rgb_type.h>
+#include <mapper/tf_listener.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/time_synchronizer.h>
+#include <mpl_basis/data_type.h>
+#include <planning_ros_utils/data_ros_utils.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <message_filters/time_synchronizer.h>
-
-#include <image_geometry/pinhole_camera_model.h>
-
-#include <mpl_basis/data_type.h>
-#include <planning_ros_utils/data_ros_utils.h>
-#include <depth_image_proc/depth_traits.h>
-#include <mapper/rgb_type.h>
-#include <mapper/tf_listener.h>
-#include <mapper/pcl_utils.h>
-#include <eigen_conversions/eigen_msg.h>
+#include <algorithm>
+#include <limits>
 
 ros::Publisher cloud_pub;
 ros::Publisher virtual_cloud_pub;
@@ -27,8 +25,9 @@ bool to_robot_frame;
 RGBValue colorRed;
 RGBValue colorBlue;
 
-typedef message_filters::sync_policies::ApproximateTime<
-    sensor_msgs::Image, sensor_msgs::Image> Policy_RGBD;
+typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image,
+                                                        sensor_msgs::Image>
+    Policy_RGBD;
 typedef message_filters::Synchronizer<Policy_RGBD> SYNC_RGBD;
 
 float upper_bound_, lower_bound_;
@@ -64,8 +63,7 @@ void info_callback(const sensor_msgs::CameraInfoConstPtr &info_msg) {
 }
 
 void pointcloud_convert_depth(const sensor_msgs::ImageConstPtr depth_msg) {
-  if (!model_ptr)
-    return;
+  if (!model_ptr) return;
 
   if (count_ < data_skip_) {
     count_++;
@@ -101,16 +99,18 @@ void pointcloud_convert_depth(const sensor_msgs::ImageConstPtr depth_msg) {
       // Check for invalid measurements
       if (!depth_image_proc::DepthTraits<float>::valid(depth) ||
           depth >= upper_bound_) {
-        if(publish_virtual_cloud_) {
+        if (publish_virtual_cloud_) {
           virtual_cloud_msg.resize(virtual_index + 1);
-          virtual_cloud_msg.points[virtual_index].x = (u - center_x) * upper_bound_ * constant_x;
-          virtual_cloud_msg.points[virtual_index].y = (v - center_y) * upper_bound_ * constant_y;
+          virtual_cloud_msg.points[virtual_index].x =
+              (u - center_x) * upper_bound_ * constant_x;
+          virtual_cloud_msg.points[virtual_index].y =
+              (v - center_y) * upper_bound_ * constant_y;
           virtual_cloud_msg.points[virtual_index].z = upper_bound_;
           // Fill in color
           virtual_cloud_msg.points[virtual_index].rgb = colorRed.float_value;
           virtual_index++;
         }
-     } else {
+      } else {
         cloud_msg.resize(index + 1);
         cloud_msg.points[index].x = (u - center_x) * depth * constant_x;
         cloud_msg.points[index].y = (v - center_y) * depth * constant_y;
@@ -125,17 +125,17 @@ void pointcloud_convert_depth(const sensor_msgs::ImageConstPtr depth_msg) {
   }
 
   PCLUtils::voxel_filter(cloud_msg, res_);
-  if(outlier_removal_)
-    PCLUtils::outlier_removal(cloud_msg, res_, 2);
+  if (outlier_removal_) PCLUtils::outlier_removal(cloud_msg, res_, 2);
   sensor_msgs::PointCloud cloud_output = PCLUtils::toROS(cloud_msg);
 
   cloud_output.header.stamp = depth_msg->header.stamp;
   cloud_output.header.frame_id = camera_frame_;
   cloud_pub.publish(cloud_output);
 
-  if(publish_virtual_cloud_) {
+  if (publish_virtual_cloud_) {
     PCLUtils::voxel_filter(virtual_cloud_msg, res_);
-    sensor_msgs::PointCloud virtual_cloud_output = PCLUtils::toROS(virtual_cloud_msg);
+    sensor_msgs::PointCloud virtual_cloud_output =
+        PCLUtils::toROS(virtual_cloud_msg);
     virtual_cloud_output.channels.resize(1);
     virtual_cloud_output.channels[0].name = "virtual";
 
@@ -147,8 +147,7 @@ void pointcloud_convert_depth(const sensor_msgs::ImageConstPtr depth_msg) {
 
 void pointcloud_convert(const sensor_msgs::ImageConstPtr depth_msg,
                         const sensor_msgs::ImageConstPtr rgb_msg) {
-  if (!model_ptr)
-    return;
+  if (!model_ptr) return;
 
   if (count_ < data_skip_) {
     count_++;
@@ -207,7 +206,7 @@ void pointcloud_convert(const sensor_msgs::ImageConstPtr depth_msg,
         cloud_msg.points[index].x = (u - center_x) * depth * constant_x;
         cloud_msg.points[index].y = (v - center_y) * depth * constant_y;
         cloud_msg.points[index].z =
-          depth_image_proc::DepthTraits<float>::toMeters(depth);
+            depth_image_proc::DepthTraits<float>::toMeters(depth);
 
         // Fill in color
         RGBValue color;
@@ -221,7 +220,7 @@ void pointcloud_convert(const sensor_msgs::ImageConstPtr depth_msg,
     }
   }
 
-  if(cloud_msg.points.size() < 10) {
+  if (cloud_msg.points.size() < 10) {
     sensor_msgs::PointCloud cloud_output;
     cloud_output.header.stamp = depth_msg->header.stamp;
     cloud_output.header.frame_id = camera_frame_;
@@ -281,8 +280,9 @@ int main(int argc, char **argv) {
   ros::Subscriber info_sub = nh.subscribe("camera_info_in", 5, info_callback);
 
   cloud_pub = nh.advertise<sensor_msgs::PointCloud>("cloud", 1, true);
-  if(publish_virtual_cloud_)
-    virtual_cloud_pub = nh.advertise<sensor_msgs::PointCloud>("virtual_cloud", 1, true);
+  if (publish_virtual_cloud_)
+    virtual_cloud_pub =
+        nh.advertise<sensor_msgs::PointCloud>("virtual_cloud", 1, true);
 
   ros::spin();
 

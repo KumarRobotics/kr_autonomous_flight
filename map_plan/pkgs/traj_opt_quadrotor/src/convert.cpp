@@ -166,8 +166,8 @@ bool TrajToQuadCmd::evaluatePos(
       2.0 * std::asin(odom->pose.pose.orientation.z);
 
   VecD val, vel;
-  traj->evaluate(t_des, 0, val); // position of traj
-  traj->evaluate(t_des, 1, vel); // velocity of traj
+  traj->evaluate(t_des, 0, val);  // position of traj
+  traj->evaluate(t_des, 1, vel);  // velocity of traj
 
   // TODO: the following part has problems, replaced with diff_xy
   // // assume val is 4d
@@ -187,13 +187,12 @@ bool TrajToQuadCmd::evaluatePos(
 
   Vec2 diff_xy = Vec2(val(0) - pos(0), val(1) - pos(1));
   if (diff_xy.norm() >= err_max) {
-    printf("Distance between odom and traj in xy too large! It is: %f \n", diff_xy.norm());
-    return_v = false; // return false
+    printf("Distance between odom and traj in xy too large! It is: %f \n",
+           diff_xy.norm());
+    return_v = false;  // return false
   }
-
 
   evaluate(traj, t_des, out);
 
   return return_v;
 }
-

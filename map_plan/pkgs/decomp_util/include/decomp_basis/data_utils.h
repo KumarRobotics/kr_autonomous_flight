@@ -2,8 +2,8 @@
  * @file data_utils.h
  * @brief Provide a few widely used function for basic type
  */
-#ifndef DATA_UTILS_H
-#define DATA_UTILS_H
+#ifndef DECOMP_DATA_UTILS_H
+#define DECOMP_DATA_UTILS_H
 
 #include <decomp_basis/data_type.h>
 

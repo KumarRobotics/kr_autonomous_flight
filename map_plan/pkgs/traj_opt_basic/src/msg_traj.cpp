@@ -1,5 +1,6 @@
 // Copyright 2015 Michael Watterson
 #include <traj_opt_basic/msg_traj.h>
+
 #include <boost/shared_ptr.hpp>
 #include <vector>
 namespace traj_opt {
@@ -82,7 +83,6 @@ bool MsgTrajectory::evaluate(decimal_t t, uint derr,
       poly = &derrives_.at(derr).back();
       dt = dts.back();
       dx = 1.0;
-
     }
     success = false;
   }
@@ -106,35 +106,37 @@ TrajData MsgTrajectory::serialize() { return traj_; }
 decimal_t MsgTrajectory::getCost() { return NAN; }
 bool MsgTrajectory::evaluateS(decimal_t t, VecD &out) {
   assert(dim_ == 9);
-  out =  VecD::Zero(6, 1);
+  out = VecD::Zero(6, 1);
   VecD r5;
   evaluate(t, 0, r5);
-  Quat q(r5(5),r5(6),r5(7),r5(8));
+  Quat q(r5(5), r5(6), r5(7), r5(8));
   Mat3 chart = q.matrix();
 
-  Vec3 xi = r5(3)*chart*Vec3::UnitY() + r5(4)*chart*Vec3::UnitZ() - chart*Vec3::UnitX();
-  Vec3 P = 2.0/(r5(3)*r5(3) + r5(4)*r5(4) + 1.0) * xi + chart*Vec3::UnitX();
-  out.block<3,1>(0,0) = r5.block<3,1>(0,0);
-  out.block<3,1>(3,0) = P;
+  Vec3 xi = r5(3) * chart * Vec3::UnitY() + r5(4) * chart * Vec3::UnitZ() -
+            chart * Vec3::UnitX();
+  Vec3 P =
+      2.0 / (r5(3) * r5(3) + r5(4) * r5(4) + 1.0) * xi + chart * Vec3::UnitX();
+  out.block<3, 1>(0, 0) = r5.block<3, 1>(0, 0);
+  out.block<3, 1>(3, 0) = P;
 
-//  std::cout << "Chart of trajm " << q.w() << ", "<< q.x() << ", "<< q.y() << ", "<< q.z()  << std::endl;
+  //  std::cout << "Chart of trajm " << q.w() << ", "<< q.x() << ", "<< q.y() <<
+  //  ", "<< q.z()  << std::endl;
   return true;
 }
 bool MsgTrajectory::evaluateST(decimal_t t, VecD &out) {
   // plots in tangent space
   assert(dim_ == 9);
-  out =  VecD::Zero(6, 1);
+  out = VecD::Zero(6, 1);
   VecD r5;
   evaluate(t, 0, r5);
-  Quat q(r5(5),r5(6),r5(7),r5(8));
+  Quat q(r5(5), r5(6), r5(7), r5(8));
   Mat3 chart = q.matrix();
 
-  Vec3 xi(r5(3) , r5(4),t);
-  out.block<3,1>(0,0) = xi;
-  out.block<3,1>(3,0) = chart*Vec3::UnitX();
+  Vec3 xi(r5(3), r5(4), t);
+  out.block<3, 1>(0, 0) = xi;
+  out.block<3, 1>(3, 0) = chart * Vec3::UnitX();
 
   return true;
 }
-
 
 }  // namespace traj_opt

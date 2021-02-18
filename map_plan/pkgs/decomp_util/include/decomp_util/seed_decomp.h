@@ -2,8 +2,8 @@
  * @file seed_decomp.h
  * @brief SeedDecomp Class
  */
-#ifndef SEED_DECOMP_H
-#define SEED_DECOMP_H
+#ifndef DECOMP_SEED_DECOMP_H
+#define DECOMP_SEED_DECOMP_H
 
 #include <decomp_util/decomp_base.h>
 

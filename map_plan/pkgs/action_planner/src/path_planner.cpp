@@ -79,9 +79,13 @@ void process(const Vec3f& start, const vec_Vec3f& goals) {
 
     planner_util_3d_->setMap(map_);
     if (planner_util_3d_->plan(start, goal)) {
-      // check path_planner_util.hpp for the fix of the start point of the path: use the actual start (i.e. robot pose upon calling the planner) instead of the center of the voxel cloest to the start, much smoother motion. 
-      // return distance map planner's path, containing x,y,z coordinates of turning points along the path
-      // check path_planner_util.hpp (search "path_ = dist_path"), distance_map_planner.cpp and jps_planner.cpp for detailed implementation
+      // check path_planner_util.hpp for the fix of the start point of the path:
+      // use the actual start (i.e. robot pose upon calling the planner) instead
+      // of the center of the voxel cloest to the start, much smoother motion.
+      // return distance map planner's path, containing x,y,z coordinates of
+      // turning points along the path check path_planner_util.hpp (search
+      // "path_ = dist_path"), distance_map_planner.cpp and jps_planner.cpp for
+      // detailed implementation
       path_msg = path_to_ros(planner_util_3d_->getPath());
       path_array_msg = path_array_to_ros(planner_util_3d_->getPathArray());
     } else {

@@ -12,8 +12,7 @@ BoundVisual::~BoundVisual() { scene_manager_->destroySceneNode(frame_node_); }
 void BoundVisual::setMessage(const vec_E<vec_Vec3f> &bds) {
   objs_.clear();
 
-  if (bds.empty())
-    return;
+  if (bds.empty()) return;
 
   objs_.resize(bds.size());
   for (auto &it : objs_)
@@ -43,12 +42,10 @@ void BoundVisual::setFrameOrientation(const Ogre::Quaternion &orientation) {
 }
 
 void BoundVisual::setColor(float r, float g, float b, float a) {
-  for (auto &it : objs_)
-    it->setColor(r, g, b, a);
+  for (auto &it : objs_) it->setColor(r, g, b, a);
 }
 
 void BoundVisual::setScale(float s) {
-  for (auto &it : objs_)
-    it->setLineWidth(s);
+  for (auto &it : objs_) it->setLineWidth(s);
 }
-}
+}  // namespace planning_rviz_plugins

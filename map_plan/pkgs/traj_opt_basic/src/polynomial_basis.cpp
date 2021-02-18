@@ -6,7 +6,6 @@
 #include <boost/math/special_functions/factorials.hpp>
 #include <boost/pointer_cast.hpp>
 #include <boost/range/irange.hpp>
-
 #include <iostream>
 #include <stdexcept>
 #include <vector>

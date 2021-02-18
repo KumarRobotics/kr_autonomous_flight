@@ -71,7 +71,6 @@ vec_Vec3f VoxelMapper::getInflatedCloud() {
   return pts;
 }
 
-
 vec_Vec3f VoxelMapper::getLocalCloud(const Vec3f& pos, const Vec3f& ori,
                                      const Vec3f& dim) {
   Vec3i dim_low, dim_up;
@@ -107,7 +106,6 @@ void VoxelMapper::decayLocalCloud(const Vec3f& pos, double max_decay_range) {
   end_pos(1) = pos(1) + max_decay_range;
   end_pos(2) = pos(2) + max_decay_range;
 
-
   Vec3i dim1 = floatToInt(start_pos);
   for (int i = 0; i < 3; i++) dim_low(i) = dim1(i) < 0 ? 0 : dim1(i);
 
@@ -130,7 +128,8 @@ void VoxelMapper::decayLocalCloud(const Vec3f& pos, double max_decay_range) {
   }
 }
 
-// crop a local voxel map from the global voxel map (local voxel map is a subset of global voxel map)
+// crop a local voxel map from the global voxel map (local voxel map is a subset
+// of global voxel map)
 vec_Vec3f VoxelMapper::getInflatedLocalCloud(const Vec3f& pos, const Vec3f& ori,
                                              const Vec3f& dim) {
   Vec3i dim_low, dim_up;
@@ -212,10 +211,9 @@ planning_ros_msgs::VoxelMap VoxelMapper::getInflatedMap() {
   return voxel_map;
 }
 
-
 // crop a local voxel map from the global voxel map
-planning_ros_msgs::VoxelMap VoxelMapper::getInflatedLocalMap(const Vec3f& ori_d,
-                                             const Vec3f& dim_d) {
+planning_ros_msgs::VoxelMap VoxelMapper::getInflatedLocalMap(
+    const Vec3f& ori_d, const Vec3f& dim_d) {
   planning_ros_msgs::VoxelMap voxel_map;
 
   voxel_map.resolution = res_;
@@ -223,42 +221,54 @@ planning_ros_msgs::VoxelMap VoxelMapper::getInflatedLocalMap(const Vec3f& ori_d,
   voxel_map.origin.y = ori_d(1);
   voxel_map.origin.z = ori_d(2);
 
-  Vec3i dim(dim_d(0) / res_, dim_d(1) / res_, dim_d(2) / res_); // calculated dimesion of local voxel map in voxels
+  Vec3i dim(
+      dim_d(0) / res_, dim_d(1) / res_,
+      dim_d(2) / res_);  // calculated dimesion of local voxel map in voxels
   voxel_map.dim.x = dim(0);
   voxel_map.dim.y = dim(1);
   voxel_map.dim.z = dim(2);
 
   voxel_map.data.resize(dim(0) * dim(1) * dim(2), val_default);
   Vec3i n;
-  
-  Vec3i offset_n = floatToInt(ori_d); // offset between the local map and the storage map (in voxels)
-  Vec3i ori_map_idx; // index of voxel in storage map (corresponding to voxel with index n in local map)
+
+  Vec3i offset_n = floatToInt(
+      ori_d);  // offset between the local map and the storage map (in voxels)
+  Vec3i ori_map_idx;  // index of voxel in storage map (corresponding to voxel
+                      // with index n in local map)
 
   for (n(0) = 0; n(0) < dim(0); n(0)++) {
     for (n(1) = 0; n(1) < dim(1); n(1)++) {
       for (n(2) = 0; n(2) < dim(2); n(2)++) {
         ori_map_idx = n + offset_n;
-        // check if inside the storage map, outside portion will be regarded as occupied for safety
-        if ((ori_map_idx(0) >= 0) && (ori_map_idx(0) < dim_(0)) && (ori_map_idx(1) >= 0) && (ori_map_idx(1) < dim_(1)) && (ori_map_idx(2) >= 0) && (ori_map_idx(2) < dim_(2))){
-          if (inflated_map_[ori_map_idx(0)][ori_map_idx(1)][ori_map_idx(2)] > val_even) {
+        // check if inside the storage map, outside portion will be regarded as
+        // occupied for safety
+        if ((ori_map_idx(0) >= 0) && (ori_map_idx(0) < dim_(0)) &&
+            (ori_map_idx(1) >= 0) && (ori_map_idx(1) < dim_(1)) &&
+            (ori_map_idx(2) >= 0) && (ori_map_idx(2) < dim_(2))) {
+          if (inflated_map_[ori_map_idx(0)][ori_map_idx(1)][ori_map_idx(2)] >
+              val_even) {
             int idx = n(0) + dim(0) * n(1) + dim(0) * dim(1) * n(2);
             voxel_map.data[idx] = val_occ;
-          } else if (inflated_map_[ori_map_idx(0)][ori_map_idx(1)][ori_map_idx(2)] >= val_free) {
+          } else if (inflated_map_[ori_map_idx(0)][ori_map_idx(1)]
+                                  [ori_map_idx(2)] >= val_free) {
             int idx = n(0) + dim(0) * n(1) + dim(0) * dim(1) * n(2);
             voxel_map.data[idx] = val_free;
           }
         } else {
           int idx = n(0) + dim(0) * n(1) + dim(0) * dim(1) * n(2);
-          voxel_map.data[idx] = val_occ;// outside storage map portion will be regarded as occupied for safety
-          } 
+          voxel_map.data[idx] = val_occ;  // outside storage map portion will be
+                                          // regarded as occupied for safety
+        }
       }
     }
   }
   return voxel_map;
 }
 
-// TODO: This function is the same as sliceMap function in data_conversions.cpp, should merge them.
-planning_ros_msgs::VoxelMap VoxelMapper::getInflatedOccMap(double h, double hh) {
+// TODO: This function is the same as sliceMap function in data_conversions.cpp,
+// should merge them.
+planning_ros_msgs::VoxelMap VoxelMapper::getInflatedOccMap(double h,
+                                                           double hh) {
   planning_ros_msgs::VoxelMap voxel_map;
   voxel_map.origin.x = origin_d_(0);
   voxel_map.origin.y = origin_d_(1);
@@ -342,7 +352,8 @@ bool VoxelMapper::allocate(const Vec3f& new_dim_d, const Vec3f& new_ori_d) {
 
 // void VoxelMapper::addCloud2D(const vec_Vec3f& pts, const Aff3f& TF,
 //                              const vec_Vec3i& ns, bool ray_trace,
-//                              double upper_h, double lower_h, double max_range) {
+//                              double upper_h, double lower_h, double
+//                              max_range) {
 //   const Vec3f pos(TF.translation().x(), TF.translation().y(),
 //                   TF.translation().z());
 //   const Vec3f origin = origin_d_;
@@ -372,7 +383,8 @@ bool VoxelMapper::allocate(const Vec3f& new_dim_d, const Vec3f& new_ori_d) {
 //     if (map_[pn(0)][pn(1)][pn(2)] <= val_even) {
 //       for (const auto& it_n : ns) {
 //         Vec3i n2 = pn + it_n;
-//         if (!isOutSide(n2) && inflated_map_[n2(0)][n2(1)][n2(2)] <= val_occ) {
+//         if (!isOutSide(n2) && inflated_map_[n2(0)][n2(1)][n2(2)] <= val_occ)
+//         {
 //           inflated_map_[n2(0)][n2(1)][n2(2)] = val_occ;
 //         }
 //       }
@@ -387,20 +399,17 @@ void VoxelMapper::addCloud(const vec_Vec3f& pts, const Aff3f& TF,
                            double max_range) {
   const Vec3f pos(TF.translation().x(), TF.translation().y(),
                   TF.translation().z());
-  
 
   // Decay cloud which is within a local region around the robot
   if (val_decay > 0) {
     double max_decay_range = max_range * 2.0;
     ROS_WARN_ONCE("[Mapper]: dacaying the point cloud within local range");
     decayLocalCloud(pos, max_decay_range);
-    }
-    else{
+  } else {
     ROS_WARN_ONCE("[Mapper]: dacaying is disabled");
-    };
+  };
 
   for (const auto& it : pts) {
-    
     // through away points outside max_range first to save computation
     if ((max_range > 0) && (it.norm() > max_range)) continue;
 
@@ -408,8 +417,10 @@ void VoxelMapper::addCloud(const vec_Vec3f& pts, const Aff3f& TF,
     const Vec3f pt = TF * lidar_rot_ * it;
     const Vec3i n = floatToInt(pt);
 
-    // through away points outside voxel box to save computation. 
-    // TODO: if unknown vs known matters (i.e. planning algorithm differentiates unknown and free), need to move this after ray_trace. Won't add much computation according to timer feedback.
+    // through away points outside voxel box to save computation.
+    // TODO: if unknown vs known matters (i.e. planning algorithm differentiates
+    // unknown and free), need to move this after ray_trace. Won't add much
+    // computation according to timer feedback.
     if (isOutSide(n)) continue;
 
     // for each point do ray trace
@@ -424,23 +435,30 @@ void VoxelMapper::addCloud(const vec_Vec3f& pts, const Aff3f& TF,
       }
     }
 
-
-    // Add val_add to the voxel whenever a point lies in it. The voxel will be occupied after N*T > (val_occ - val_free) / val_add, where N is the number of points and T is number of scans.
+    // Add val_add to the voxel whenever a point lies in it. The voxel will be
+    // occupied after N*T > (val_occ - val_free) / val_add, where N is the
+    // number of points and T is number of scans.
     if (map_[n(0)][n(1)][n(2)] < val_occ) {
-      map_[n(0)][n(1)][n(2)] =  map_[n(0)][n(1)][n(2)] + val_add; // 
-    	// Do the same to voxels in the inflation region      
-      if (inflated_map_[n(0)][n(1)][n(2)] < val_occ) {inflated_map_[n(0)][n(1)][n(2)] =  inflated_map_[n(0)][n(1)][n(2)] + val_add;}
-	    // ns is a vector of values from -inflation_range to +inflation_range excluding 0
+      map_[n(0)][n(1)][n(2)] =
+          map_[n(0)][n(1)][n(2)] +
+          val_add;  //
+                    // Do the same to voxels in the inflation region
+      if (inflated_map_[n(0)][n(1)][n(2)] < val_occ) {
+        inflated_map_[n(0)][n(1)][n(2)] =
+            inflated_map_[n(0)][n(1)][n(2)] + val_add;
+      }
+      // ns is a vector of values from -inflation_range to +inflation_range
+      // excluding 0
       for (const auto& it_n : ns) {
         Vec3i n2 = n + it_n;
         if (!isOutSide(n2) && inflated_map_[n2(0)][n2(1)][n2(2)] < val_occ) {
-          inflated_map_[n2(0)][n2(1)][n2(2)] = inflated_map_[n2(0)][n2(1)][n2(2)] + val_add;
+          inflated_map_[n2(0)][n2(1)][n2(2)] =
+              inflated_map_[n2(0)][n2(1)][n2(2)] + val_add;
         }
       }
     }
   }
 }
-
 
 void VoxelMapper::freeCloud(const vec_Vec3f& pts, const Aff3f& TF) {
   const Vec3f pos(TF.translation().x(), TF.translation().y(),

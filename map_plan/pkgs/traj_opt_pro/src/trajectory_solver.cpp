@@ -1,5 +1,6 @@
 // Copyright 2015 Michael Watterson
 #include <traj_opt_pro/trajectory_solver.h>
+
 #include <utility>
 #include <vector>
 

@@ -2,8 +2,8 @@
  * @file ellipsoid_decomp.h
  * @brief EllipsoidDecomp Class
  */
-#ifndef ELLIPSOID_DECOMP_H
-#define ELLIPSOID_DECOMP_H
+#ifndef DECOMP_ELLIPSOID_DECOMP_H
+#define DECOMP_ELLIPSOID_DECOMP_H
 
 #include <decomp_util/line_segment.h>
 

@@ -2,8 +2,8 @@
  * @file iterative_decomp.h
  * @brief IterativeDecomp Class
  */
-#ifndef ITERATIVE_DECOMP_H
-#define ITERATIVE_DECOMP_H
+#ifndef DECOMP_ITERATIVE_DECOMP_H
+#define DECOMP_ITERATIVE_DECOMP_H
 
 #include <decomp_util/ellipsoid_decomp.h>
 

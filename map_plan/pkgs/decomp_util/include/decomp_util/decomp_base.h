@@ -2,8 +2,8 @@
  * @file decomp_base.h
  * @brief Decomp Base Class
  */
-#ifndef DECOMP_BASE_H
-#define DECOMP_BASE_H
+#ifndef DECOMP_DECOMP_BASE_H
+#define DECOMP_DECOMP_BASE_H
 
 #include <decomp_geometry/ellipsoid.h>
 #include <decomp_geometry/polyhedron.h>

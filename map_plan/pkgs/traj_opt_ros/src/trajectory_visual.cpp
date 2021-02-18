@@ -3,7 +3,6 @@
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreVector3.h>
-
 #include <rviz/ogre_helpers/arrow.h>
 #include <rviz/ogre_helpers/line.h>
 #include <rviz/ogre_helpers/shape.h>
@@ -11,10 +10,10 @@
 #include <traj_opt_ros/ros_bridge.h>
 //#include <traj_opt_basic/hopf_helper.h>
 #ifdef BUILD_HOPF
-  #include <hopf_control/hopf_helper.h>
+#include <hopf_control/hopf_helper.h>
 #endif
 
-#include "trajectory_visual.h" // NOLINT()
+#include "trajectory_visual.h"  // NOLINT()
 
 namespace traj_opt {
 
@@ -55,7 +54,8 @@ TrajectoryVisual::TrajectoryVisual(Ogre::SceneManager* scene_manager,
   //  acceleration_arrow_.reset(new rviz::Arrow( scene_manager_, frame_node_ ));
 
   // allocate space for line objects
-  resetTrajPoints(num_traj_points_, num_vel_points_, vel_on_, acc_on_, hopf_on_);
+  resetTrajPoints(num_traj_points_, num_vel_points_, vel_on_, acc_on_,
+                  hopf_on_);
 
   // allocate space of tangent objects
 }
@@ -76,7 +76,7 @@ void TrajectoryVisual::setStyle(int style) {
 }
 
 void TrajectoryVisual::resetTrajPoints(int traj_points, int tangent_points,
-                                       bool use_v, bool use_a, bool use_h ) {
+                                       bool use_v, bool use_a, bool use_h) {
   num_traj_points_ = traj_points;
   num_vel_points_ = tangent_points;
   vel_on_ = use_v;
@@ -95,7 +95,7 @@ void TrajectoryVisual::draw() {
   trajectory_lines_.reserve(num_traj_points_);
   if (vel_on_) vel_arrows_.reserve(num_vel_points_);
   if (acc_on_) acc_arrows_.reserve(num_vel_points_);
-  if (hopf_on_) hopf_arrows_.reserve(3*num_vel_points_);
+  if (hopf_on_) hopf_arrows_.reserve(3 * num_vel_points_);
 
   // allocate objects
   if (style_ == Style::Mike || style_ == Style::Hopf) {
@@ -136,9 +136,9 @@ void TrajectoryVisual::draw() {
               boost::make_shared<rviz::Arrow>(scene_manager_, frame_node_));
         }
         if (hopf_on_) {
-          for(int c=0;c<3;c++) {
+          for (int c = 0; c < 3; c++) {
             hopf_arrows_.push_back(boost::make_shared<rviz::Shape>(
-                                     rviz::Shape::Type::Cylinder, scene_manager_, frame_node_));
+                rviz::Shape::Type::Cylinder, scene_manager_, frame_node_));
           }
         }
       } else if (style_ == Style::Hopf) {
@@ -197,7 +197,7 @@ void TrajectoryVisual::setCurve() {
     traj_->evaluate(dtt, 0, p2);
     Ogre::Vector3 op2 = vecFromVecD(p2);
 
-    if (style_ == Style::Mike ) {
+    if (style_ == Style::Mike) {
       boost::shared_ptr<rviz::Shape> sp =
           boost::dynamic_pointer_cast<rviz::Shape>(trajectory_lines_.at(i - 1));
       setShapeFromPosePair(op1, op2, thickness_, sp.get());
@@ -245,48 +245,45 @@ void TrajectoryVisual::setCurve() {
     Quat hopf_orin;
 
     if (hopf_on_) {
-       traj_->evaluate(dtt, 2, p2);
-       traj_->evaluate(dtt, 3, p3);
-       traj_->evaluate(dtt, 1, p4);
+      traj_->evaluate(dtt, 2, p2);
+      traj_->evaluate(dtt, 3, p3);
+      traj_->evaluate(dtt, 1, p4);
 
+      traj_opt::Vec3 p1_3d = traj_opt::Vec3::Zero();
+      traj_opt::Vec3 p2_3d;
+      p2_3d << 0.0, 0.0, 9.81;
+      for (int i = 0; i < 3; i++) {
+        if (i < p1.rows()) p1_3d(i) = p1(i);
+        if (i < p2.rows()) p2_3d(i) += p2(i);
+      }
+      decimal_t yaw = 0, yawd = 0;
+      if (p1.rows() > 3) {
+        yaw = p1(3);
+        yawd = p4(3);
+      }
+      bool hover = true;
+      if (p1.rows() > 4) hover = p1(4) < 0.5;
+      //       ROS_WARN_STREAM("Hover " << hover);
 
-       traj_opt::Vec3 p1_3d = traj_opt::Vec3::Zero();
-       traj_opt::Vec3 p2_3d;
-       p2_3d << 0.0,0.0,9.81;
-       for (int i = 0; i < 3; i++) {
-         if (i < p1.rows()) p1_3d(i) = p1(i);
-         if (i < p2.rows()) p2_3d(i) += p2(i);
-       }
-       decimal_t yaw = 0, yawd=0;
-       if(p1.rows() > 3) {
-         yaw = p1(3);
-         yawd = p4(3);
-       }
-       bool hover = true;
-       if(p1.rows() > 4)
-         hover = p1(4) < 0.5;
-//       ROS_WARN_STREAM("Hover " << hover);
+      Vec3 xid = p3.block<3, 1>(0, 0);
+      HopfHelper hh;
+      hh.setDes(p2_3d, xid);
+      hh.calculateControl(yaw, yawd, hover);
+      hh.getControl(hopf_force, hopf_orin, hopf_omega);
 
+      traj_opt::Mat3 basis = traj_opt::Mat3::Identity();
 
-       Vec3 xid = p3.block<3,1>(0,0);
-       HopfHelper hh;
-       hh.setDes(p2_3d,xid);
-       hh.calculateControl(yaw,yawd,hover);
-       hh.getControl(hopf_force,hopf_orin,hopf_omega);
-
-       traj_opt::Mat3 basis = traj_opt::Mat3::Identity();
-
-       for(int c = 0 ;c< 3;c++) {
-         boost::shared_ptr<rviz::Shape> lp =
-             boost::dynamic_pointer_cast<rviz::Shape>(hopf_arrows_.at(i+c*num_vel_points_));
-         traj_opt::Vec3 pi = basis.block<3,1>(0,c);
-          pi *= thickness_ * 5.0;
-          Vec3 pf = hopf_orin.matrix() * pi + p1_3d;
-          Ogre::Vector3 op2(pf(0), pf(1), pf(2));
-          setShapeFromPosePair(op1, op2, 0.5 * thickness_, lp.get());
-          lp->setColor(basis(0,c), basis(1,c), basis(2,c), 1.0);
-       }
-
+      for (int c = 0; c < 3; c++) {
+        boost::shared_ptr<rviz::Shape> lp =
+            boost::dynamic_pointer_cast<rviz::Shape>(
+                hopf_arrows_.at(i + c * num_vel_points_));
+        traj_opt::Vec3 pi = basis.block<3, 1>(0, c);
+        pi *= thickness_ * 5.0;
+        Vec3 pf = hopf_orin.matrix() * pi + p1_3d;
+        Ogre::Vector3 op2(pf(0), pf(1), pf(2));
+        setShapeFromPosePair(op1, op2, 0.5 * thickness_, lp.get());
+        lp->setColor(basis(0, c), basis(1, c), basis(2, c), 1.0);
+      }
     }
     // end hopf stuff
 
@@ -299,7 +296,7 @@ void TrajectoryVisual::setCurve() {
         if (i < p1.rows()) p1_3d(i) = p1(i);
         if (i < p2.rows()) p2_3d(i) = p2(i);
       }
-      if(!hopf_on_) {
+      if (!hopf_on_) {
         p2_3d = rot.matrix() * p2_3d + p1_3d;
       } else {
         p2_3d = hopf_omega + p1_3d;
@@ -338,9 +335,6 @@ void TrajectoryVisual::setCurve() {
         // lp->setPoints(op1, op2);
       }
     }
-
-
-
   }
 }
 
@@ -424,6 +418,5 @@ void TrajectoryVisual::setShapeFromPosePair(const Ogre::Vector3& p0,
   shape->setPosition(p0);
   shape->setDirection(n);
 }
-
 
 }  // namespace traj_opt

@@ -1,6 +1,7 @@
 // Copyright 2015 Michael Watterson
 #include <gurobi_c++.h>
 #include <traj_opt_pro/gurobi_trajectory.h>
+
 #include <Eigen/Eigenvalues>
 #include <boost/range/irange.hpp>
 
@@ -893,10 +894,9 @@ Poly TrajSection1D::getBoostPoly() {
   //  ROS_INFO_STREAM("n_p " << n_p << " coeff " << coeffs.size());
   for (int i = 0; i < static_cast<int>(coeffs.size()); i++) {
     //    ROS_INFO_STREAM("Coeff " << coeffs.at(i));
-    base +=
-        coeffs.at(i) *
-        boost::dynamic_pointer_cast<StandardBasis>(basis->derrivatives.front())
-            ->getPoly(i);
+    base += coeffs.at(i) * boost::dynamic_pointer_cast<StandardBasis>(
+                               basis->derrivatives.front())
+                               ->getPoly(i);
   }
   //  ROS_INFO_STREAM("base " << base);
 

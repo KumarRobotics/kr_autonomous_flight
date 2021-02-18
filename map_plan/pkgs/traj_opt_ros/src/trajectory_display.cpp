@@ -1,10 +1,9 @@
 // Copyright 2016 Michael Watterson
 
+#include "trajectory_display.h"  // NOLINT()
+
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreSceneNode.h>
-
-#include <tf/transform_listener.h>
-
 #include <rviz/frame_manager.h>
 #include <rviz/load_resource.h>
 #include <rviz/properties/color_property.h>
@@ -12,10 +11,9 @@
 #include <rviz/properties/float_property.h>
 #include <rviz/properties/int_property.h>
 #include <rviz/visualization_manager.h>
+#include <tf/transform_listener.h>
 
 #include "trajectory_visual.h"  // NOLINT()
-#include "trajectory_display.h"  // NOLINT()
-
 
 namespace traj_opt {
 
@@ -52,9 +50,9 @@ TrajectoryDisplay::TrajectoryDisplay() {
                                            "Turns arrow/lines on/off", this,
                                            SLOT(updateSampleLength()));
 
-  use_h_property_ =
-      new rviz::BoolProperty("Plot NonFlat", false, "Turns quadrotor orientation on/off",
-                             this, SLOT(updateSampleLength()));
+  use_h_property_ = new rviz::BoolProperty("Plot NonFlat", false,
+                                           "Turns quadrotor orientation on/off",
+                                           this, SLOT(updateSampleLength()));
 
   history_length_property_ = new rviz::IntProperty(
       "History Length", 1,
@@ -91,7 +89,7 @@ TrajectoryDisplay::TrajectoryDisplay() {
   style_property_->addOption("Mike", 0);
   style_property_->addOption("Sikang", 1);
   style_property_->addOption("CJ", 2);
-//  style_property_->addOption("Hopf", 3);
+  //  style_property_->addOption("Hopf", 3);
 }
 
 // After the top-level rviz::Display::initialize() does its own setup,
@@ -171,7 +169,8 @@ void TrajectoryDisplay::updateSampleLength() {
   bool use_h = use_h_property_->getBool();
 
   for (size_t i = 0; i < visuals_.size(); i++) {
-    visuals_[i]->resetTrajPoints(traj_points, tangent_points, use_v, use_a,use_h);
+    visuals_[i]->resetTrajPoints(traj_points, tangent_points, use_v, use_a,
+                                 use_h);
     visuals_[i]->draw();
   }
   updateColorAndAlpha();
@@ -235,5 +234,5 @@ void TrajectoryDisplay::randomizeColor() {}
 
 // Tell pluginlib about this class.  It is important to do this in
 // global scope, outside our package's namespace.
-#include <pluginlib/class_list_macros.h> // NOLINT()
+#include <pluginlib/class_list_macros.h>  // NOLINT()
 PLUGINLIB_EXPORT_CLASS(traj_opt::TrajectoryDisplay, rviz::Display)

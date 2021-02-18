@@ -4,6 +4,8 @@
 
  * Mostly alias from Eigen Library.
  */
+#ifndef DECOMP_DATA_TYPE_H
+#define DECOMP_DATA_TYPE_H
 
 #include <stdio.h>
 #include <math.h>
@@ -41,8 +43,6 @@
 #define ANSI_COLOR_RESET "\x1b[0m"
 #endif
 
-#ifndef DATA_TYPE_H
-#define DATA_TYPE_H
 /*! \brief Rename the float type used in lib
 
     Default is set to be double, but user can change it to float.

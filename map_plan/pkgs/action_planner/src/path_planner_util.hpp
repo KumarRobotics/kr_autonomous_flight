@@ -45,7 +45,6 @@ class PathPlannerUtil {
     /// get 3d shortest path using jps
     bool solved = jps_util_->plan(start, goal, 1.0, true);
     if (solved) {
-    
       jps_path = jps_util_->getPath();
       /// inflate the local map with 0.5m
       Vecf<Dim> potential_radius;
@@ -67,7 +66,9 @@ class PathPlannerUtil {
     path_.clear();
 
     if (solved) {
-      // fix the start point of the path: use the actual start (i.e. robot pose upon calling the planner) instead of the center of the voxel closest to the start, much smoother motion. 
+      // fix the start point of the path: use the actual start (i.e. robot pose
+      // upon calling the planner) instead of the center of the voxel closest to
+      // the start, much smoother motion.
       jps_path[0] = start;
       dist_path[0] = start;
 

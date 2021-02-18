@@ -29,10 +29,11 @@
 
 /* Author: Brian Gerkey */
 
-#include <fstream>
 #include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <fstream>
 
 #include "image_loader.hpp"
 #include "ros/ros.h"
@@ -40,7 +41,8 @@
 int main(int argc, char **argv) {
   ros::init(argc, argv, "create_map", ros::init_options::AnonymousName);
   ros::NodeHandle nh("~");
-  ros::Publisher map_pub = nh.advertise<planning_ros_msgs::VoxelMap>("voxel_map", 1, true);
+  ros::Publisher map_pub =
+      nh.advertise<planning_ros_msgs::VoxelMap>("voxel_map", 1, true);
 
   std::string mapfname;
   double origin[3];
@@ -65,8 +67,8 @@ int main(int argc, char **argv) {
   ROS_INFO("Loading map from image \"%s\"", mapfname.c_str());
   planning_ros_msgs::VoxelMap map_resp;
   try {
-    map_server::loadMapFromFile(map_resp, mapfname.c_str(), res, negate,
-                                occ_th, free_th, origin, mode);
+    map_server::loadMapFromFile(map_resp, mapfname.c_str(), res, negate, occ_th,
+                                free_th, origin, mode);
   } catch (std::runtime_error e) {
     ROS_ERROR("%s", e.what());
     exit(-1);

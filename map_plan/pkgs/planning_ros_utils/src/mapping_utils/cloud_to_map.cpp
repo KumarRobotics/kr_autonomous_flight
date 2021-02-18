@@ -1,13 +1,13 @@
-#include <ros/ros.h>
 #include <planning_ros_utils/data_ros_utils.h>
 #include <planning_ros_utils/voxel_grid.h>
-#include <topic_tools/shape_shifter.h>
+#include <ros/ros.h>
 #include <sensor_msgs/point_cloud_conversion.h>
+#include <topic_tools/shape_shifter.h>
 
 std::unique_ptr<VoxelGrid> voxel_grid_;
 ros::Publisher map_pub;
 
-void processCloud(const sensor_msgs::PointCloud& cloud) {
+void processCloud(const sensor_msgs::PointCloud &cloud) {
   voxel_grid_->addCloud(cloud_to_vec(cloud));
   planning_ros_msgs::VoxelMap map = voxel_grid_->getMap();
   map.header = cloud.header;
@@ -16,17 +16,15 @@ void processCloud(const sensor_msgs::PointCloud& cloud) {
 }
 
 void cloudCallback(const topic_tools::ShapeShifter::ConstPtr &msg) {
-  if(msg->getDataType() == "sensor_msgs/PointCloud") {
+  if (msg->getDataType() == "sensor_msgs/PointCloud") {
     auto cloud_ptr = msg->instantiate<sensor_msgs::PointCloud>();
     processCloud(*cloud_ptr);
-  }
-  else if(msg->getDataType() == "sensor_msgs/PointCloud2") {
+  } else if (msg->getDataType() == "sensor_msgs/PointCloud2") {
     auto cloud2_ptr = msg->instantiate<sensor_msgs::PointCloud2>();
     sensor_msgs::PointCloud cloud;
     sensor_msgs::convertPointCloud2ToPointCloud(*cloud2_ptr, cloud);
     processCloud(cloud);
-  }
-  else
+  } else
     return;
 }
 

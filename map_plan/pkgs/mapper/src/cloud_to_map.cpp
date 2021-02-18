@@ -36,8 +36,9 @@ void processCloud(const sensor_msgs::PointCloud& cloud) {
   geometry_msgs::Pose pose_map_cloud;
 
   if (real_robot_) {
-    // for real robot, the point cloud frame_id may not exist in the tf tree, manually defining it here.
-    // TODO: make this automatic 
+    // for real robot, the point cloud frame_id may not exist in the tf tree,
+    // manually defining it here.
+    // TODO: make this automatic
     auto tf_map_cloud = tf_listener.LookupTransform(map_frame_, lidar_frame_,
                                                     cloud.header.stamp);
     if (!tf_map_cloud) {
@@ -56,7 +57,7 @@ void processCloud(const sensor_msgs::PointCloud& cloud) {
     }
     pose_map_cloud = *tf_map_cloud;
   }
-  
+
   const Aff3f T_m_c = toTF(pose_map_cloud);
 
   ros::Time t0 = ros::Time::now();
@@ -76,8 +77,8 @@ void processCloud(const sensor_msgs::PointCloud& cloud) {
   map.header.frame_id = map_frame_;
   map_pub.publish(map);
 
-
-  planning_ros_msgs::VoxelMap global_occ_map = voxel_mapper_->getInflatedOccMap(occ_map_height_);
+  planning_ros_msgs::VoxelMap global_occ_map =
+      voxel_mapper_->getInflatedOccMap(occ_map_height_);
   global_occ_map.header.frame_id = map_frame_;
   global_occ_map_pub.publish(global_occ_map);
 
@@ -155,8 +156,8 @@ int main(int argc, char** argv) {
   // ros::Subscriber map_info_sub = nh.subscribe("map_info", 1, mapInfoUpdate);
 
   map_pub = nh.advertise<planning_ros_msgs::VoxelMap>("voxel_map", 1, true);
-  global_occ_map_pub = nh.advertise<planning_ros_msgs::VoxelMap>("global_occ_map", 1,
-  true);
+  global_occ_map_pub =
+      nh.advertise<planning_ros_msgs::VoxelMap>("global_occ_map", 1, true);
   local_cloud_pub =
       nh.advertise<sensor_msgs::PointCloud>("local_cloud", 1, true);
 
@@ -188,7 +189,6 @@ int main(int argc, char** argv) {
   nh.param("local/dim_x", local_dim_x_, 10.0);
   nh.param("local/dim_y", local_dim_y_, 10.0);
   nh.param("local/dim_z", local_dim_z_, 8.0);
-
 
   ROS_INFO("local_range_x: %f, local_range_y: %f, local_range_z: %f",
            local_dim_x_, local_dim_y_, local_dim_z_);

@@ -2,8 +2,8 @@
  * @file line_segment.h
  * @brief LineSegment Class
  */
-#ifndef LINE_SEGMENT_H
-#define LINE_SEGMENT_H
+#ifndef DECOMP_LINE_SEGMENT_H
+#define DECOMP_LINE_SEGMENT_H
 
 #include <decomp_geometry/geometric_utils.h>
 #include <decomp_util/decomp_base.h>

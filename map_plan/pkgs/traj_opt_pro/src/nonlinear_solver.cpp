@@ -1,10 +1,11 @@
 // Copyright 2017 Michael Watterson
 #include <traj_opt_pro/nonlinear_solver.h>
 // move to cpp
+#include <nlopt.h>
+
 #include <algorithm>
 #include <utility>
 #include <vector>
-#include <nlopt.h>
 
 namespace traj_opt {
 
@@ -34,7 +35,6 @@ bool operator==(const Variable &var1, const Variable &var2) {
 bool operator<(const Variable &var1, const Variable &var2) {
   return var1.val < var2.val;
 }
-
 
 // Eq solver helpers
 ETV EqConstraint::ai() {
@@ -137,7 +137,7 @@ decimal_t NonlinearSolver::duality() {
   int num_u = ineq_con.size();
   for (auto &con : ineq_con) gap += con->var_u->val * con->var_s->val;
   gap /= decimal_t(num_u);
-  if(num_u == 0)
+  if (num_u == 0)
     return 0.0;
   else
     return gap;
@@ -149,7 +149,7 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
   // Timer tm;
   int num_u = ineq_con.size();
   int total_v = vars.size();
-  int num_z = total_v - 2*num_u;// - num_v;
+  int num_z = total_v - 2 * num_u;  // - num_v;
 
   SpMat M(total_v, total_v);
   SpMat b(total_v, 1);
@@ -160,7 +160,6 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
   // add A
   // std::cout << "Frontend pre took " << tm.toc() << std::endl;
   // tm.tic();
-
 
   ETV A;
   for (auto &eq : eq_con) {
@@ -175,7 +174,7 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
   ETV AT = transpose(A);
   coeffs.insert(coeffs.end(), A.begin(), A.end());
   coeffs.insert(coeffs.end(), AT.begin(), AT.end());
-  
+
   // std::cout << "Frontend eq took " << tm.toc() << std::endl;
   // tm.tic();
 
@@ -194,13 +193,13 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
         ET(ineq->var_s->id, ineq->var_s->id, ineq->var_u->val));  // Z
   }
   ETV GT = transpose(G);
-  if(G.size() > 0) {
+  if (G.size() > 0) {
     coeffs.insert(coeffs.end(), G.begin(), G.end());
     coeffs.insert(coeffs.end(), GT.begin(), GT.end());
   }
 
-  // std::cout << "Frontend in took " << tm.toc() << " coeffs now " << coeffs.size() <<std::endl;
-  // tm.tic();
+  // std::cout << "Frontend in took " << tm.toc() << " coeffs now " <<
+  // coeffs.size() <<std::endl; tm.tic();
 
   // add Cost
 
@@ -210,13 +209,12 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
   coeffs.insert(coeffs.end(), co.begin(), co.end());
   ETV na = cost->gradient();
   bcoeffs.insert(bcoeffs.end(), na.begin(), na.end());
-//  std::cout << "cost g size " << bcoeffs.size() << std::endl;
-//  std::cout << "cost na size " << na.size() << std::endl;
+  //  std::cout << "cost g size " << bcoeffs.size() << std::endl;
+  //  std::cout << "cost na size " << na.size() << std::endl;
 
   // end Add Cost
-  // std::cout << "Frontend cost took " << tm.toc() << " coeffs now " << coeffs.size() <<  std::endl;
-  // tm.tic();
-
+  // std::cout << "Frontend cost took " << tm.toc() << " coeffs now " <<
+  // coeffs.size() <<  std::endl; tm.tic();
 
   // Timer tmm,tmmm;
   // add tensor sum terms
@@ -229,8 +227,9 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
     coeffs.insert(coeffs.end(), coi.begin(), coi.end());
     bcoeffs.insert(bcoeffs.end(), gu.begin(), gu.end());
     // if(tmm.toc() > 0.5) {
-    //   std::cout << "inequality took a long time: " << ineq->id << " num values hess "<< coi.size() << " gradient s " << gu.size() << " gradientS time " << tmmm.toc() << std::endl;
-    //   ineq->profile();
+    //   std::cout << "inequality took a long time: " << ineq->id << " num
+    //   values hess "<< coi.size() << " gradient s " << gu.size() << "
+    //   gradientS time " << tmmm.toc() << std::endl; ineq->profile();
     // }
   }
   for (auto &eq : eq_con) {
@@ -240,13 +239,13 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
   }
 
   // double long_time = tm.toc();
-  // std::cout << "Frontend weird things took " << long_time <<" coeffs now " << coeffs.size() << std::endl;
-  // tm.tic();
-  // if(long_time >2)
+  // std::cout << "Frontend weird things took " << long_time <<" coeffs now " <<
+  // coeffs.size() << std::endl; tm.tic(); if(long_time >2)
   //   throw 2;
 
-  for(int i=0 ; i < bcoeffs.size();i++){
-    if(bcoeffs.at(i).row() < 0 || bcoeffs.at(i).row() >= total_v  || bcoeffs.at(i).col() != 0 )
+  for (int i = 0; i < bcoeffs.size(); i++) {
+    if (bcoeffs.at(i).row() < 0 || bcoeffs.at(i).row() >= total_v ||
+        bcoeffs.at(i).col() != 0)
       std::cout << "neg i: " << i << std::endl;
   }
 
@@ -261,7 +260,7 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
 
   // backend bottleneck
   Eigen::SparseLU<SpMat> solver;
-//  Eigen::SparseQR<SpMat,Eigen::COLAMDOrdering<int> > solver;
+  //  Eigen::SparseQR<SpMat,Eigen::COLAMDOrdering<int> > solver;
   //    Eigen::PardisoLU<SpMat> solver;
 
   //        std::cout << "M: " << M << std::endl;
@@ -274,15 +273,14 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
 
   if (solver.info() != Eigen::Success) {
     std::cout << "Back end failed with code " << solver.info() << std::endl;
-//            std::cout << M << std::endl;
-            draw_matrix(M);
+    //            std::cout << M << std::endl;
+    draw_matrix(M);
     return false;
   }
   VecD delta_x = solver.solve(b);
 
-
-  VecD err = M*delta_x;
-  err-=b;
+  VecD err = M * delta_x;
+  err -= b;
 
   // Check error
 
@@ -300,10 +298,9 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
     decimal_t max_i = con->linesearch(delta_x, max_h);
     max_h = std::min(max_i, max_h);
   }
-  for(auto &pv:positive_vars){
+  for (auto &pv : positive_vars) {
     decimal_t max_i = pv->val / delta_x(pv->id);
-    if(max_i > 0 )
-      max_h = std::min(max_i, max_h);
+    if (max_i > 0) max_h = std::min(max_i, max_h);
   }
   //    max_h = std::min(max_h,cost_linesearch(delta_x));
   max_h = std::max(max_h, 0.0);
@@ -322,8 +319,7 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
   //    std::cout << "mu: " << mu << std::endl;
   // centering param
   decimal_t sigma = std::pow(mu_aff / mu, 3);
-  if(mu == 0.0)
-    sigma = 0.0;
+  if (mu == 0.0) sigma = 0.0;
   //    std::cout << "Sigma " << sigma << std::endl;
 
   nu = mu * sigma * VecD::Ones(num_u);
@@ -341,12 +337,11 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
   //     std::cout << "updated b: " << b << std::endl;
   delta_x = solver.solve(b);
   // add watterson hacky hueristic
-  for(auto &v:sensitive_vars) {
-//     delta_x(v->id) *= std::pow(1.0 - sigma,2.0);
-//     if (sigma > 0.5)
-//     delta_x(v->id) *= 0.0;
+  for (auto &v : sensitive_vars) {
+    //     delta_x(v->id) *= std::pow(1.0 - sigma,2.0);
+    //     if (sigma > 0.5)
+    //     delta_x(v->id) *= 0.0;
   }
-
 
   // redo line search
   max_h = 1.0;
@@ -357,11 +352,10 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
       std::cout << "out of slack for ineq " << con->id << std::endl;
     //         std::cout << "max_i: " << max_i << std::endl;
   }
-  for(auto &pv:positive_vars){
+  for (auto &pv : positive_vars) {
     decimal_t max_i = pv->val / delta_x(pv->id);
     std::cout << "pval " << pv->val << " pr " << delta_x(pv->id) << std::endl;
-    if(max_i > 0 )
-      max_h = std::min(max_i, max_h);
+    if (max_i > 0) max_h = std::min(max_i, max_h);
   }
 
   //     // check duality gap reduction
@@ -377,10 +371,9 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
 
   //     max_h = std::min(max_h,cost_linesearch(delta_x));
   max_h = std::max(max_h, 0.0);
-  if(mu != 0.0)
-    max_h *= 0.99;
-//  else
-//    std::cout << "delta_x  " << delta_x.transpose() << std::endl;
+  if (mu != 0.0) max_h *= 0.99;
+  //  else
+  //    std::cout << "delta_x  " << delta_x.transpose() << std::endl;
 
   //     VecD delta_sub = delta_x.block(0,0,num_z,1);
   //     VecD delta_v = delta_x.block(num_z,0,num_v,1);
@@ -392,14 +385,14 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
   //     std::cout << "expected cost diff: " << delta_x.sum()*max_h <<
   //     std::endl;
 
-//  std::cout << "dx: ";
+  //  std::cout << "dx: ";
   // update variables
   for (int i = 0; i < total_v; i++) {
     vars.at(i).val -= delta_x(vars.at(i).id) * max_h;
-//    if(i < num_z)
-//      std::cout << delta_x(vars.at(i).id) * max_h << " ";
+    //    if(i < num_z)
+    //      std::cout << delta_x(vars.at(i).id) * max_h << " ";
   }
-//  std::cout << std::endl;
+  //  std::cout << std::endl;
   // robustify against bad search directions
   //     for(uint i =num_z+num_v ; i <total_v;i++){
   //         decimal_t dx = delta_x(vars.at(i).id)*max_h;
@@ -422,7 +415,8 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
 
   return (mu > epsilon_) && (max_h > 1e-15);
 }
-bool NonlinearSolver::solve(bool verbose, decimal_t epsilon, std::vector<Variable*> sensitive_vars) {
+bool NonlinearSolver::solve(bool verbose, decimal_t epsilon,
+                            std::vector<Variable *> sensitive_vars) {
   epsilon_ = epsilon;
   int max_iterations = 50;
   // decimal_t nu = 0.5;
@@ -455,9 +449,10 @@ bool NonlinearSolver::solve(bool verbose, decimal_t epsilon, std::vector<Variabl
   for (int i = 0; i < max_iterations; i++) {
     its = i;
     if (verbose) {
-                 std::cout << "Starting iteration " << i << " Gap: " << duality() << std::endl;// << "\033[1A";
-      //            std::cout << "x: ";
-      //            for(int i=0;i<num_z;i++)
+      std::cout << "Starting iteration " << i << " Gap: " << duality()
+                << std::endl;  // << "\033[1A";
+                               //            std::cout << "x: ";
+                               //            for(int i=0;i<num_z;i++)
       //                std::cout << vars.at(i).val << " ";
       //            std::cout << std::endl;
       //            std::cout << "v: ";
@@ -472,7 +467,7 @@ bool NonlinearSolver::solve(bool verbose, decimal_t epsilon, std::vector<Variabl
       //            for(auto &v:ineq_con)
       //                std::cout << v->var_s->val << " ";
       //            std::cout << std::endl;
-                  std::cout << "Cost: " << cost->evaluate() << std::endl;
+      std::cout << "Cost: " << cost->evaluate() << std::endl;
       //            tm.tic();
     }
     if (!iterate(sensitive_vars)) break;
@@ -505,8 +500,7 @@ bool NonlinearSolver::solve(bool verbose, decimal_t epsilon, std::vector<Variabl
     //        else
     //            std::cout << "Due to lack of slack" << std::endl;
     std::cout << "x: ";
-    for(int i=0;i<num_z;i++)
-      std::cout << vars.at(i).val << " ";
+    for (int i = 0; i < num_z; i++) std::cout << vars.at(i).val << " ";
     std::cout << std::endl;
     //        std::cout << "v: ";
     //        for(auto &v:eq_con)
@@ -642,102 +636,100 @@ void NonlinearSolver::draw_matrix(const SpMat &mat) {
   cv::waitKey(-1);
 }
 void IneqConstraint::update_max_hess(uint val) {
-  max_hess_size = std::max(max_hess_size,val);
+  max_hess_size = std::max(max_hess_size, val);
 }
-void IneqConstraint::update_max_grad(uint val){
-  max_grad_size = std::max(max_grad_size,val);
+void IneqConstraint::update_max_grad(uint val) {
+  max_grad_size = std::max(max_grad_size, val);
 }
-double NonlinearSolver::nlopt_wrapper_f(uint n, const double *x, double *grad, void *data) {
+double NonlinearSolver::nlopt_wrapper_f(uint n, const double *x, double *grad,
+                                        void *data) {
   NonlinearSolver *solver = static_cast<NonlinearSolver *>(data);
   // set variables
-//  if(solver->num_vars() != n)
-//    throw std::runtime_error("nlopt num vars doesnt match solver num");
-  for(int i=0;i<n;i++){
+  //  if(solver->num_vars() != n)
+  //    throw std::runtime_error("nlopt num vars doesnt match solver num");
+  for (int i = 0; i < n; i++) {
     solver->vars.at(i).val = x[i];
   }
   double res = solver->cost->evaluate();
 
-  if(grad){
-  ETV grade = solver->cost->gradient();
+  if (grad) {
+    ETV grade = solver->cost->gradient();
 
-  SpMat gv(n, 1);
-  gv.setFromTriplets(grade.begin(),grade.end());
-  VecD dy(gv);
+    SpMat gv(n, 1);
+    gv.setFromTriplets(grade.begin(), grade.end());
+    VecD dy(gv);
 
-    for(int i=0;i<n;i++){
+    for (int i = 0; i < n; i++) {
       grad[i] = dy(i);
     }
   }
   return res;
 }
-double NonlinearSolver::nlopt_wrapper_g(uint n, const double *x, double *grad, void *data) {
+double NonlinearSolver::nlopt_wrapper_g(uint n, const double *x, double *grad,
+                                        void *data) {
   IneqConstraint *ineq = static_cast<IneqConstraint *>(data);
   // set variables
 
-  for(auto &v: ineq->vars) {
+  for (auto &v : ineq->vars) {
     v->val = x[v->id];
   }
 
   double res = ineq->evaluate();
 
-  if(grad){
+  if (grad) {
+    ETV grade = ineq->gradient();
 
-  ETV grade = ineq->gradient();
+    ETV gradef;
+    gradef.reserve(grade.size());
 
-  ETV gradef;
-  gradef.reserve(grade.size());
+    for (auto &g : grade) gradef.push_back(ET(g.col(), 0, g.value()));
 
-  for(auto &g:grade)
-    gradef.push_back(ET(g.col(),0,g.value()));
+    SpMat gv(n, 1);
+    gv.setFromTriplets(gradef.begin(), gradef.end());
+    VecD dy(gv);
 
-  SpMat gv(n,1);
-  gv.setFromTriplets(gradef.begin(),gradef.end());
-  VecD dy(gv);
-
-    for(int i=0;i<n;i++){
+    for (int i = 0; i < n; i++) {
       grad[i] = dy(i);
     }
   }
 
-
-
   return res;
 }
-bool NonlinearSolver::solve_nlopt(){
+bool NonlinearSolver::solve_nlopt() {
   Timer tm_t;
   tm_t.tic();
 
-  int n = num_vars() - 2*ineq_con.size();
+  int n = num_vars() - 2 * ineq_con.size();
   nlopt_opt opt;
-//  opt = nlopt_create(NLOPT_LD_MMA,n);
-  opt = nlopt_create(NLOPT_LN_COBYLA,n);
-//  opt = nlopt_create(NLOPT_LN_BOBYQA,n);
-  nlopt_set_min_objective(opt,nlopt_wrapper_f,this);
+  //  opt = nlopt_create(NLOPT_LD_MMA,n);
+  opt = nlopt_create(NLOPT_LN_COBYLA, n);
+  //  opt = nlopt_create(NLOPT_LN_BOBYQA,n);
+  nlopt_set_min_objective(opt, nlopt_wrapper_f, this);
 
-  for(auto &con:ineq_con) {
-    nlopt_add_inequality_constraint(opt,nlopt_wrapper_g, con.get(), 1e-3);
+  for (auto &con : ineq_con) {
+    nlopt_add_inequality_constraint(opt, nlopt_wrapper_g, con.get(), 1e-3);
   }
-  nlopt_set_xtol_rel(opt,1e-4);
-//  nlopt_set_maxeval(opt,100);
-  nlopt_set_maxtime(opt,5*60);
+  nlopt_set_xtol_rel(opt, 1e-4);
+  //  nlopt_set_maxeval(opt,100);
+  nlopt_set_maxtime(opt, 5 * 60);
 
-  std::vector<double> ic(n,1.0);
-//  for(int i=0;i<n;i++)
-//    ic.at(i) = vars.at(i).getVal();
+  std::vector<double> ic(n, 1.0);
+  //  for(int i=0;i<n;i++)
+  //    ic.at(i) = vars.at(i).getVal();
 
   double minf;
-//  int retc =  -42;
-  int retc =  nlopt_optimize(opt,ic.data(),&minf);
-  if(retc<0){
-    std::cout << "nlopt failed with " << retc << " in " << 1000.0*tm_t.toc() << " ms" << std::endl;
+  //  int retc =  -42;
+  int retc = nlopt_optimize(opt, ic.data(), &minf);
+  if (retc < 0) {
+    std::cout << "nlopt failed with " << retc << " in " << 1000.0 * tm_t.toc()
+              << " ms" << std::endl;
     return false;
   }
-  std::cout << "nlopt found min " << minf << " with ret code " << retc <<  " in " << 1000.0*tm_t.toc() << " ms" << std::endl;
-  for(int i=0;i<n;i++)
-    vars.at(i).val = ic.at(i);
+  std::cout << "nlopt found min " << minf << " with ret code " << retc << " in "
+            << 1000.0 * tm_t.toc() << " ms" << std::endl;
+  for (int i = 0; i < n; i++) vars.at(i).val = ic.at(i);
 
   return true;
 }
-
 
 }  // namespace traj_opt

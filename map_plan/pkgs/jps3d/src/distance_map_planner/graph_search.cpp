@@ -1,19 +1,23 @@
-#include <cmath>
 #include <jps_planner/distance_map_planner/graph_search.h>
+
+#include <cmath>
 
 using namespace DMP;
 
 GraphSearch::GraphSearch(const int8_t *cMap, int xDim, int yDim, double eps,
                          double cweight, bool verbose)
-    : cMap_(cMap), xDim_(xDim), yDim_(yDim), eps_(eps), cweight_(cweight),
+    : cMap_(cMap),
+      xDim_(xDim),
+      yDim_(yDim),
+      eps_(eps),
+      cweight_(cweight),
       verbose_(verbose) {
   hm_.resize(xDim_ * yDim_);
   seen_.resize(xDim_ * yDim_, false);
 
   for (int x = -1; x <= 1; x++) {
     for (int y = -1; y <= 1; y++) {
-      if (x == 0 && y == 0)
-        continue;
+      if (x == 0 && y == 0) continue;
       ns_.push_back(std::vector<int>{x, y});
     }
   }
@@ -21,8 +25,13 @@ GraphSearch::GraphSearch(const int8_t *cMap, int xDim, int yDim, double eps,
 
 GraphSearch::GraphSearch(const int8_t *cMap, int xDim, int yDim, int zDim,
                          double eps, double cweight, bool verbose)
-    : cMap_(cMap), xDim_(xDim), yDim_(yDim), zDim_(zDim), eps_(eps),
-      cweight_(cweight), verbose_(verbose) {
+    : cMap_(cMap),
+      xDim_(xDim),
+      yDim_(yDim),
+      zDim_(zDim),
+      eps_(eps),
+      cweight_(cweight),
+      verbose_(verbose) {
   hm_.resize(xDim_ * yDim_ * zDim_);
   seen_.resize(xDim_ * yDim_ * zDim_, false);
 
@@ -30,8 +39,7 @@ GraphSearch::GraphSearch(const int8_t *cMap, int xDim, int yDim, int zDim,
   for (int x = -1; x <= 1; x++) {
     for (int y = -1; y <= 1; y++) {
       for (int z = -1; z <= 1; z++) {
-        if (x == 0 && y == 0 && z == 0)
-          continue;
+        if (x == 0 && y == 0 && z == 0) continue;
         ns_.push_back(std::vector<int>{x, y, z});
       }
     }
@@ -66,7 +74,7 @@ inline double GraphSearch::getHeur(int x, int y, int z) const {
 }
 
 double GraphSearch::plan(int xStart, int yStart, int xGoal, int yGoal,
-                       std::vector<bool> in_region) {
+                         std::vector<bool> in_region) {
   use_2d_ = true;
   pq_.clear();
   path_.clear();
@@ -75,12 +83,10 @@ double GraphSearch::plan(int xStart, int yStart, int xGoal, int yGoal,
   in_region_ = in_region;
   if (in_region.empty()) {
     global_ = true;
-    if (verbose_)
-      printf("global planning!\n");
+    if (verbose_) printf("global planning!\n");
   } else {
     global_ = false;
-    if (verbose_)
-      printf("local planning!\n");
+    if (verbose_) printf("local planning!\n");
   }
 
   // Set goal
@@ -108,12 +114,10 @@ double GraphSearch::plan(int xStart, int yStart, int zStart, int xGoal,
   in_region_ = in_region;
   if (in_region.empty()) {
     global_ = true;
-    if (verbose_)
-      printf("global planning!\n");
+    if (verbose_) printf("global planning!\n");
   } else {
     global_ = false;
-    if (verbose_)
-      printf("local planning!\n");
+    if (verbose_) printf("local planning!\n");
   }
 
   // Set goal
@@ -145,11 +149,10 @@ double GraphSearch::plan(StatePtr &currNode_ptr, int start_id, int goal_id) {
     // get element with smallest cost
     currNode_ptr = pq_.top();
     pq_.pop();
-    currNode_ptr->closed = true; // Add to closed list
+    currNode_ptr->closed = true;  // Add to closed list
 
     if (currNode_ptr->id == goal_id) {
-      if (verbose_)
-        printf("Goal Reached!!!!!!\n\n");
+      if (verbose_) printf("Goal Reached!!!!!!\n\n");
       break;
     }
 
@@ -166,29 +169,28 @@ double GraphSearch::plan(StatePtr &currNode_ptr, int start_id, int goal_id) {
       double tentative_gval = currNode_ptr->g + succ_costs[s];
 
       if (tentative_gval < child_ptr->g) {
-        child_ptr->parentId = currNode_ptr->id; // Assign new parent
-        child_ptr->g = tentative_gval;          // Update gval
+        child_ptr->parentId = currNode_ptr->id;  // Assign new parent
+        child_ptr->g = tentative_gval;           // Update gval
 
         // double fval = child_ptr->g + child_ptr->h;
 
         // if currently in OPEN, update
         if (child_ptr->opened && !child_ptr->closed)
-          pq_.increase(child_ptr->heapkey); // update heap
+          pq_.increase(child_ptr->heapkey);  // update heap
         // if currently in CLOSED
         else if (child_ptr->opened && child_ptr->closed) {
           printf("ASTAR ERROR!\n");
-        } else // new node, add to heap
+        } else  // new node, add to heap
         {
           // printf("add to open set: %d, %d\n", child_ptr->x, child_ptr->y);
           child_ptr->heapkey = pq_.push(child_ptr);
           child_ptr->opened = true;
         }
-      } //
-    }   // Process successors
+      }  //
+    }    // Process successors
 
     if (pq_.empty()) {
-      if (verbose_)
-        printf("Priority queue is empty!!!!!!\n\n");
+      if (verbose_) printf("Priority queue is empty!!!!!!\n\n");
       return std::numeric_limits<double>::infinity();
     }
   }
@@ -221,12 +223,10 @@ void GraphSearch::getSucc(const StatePtr &curr, std::vector<int> &succ_ids,
     for (const auto &d : ns_) {
       int new_x = curr->x + d[0];
       int new_y = curr->y + d[1];
-      if (!isFree(new_x, new_y))
-        continue;
+      if (!isFree(new_x, new_y)) continue;
 
       int new_id = coordToId(new_x, new_y);
-      if (!global_ && !in_region_[new_id])
-        continue;
+      if (!global_ && !in_region_[new_id]) continue;
 
       if (!seen_[new_id]) {
         seen_[new_id] = true;
@@ -243,12 +243,10 @@ void GraphSearch::getSucc(const StatePtr &curr, std::vector<int> &succ_ids,
       int new_x = curr->x + d[0];
       int new_y = curr->y + d[1];
       int new_z = curr->z + d[2];
-      if (!isFree(new_x, new_y, new_z))
-        continue;
+      if (!isFree(new_x, new_y, new_z)) continue;
 
       int new_id = coordToId(new_x, new_y, new_z);
-      if (!global_ && !in_region_[new_id])
-        continue;
+      if (!global_ && !in_region_[new_id]) continue;
 
       if (!seen_[new_id]) {
         seen_[new_id] = true;
@@ -268,8 +266,7 @@ std::vector<StatePtr> GraphSearch::getPath() const { return path_; }
 std::vector<StatePtr> GraphSearch::getOpenSet() const {
   std::vector<StatePtr> ss;
   for (const auto &it : hm_) {
-    if (it && it->opened && !it->closed)
-      ss.push_back(it);
+    if (it && it->opened && !it->closed) ss.push_back(it);
   }
   return ss;
 }
@@ -277,8 +274,7 @@ std::vector<StatePtr> GraphSearch::getOpenSet() const {
 std::vector<StatePtr> GraphSearch::getCloseSet() const {
   std::vector<StatePtr> ss;
   for (const auto &it : hm_) {
-    if (it && it->closed)
-      ss.push_back(it);
+    if (it && it->closed) ss.push_back(it);
   }
   return ss;
 }
@@ -286,8 +282,7 @@ std::vector<StatePtr> GraphSearch::getCloseSet() const {
 std::vector<StatePtr> GraphSearch::getAllSet() const {
   std::vector<StatePtr> ss;
   for (const auto &it : hm_) {
-    if (it)
-      ss.push_back(it);
+    if (it) ss.push_back(it);
   }
   return ss;
 }

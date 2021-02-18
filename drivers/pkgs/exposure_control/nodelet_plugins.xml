@@ -1,8 +1,0 @@
-<library path="lib/libexposure_control_nodelet">
-    <class name="exposure_control/ExposureControlNodelet" type="exposure_control::ExposureControlNodelet"
-        base_class_type="nodelet::Nodelet">
-        <description>
-            nodelet for the exposure control module
-        </description>
-    </class>
-</library>

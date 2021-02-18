@@ -1,16 +1,22 @@
 name: docker-build-map-plan
 
-# Build control when "base" changes, or when any files in the control folder are
-# modified
+# Build map-plan when "control" changes, or when any files in the map_plan
+# folder are modified
 on:
-  workflow_run:
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Comment'
+        required: false
+        default: 'no-comment'
+        workflow_run:
     workflows: ["docker-build-control"]
     branches: [master]
     types:
       - completed
   push:
     paths:
-    - 'control/**'
+    - 'map_plan/**'
     branches: [master, add_map_plan, add_map_plan_action]
 
 jobs:
@@ -43,7 +49,7 @@ jobs:
           context: .
           push: true
           tags: kumarrobotics/autonomy:map-plan
-          file: ./control/Dockerfile
+          file: ./map_plan/Dockerfile
           platforms: linux/amd64,linux/arm64
       -
         name: Image digest

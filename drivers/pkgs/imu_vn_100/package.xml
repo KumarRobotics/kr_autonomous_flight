@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>imu_vn_100</name>
+  <version>0.0.0</version>
+  <description>The imu_vn_100 package</description>
+
+  <maintainer email="sunke.polyu@gmail.com">Ke Sun</maintainer>
+  <license>Apache 2.0</license>
+  <!-- <url type="website">http://wiki.ros.org/imu_vn_100</url> -->
+  <author email="sunke.polyu@gmail.com">Ke Sun</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>diagnostic_updater</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+
+  <export>
+  </export>
+</package>

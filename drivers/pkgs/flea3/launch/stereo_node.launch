@@ -1,0 +1,97 @@
+<launch>
+    <!-- Common Interface -->
+    <arg name="rate" default="7.5"/>
+
+    <!-- Camera Settings -->
+    <arg name="left" default="15322735"/>
+    <arg name="right" default="15322733"/>
+    <arg name="left_camera_name" default="pg_$(arg left)"/>
+    <arg name="right_camera_name" default="pg_$(arg right)"/>
+    <arg name="left_calib_url" default="file://${ROS_HOME}/camera_info/$(arg left_camera_name).yaml"/>
+    <arg name="right_calib_url" default="file://${ROS_HOME}/camera_info/$(arg right_camera_name).yaml"/>
+
+    <arg name="camera" default="stereo"/>
+    <arg name="frame_id" default="$(arg camera)"/>
+    <arg name="fps" default="$(arg rate)"/>
+
+    <arg name="width" default="0"/>
+    <arg name="height" default="0"/>
+    <arg name="video_mode" default="23"/>
+    <arg name="pixel_format" default="22"/>
+    <arg name="exposure" default="true"/>
+    <arg name="auto_exposure" default="true"/>
+    <arg name="auto_shutter" default="true"/>
+    <arg name="shutter_ms" default="10.0"/>
+    <arg name="auto_gain" default="true"/>
+    <arg name="gain_db" default="0.0"/>
+    <arg name="trigger_source" default="7"/>
+    <arg name="trigger_polarity" default="0"/>
+    <arg name="strobe_control" default="-1"/>
+    <arg name="strobe_polarity" default="0"/>
+    <arg name="white_balance" default="false"/>
+    <arg name="auto_white_balance" default="false"/>
+
+    <!-- Node Settings -->
+    <arg name="output" default="screen"/>
+    <arg name="proc" default="false"/>
+    <arg name="view" default="false"/>
+    <arg name="calib" default="false"/>
+
+    <!-- Node -->
+    <node pkg="flea3" type="flea3_stereo_node" name="$(arg camera)" output="$(arg output)">
+        <param name="left/camera_name" type="string" value="$(arg left_camera_name)"/>
+        <param name="left/identifier" type="string" value="$(arg left)"/>
+        <param name="left/calib_url" type="string" value="$(arg left_calib_url)"/>
+
+        <param name="right/camera_name" type="string" value="$(arg right_camera_name)"/>
+        <param name="right/identifier" type="string" value="$(arg right)"/>
+        <param name="right/calib_url" type="string" value="$(arg right_calib_url)"/>
+
+        <param name="frame_id" type="string" value="$(arg frame_id)"/>
+        <param name="fps" type="double" value="$(arg fps)"/>
+        <param name="video_mode" type="int" value="$(arg video_mode)"/>
+        <param name="pixel_format" type="int" value="$(arg pixel_format)"/>
+        <param name="exposure" type="bool" value="$(arg exposure)"/>
+        <param name="auto_exposure" type="bool" value="$(arg auto_exposure)"/>
+        <param name="auto_shutter" type="bool" value="$(arg auto_shutter)"/>
+        <param name="shutter_ms" type="double" value="$(arg shutter_ms)"/>
+        <param name="auto_gain" type="bool" value="$(arg auto_gain)"/>
+        <param name="gain_db" type="double" value="$(arg gain_db)"/>
+        <param name="trigger_source" type="int" value="$(arg trigger_source)"/>
+        <param name="width" type="int" value="$(arg width)"/>
+        <param name="height" type="int" value="$(arg height)"/>
+        <param name="white_balance" type="bool" value="$(arg white_balance)" />
+        <param name="auto_white_balance" type="bool" value="$(arg auto_white_balance)" />
+    </node>
+
+    <!-- Proc -->
+    <node if="$(arg proc)"
+        pkg="stereo_image_proc" type="stereo_image_proc"
+        name="stereo_image_proc" ns="$(arg camera)">
+    </node>
+
+    <!-- View -->
+    <arg name="image" default="image_rect"/>
+    <node if="$(arg view)"
+        pkg="image_view" type="stereo_view" name="viewer"
+        output="$(arg output)"
+        args="stereo:=$(arg camera) image:=$(arg image)">
+    </node>
+
+    <!-- Calib -->
+    <group if="$(arg calib)">
+        <arg name="pattern" default="chessboard"/>
+        <arg name="size"/>
+        <arg name="square"/>
+        <arg name="num_dist_coeff" default="2"/>
+        <node pkg="camera_calibration" type="cameracalibrator.py"
+            name="calibrator" output="screen"
+            args="-p $(arg pattern) -s $(arg size) -q $(arg square)
+            -k $(arg num_dist_coeff)
+            right:=/$(arg camera)/right/image_raw
+            left:=/$(arg camera)/left/image_raw
+            right_camera:=/$(arg camera)/right
+            left_camera:=/$(arg camera)/left">
+        </node>
+    </group>
+</launch>

@@ -1,0 +1,8 @@
+<library path="lib/libflea3">
+    <class name="flea3/SingleNodelet" type="flea3::SingleNodelet"
+        base_class_type="nodelet::Nodelet">
+        <description>
+            This is a nodelet for a single camera
+        </description>
+    </class>
+</library>

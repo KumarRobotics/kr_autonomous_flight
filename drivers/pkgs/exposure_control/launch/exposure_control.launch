@@ -1,0 +1,25 @@
+<launch>
+    <!--############### Node Configurations ##################-->
+    <arg name="output" default="screen"/>
+    <arg name="enabled" default="true"/>
+    <!-- must know the camera frame rate and the max camera free running
+         frame rate to limit max exposure time! --> 
+    <arg name="frame_rate"/>
+    <arg name="max_fps_free" default="200"/>
+    <arg name="brightness_tol" default="30"/>
+
+    <!-- node -->
+    <node pkg="exposure_control" type="exposure_control_node" name="exposure_control" output="$(arg output)">
+        <param name="fps" type="double" value="$(arg frame_rate)"/>
+	<param name="max_fps_free" type="double" value="$(arg
+							max_fps_free)"/>
+	<param name="brightness_tol" type="double" value="$(arg
+							  brightness_tol)"/>
+	<param name="max_gain" type="double" value="10.0"/>
+	<!--- topic for incoming images -->
+	<remap from="exposure_control/image"
+	       to="/sync/cam0/image_raw"/>
+	<!--- topic for outgoing exposure control messages -->
+	<remap from="~exposure" to="/sync/exposure"/>
+    </node>
+</launch>

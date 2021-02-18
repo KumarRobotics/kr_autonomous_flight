@@ -1,0 +1,5 @@
+repositories:
+  ouster_driver:
+    type: git
+    url: https://github.com/versatran01/ouster_driver.git
+    version: devel

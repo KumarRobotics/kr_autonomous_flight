@@ -1,0 +1,82 @@
+<launch>
+    <arg name="robot" default="$(optenv ROBOT_NAME quadrotor)"/>
+
+    <arg name="output" default="screen"/>
+    <arg name="imu_rate" default="200"/>
+    <arg name="sync_rate" default="$(env SYNC_FRAME_RATE)"/>
+    <arg name="num_cameras" default="2"/>
+    <arg name="auto_shutter" default="false"/>
+    <arg name="auto_gain" default="false"/>
+    <arg name="max_shutter" default="30"/>
+
+    <arg name="gain_db" default="0.0"/>
+    <arg name="shutter_ms" default="$(env SYNC_SHUTTER_MS)"/>
+
+    <arg name="cam0" default="$(env SYNC_CAM0_SERIAL)"/>
+    <arg name="cam1" default="$(env SYNC_CAM1_SERIAL)"/>
+    <arg name="port" default="$(env SYNC_IMU_PORT)"/>
+
+    <!--############### IMU Configurations ###################-->
+    <!-- Frame ID for messages -->
+    <arg name="imu_frame_id" default="imu"/>
+
+    <!-- Baudrate of serial comms (see manual for allowed values) -->
+    <arg name="baudrate" default="921600"/>
+
+    <!-- Ros Topic settings -->
+    <arg name="enable_pres" default="true"/>
+    <arg name="enable_temp" default="true"/>
+    <arg name="enable_mag" default="true"/>
+    <env name="ROSCONSOLE_FORMAT" value="[${severity}] [${time}] [${node}]: ${message}"/>
+
+    <group ns="$(arg robot)">
+
+        <!-- Imu Configurations -->
+        <group ns="sync/imu">
+            <param name="port" type="string" value="$(arg port)"/>
+            <param name="baudrate" type="int" value="$(arg baudrate)"/>
+            <param name="imu_rate" type="int" value="$(arg imu_rate)"/>
+            <param name="enable_mag" type="bool" value="$(arg enable_mag)"/>
+            <param name="enable_pres" type="bool" value="$(arg enable_pres)"/>
+            <param name="enable_temp" type="bool" value="$(arg enable_temp)"/>
+            <param name="sync_rate" type="int" value="$(arg sync_rate)"/>
+            <param name="sync_pulse_width_us" type="int" value="100"/>
+        </group>
+
+        <node pkg="cam_imu_sync" type="cam_imu_sync_node" name="sync" output="$(arg output)">
+            <param name="num_cameras" type="int" value="$(arg num_cameras)"/>
+            <param name="fps" type="double" value="$(arg sync_rate)"/>
+
+            <param name="cam0/identifier" type="string" value="$(arg cam0)"/>
+            <param name="cam0/camera_name" type="string" value="pg_$(arg cam0)"/>
+            <param name="cam0/calib_url" type="string" value="file://${ROS_HOME}/camera_info/pg_$(arg cam0).yaml"/>
+
+            <param name="cam1/identifier" type="string" value="$(arg cam1)"/>
+            <param name="cam1/camera_name" type="string" value="pg_$(arg cam1)"/>
+            <param name="cam1/calib_url" type="string" value="file://${ROS_HOME}/camera_info/pg_$(arg cam1).yaml"/>
+
+            <param name="auto_shutter" type="bool" value="$(arg auto_shutter)"/>
+            <param name="shutter_ms" type="double" value="$(arg shutter_ms)"/>
+            <param name="auto_gain" type="bool" value="$(arg auto_gain)"/>
+            <param name="auto_exposure" type="bool" value="false"/>
+            <param name="gain_db" type="double" value="$(arg gain_db)"/>
+            <param name="trigger_source" type="int" value="2"/>
+            <param name="trigger_polarity" type="int" value="1"/>
+            <param name="width" type="int" value="1280"/>
+            <param name="height" type="int" value="1024"/>
+            <!--- topic on which exposure parameters are received -->
+            <remap from="sync/exposure" to="exposure_control/exposure"/>
+        </node>
+
+        <node if="true" pkg="exposure_control" type="exposure_control_node" name="exposure_control" output="$(arg output)">
+            <param name="fps" type="double" value="$(arg sync_rate)"/>
+            <param name="max_gain" type="double" value="10"/>
+            <param name="max_shutter" type="double" value="$(arg max_shutter)"/>
+            <param name="min_shutter" type="double" value="0.001"/>
+            <!-- topic for incoming images -->
+            <remap from="exposure_control/image" to="sync/cam0/image_raw"/>
+            <!-- topic on which current exposure params are posted -->
+            <remap from="exposure_control/current_exposure" to="sync/current_exposure"/>
+        </node>
+    </group>
+</launch>

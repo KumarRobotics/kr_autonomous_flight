@@ -1,0 +1,28 @@
+<launch>
+    <!-- Common Interface -->
+    <arg name="device"/>
+    <arg name="rate" default="20"/>
+
+    <!-- Camera Settings -->
+    <arg name="serial" default="$(arg device)"/>
+    <arg name="camera_name" default="pg_$(arg serial)"/>
+    <arg name="camera" default="$(arg camera_name)"/>
+    <arg name="frame_id" default="$(arg camera)"/>
+    <arg name="calib_url" default="file://${ROS_HOME}/camera_info/$(arg camera_name).yaml"/>
+    <arg name="fps" default="$(arg rate)"/>
+
+<!--     <node
+        pkg="nodelet" type="nodelet" name="manager" args="manager"
+        output="screen">
+    </node>
+ -->
+    <!-- Nodelet -->
+    <node pkg="nodelet" type="nodelet" name="$(arg camera)"
+        args="load flea3/SingleNodelet manager" output="screen">
+        <param name="identifier" type="string" value="$(arg serial)"/>
+        <param name="frame_id" type="string" value="$(arg frame_id)"/>
+        <param name="camera_name" type="string" value="$(arg camera_name)"/>
+        <param name="calib_url" type="string" value="$(arg calib_url)"/>
+        <param name="fps" type="double" value="$(arg fps)"/>
+    </node>
+</launch>

@@ -1,0 +1,34 @@
+<launch>
+    <arg name="output" default="screen"/>
+    <arg name="imu" default="imu"/>
+
+    <arg name="port" default="/dev/ttyUSB0" />
+    <arg name="frame_id" default="$(arg imu)"/>
+    <arg name="baudrate" default="921600"/>
+    <arg name="imu_rate" default="100"/>
+
+    <!-- Sync out settings -->
+    <!-- to disable this just set it to < 0 -->
+    <arg name="sync_rate" default="20"/>
+    <arg name="sync_pulse_width_us" default="1000"/>
+
+    <arg name="binary_output" default="true"/>
+
+    <!-- Ros Topic settings -->
+    <arg name="enable_mag" default="true"/>
+    <arg name="enable_pres" default="true"/>
+    <arg name="enable_temp" default="true"/>
+
+    <node pkg="imu_vn_100" name="$(arg imu)" type="imu_vn_100_cont_node" output="$(arg output)">
+        <param name="port" type="string" value="$(arg port)"/>
+        <param name="baudrate" type="int" value="$(arg baudrate)"/>
+        <param name="frame_id" type="string" value="$(arg frame_id)"/>
+        <param name="imu_rate" type="int" value="$(arg imu_rate)"/>
+        <param name="binary_output" type="bool" value="$(arg binary_output)"/>
+        <param name="enable_mag" type="bool" value="$(arg enable_mag)"/>
+        <param name="enable_pres" type="bool" value="$(arg enable_pres)"/>
+        <param name="enable_temp" type="bool" value="$(arg enable_temp)"/>
+        <param name="sync_rate" type="int" value="$(arg sync_rate)"/>
+        <param name="sync_pulse_width_us" type="int" value="$(arg sync_pulse_width_us)"/>
+    </node>
+</launch>

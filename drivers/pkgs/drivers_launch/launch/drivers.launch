@@ -1,0 +1,7 @@
+<launch>
+    <include file="$(find emu_drivers_launch)/launch/cam_imu.launch">
+    </include>
+
+    <include file="$(find emu_drivers_launch)/launch/ouster.launch">
+    </include>
+</launch>

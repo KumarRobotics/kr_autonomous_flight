@@ -1,0 +1,8 @@
+<library path="lib/libcam_imu_sync_nodelet">
+    <class name="cam_imu_sync/CamImuSyncNodelet" type="cam_imu_sync::CamImuSyncNodelet"
+        base_class_type="nodelet::Nodelet">
+        <description>
+            nodelet for the cam_imu_sync module
+        </description>
+    </class>
+</library>

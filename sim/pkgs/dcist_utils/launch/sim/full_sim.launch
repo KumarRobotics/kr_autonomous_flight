@@ -5,7 +5,7 @@
   <arg name="takeoff_node_start_delay" default="15.0" />  
   <arg name="robot" default="quadrotor" />  
   <arg name="odom" default="/unity_command/ground_truth/$(arg robot)/odom" />
-  <arg name="use_lauras" default="true" />
+  <arg name="use_lauras" default="false" />
 
   <include file="$(find dcist_utils)/launch/sim/sim_quad.launch">
     <arg name="robot" value="$(arg robot)" />

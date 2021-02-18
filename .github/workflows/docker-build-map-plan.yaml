@@ -1,0 +1,50 @@
+name: docker-build-map-plan
+
+# Build control when "base" changes, or when any files in the control folder are
+# modified
+on:
+  workflow_run:
+    workflows: ["docker-build-control"]
+    branches: [master]
+    types:
+      - completed
+  push:
+    paths:
+    - 'control/**'
+    branches: [master, add_map_plan, add_map_plan_action]
+
+jobs:
+  main:
+    runs-on: ubuntu-18.04
+
+    steps:
+      -
+        # This action is now required because we are building with context,
+        # required to clone a third party repo
+        name: Checkout
+        uses: actions/checkout@v2
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      -
+        name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: kumarrobotics/autonomy:map-plan
+          file: ./control/Dockerfile
+          platforms: linux/amd64,linux/arm64
+      -
+        name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}

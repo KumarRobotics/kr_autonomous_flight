@@ -1,0 +1,176 @@
+{
+  "keys": {},
+  "groups": {
+    "pluginmanager": {
+      "keys": {
+        "running-plugins": {
+          "type": "repr",
+          "repr": "{u'rqt_quadrotor_safety/QuadrotorSafety': [1], u'rqt_reconfigure/Param': [1], u'rqt_image_view/ImageView': [1], u'rqt_runtime_monitor/RuntimeMonitor': [1]}"
+        }
+      },
+      "groups": {
+        "plugin__rqt_quadrotor_safety__QuadrotorSafety__1": {
+          "keys": {},
+          "groups": {
+            "dock_widget__QuadrotorSafetyUi": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "True"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "None"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u'Quadrotor Steering'"
+                }
+              },
+              "groups": {}
+            }
+          }
+        },
+        "plugin__rqt_runtime_monitor__RuntimeMonitor__1": {
+          "keys": {},
+          "groups": {
+            "dock_widget__RuntimeMonitorWidget": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "True"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "None"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u'Runtime Monitor'"
+                }
+              },
+              "groups": {}
+            }
+          }
+        },
+        "plugin__rqt_reconfigure__Param__1": {
+          "keys": {},
+          "groups": {
+            "dock_widget___plugincontainer_top_widget": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "True"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "None"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u'Dynamic Reconfigure'"
+                }
+              },
+              "groups": {}
+            },
+            "plugin": {
+              "keys": {
+                "splitter": {
+                  "type": "repr(QByteArray.hex)",
+                  "repr(QByteArray.hex)": "QtCore.QByteArray(b'000000ff0000000100000002000000ae0000006401ffffffff010000000100')",
+                  "pretty-print": "         d     "
+                },
+                "_splitter": {
+                  "type": "repr(QByteArray.hex)",
+                  "repr(QByteArray.hex)": "QtCore.QByteArray(b'000000ff00000001000000020000012c000000640100000009010000000200')",
+                  "pretty-print": "       , d     "
+                }
+              },
+              "groups": {}
+            }
+          }
+        },
+        "plugin__rqt_image_view__ImageView__1": {
+          "keys": {},
+          "groups": {
+            "dock_widget__ImageViewWidget": {
+              "keys": {
+                "dockable": {
+                  "type": "repr",
+                  "repr": "True"
+                },
+                "parent": {
+                  "type": "repr",
+                  "repr": "None"
+                },
+                "dock_widget_title": {
+                  "type": "repr",
+                  "repr": "u'Image View'"
+                }
+              },
+              "groups": {}
+            },
+            "plugin": {
+              "keys": {
+                "max_range": {
+                  "type": "repr",
+                  "repr": "10.0"
+                },
+                "mouse_pub_topic": {
+                  "type": "repr",
+                  "repr": "u''"
+                },
+                "toolbar_hidden": {
+                  "type": "repr",
+                  "repr": "False"
+                },
+                "zoom1": {
+                  "type": "repr",
+                  "repr": "False"
+                },
+                "dynamic_range": {
+                  "type": "repr",
+                  "repr": "False"
+                },
+                "topic": {
+                  "type": "repr",
+                  "repr": "u''"
+                },
+                "publish_click_location": {
+                  "type": "repr",
+                  "repr": "False"
+                }
+              },
+              "groups": {}
+            }
+          }
+        }
+      }
+    },
+    "mainwindow": {
+      "keys": {
+        "geometry": {
+          "type": "repr(QByteArray.hex)",
+          "repr(QByteArray.hex)": "QtCore.QByteArray(b'01d9d0cb00020000000000000000001b00000173000002460000000000000040000001730000024600000000000000000556')",
+          "pretty-print": "         s F   @ s F    V"
+        },
+        "state": {
+          "type": "repr(QByteArray.hex)",
+          "repr(QByteArray.hex)": "QtCore.QByteArray(b'000000ff00000000fd000000010000000300000174000001defc0100000001fc00000000000001740000017400fffffffa000000030200000004fb00000078007200710074005f00720075006e00740069006d0065005f006d006f006e00690074006f0072005f005f00520075006e00740069006d0065004d006f006e00690074006f0072005f005f0031005f005f00520075006e00740069006d0065004d006f006e00690074006f00720057006900640067006500740100000000ffffffff0000005a00fffffffb0000006c007200710074005f007200650063006f006e006600690067007500720065005f005f0050006100720061006d005f005f0031005f005f005f0070006c007500670069006e0063006f006e007400610069006e00650072005f0074006f0070005f0077006900640067006500740100000000ffffffff0000010e00fffffffb0000005a007200710074005f0069006d006100670065005f0076006900650077005f005f0049006d0061006700650056006900650077005f005f0031005f005f0049006d00610067006500560069006500770057006900640067006500740100000000ffffffff000000a400fffffffb00000076007200710074005f00710075006100640072006f0074006f0072005f007300610066006500740079005f005f00510075006100640072006f0074006f0072005300610066006500740079005f005f0031005f005f00510075006100640072006f0074006f0072005300610066006500740079005500690100000013000001eb000001c400ffffff000001740000000000000004000000040000000800000008fc00000001000000030000000100000036004d0069006e0069006d0069007a006500640044006f0063006b00570069006400670065007400730054006f006f006c0062006100720000000000ffffffff0000000000000000')",
+          "pretty-print": "                   t t                                                                           Z                                                                                                                                                                                                  t                                                      "
+        }
+      },
+      "groups": {
+        "toolbar_areas": {
+          "keys": {
+            "MinimizedDockWidgetsToolbar": {
+              "type": "repr",
+              "repr": "8"
+            }
+          },
+          "groups": {}
+        }
+      }
+    }
+  }
+}

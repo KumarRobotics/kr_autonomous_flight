@@ -1,0 +1,29 @@
+<package>
+  <name>rqt_quadrotor_safety</name>
+  <version>0.1.0</version>
+  <description>Provides a GUI plugin for MAV Manager.</description>
+  <maintainer email="ablasdel@gmail.com">Dinesh Thakur</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://ros.org/wiki/rqt_quadrotor_safety</url>
+  <url type="repository">https://github.com/KumarRobotics/kr_ui</url>
+
+  <author>Dinesh Thakur</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>mav_high_level_msgs</run_depend>
+  <run_depend>mavros_msgs</run_depend>
+  <run_depend>python-rospkg</run_depend>
+  <run_depend>rostopic</run_depend>
+  <run_depend>rqt_gui</run_depend>
+  <run_depend>rqt_gui_py</run_depend>
+
+  <run_depend>mav_manager</run_depend>
+
+  <export>
+    <rqt_gui plugin="${prefix}/plugin.xml"/>
+  </export>
+</package>

@@ -1,0 +1,47 @@
+# This should contain tracker parameters
+
+#line_tracker_distance:
+#  default_v_des: 2.5
+#  default_a_des: 1.5
+#  default_w_des: 2.5
+#  epsilon: 0.1
+
+#line_tracker_min_jerk:
+#  default_v_des: 2.5
+#  default_a_des: 1.5
+#  default_yaw_v_des: 1.0
+#  default_yaw_a_des: 0.5
+
+stopping_policy:
+  default_a_des: 5.0
+  default_j_des: 1.0
+
+take_off_tracker:
+  thrust_rate: 5.0
+  max_thrust: 3.0
+  min_thurst: -9.8
+  epsilon: 0.01
+
+trajectory_tracker:
+  max_pos_error: 2.0  # maximum tracker position error (in xy plane) allowed, default 1.0
+
+trajectory_planner:
+  debug: false # default false
+  verbose: false # default false
+  use_yaw: false # default false
+  yaw_speed: 0.2 # default 0.2
+  use_lambda: true # pose error checking
+  max_v: 15.0 # default 2.0
+  max_a: 5.0 # default 1.0
+  max_j: 5.0 # default 1.0
+  max_u: 5.0 # default 1.0
+  tol_pos: 3.0 # distance tolerance for goal region, 0 means no tolerance, -1 means no limitation
+  tol_vel: -1.0 # tolerance of acceleration for goal region
+  tol_acc: -1.0 # tolerance of velocity for goal region
+  dt: 1.0 # default 1
+  ndt: 1.0 # default 1
+  max_num: -1 # Maxmum number of expansion, -1 means no limitation
+
+local_global_server:
+  crop_radius: 30 # crop length when cropping global path to get local goal, this should be less than local map's range
+  termination_distance: 15 # distance within which the final goal is regarded as reached 

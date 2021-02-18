@@ -1,0 +1,53 @@
+<launch>
+  #### rviz ####
+  <node pkg="rviz"
+    type="rviz"
+    name="rviz"
+    args="-d $(find action_planner)/launch/test.rviz"/>
+
+  <node pkg="using_markers"
+    type="environment_visualization"
+    name="env_vis">
+    <param name="mesh_resource" value="package://mrsl_models/models/forest04/forest04.dae"/>
+    <param name="frame_id" value="map"/>
+  </node>
+
+  <node pkg="using_markers"
+    type="environment_visualization"
+    name="barrel1_vis">
+    <param name="mesh_resource" value="package://mrsl_models/models/barrel/barrel.dae"/>
+    <param name="frame_id" value="map"/>
+    <param name="x" value="3.0"/>
+    <param name="yaw" value="1.57"/>
+  </node>
+
+  <node pkg="using_markers"
+    type="environment_visualization"
+    name="barrel2_vis">
+    <param name="mesh_resource" value="package://mrsl_models/models/barrel/barrel.dae"/>
+    <param name="frame_id" value="map"/>
+    <param name="x" value="100.0"/>
+    <param name="yaw" value="1.57"/>
+  </node>
+
+  <group ns="fla">
+    <node pkg="nodelet"
+      type="nodelet"
+      name="path_vis_node"
+      args="standalone using_markers/LineVisualization"
+      output="screen">
+      <remap from="~odom" to="odom"/>
+    </node>
+
+    #### current odom visual ####
+    <node pkg="using_markers"
+      type="quad_visualization"
+      name="robot_vis">
+      <remap from="~odom" to="odom"/>
+      <param name="mesh_resource" value="package://mrsl_models/models/pelican/pelican.dae"/>
+      <param name="scale" value="1.5"/>
+    </node>
+  </group>
+
+
+</launch>

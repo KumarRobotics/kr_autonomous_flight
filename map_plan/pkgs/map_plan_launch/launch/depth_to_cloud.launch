@@ -1,0 +1,17 @@
+<launch>
+	<arg name="image_raw" default="image_raw"/>
+	<arg name="points" default="points"/>
+
+	<!-- Nodelet manager for this pipeline -->
+	<node pkg="nodelet" type="nodelet" args="manager" name="nodelet_manager" output="screen"/>
+
+	<node pkg="nodelet" name="metric_rect" type="nodelet" args="load depth_image_proc/convert_metric nodelet_manager --no-bond" output="screen">
+		<remap from="image_raw" to="$(arg image_raw)"/>
+		<remap from="image" to="image_rect"/>
+	</node>
+
+	<!-- Convert it into a point cloud -->
+	<node pkg="nodelet" type="nodelet" name="cloudify" args="load depth_image_proc/point_cloud_xyz nodelet_manager --no-bond" output="screen">
+		<remap from="points" to="$(arg points)"/>
+	</node>
+</launch>

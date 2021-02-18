@@ -5,5 +5,6 @@ trackers:
   - kr_trackers/NullTracker
   - action_trackers/TakeOffTracker
   - action_trackers/LandTracker
-  - action_trackers/ActionPathTracker
   - action_trackers/StoppingPolicy
+  - action_trackers/ActionTrajectoryTracker
+    #- action_trackers/ActionPathTracker

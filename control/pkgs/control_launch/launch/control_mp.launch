@@ -19,8 +19,8 @@
 		<!-- If simulation -->
 		<group if="$(arg simulation)">
 			<node pkg="nodelet" type="nodelet" name="trackers_manager" args="load kr_trackers_manager/TrackersManager $(arg manager)" output="screen">
-				<rosparam file="$(find control_launch)/config/trackers.yaml"/>
-				<rosparam file="$(find control_launch)/config/tracker_params.yaml"/>
+				<rosparam file="$(find control_launch)/config/trackers_mp.yaml"/>
+				<rosparam file="$(find control_launch)/config/tracker_params_mp.yaml"/>
 				<remap from="~odom" to="odom"/>
 				<remap from="~cmd" to="position_cmd"/>
 				<remap from="~des_max" to="des_max"/>

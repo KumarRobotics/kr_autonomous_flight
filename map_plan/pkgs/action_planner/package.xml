@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>action_planner</name>
+  <version>0.0.0</version>
+  <description>The action_planner package</description>
+
+  <maintainer email="TODO@seas.upenn.edu">TODO</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>message_generation</build_depend>
+  <exec_depend>message_runtime</exec_depend>
+  <build_depend>actionlib_msgs</build_depend>
+  <exec_depend>actionlib_msgs</exec_depend>
+
+  <depend>dynamic_reconfigure</depend>
+  <depend>roscpp</depend>
+  <depend>actionlib</depend>
+  <depend>eigen_conversions</depend>
+  <depend>mav_high_level_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf_conversions</depend>
+  <depend>pcl_ros</depend>
+  <depend>mapper</depend>
+  <depend>jps3d</depend>
+  <depend>planning_ros_utils</depend>
+  <depend>planning_ros_msgs</depend>
+  <depend>traj_opt_msgs</depend>
+  <depend>traj_opt_ros</depend>
+  <depend>motion_primitive_library</depend>
+  <depend>primitive_to_traj_opt</depend>
+ 
+  <export>
+  </export>
+</package>

@@ -1,41 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-    <arg name="robot" default="$(optenv ROBOT_NAME quadrotor)"/>
-    <arg name="mass" default="1.74"/>
-    <arg name="max_prop_force" default="7"/>
+	<arg name="robot" default="$(optenv ROBOT_NAME quadrotor)"/>
+	<arg name="mass" default="1.74"/>
+	<arg name="simulation" default="true"/>
+	<arg name="max_prop_force" default="7"/>
 
-    <arg name="start_nodelet_manager" default="true"/>
-    <arg name="manager" default="$(arg robot)_manager_control"/>
+	<arg name="start_nodelet_manager" default="true"/>
+	<arg name="manager" default="$(arg robot)_manager_control"/>
 
-    <group ns="$(arg robot)">
-        <param name="mass" value="$(arg mass)"/>
-        <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" output="screen" if="$(arg start_nodelet_manager)"/>
+	<group ns="$(arg robot)">
+		<param name="mass" value="$(arg mass)"/>
+		<node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" output="screen" if="$(arg start_nodelet_manager)"/>
 
-        <node pkg="mav_manager" type="mav_services" name="mav_services" clear_params="true" output="screen">
-            <rosparam file="$(find control_launch)/config/mav_manager_params.yaml"/>
-        </node>
+		<node pkg="kr_mav_manager" type="mav_services" name="mav_services" clear_params="true" output="screen">
+			<rosparam file="$(find control_launch)/config/mav_manager_params.yaml"/>
+		</node>
 
-        <node pkg="nodelet" type="nodelet" name="trackers_manager" args="load trackers_manager/TrackersManager $(arg manager)" output="screen">
-            <rosparam file="$(find control_launch)/config/trackers.yaml"/>
-            <rosparam file="$(find control_launch)/config/tracker_params.yaml"/>
+		<!-- If simulation -->
+		<group if="$(arg simulation)">
+			<node pkg="nodelet" type="nodelet" name="trackers_manager" args="load kr_trackers_manager/TrackersManager $(arg manager)" output="screen">
+				<rosparam file="$(find control_launch)/config/trackers.yaml"/>
+				<rosparam file="$(find control_launch)/config/tracker_params.yaml"/>
+				<remap from="~odom" to="odom"/>
+				<remap from="~cmd" to="position_cmd"/>
+				<remap from="~des_max" to="des_max"/>
+				<param name="mass" value="(arg mass)"/>
+			</node>
+			<node pkg="nodelet" type="nodelet" args="load kr_mav_controllers/SO3ControlNodelet $(arg manager)" name="so3_control" required="true" output="screen">
+				<rosparam file="$(find control_launch)/config/so3_control_gains.yaml"/>
+				<param name="mass" value="$(arg mass)"/>
+				<remap from="~odom" to="odom"/>
+				<remap from="~position_cmd" to="position_cmd"/>
+				<remap from="~so3_cmd" to="so3_cmd"/>
+				<remap from="~motors" to="motors"/>
+			</node>
+		</group>
 
-            <remap from="~odom" to="odom"/>
-            <remap from="~cmd" to="position_cmd"/>
-            <remap from="~des_max" to="des_max"/>
-            <param name="mass" value="(arg mass)"/>
-        </node>
+		<!-- If real experiment, use a different set of tracker and controller parameters -->
+		<group unless="$(arg simulation)">
+			<node pkg="nodelet" type="nodelet" name="trackers_manager" args="load kr_trackers_manager/TrackersManager $(arg manager)" output="screen">
+				<rosparam file="$(find real_experiment_launch)/config/trackers.yaml"/>
+				<rosparam file="$(find real_experiment_launch)/config/tracker_params.yaml"/>
+				<remap from="~odom" to="odom"/>
+				<remap from="~cmd" to="position_cmd"/>
+				<remap from="~des_max" to="des_max"/>
+				<param name="mass" value="(arg mass)"/>
+			</node>
+			<node pkg="nodelet" type="nodelet" args="load kr_mav_controllers/SO3ControlNodelet $(arg manager)" name="so3_control" required="true" output="screen">
+				<rosparam file="$(find real_experiment_launch)/config/so3_control_gains.yaml"/>
+				<param name="mass" value="$(arg mass)"/>
+				<remap from="~odom" to="odom"/>
+				<remap from="~position_cmd" to="position_cmd"/>
+				<remap from="~so3_cmd" to="so3_cmd"/>
+				<remap from="~motors" to="motors"/>
+			</node>
+		</group>
 
-        <node pkg="nodelet" type="nodelet" args="load so3_control/SO3ControlNodelet $(arg manager)" name="so3_control" required="true" output="screen">
-            <rosparam file="$(find control_launch)/config/so3_control_gains.yaml"/>
-            <param name="mass" value="$(arg mass)"/>
 
-            <remap from="~odom" to="odom"/>
-            <remap from="~position_cmd" to="position_cmd"/>
-            <remap from="~so3_cmd" to="so3_cmd"/>
-            <remap from="~motors" to="motors"/>
-        </node>
+		<node pkg="kr_trackers" type="twist_to_velocity_goal.py" name="twist_to_velocity"/>
 
-        <node pkg="trackers_manager" type="twist_to_action.py" name="twist_to_velocity"/>
-
-    </group>
+	</group>
 </launch>

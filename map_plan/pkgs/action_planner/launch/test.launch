@@ -1,0 +1,27 @@
+<launch>
+  <arg name="robot" default="$(optenv FLA_ROBOT fla)"/>
+  <arg name="horizon_frame" default="$(arg robot)/horizon_frame"/>
+  <param name="robot" value="$(arg robot)"/>
+
+  <group ns="$(arg robot)">
+    ##### planning server#####
+    <node pkg="action_planner"
+      type="path_planner"
+      name="tpplanner_test"
+      output="screen">
+      <param name="v_max" value="5.0"/>
+      <param name="a_max" value="5.0"/>
+      <param name="j_max" value="50.0"/>
+      <param name="degree" value="7"/>
+      <param name="polytype" value="1"/>
+      <param name="constraint" value="1"/>
+      <param name="samples" value="10"/>
+      <param name="robot_r" value="0.6"/>
+      <param name="robot_h" value="0.1"/>
+      <param name="reliable_range" value="5.0"/>
+
+      <remap from="~traj_request" to="traj_request"/>
+    </node>
+
+  </group>
+</launch>

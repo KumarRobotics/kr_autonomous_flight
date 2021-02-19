@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- use nice to set low priority for planner -->
+  <node pkg="action_planner" type="path_planner" name="tpplanner" clear_params="true" output="screen" launch-prefix="nice -n 1">
+    <remap from="~voxel_map" to="voxel_map"/>
+    <param name="verbose" value="true"/>
+  </node>
+</launch>

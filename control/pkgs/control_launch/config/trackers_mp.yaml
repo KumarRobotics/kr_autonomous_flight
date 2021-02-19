@@ -1,0 +1,10 @@
+trackers:
+  - kr_trackers/LineTrackerMinJerk
+  - kr_trackers/LineTrackerDistance
+  - kr_trackers/VelocityTracker
+  - kr_trackers/NullTracker
+  - action_trackers/TakeOffTracker
+  - action_trackers/LandTracker
+  - action_trackers/StoppingPolicy
+  - action_trackers/ActionTrajectoryTracker
+    #- action_trackers/ActionPathTracker

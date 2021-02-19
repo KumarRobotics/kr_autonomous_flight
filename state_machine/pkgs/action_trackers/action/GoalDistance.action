@@ -1,0 +1,8 @@
+# Action goal
+kr_tracker_msgs/LineTrackerGoal goal
+---
+# Action result
+bool at_goal
+---
+# Action status
+float32 distance_to_goal

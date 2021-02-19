@@ -1,0 +1,13 @@
+<launch>
+    <arg name="takeoff_height" default="3"/>
+    <arg name="node_start_delay" default="20"/>
+
+    <node pkg="fla_state_machine" type="main_state_machine.py" name="main_state_machine" output="screen" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' ">
+        <remap from="~odom" to="odom"/>
+        <!-- <remap from="~odom" to="/unity_ros/$(arg robot)/TrueState/odom"/> -->
+        <remap from="waypoints_done" to="done"/>
+        <remap from="~height" to="mavros/distance_sensor/lidarlite_pub"/>
+        <param name="takeoff_height" value="$(arg takeoff_height)"/>
+        <remap from="~goal_pose" to="goal_pose"/>
+    </node>
+</launch>

@@ -1,0 +1,9 @@
+# Action goal
+geometry_msgs/PoseStamped goal
+int8 auto_mode
+---
+# result
+bool reach
+---
+# status
+int32 num_replan

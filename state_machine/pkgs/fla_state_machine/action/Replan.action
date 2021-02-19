@@ -1,0 +1,21 @@
+# Goal
+geometry_msgs/Pose p_init
+geometry_msgs/Pose[] goals
+geometry_msgs/Pose p_final
+geometry_msgs/Pose[] p_finals
+float64 replan_rate
+bool reset
+bool avoid_obstacles
+---
+# Result
+uint8 status
+uint8 SUCCESS                      = 0
+uint8 DYNAMICALLY_INFEASIBLE       = 1
+uint8 NO_PATH                      = 2
+uint8 CRITICAL_ERROR               = 3
+uint8 IN_PROGRESS                  = 4
+uint8 ABORT_FULL_MISSION           = 5
+---
+# Feedback
+float64 distance_to_goal
+int64 epoch

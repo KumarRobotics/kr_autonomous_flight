@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <arg name="mapper_config" default="$(find map_plan_launch)/config/mapper.yaml"/>
+    <arg name="onboard_sensing" default="false"/>
+    <!-- Use RGBD instead of LDIAR -->
+    <arg name="use_rgbd" default="false"/>
+    <arg name="robot" default="quadrotor"/>
+    <arg name="depth_cam" default="DepthCamera"/>
+    <arg name="takeoff_height" default="5"/>
+
+    <!-- S-MSCKF VIO -->
+	<group if="$(arg onboard_sensing)">
+		<include file="$(find estimation_launch)/launch/estimation.launch">
+		</include>
+	</group>
+
+    <!-- Controller -->
+    <include file="$(find control_launch)/launch/control.launch">
+    </include>
+
+    <!-- Use RGBD -->
+	<group if="$(arg use_rgbd)">
+     	<!-- RGBD Covert Depth Image to Point Cloud -->
+      <group ns="$(arg robot)/$(arg depth_cam)">
+       <include file="$(find map_plan_launch)/launch/depth_to_cloud.launch">
+       </include>
+      </group>
+     	<!-- Mapper and Planner -->
+		<include file="$(find map_plan_launch)/launch/map_plan.launch">
+      <arg name="cloud" value="$(arg depth_cam)/points"/>
+		     <arg name="mapper_config" value="$(arg mapper_config)"/>
+		     <arg name="robot" value="$(arg robot)"/>
+		</include>
+	</group>
+
+
+     <!-- Use LIDAR -->
+	<group unless="$(arg use_rgbd)">
+     	<!-- Mapper and Planner -->
+		<include file="$(find map_plan_launch)/launch/map_plan.launch">
+		     <arg name="cloud" value="lidar"/>
+		     <arg name="mapper_config" value="$(arg mapper_config)"/>
+		     <arg name="robot" value="$(arg robot)"/>
+		</include>
+	</group>
+
+
+	 <!-- State machine -->
+    <include file="$(find state_machine_launch)/launch/state_machine.launch">
+        <arg name="takeoff_height" value="$(arg takeoff_height)"/>
+    </include>
+</launch>

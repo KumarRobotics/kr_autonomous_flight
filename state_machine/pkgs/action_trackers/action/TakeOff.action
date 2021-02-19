@@ -1,0 +1,8 @@
+# Action goal
+float32 height
+---
+# Action result
+bool at_goal
+---
+# Action status
+float32 time_remaining

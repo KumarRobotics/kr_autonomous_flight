@@ -1,0 +1,17 @@
+<library path="src">
+  <class name="QuadrotorSafety" type="rqt_quadrotor_safety.quadrotor_safety.QuadrotorSafety" base_class_type="rqt_gui_py::Plugin">
+    <description>
+      A Python GUI plugin to steer a quadrotor with a geometry_msgs/Twist message.
+    </description>
+    <qtgui>
+      <group>
+        <label>Robot Tools</label>
+        <icon type="theme">folder</icon>
+        <statustip>Plugins related to quadrotor tools.</statustip>
+      </group>
+      <label>FLA Control</label>
+      <icon type="theme">nm-signal-25</icon>
+      <statustip>A Python GUI plugin for controlling the FLA platform</statustip>
+    </qtgui>
+  </class>
+</library>

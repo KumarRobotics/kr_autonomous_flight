@@ -1,6 +1,8 @@
 # Autonomy Stack
 
-This is the autonomy stack for quadrotor simulation and hardware.
+This is the autonomus flight code stack. Together our supplementary repository for real_robot [KumarRobotics/autonomy_real_robot]() or Unity simulation [KumarRobotics/autonomy_simulation](), you can run experiments either on real robots or in Unity simulation. 
+
+The following is instruction on how to run Unity simulation.
 
 This readme consists of two parts: (1) [use without docker (i.e. build from source)](https://github.com/KumarRobotics/autonomy_stack/blob/update_docs/README.md#part1-use-without-docker-ie-build-from-source) and (2)[use with docker](https://github.com/KumarRobotics/autonomy_stack/blob/update_docs/README.md#part2-use-with-docker) .
 

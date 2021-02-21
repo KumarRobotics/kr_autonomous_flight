@@ -6,7 +6,7 @@ The following is instruction on how to run Unity simulation.
 
 This readme consists of two parts: (1) [use without docker (i.e. build from source)](https://github.com/KumarRobotics/autonomy_stack/blob/update_docs/README.md#part1-use-without-docker-ie-build-from-source) and (2)[use with docker](https://github.com/KumarRobotics/autonomy_stack/blob/update_docs/README.md#part2-use-with-docker) .
 
-If you are a user who will not make changes to this code stack and is comfortable with docker, (1) is recommended; Otherwise, (2) is recommended.
+If you are a developer who will make changes to this code stack, (1) is recommended; Otherwise, if you are a user who will NOT make changes to this code stack and is comfortable with docker, (2) is recommended.
 
 
 # Part1: Use without docker (i.e. build from source)

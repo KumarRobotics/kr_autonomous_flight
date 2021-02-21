@@ -31,7 +31,7 @@ catkin build -DCMAKE_BUILD_TYPE=Release
 
 ## Step 2: Build autonomy stack
 
-Firstly, clone the following repo:
+Firstly, clone the following repo into your_code_directory:
 ```
 git clone https://github.com/KumarRobotics/autonomy_stack
 git clone https://github.com/KumarRobotics/autonomy_simulation
@@ -48,20 +48,19 @@ Secondly, go to arl-unity-ros, create symbolic links of the repos you clone:
 ```
 cd ~/arl-unity-ros (or your arl-unity-ros workspace folder)
 cd src
-git clone https://github.com/catkin/catkin_simple
+ln -s ~/path_to_your_code_directory/* .
+```
+
+Finally, install dependencies, and build everything:
+```
 sudo apt install libnlopt-dev
 sudo apt install libsdl-image1.2-dev
-ln -s ~/autonomy_stack/client/
-ln -s ~/autonomy_stack/control/
-ln -s ~/autonomy_stack/map_plan/
-ln -s ~/autonomy_stack/state_machine/
-ln -s ~/autonomy_stack/sim/
 cd ..
 catkin build -DCMAKE_BUILD_TYPE=Release 
 ```
 
 ### Troubleshooting
-None
+If you run into any dependency issues, try installing the corresponding package using apt-get install.
 
 ## Step 3: Run the simulation with autonomy stack
 Open four terminals, in **each** terminal source arl-unity-ros workspace you just built:

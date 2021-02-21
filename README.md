@@ -1,6 +1,6 @@
 # Autonomy Stack
 
-This is the autonomus flight code stack. Together our supplementary repository for real_robot [KumarRobotics/autonomy_real_robot]() or Unity simulation [KumarRobotics/autonomy_simulation](), you can run experiments either on real robots or in Unity simulation. 
+This is the autonomus flight code stack. Together our supplementary repository for real_robot [KumarRobotics/autonomy_real_robot](https://github.com/KumarRobotics/autonomy_real_robot) or Unity simulation [KumarRobotics/autonomy_simulation](https://github.com/KumarRobotics/autonomy_simulation), you can run experiments either on real robots or in Unity simulation. 
 
 The following is instruction on how to run Unity simulation.
 

@@ -26,7 +26,6 @@
   <depend>jps3d</depend>
   <depend>planning_ros_utils</depend>
   <depend>planning_ros_msgs</depend>
-  <depend>traj_opt_msgs</depend>
   <depend>traj_opt_ros</depend>
   <depend>motion_primitive_library</depend>
   <depend>primitive_to_traj_opt</depend>

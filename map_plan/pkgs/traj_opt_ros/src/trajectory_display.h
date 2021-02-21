@@ -1,10 +1,10 @@
 // Copyright 2016 Michael Watterson
 
-#ifndef MOBILITY_PLANNER_traj_opt_msgs_SRC_TRAJECTORY_DISPLAY_H_
-#define MOBILITY_PLANNER_traj_opt_msgs_SRC_TRAJECTORY_DISPLAY_H_
+#ifndef MOBILITY_PLANNER_traj_opt_SRC_TRAJECTORY_DISPLAY_H_
+#define MOBILITY_PLANNER_traj_opt_SRC_TRAJECTORY_DISPLAY_H_
 
 #ifndef Q_MOC_RUN
-#include <traj_opt_msgs/Trajectory.h>
+#include <planning_ros_msgs/Trajectory_traj_opt.h>
 #include <rviz/message_filter_display.h>
 #include <boost/circular_buffer.hpp>
 #endif
@@ -45,7 +45,7 @@ class TrajectoryVisual;
 // idiom for the visuals is that when the objects exist, they appear
 // in the scene, and when they are deleted, they disappear.
 class TrajectoryDisplay
-    : public rviz::MessageFilterDisplay<traj_opt_msgs::Trajectory> {
+    : public rviz::MessageFilterDisplay<planning_ros_msgs::Trajectory_traj_opt> {
   Q_OBJECT  // NOLINT
       public
       :  // NOLINT
@@ -76,7 +76,7 @@ class TrajectoryDisplay
   void updateSampleLength();
   // Function to handle an incoming ROS message.
  private:
-  void processMessage(const traj_opt_msgs::Trajectory::ConstPtr& msg);
+  void processMessage(const planning_ros_msgs::Trajectory_traj_opt::ConstPtr& msg);
 
   // Storage for the list of visuals.  It is a circular buffer where
   // data gets popped from the front (oldest) and pushed to the back (newest)
@@ -100,7 +100,7 @@ class TrajectoryDisplay
 };
 // END_TUTORIAL
 
-}  // end namespace traj_opt_msgs
+}  // end namespace traj_opt
 
-#endif  // MOBILITY_PLANNER_traj_opt_msgs_SRC_TRAJECTORY_DISPLAY_H_
+#endif  // MOBILITY_PLANNER_traj_opt_SRC_TRAJECTORY_DISPLAY_H_
 // %EndTag(FULL_SOURCE)%

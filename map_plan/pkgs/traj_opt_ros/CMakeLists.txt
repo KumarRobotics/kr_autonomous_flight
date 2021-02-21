@@ -4,7 +4,7 @@ project(traj_opt_ros)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBUILD_HOPF=Off")
 
-find_package(catkin REQUIRED COMPONENTS roscpp traj_opt_basic traj_opt_msgs)
+find_package(catkin REQUIRED COMPONENTS roscpp traj_opt_basic planning_ros_msgs)
 
 catkin_package(
   INCLUDE_DIRS
@@ -13,7 +13,8 @@ catkin_package(
   ${PROJECT_NAME}
   CATKIN_DEPENDS
   traj_opt_basic
-  traj_opt_msgs)
+  planning_ros_msgs
+  )
 
 add_library(${PROJECT_NAME} src/ros_bridge.cpp)
 # src/trajectory_visual.cpp src/trajectory_display.cpp ${MOC_FILES})

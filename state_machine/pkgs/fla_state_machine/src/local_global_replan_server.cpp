@@ -10,7 +10,6 @@
 #include <actionlib/server/simple_action_server.h>
 // traj_opt stuff
 #include <traj_opt_basic/msg_traj.h>
-#include <traj_opt_msgs/Trajectory.h>
 #include <traj_opt_ros/ros_bridge.h>
 
 #include <action_planner/PlanPathAction.h>

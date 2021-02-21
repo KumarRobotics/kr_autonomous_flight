@@ -8,10 +8,13 @@
 
 // quad control stuff
 #include <kr_trackers_manager/Tracker.h>
+
+// planning ros msgs stuff
+#include <planning_ros_msgs/Trajectory_traj_opt.h>
+
 // traj_opt stuff
 #include <std_msgs/Empty.h>
 #include <traj_opt_basic/msg_traj.h>
-#include <traj_opt_msgs/Trajectory.h>
 #include <traj_opt_quadrotor/convert.h>
 #include <traj_opt_ros/ros_bridge.h>
 // action stuff
@@ -439,7 +442,7 @@ void ActionTrajectoryTracker::trajCB() {
     traj_epoch.pop_back();
   }
 
-  traj_opt_msgs::Trajectory msg =
+  planning_ros_msgs::Trajectory_traj_opt msg =
       goal->traj; // extract trajectory msg from goal->traj
   boost::shared_ptr<traj_opt::Trajectory> sp =
       boost::make_shared<traj_opt::MsgTrajectory>(TrajRosBridge::convert(msg));

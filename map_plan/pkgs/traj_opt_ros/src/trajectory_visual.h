@@ -1,10 +1,10 @@
 // Copyright 2016 Michael Watterson
 
-#ifndef MOBILITY_PLANNER_traj_opt_msgs_SRC_TRAJECTORY_VISUAL_H_
-#define MOBILITY_PLANNER_traj_opt_msgs_SRC_TRAJECTORY_VISUAL_H_
+#ifndef MOBILITY_PLANNER_traj_opt_SRC_TRAJECTORY_VISUAL_H_
+#define MOBILITY_PLANNER_traj_opt_SRC_TRAJECTORY_VISUAL_H_
 
 #include <traj_opt_basic/trajectory.h>
-#include <traj_opt_msgs/Trajectory.h>
+#include <planning_ros_msgs/Trajectory_traj_opt.h>
 #include <traj_opt_basic/types.h>
 
 #include <vector>
@@ -28,7 +28,7 @@ namespace traj_opt {
 // Declare the visual class for this display.
 //
 // Each instance of TrajectoryVisual represents the visualization of a single
-// traj_opt_msgs::Trajectory message.  Currently it just shows an arrow with
+// planning_ros_msgs::Trajectory_traj_opt message.  Currently it just shows an arrow with
 // the direction and magnitude of the acceleration vector, but could
 // easily be expanded to include more of the message data.
 
@@ -46,7 +46,7 @@ class TrajectoryVisual {
 
   void draw();
   // Configure the visual to show the data in the message.
-  void setMessage(const traj_opt_msgs::Trajectory::ConstPtr& msg);
+  void setMessage(const planning_ros_msgs::Trajectory_traj_opt::ConstPtr& msg);
 
   // Set the pose of the coordinate frame the message refers to.
   // These could be done inside setMessage(), but that would require
@@ -108,6 +108,6 @@ class TrajectoryVisual {
 };
 // END_TUTORIAL
 
-}  // namespace traj_opt_msgs
+}  // namespace traj_opt
 
-#endif  // MOBILITY_PLANNER_traj_opt_msgs_SRC_TRAJECTORY_VISUAL_H_
+#endif  // MOBILITY_PLANNER_traj_opt_SRC_TRAJECTORY_VISUAL_H_

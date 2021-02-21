@@ -110,9 +110,6 @@ void TrajectoryDisplay::onInitialize() {
   updateHistoryLength();
   updateColorAndAlpha();
   updateSampleLength();
-  //  this->setIcon(
-  //  rviz::loadPixmap("package://traj_opt_msgs/icons/classes/Trajectory.svg",true)
-  //  );
 }
 
 TrajectoryDisplay::~TrajectoryDisplay() {}
@@ -178,7 +175,7 @@ void TrajectoryDisplay::updateSampleLength() {
 
 // This is our callback to handle an incoming message.
 void TrajectoryDisplay::processMessage(
-    const traj_opt_msgs::Trajectory::ConstPtr &msg) {
+    const planning_ros_msgs::Trajectory_traj_opt::ConstPtr &msg) {
   // Here we call the rviz::FrameManager to get the transform from the
   // fixed frame to the frame in the header of this Trajectory message.  If
   // it fails, we can't do anything else so we return.

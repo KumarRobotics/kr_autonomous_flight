@@ -19,7 +19,6 @@
   <depend>actionlib</depend>
   <depend>message_generation</depend>
   <depend>message_runtime</depend>
-  <depend>traj_opt_msgs</depend>
 
   <depend>planning_ros_msgs</depend>
 

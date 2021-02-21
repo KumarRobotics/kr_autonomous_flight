@@ -17,7 +17,6 @@ find_package(
              jps3d
              planning_ros_utils
              planning_ros_msgs
-             traj_opt_msgs
              mav_high_level_msgs
              traj_opt_ros
              dynamic_reconfigure
@@ -28,11 +27,11 @@ find_package(Eigen3 REQUIRED)
 
 add_action_files(DIRECTORY action FILES PlanPath.action PlanTwoPoint.action
                  PlanWaypoints.action)
-generate_messages(DEPENDENCIES actionlib_msgs planning_ros_msgs traj_opt_msgs)
+generate_messages(DEPENDENCIES actionlib_msgs planning_ros_msgs)
 generate_dynamic_reconfigure_options(cfg/ActionPlanner.cfg)
 
 catkin_package(CATKIN_DEPENDS dynamic_reconfigure planning_ros_msgs
-               actionlib_msgs traj_opt_msgs)
+               actionlib_msgs)
 
 add_executable(global_plan_server src/global_plan_server.cpp)
 target_include_directories(global_plan_server PUBLIC include ${catkin_INCLUDE_DIRS})

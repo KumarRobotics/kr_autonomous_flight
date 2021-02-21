@@ -11,7 +11,7 @@ namespace plt = matplotlibcpp;
 
 using namespace traj_opt;
 
-void trajCallback(const traj_opt_msgs::TrajectoryConstPtr& msg) {
+void trajCallback(const planning_ros_msgs::Trajectory::ConstPtr& msg) {
   boost::shared_ptr<Trajectory> traj =
       boost::make_shared<MsgTrajectory>(TrajRosBridge::convert(*msg));
   //  TrajPlot::plot(traj,1);

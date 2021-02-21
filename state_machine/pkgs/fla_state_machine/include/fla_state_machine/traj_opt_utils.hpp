@@ -2,7 +2,6 @@
 #define TRAJ_OPT_UTILS_HPP
 #include <ros/ros.h>
 // traj_opt stuff
-// #include <traj_opt_msgs/Trajectory.h>
 #include <traj_opt_basic/msg_traj.h>
 
 // TODO: put this into taj_opt pkg

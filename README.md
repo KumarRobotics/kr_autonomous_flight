@@ -2,12 +2,12 @@
 
 This is the autonomy stack for quadrotor simulation and hardware.
 
-This readme consists of two parts: (1) [use without docker (i.e. build from source)]() and (2)[use with docker]() .
+This readme consists of two parts: (1) [use without docker (i.e. build from source)]() and (2)[use with docker](https://github.com/KumarRobotics/autonomy_stack/blob/update_docs/README.md#part2-use-with-docker) .
 
 If you are a user who will not make changes to this code stack and is comfortable with docker, (1) is recommended; Otherwise, (2) is recommended.
 
 
-# Part2: Use without docker (i.e. build from source)
+# Part1: Use without docker (i.e. build from source)
 1. Follow the [build from source instructions](https://gitlab.sitcore.net/arl/robotics-simulation/arl-unity-ros#building-from-source) to build arl-unity-ros simulator.
 ### Troubleshooting
 1. For any errors related to rosfligt, try the following:

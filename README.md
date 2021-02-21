@@ -42,6 +42,12 @@ git clone --branch catkin https://github.com/KumarRobotics/kr_mav_control.git
 git clone --branch catkin https://github.com/KumarRobotics/jps3d
 git clone --branch catkin https://github.com/KumarRobotics/DecompROS.git
 ```
+Alternatively, use `vcs` (`sudo apt-get install python3-vcstool` https://github.com/dirk-thomas/vcstool)
+```
+cd your_code_directory
+vcs import < ./autonomy_stack/autonomy_stack_repos.yml
+```
+You can then pull all dependecies later by running `vcs pull` in your_code_directory.
 
 Secondly, go to arl-unity-ros, create symbolic links of the repos you clone:
 ```

@@ -72,7 +72,8 @@ Then, following the instructions in **one of the following scenarios** according
 
 ### Scenario 1: Run in DCIST prebuilt environments + use ground truth pose
 ```
-roslaunch dcist_utils full_sim.launch
+roscd dcist_utils
+./script/unity_sim.sh
 ```
 Click motors on after you get commands (i.e., when the commands in rqt GUI window become non-zero).
 Wait for several seconds, click “take off” in rqt GUI, and you should see the UAV take off. 

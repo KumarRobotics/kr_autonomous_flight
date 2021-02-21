@@ -72,30 +72,18 @@ source ~/arl-unity-ros/devel/setup.bash
 Then, following the instructions in **one of the following scenarios** according to your application:
 
 ### Scenario 1: Run in DCIST prebuilt environments + use ground truth pose
-In the 1st terminal:
 ```
-roslaunch dcist_utils sim_quad.launch
+roslaunch dcist_utils full_sim.launch
 ```
-**Wait unitl everything finishes, you should see a UAV generated in the simulation environment**
+Click motors on after you get commands (i.e., when the commands in rqt GUI window become non-zero).
+Wait for several seconds, click “take off” in rqt GUI, and you should see the UAV take off. 
 
-In the 2nd terminal:
+#### Troubleshooting
+If the robot does not take off. You don't have to relaunch. Instead, you can try clicking the rqt GUI again in the following order:
 ```
-roslaunch client_launch client.launch 
+motors off -> motors on -> take off
 ```
-Then, click “motors on” in the GUI.
-
-In the 3rd terminal:
-```
-roslaunch state_machine_launch system.launch
-```
-
-In the 4th terminal:
-```
-rosrun dcist_utils takeoff.bash
-```
-**Wait unitl finishes, i.e., nothing is being printed in the terminal**
-Then, click “take off” in the GUI, and you should see the UAV take off. 
-
+If the robot still does not take off, kill everything and relaunch.
 
 
 ### Scenario 2 Customize and run in your own environments + use ground truth pose
@@ -104,31 +92,9 @@ https://drive.google.com/drive/folders/1VbmOorFlEIpqCw3hX1xXsYKw7Pj8fMpS?usp=sha
 
 Click "Play" in Unity Editor.
 
-In the 1st terminal:
 ```
-roslaunch dcist_utils sim_quad.launch launch_unity:=false
+roslaunch dcist_utils full_sim_onboard.launch (TODO!)
 ```
-For the other 3 terminals, do the same as in Scenario 1.
-
-**Wait unitl everything finishes, you should see a UAV generated in the simulation environment**
-
-### Scenario 3: Customize and run in your own environments + use onboard VIO pose
-Follow the steps in Scenario 2, only difference is that, in the 1st terminal, run:
-```
-roslaunch dcist_utils sim_quad_onboard_vision_only.launch
-```
-
-### Troubleshooting
-1. No UAV generated in simulation:
-Redo the steps for the 1st terminal.
-
-2. UAV not taking off:
-Try clicking “motors on“ again, and then click “take off“. If does not work, kill all 4 terminals, and redo all procedures in this step.
-
-3. Cannot find packages or launch files:
-Remember to **always** source the workspace in each newly opened terminal.
-
-
 
 
 

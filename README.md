@@ -40,7 +40,6 @@ git clone --branch catkin https://github.com/KumarRobotics/motion_primitive_libr
 git clone --branch catkin https://github.com/KumarRobotics/msckf_vio
 git clone --branch catkin https://github.com/KumarRobotics/kr_mav_control.git
 git clone --branch catkin https://github.com/KumarRobotics/jps3d
-git clone --branch catkin https://github.com/KumarRobotics/DecompUtil
 git clone --branch catkin https://github.com/KumarRobotics/DecompROS.git
 ```
 

@@ -60,7 +60,7 @@ cd ..
 catkin build -DCMAKE_BUILD_TYPE=Release 
 ```
 
-### Troubleshooting
+#### Troubleshooting
 If you run into any dependency issues, try installing the corresponding package using apt-get install.
 
 ## Step 3: Run the simulation with autonomy stack
@@ -144,7 +144,7 @@ xhost +
 ```
 docker login registry.gitlab.sitcore.net:443
 ```
-### Troubleshooting 
+#### Troubleshooting 
 * If login fails (e.g. timeout exceeded), set DNS server to 8.8.8.8 and reconnect the internet
 
 ## Usage
@@ -172,7 +172,7 @@ rosrun arl_unity_ros_air rosflight_offboard.py __ns:=falcon
 ```
 4. Set waypoints in rviz and click `short range`
 
-### Troubleshooting 
+#### Troubleshooting 
 * If you see many error messages, go to `dcist-platform-supplemental` folder and open `falcon_lejeune.yml`
 * Go to line 123 and change into `sleep 30` (longer time)
 

@@ -3,10 +3,6 @@ repositories:
     type: git
     url: git@github.com:KumarRobotics/DecompROS.git
     version: catkin
-  autonomy_stack:
-    type: git
-    url: git@github.com:KumarRobotics/autonomy_stack.git
-    version: master
   catkin_simple:
     type: git
     url: git@github.com:catkin/catkin_simple.git

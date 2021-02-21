@@ -11,9 +11,9 @@ uint factorial(uint i) {
 /**
  * @brief convert traj msg for visualization?
  */
-planning_ros_msgs::Trajectory PrimitiveToTrajOpt::convert(
+planning_ros_msgs::Trajectory_traj_opt PrimitiveToTrajOpt::convert(
     const planning_ros_msgs::Trajectory &msg) {
-  planning_ros_msgs::Trajectory traj;
+  planning_ros_msgs::Trajectory_traj_opt traj;
   traj.header = msg.header;
 
   double T = 0.0;

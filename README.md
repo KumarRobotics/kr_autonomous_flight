@@ -31,7 +31,7 @@ catkin build -DCMAKE_BUILD_TYPE=Release
 
 ## Step 2: Build autonomy stack
 
-Firstly, clone the following repo into your_code_directory:
+Firstly, create a new folder (your_code_directory), clone the following repo into it:
 ```
 git clone https://github.com/KumarRobotics/autonomy_stack
 git clone https://github.com/KumarRobotics/autonomy_simulation
@@ -50,6 +50,7 @@ cd ~/arl-unity-ros (or your arl-unity-ros workspace folder)
 cd src
 ln -s ~/path_to_your_code_directory/* .
 ```
+after this, you should be able to see symbolic links of all repos that you just cloned in this folder.
 
 Finally, install dependencies, and build everything:
 ```

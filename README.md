@@ -12,7 +12,7 @@ If you are a developer who will make changes to this code stack, (1) is recommen
 # Part1: Use without docker (i.e. build from source)
 1. Follow the [build from source instructions](https://gitlab.sitcore.net/arl/robotics-simulation/arl-unity-ros#building-from-source) to build arl-unity-ros simulator.
 ### Troubleshooting
-1. For any errors related to rosfligt, try the following:
+1. For any errors related to rosflight, try the following:
 ```
 cd ~/arl-unity-ros (your arl-unity-ros workspace folder)
 cd src/external/rosflight
@@ -36,8 +36,8 @@ Firstly, create a new folder (your_code_directory), clone the following repo int
 git clone https://github.com/KumarRobotics/autonomy_stack
 git clone https://github.com/KumarRobotics/autonomy_simulation
 git clone https://github.com/catkin/catkin_simple.git
+git clone https://github.com/KumarRobotics/msckf_vio
 git clone --branch catkin https://github.com/KumarRobotics/motion_primitive_library.git
-git clone --branch catkin https://github.com/KumarRobotics/msckf_vio
 git clone --branch catkin https://github.com/KumarRobotics/kr_mav_control.git
 git clone --branch catkin https://github.com/KumarRobotics/jps3d
 git clone --branch catkin https://github.com/KumarRobotics/DecompROS.git

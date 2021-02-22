@@ -312,9 +312,11 @@ int main(int argc, char** argv) {
           // this offset make the map centered around the given position
 
   // dimension (in voxels) of the region to free voxels
-  for (int nx = -2; nx <= 2; nx++) {
-    for (int ny = -2; ny <= 2; ny++) {
-      clear_ns_.push_back(Vec3i(nx, ny, 0));
+  for (int nx = -1; nx <= 1; nx++) {
+    for (int ny = -1; ny <= 1; ny++) {
+        for (int nz = -1; nz <= 1; nz++) {
+          clear_ns_.push_back(Vec3i(nx, ny, nz));
+        }
     }
   }
 

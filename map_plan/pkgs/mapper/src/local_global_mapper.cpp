@@ -131,7 +131,7 @@ void processCloud(const sensor_msgs::PointCloud& cloud) {
   t0 = ros::Time::now();
 
   double total_t = dt_storage_add+dt_storage_pub+dt_local_crop_pub;
-  if (total_t > 0){    
+  if (total_t > 0.5){    
     ROS_WARN("[Mapper]: Time for processing storage and local map is too large!!!");
     ROS_WARN("Time for updating storage map: %f, for publishing it: %f. Total time for cropping and publishing local map: %f",
         dt_storage_add, dt_storage_pub, dt_local_crop_pub);}

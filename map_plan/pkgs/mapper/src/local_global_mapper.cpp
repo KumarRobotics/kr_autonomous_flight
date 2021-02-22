@@ -58,7 +58,8 @@ vec_Vec3i clear_ns_;
 void cropLocalMap(const Vec3f& center_position) {
   const Vec3f local_dim(local_map_info_.dim.x, local_map_info_.dim.y,
                         local_map_info_.dim.z);
-  const Vec3f local_origin = center_position + local_ori_offset_;
+  Vec3f local_origin = center_position + local_ori_offset_;
+  local_origin(2) = local_map_info_.origin.z;
 
   // core function: crop local map from the storage map
   planning_ros_msgs::VoxelMap local_voxel_map =
@@ -113,15 +114,32 @@ void processCloud(const sensor_msgs::PointCloud& cloud) {
   t0 = ros::Time::now();
   storage_voxel_mapper_->addCloud(pts, T_m_c, local_infla_array_, false,
                                   local_max_raycast_);
-  double dt1 = (ros::Time::now() - t0).toSec();
+  double dt_storage_add = (ros::Time::now() - t0).toSec();
+  t0 = ros::Time::now();
 
-  planning_ros_msgs::VoxelMap storage_map =
-      storage_voxel_mapper_->getInflatedMap();
-  storage_map.header.frame_id = map_frame_;
-  storage_map_pub.publish(storage_map);
+  // **NOTE: this getInflatedMap() step can be very expensive if storage_map is big. Therefore, disable this (it's not important anyways).
+  // planning_ros_msgs::VoxelMap storage_map =
+      // storage_voxel_mapper_->getInflatedMap();
+  // storage_map.header.frame_id = map_frame_;
+  // storage_map_pub.publish(storage_map);
+  double dt_storage_pub = (ros::Time::now() - t0).toSec();
+  t0 = ros::Time::now();
 
   // crop local voxel map
   cropLocalMap(sensor_position);
+  double dt_local_crop_pub = (ros::Time::now() - t0).toSec();
+  t0 = ros::Time::now();
+
+  double total_t = dt_storage_add+dt_storage_pub+dt_local_crop_pub;
+  if (total_t > 0){    
+    ROS_WARN("[Mapper]: Time for processing storage and local map is too large!!!");
+    ROS_WARN("Time for updating storage map: %f, for publishing it: %f. Total time for cropping and publishing local map: %f",
+        dt_storage_add, dt_storage_pub, dt_local_crop_pub);}
+  
+  sensor_msgs::Temperature tmsg;
+  tmsg.header.stamp = t0;
+  tmsg.temperature = total_t * 1000;
+  time_pub.publish(tmsg);
 
   // only global voxel map once every update_interval_ point clouds
   if (counter_ % update_interval_ == 0) {
@@ -142,53 +160,19 @@ void processCloud(const sensor_msgs::PointCloud& cloud) {
   }
   ++counter_;
 
-  t0 = ros::Time::now();
 
   if (debug_) {
     ROS_INFO_THROTTLE(1, "[Mapper]: Got cloud, number of points: [%zu]",
                       cloud.points.size());
-    // ROS_INFO_THROTTLE(
-    //     1, "[Mapper]: Time for updating map: %f, for publishing: %f", dt1,
-    //     dt2);
   }
-
-  sensor_msgs::Temperature tmsg;
-  tmsg.header.stamp = t0;
-  tmsg.temperature = dt1 * 1000;
-  time_pub.publish(tmsg);
 }
 
 void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
-  // update local voxel map every scan
-  // if !(odom_received_){
-  //   ROS_WARN_ONCE("[Mapper]: odometry not received yet!");
-  // }
-  // else{
   ROS_WARN_ONCE("[Mapper]: got the point cloud!");
   sensor_msgs::PointCloud cloud;
   sensor_msgs::convertPointCloud2ToPointCloud(*msg, cloud);
   processCloud(cloud);
-  // }
 }
-
-// void odomCallBack(const Odometry& odom_msg) {
-//   last_odom_ = odom_msg;
-//   if !(odom_received_){
-//     // initializing local map
-//     updateLocalMap(last_odom_)
-//     odom_received_ = true};
-//   //TODO: if robot too far, move global map
-// }
-
-// void updateLocalMap() {
-//   const Vec3f origin(local_map_info_.origin.x, local_map_info_.origin.y,
-//   local_map_info_.origin.z); const Vec3f dim(local_map_info_.dim.x,
-//   local_map_info_.dim.y, local_map_info_.dim.z); const double res =
-//   local_map_info_.resolution;
-//   // Initialize the mapper
-//   global_voxel_mapper_.reset(new VoxelMapper(origin, dim, res));
-
-// }
 
 void mapInit() {
   // TODO: combine two parts into one.
@@ -306,7 +290,7 @@ int main(int argc, char** argv) {
   nh.param("local/resolution", local_map_info_.resolution, 0.25f);
   nh.param("local/range_x", local_map_info_.dim.x, 20.);
   nh.param("local/range_y", local_map_info_.dim.y, 20.);
-  nh.param("local/range_z", local_map_info_.dim.z, 10.0);
+  // nh.param("local/range_z", local_map_info_.dim.z, 10.0);
   nh.param("local/max_raycast_range", local_max_raycast_, 20.0);
 
   storage_map_info_.resolution = local_map_info_.resolution;
@@ -316,20 +300,16 @@ int main(int argc, char** argv) {
   storage_map_info_.origin.y = storage_map_cy - storage_map_info_.dim.y / 2;
   storage_map_info_.origin.z = storage_map_cz - storage_map_info_.dim.z / 2;
 
-  const Vec3f local_dim(local_map_info_.dim.x, local_map_info_.dim.y,
-                        local_map_info_.dim.z);
+  // local map range z and center_z will be the same as storage map   
+  local_map_info_.dim.z = storage_map_info_.dim.z;
+  local_map_info_.origin.z = storage_map_info_.origin.z;
+
+
+  const Vec3f local_dim(local_map_info_.dim.x, local_map_info_.dim.y, local_map_info_.dim.z);
   local_ori_offset_ =
       -local_dim /
       2;  // origin is the left lower corner of the voxel map, therefore, adding
           // this offset make the map centered around the given position
-
-  // ROS_INFO("Global map range_x: %f, range_y: %f, range_z: %f",
-  // global_map_info_.dim.x,
-  //          global_map_info_.dim.y, global_map_info_.dim.z);
-
-  // ROS_INFO("Local map range_x: %f, range_y: %f, range_z: %f",
-  // local_map_info_.dim.x,
-  //         local_map_info_.dim.y, local_map_info_.dim.z);
 
   // dimension (in voxels) of the region to free voxels
   for (int nx = -2; nx <= 2; nx++) {

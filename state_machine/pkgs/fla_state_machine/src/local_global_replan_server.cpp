@@ -75,7 +75,7 @@ private:
   double local_replan_rate_; // should be set in the goal sent from the
                              // state_machine
   int global_replan_interval_{
-      1}; // a global replan will be called once every x local replan calls,
+      2}; // a global replan will be called once every x local replan calls,
           // where x = global_replan_interval_. TODO: maybe also specify global
           // replan rate in goal?
   int local_replan_counter_{

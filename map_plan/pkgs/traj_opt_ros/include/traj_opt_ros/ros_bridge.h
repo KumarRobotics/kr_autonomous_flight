@@ -4,18 +4,18 @@
 
 #include <ros/ros.h>
 #include <traj_opt_basic/traj_data.h>
-#include <planning_ros_msgs/Trajectory_traj_opt.h>
+#include <planning_ros_msgs/SplineTrajectory.h>
 
 #include <string>
 
 class TrajRosBridge {
  public:
   // No need to instantiate pesky variables!
-  static planning_ros_msgs::Trajectory_traj_opt convert(const traj_opt::TrajData &data);
-  static traj_opt::TrajData convert(const planning_ros_msgs::Trajectory_traj_opt &msg);
+  static planning_ros_msgs::SplineTrajectory convert(const traj_opt::TrajData &data);
+  static traj_opt::TrajData convert(const planning_ros_msgs::SplineTrajectory &msg);
 
   // make sure to run ros::init() before calling this function or it won't work
-  static void publish_msg(const planning_ros_msgs::Trajectory_traj_opt &msg,
+  static void publish_msg(const planning_ros_msgs::SplineTrajectory &msg,
                           std::string frame_id = "map");
   static void publish_msg(const traj_opt::TrajData &data,
                           std::string frame_id = "map");

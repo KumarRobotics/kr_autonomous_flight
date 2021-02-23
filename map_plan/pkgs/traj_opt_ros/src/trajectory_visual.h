@@ -4,7 +4,7 @@
 #define MOBILITY_PLANNER_TRAJ_OPT_SRC_TRAJECTORY_VISUAL_H_
 
 #include <traj_opt_basic/trajectory.h>
-#include <planning_ros_msgs/Trajectory_traj_opt.h>
+#include <planning_ros_msgs/SplineTrajectory.h>
 #include <traj_opt_basic/types.h>
 
 #include <vector>
@@ -28,7 +28,7 @@ namespace traj_opt {
 // Declare the visual class for this display.
 //
 // Each instance of TrajectoryVisual represents the visualization of a single
-// planning_ros_msgs::Trajectory_traj_opt message.  Currently it just shows an arrow with
+// planning_ros_msgs::SplineTrajectory message.  Currently it just shows an arrow with
 // the direction and magnitude of the acceleration vector, but could
 // easily be expanded to include more of the message data.
 
@@ -46,7 +46,7 @@ class TrajectoryVisual {
 
   void draw();
   // Configure the visual to show the data in the message.
-  void setMessage(const planning_ros_msgs::Trajectory_traj_opt::ConstPtr& msg);
+  void setMessage(const planning_ros_msgs::SplineTrajectory::ConstPtr& msg);
 
   // Set the pose of the coordinate frame the message refers to.
   // These could be done inside setMessage(), but that would require

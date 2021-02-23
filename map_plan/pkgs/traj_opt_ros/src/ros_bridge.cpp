@@ -4,7 +4,7 @@
 #include <string>
 
 TrajRosBridge::TrajRosBridge() : nh_("~") {
-  pub_ = nh_.advertise<planning_ros_msgs::Trajectory_traj_opt>("trajectory", 1,
+  pub_ = nh_.advertise<planning_ros_msgs::SplineTrajectory>("trajectory", 1,
                                                                true);
 }
 TrajRosBridge &TrajRosBridge::instance() {
@@ -12,8 +12,8 @@ TrajRosBridge &TrajRosBridge::instance() {
   return inst;
 }
 void TrajRosBridge::publish_msg(
-    const planning_ros_msgs::Trajectory_traj_opt &msg, std::string frame_id) {
-  planning_ros_msgs::Trajectory_traj_opt msgc = msg;
+    const planning_ros_msgs::SplineTrajectory &msg, std::string frame_id) {
+  planning_ros_msgs::SplineTrajectory msgc = msg;
   msgc.header.frame_id = frame_id;
   instance().pub_.publish(msgc);
 }
@@ -23,9 +23,9 @@ void TrajRosBridge::publish_msg(const traj_opt::TrajData &data,
 }
 
 // these convert functions can be written more cleanly with templates
-planning_ros_msgs::Trajectory_traj_opt
+planning_ros_msgs::SplineTrajectory
 TrajRosBridge::convert(const traj_opt::TrajData &data) {
-  planning_ros_msgs::Trajectory_traj_opt traj;
+  planning_ros_msgs::SplineTrajectory traj;
   traj.header.stamp = ros::Time::now();
   traj.header.frame_id = "map";
 
@@ -49,7 +49,7 @@ TrajRosBridge::convert(const traj_opt::TrajData &data) {
   return traj;
 }
 traj_opt::TrajData
-TrajRosBridge::convert(const planning_ros_msgs::Trajectory_traj_opt &msg) {
+TrajRosBridge::convert(const planning_ros_msgs::SplineTrajectory &msg) {
   traj_opt::TrajData data;
   // copy all fields
   data.dimension_names = msg.dimension_names;

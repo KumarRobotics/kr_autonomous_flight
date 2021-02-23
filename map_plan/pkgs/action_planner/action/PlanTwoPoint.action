@@ -16,7 +16,7 @@ int64 epoch
 bool success
 bool killed
 planning_ros_msgs/Path path
-planning_ros_msgs/Trajectory_traj_opt traj
+planning_ros_msgs/SplineTrajectory traj
 geometry_msgs/Pose[] p_stop
 geometry_msgs/Twist[] v_stop
 geometry_msgs/Twist[] a_stop

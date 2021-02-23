@@ -7,7 +7,7 @@
 #include <traj_opt_ros/ros_bridge.h>
 
 // planning ros msgs stuff
-#include <planning_ros_msgs/Trajectory_traj_opt.h>
+#include <planning_ros_msgs/SplineTrajectory.h>
 
 static ros::Subscriber traj_sub;
 static ros::Publisher warp_pub, cmd_pub;
@@ -17,7 +17,7 @@ static double kx_[3], kv_[3];
 
 using kr_mav_msgs::PositionCommand;
 
-void trajCB(const planning_ros_msgs::Trajectory_traj_opt::ConstPtr &traj_msg) {
+void trajCB(const planning_ros_msgs::SplineTrajectory::ConstPtr &traj_msg) {
   traj = boost::make_shared<traj_opt::MsgTrajectory>(
       TrajRosBridge::convert(*traj_msg));
   start = ros::Time::now();

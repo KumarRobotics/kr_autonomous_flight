@@ -7,7 +7,7 @@ bool avoid_obstacles
 # Action result
 bool success
 bool killed
-planning_ros_msgs/Trajectory_traj_opt traj
+planning_ros_msgs/SplineTrajectory traj
 ---
 # Action feedback
 duration computation_time

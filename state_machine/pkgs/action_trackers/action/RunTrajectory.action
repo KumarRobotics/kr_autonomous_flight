@@ -1,5 +1,5 @@
 # Action goal
-planning_ros_msgs/Trajectory_traj_opt traj
+planning_ros_msgs/SplineTrajectory traj
 int64 epoch
 float32 replan_rate
 bool block # will not return until traj is complete (cannot be used with replanning)

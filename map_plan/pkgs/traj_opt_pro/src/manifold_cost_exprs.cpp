@@ -4,7 +4,7 @@ namespace traj_opt {
 
 NestedSO3::NestedSO3(
     const Quat &R1, const Quat &R2,
-    const std::vector<boost::shared_ptr<NestedExpression> > &xi1, int d) {
+    const std::vector<boost::shared_ptr<NestedExpression>> &xi1, int d) {
   f_inputs = xi1;
   dq = R2.inverse() * R1;
   dim = d;
@@ -270,4 +270,4 @@ decimal_t NestedSum::f(const std::vector<decimal_t> &val) {
 std::vector<decimal_t> NestedSum::df(const std::vector<decimal_t> &val) {
   return weights;
 }
-}  // namespace traj_opt
+} // namespace traj_opt

@@ -2,7 +2,7 @@
 
 namespace PCLUtils {
 
-PCLPointCloud toPCL(const sensor_msgs::PointCloud& cloud_ros) {
+PCLPointCloud toPCL(const sensor_msgs::PointCloud &cloud_ros) {
   PCLPointCloud cloud;
   cloud.points.resize(cloud_ros.points.size());
   for (unsigned int i = 0; i < cloud_ros.points.size(); i++) {
@@ -13,7 +13,7 @@ PCLPointCloud toPCL(const sensor_msgs::PointCloud& cloud_ros) {
   return cloud;
 }
 
-vec_Vec3f fromPCL(const PCLPointCloud& cloud) {
+vec_Vec3f fromPCL(const PCLPointCloud &cloud) {
   vec_Vec3f pts;
   pts.resize(cloud.points.size());
   for (unsigned int i = 0; i < cloud.points.size(); i++) {
@@ -24,7 +24,7 @@ vec_Vec3f fromPCL(const PCLPointCloud& cloud) {
   return pts;
 }
 
-PCLPointCloud eigenToPCL(const vec_Vec3f& pts) {
+PCLPointCloud eigenToPCL(const vec_Vec3f &pts) {
   PCLPointCloud cloud;
   cloud.points.resize(pts.size());
   for (unsigned int i = 0; i < pts.size(); i++) {
@@ -36,7 +36,7 @@ PCLPointCloud eigenToPCL(const vec_Vec3f& pts) {
   return cloud;
 }
 
-sensor_msgs::PointCloud toROS(const PCLPointCloud& cloud_pcl) {
+sensor_msgs::PointCloud toROS(const PCLPointCloud &cloud_pcl) {
   sensor_msgs::PointCloud cloud;
   cloud.points.resize(cloud_pcl.points.size());
   cloud.channels.resize(1);
@@ -52,8 +52,9 @@ sensor_msgs::PointCloud toROS(const PCLPointCloud& cloud_pcl) {
   return cloud;
 }
 
-void outlier_removal(PCLPointCloud& cloud, float radius, int N) {
-  if (cloud.points.empty()) return;
+void outlier_removal(PCLPointCloud &cloud, float radius, int N) {
+  if (cloud.points.empty())
+    return;
   pcl::RadiusOutlierRemoval<PCLPoint> sor;
   sor.setInputCloud(boost::make_shared<PCLPointCloud>(cloud));
   sor.setRadiusSearch(radius);
@@ -61,8 +62,8 @@ void outlier_removal(PCLPointCloud& cloud, float radius, int N) {
   sor.filter(cloud);
 }
 
-void bound_filter(PCLPointCloud& cloud, const Vec3f& lower_bound,
-                  const Vec3f& upper_bound) {
+void bound_filter(PCLPointCloud &cloud, const Vec3f &lower_bound,
+                  const Vec3f &upper_bound) {
   // build the condition
   pcl::ConditionAnd<PCLPoint>::Ptr range_cond(
       new pcl::ConditionAnd<PCLPoint>());
@@ -93,7 +94,7 @@ void bound_filter(PCLPointCloud& cloud, const Vec3f& lower_bound,
   condrem.filter(cloud);
 }
 
-void voxel_filter(PCLPointCloud& cloud, decimal_t res) {
+void voxel_filter(PCLPointCloud &cloud, decimal_t res) {
   PCLPointCloud2::Ptr pcl_cloud2(new PCLPointCloud2);
   PCLPointCloud2 cloud_filtered;
 
@@ -106,4 +107,4 @@ void voxel_filter(PCLPointCloud& cloud, decimal_t res) {
   pcl::fromPCLPointCloud2(cloud_filtered, cloud);
 }
 
-}  // namespace PCLUtils
+} // namespace PCLUtils

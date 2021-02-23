@@ -244,7 +244,7 @@ ActionTrajectoryTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
     }
 
     // check continuity in position
-    if ((pos_old - pos_new).norm() > 1.0) {
+    if ((pos_old - pos_new).norm() > 3.0) {
       // incontinuity is too large, abort
       ROS_ERROR_STREAM("Trajectories not continuous, aborting transition from "
                        << pos_old.transpose() << " to " << pos_new.transpose());

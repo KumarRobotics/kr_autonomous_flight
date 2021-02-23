@@ -29,22 +29,26 @@ void PathDisplay::reset() {
 
 void PathDisplay::updateLineColorAndAlpha() {
   Ogre::ColourValue color = line_color_property_->getOgreColor();
-  if (visual_) visual_->setLineColor(color.r, color.g, color.b, 1);
+  if (visual_)
+    visual_->setLineColor(color.r, color.g, color.b, 1);
 }
 
 void PathDisplay::updateNodeColorAndAlpha() {
   Ogre::ColourValue color = node_color_property_->getOgreColor();
-  if (visual_) visual_->setNodeColor(color.r, color.g, color.b, 1);
+  if (visual_)
+    visual_->setNodeColor(color.r, color.g, color.b, 1);
 }
 
 void PathDisplay::updateLineScale() {
   float s = line_scale_property_->getFloat();
-  if (visual_) visual_->setLineScale(s);
+  if (visual_)
+    visual_->setLineScale(s);
 }
 
 void PathDisplay::updateNodeScale() {
   float s = node_scale_property_->getFloat();
-  if (visual_) visual_->setNodeScale(s);
+  if (visual_)
+    visual_->setNodeScale(s);
 }
 
 void PathDisplay::processMessage(const planning_ros_msgs::Path::ConstPtr &msg) {
@@ -80,7 +84,7 @@ void PathDisplay::visualizeMessage() {
 
   visual_ = visual;
 }
-}  // namespace planning_rviz_plugins
+} // namespace planning_rviz_plugins
 
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_EXPORT_CLASS(planning_rviz_plugins::PathDisplay, rviz::Display)

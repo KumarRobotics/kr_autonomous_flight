@@ -23,9 +23,10 @@ Quat ConvertHopf::getQuat(const Vec3 &xi, decimal_t yaw, bool hover) {
   }
 
   // never send nan
-  if (std::isnan(fib.w())) return Quat::Identity();
+  if (std::isnan(fib.w()))
+    return Quat::Identity();
 
   return fib * orin_yaw;
 }
 
-}  // namespace traj_opt
+} // namespace traj_opt

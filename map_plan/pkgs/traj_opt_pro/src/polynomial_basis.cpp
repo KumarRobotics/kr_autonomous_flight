@@ -15,15 +15,17 @@ namespace traj_opt {
 Poly PolyCalculusPro::bernstein_polynomial(typename Poly::size_type n,
                                            typename Poly::size_type i) {
   std::vector<decimal_t> t_dat({0, 1});
-  Poly t(t_dat.data(), 1);  // t
+  Poly t(t_dat.data(), 1); // t
   std::vector<decimal_t> omt_dat({1, -1});
-  Poly omt(omt_dat.data(), 1);  // 1-t
+  Poly omt(omt_dat.data(), 1); // 1-t
 
-  Poly t_rasied_i(omt_dat.data(), 0);  // t to the ith power
-  Poly omt_rasied_ni(t_rasied_i);      // (1-t) to the (n-i)th power
+  Poly t_rasied_i(omt_dat.data(), 0); // t to the ith power
+  Poly omt_rasied_ni(t_rasied_i);     // (1-t) to the (n-i)th power
 
-  for (uint c = 0; c < i; c++) t_rasied_i *= t;
-  for (uint c = 0; c < n - i; c++) omt_rasied_ni *= omt;
+  for (uint c = 0; c < i; c++)
+    t_rasied_i *= t;
+  for (uint c = 0; c < n - i; c++)
+    omt_rasied_ni *= omt;
 
   Poly result(t_rasied_i);
   result *= omt_rasied_ni;
@@ -32,12 +34,13 @@ Poly PolyCalculusPro::bernstein_polynomial(typename Poly::size_type n,
 }
 Poly PolyCalculusPro::chebyshev_polynomial(typename Poly::size_type n) {
   std::vector<decimal_t> omt_dat({1, -1});
-  Poly omt(omt_dat.data(), 1);  //  1 - t
+  Poly omt(omt_dat.data(), 1); //  1 - t
   decimal_t one = 1;
   decimal_t zero = 0;
 
-  Poly omt_raised_k(&one, 0);  // (1-t) to the kth power
-  if (n == 0) return omt_raised_k;
+  Poly omt_raised_k(&one, 0); // (1-t) to the kth power
+  if (n == 0)
+    return omt_raised_k;
 
   Poly result(&zero, 0);
 
@@ -83,7 +86,8 @@ LegendreBasis::LegendreBasis(uint n_p_, uint k_r_) : StandardBasis(0) {
     simple.push_back(1.0);
   }
   // does this line break ooqp? yes it does
-  if (n_p == k_r) return;
+  if (n_p == k_r)
+    return;
   for (uint p = 0; p <= n_p - k_r; p++) {
     Poly p_cur = PolyCalculusPro::shifted_legendre(p);
     // std::cout << "shifted p " << p_cur << std::endl;
@@ -95,7 +99,7 @@ LegendreBasis::LegendreBasis(uint n_p_, uint k_r_) : StandardBasis(0) {
 }
 
 BezierBasis::BezierBasis(uint n_p_) : StandardBasis(0) {
-  n_p = n_p_;  // this was commented out, why?
+  n_p = n_p_; // this was commented out, why?
   type_ = PolyType::BEZIER;
   for (int i = 0; i <= static_cast<int>(n_p); i++)
     polys.push_back(PolyCalculusPro::bernstein_polynomial(n_p, i));
@@ -112,7 +116,7 @@ ChebyshevBasis::ChebyshevBasis(uint n_p_) : StandardBasis(0) {
   // std::cout << "Chebyshev "  << *this << std::endl;
 }
 EndPointBasis::EndPointBasis(uint n_p_) : StandardBasis(0) {
-  n_p = n_p_;  // this was commented out, why?
+  n_p = n_p_; // this was commented out, why?
   type_ = PolyType::ENDPOINT;
   traj_opt::MatD coeffs = MatD::Zero(n_p_ + 1, n_p + 1);
   for (int i = 0; i <= static_cast<int>(n_p); i++) {
@@ -134,7 +138,8 @@ EndPointBasis::EndPointBasis(uint n_p_) : StandardBasis(0) {
     std::vector<decimal_t> data;
     for (int j = 0; j <= static_cast<int>(n_p); j++) {
       //      data.push_back(coeffsi(i, j));
-      if (std::abs(coeffsi(j, i)) > 1e-12) data.push_back(coeffsi(j, i));
+      if (std::abs(coeffsi(j, i)) > 1e-12)
+        data.push_back(coeffsi(j, i));
       //            data.push_back(coeffsi(i, j));
       else
         data.push_back(0.0);
@@ -158,7 +163,8 @@ decimal_t LegendreBasis::innerproduct(uint i, uint j) const {
 Poly StandardBasis::getPoly(uint i) const { return polys.at(i); }
 StandardBasis::StandardBasis(uint n) : Basis(n) {
   type_ = PolyType::STANDARD;
-  if (n == 0) return;
+  if (n == 0)
+    return;
   std::vector<decimal_t> simple;
   simple.push_back(1.0);
   for (uint i = 0; i <= n_p; i++) {
@@ -216,7 +222,7 @@ const MatD &BasisTransformer::getBasisBasisTransform() {
 const MatD &BasisTransformer::getLinearTransform(decimal_t a, decimal_t b) {
   decimal_t data[2];
   data[0] = b;
-  data[1] = a;  // remember boost's convention is backward from matlabs
+  data[1] = a; // remember boost's convention is backward from matlabs
   Poly fac(data, 1);
   decimal_t one = 1;
   Poly base(&one, 0);
@@ -229,7 +235,7 @@ const MatD &BasisTransformer::getLinearTransform(decimal_t a, decimal_t b) {
   }
 
   //  std::cout << "Debug mat: " << mat << std::endl;
-  scaledtranform_ = Ainv * mat * A;  // more communitive diagrams
+  scaledtranform_ = Ainv * mat * A; // more communitive diagrams
   return scaledtranform_;
 }
 boost::shared_ptr<Basis> BasisBundle::getBasis(int i) {
@@ -268,9 +274,10 @@ BasisBundlePro::BasisBundlePro(PolyType type, uint n_p_, uint k_r_) {
       base->integrate();
       integrals.push_back(base);
     } else {
-      for (int j = 0; j < i; j++) base->differentiate();
+      for (int j = 0; j < i; j++)
+        base->differentiate();
       derrivatives.push_back(base);
     }
   }
 }
-}  // namespace traj_opt
+} // namespace traj_opt

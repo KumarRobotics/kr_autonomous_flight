@@ -1,6 +1,6 @@
 // Copyright 2016 Michael Watterson
 
-#include "trajectory_display.h"  // NOLINT()
+#include "trajectory_display.h" // NOLINT()
 
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreSceneNode.h>
@@ -13,7 +13,7 @@
 #include <rviz/visualization_manager.h>
 #include <tf/transform_listener.h>
 
-#include "trajectory_visual.h"  // NOLINT()
+#include "trajectory_visual.h" // NOLINT()
 
 namespace traj_opt {
 
@@ -227,9 +227,9 @@ void TrajectoryDisplay::processMessage(
   visuals_.push_back(visual);
 }
 void TrajectoryDisplay::randomizeColor() {}
-}  // namespace traj_opt
+} // namespace traj_opt
 
 // Tell pluginlib about this class.  It is important to do this in
 // global scope, outside our package's namespace.
-#include <pluginlib/class_list_macros.h>  // NOLINT()
+#include <pluginlib/class_list_macros.h> // NOLINT()
 PLUGINLIB_EXPORT_CLASS(traj_opt::TrajectoryDisplay, rviz::Display)

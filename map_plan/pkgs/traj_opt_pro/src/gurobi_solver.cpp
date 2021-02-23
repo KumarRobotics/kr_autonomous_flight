@@ -26,7 +26,8 @@ void GurobiSolver::sikangSeed(boost::shared_ptr<Vec3Vec> points,
     acc = a_max;
 
   int ini_sign = 1;
-  if (ini_v < 0) ini_sign = -1;
+  if (ini_v < 0)
+    ini_sign = -1;
 
   if (end_v > v_max) {
     printf("end_v = %f too large, set it to %f", end_v, v_max);
@@ -64,7 +65,8 @@ void GurobiSolver::sikangSeed(boost::shared_ptr<Vec3Vec> points,
       } else if (d >= total_dist - dec_d_thr && d <= total_dist) {
         decimal_t ep =
             max_speed * max_speed - 2 * a_max * (d - (total_dist - dec_d_thr));
-        if (ep < 0) ep = 0;
+        if (ep < 0)
+          ep = 0;
         t = (max_speed - ini_v) / acc +
             (total_dist - acc_d_thr - dec_d_thr) / max_speed +
             (max_speed - sqrt(ep)) / a_max;
@@ -112,7 +114,8 @@ void GurobiSolver::sikangSeed(boost::shared_ptr<Vec3Vec> points,
 void GurobiSolver::seedDs(boost::shared_ptr<Vec3Vec> points,
                           std::vector<decimal_t> *dsp) {
   // use hurristic
-  if (points == NULL) return;
+  if (points == NULL)
+    return;
   std::vector<decimal_t> &ds(*dsp);
 
   decimal_t dx = 0;
@@ -153,7 +156,8 @@ void GurobiSolver::seedDs(boost::shared_ptr<Vec3Vec> points,
   }
 
   // std::cout << "ds ";
-  for (auto &s : ds) s *= 3.0;
+  for (auto &s : ds)
+    s *= 3.0;
   //   std::cout << s << " , ";
   // std::cout << std::endl;
 }
@@ -198,7 +202,8 @@ boost::shared_ptr<Trajectory> GurobiSolver::getTrajectory() {
 }
 void GurobiSolver::addPathCost(const std::vector<MatD> &A,
                                const std::vector<VecD> &b, double epsilon) {
-  if (A.size() == 0) return;
+  if (A.size() == 0)
+    return;
   if ((ltraj_->individual_sections.size()) != A.size()) {
     std::cout << "Un-equal path and traj size" << std::endl;
     return;
@@ -209,8 +214,10 @@ void GurobiSolver::addPathCost(const std::vector<MatD> &A,
 }
 void GurobiSolver::addLineCost(boost::shared_ptr<Vec3Vec> points,
                                double upsilon) {
-  if (points == NULL) return;
-  if (upsilon == 0) return;  // oops you forgot to set upsilon
+  if (points == NULL)
+    return;
+  if (upsilon == 0)
+    return; // oops you forgot to set upsilon
 
   for (uint i = 1; i < points->size(); i++) {
     ltraj_->individual_sections.at(i - 1)->addLineCost(points->at(i - 1),
@@ -245,8 +252,8 @@ bool GurobiSolver::solveTrajectory(
     ds = std::vector<decimal_t>(A.size(), 1.0);
   }
   try {
-    grb_env_->set(GRB_IntParam_OutputFlag, 0);       // turn off output
-    grb_env_->set(GRB_DoubleParam_TimeLimit, 0.15);  // execution time limit
+    grb_env_->set(GRB_IntParam_OutputFlag, 0);      // turn off output
+    grb_env_->set(GRB_DoubleParam_TimeLimit, 0.15); // execution time limit
     GRBModel model(*grb_env_);
 
     bool use_vel_contr = false;
@@ -349,4 +356,4 @@ bool GurobiSolver::checkMax(decimal_t ratio) {
   return ltraj_->check_max(v_max_ * ratio, a_max_ * ratio, j_max_ * ratio);
 }
 
-}  // namespace traj_opt
+} // namespace traj_opt

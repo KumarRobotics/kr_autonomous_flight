@@ -55,13 +55,13 @@ enum MapMode { TRINARY, SCALE, RAW };
 
 namespace map_server {
 
-void loadMapFromFile(planning_ros_msgs::VoxelMap& resp, const char* fname,
+void loadMapFromFile(planning_ros_msgs::VoxelMap &resp, const char *fname,
                      double res, bool negate, double occ_th, double free_th,
-                     double* origin, MapMode mode) {
-  SDL_Surface* img;
+                     double *origin, MapMode mode) {
+  SDL_Surface *img;
 
-  unsigned char* pixels;
-  unsigned char* p;
+  unsigned char *pixels;
+  unsigned char *p;
   unsigned char value;
   int rowstride, n_channels, avg_channels;
   unsigned int i, j;
@@ -111,13 +111,14 @@ void loadMapFromFile(planning_ros_msgs::VoxelMap& resp, const char* fname,
     avg_channels = n_channels - 1;
 
   // Copy pixel data into the map structure
-  pixels = (unsigned char*)(img->pixels);
+  pixels = (unsigned char *)(img->pixels);
   for (j = 0; j < resp.dim.y; j++) {
     for (i = 0; i < resp.dim.x; i++) {
       // Compute mean of RGB for this pixel
       p = pixels + j * rowstride + i * n_channels;
       color_sum = 0;
-      for (k = 0; k < avg_channels; k++) color_sum += *(p + (k));
+      for (k = 0; k < avg_channels; k++)
+        color_sum += *(p + (k));
       color_avg = color_sum / (double)avg_channels;
 
       if (n_channels == 1)
@@ -125,7 +126,8 @@ void loadMapFromFile(planning_ros_msgs::VoxelMap& resp, const char* fname,
       else
         alpha = *(p + n_channels - 1);
 
-      if (negate) color_avg = 255 - color_avg;
+      if (negate)
+        color_avg = 255 - color_avg;
 
       if (mode == RAW) {
         value = color_avg;
@@ -158,4 +160,4 @@ void loadMapFromFile(planning_ros_msgs::VoxelMap& resp, const char* fname,
   SDL_FreeSurface(img);
 }
 
-}  // namespace map_server
+} // namespace map_server

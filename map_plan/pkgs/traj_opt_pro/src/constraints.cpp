@@ -7,7 +7,7 @@ class AxbConstraint : public IneqConstraint {
   VecD ai_;
   decimal_t bi_;
 
- public:
+public:
   SymbolicPoly poly;
   // i is bezier coeff numer
   // j is trajectory segment
@@ -26,11 +26,11 @@ class AxbConstraint : public IneqConstraint {
     for (int d = 0; d < ai.rows(); d++) {
       for (int k = 0; k <= traj_->deg_; k++) {
         Variable *vk = traj->traj.at(d).at(j).at(k);
-        if (vk != NULL &&
-            std::abs(ai_(d)) > 1e-4) {  // for numerical robustness
+        if (vk != NULL && std::abs(ai_(d)) > 1e-4) { // for numerical robustness
           poly.add(
               SymbolicPoly(vk, traj_->times.at(j), k / 2, tf(i, k) * ai_(d)));
-          if (!vk->isConstant()) vars.push_back(vk);
+          if (!vk->isConstant())
+            vars.push_back(vk);
         } else if (vk == NULL) {
           vk = traj_->lamdas.at(j - !(k % 2));
           bi_ += tf(i, k) * ai_(d) * g(d);
@@ -42,7 +42,7 @@ class AxbConstraint : public IneqConstraint {
     }
   }
 
- private:
+private:
   decimal_t evaluate() { return poly.evaluate() - bi_; }
   ETV gradient() { return poly.gradient(var_u->getId()); }
   ETV hessian() { return poly.hessian(); }
@@ -53,7 +53,7 @@ class BallConstraint : public IneqConstraint {
   int i, j;
   decimal_t rhs{0.0};
 
- public:
+public:
   SymbolicPoly poly;
   // i is bezier coeff numer
   // j is trajectory segment
@@ -88,20 +88,20 @@ class BallConstraint : public IneqConstraint {
     for (int d = 0; d < traj->dim_; d++) {
       // just manually expand (x-c)^2
       poly.add(SymbolicPoly(traj->beads.at(d).at(j), traj->beads.at(d).at(j),
-                            traj_->times.at(j), 0, -1.0));  // x^2
+                            traj_->times.at(j), 0, -1.0)); // x^2
       poly.add(SymbolicPoly(traj->beads.at(d).at(j), traj_->times.at(j), 0,
-                            2.0 * point(d)));  // -2xc
-      rhs += -point(d) * point(d);             // +c^2
+                            2.0 * point(d))); // -2xc
+      rhs += -point(d) * point(d);            // +c^2
     }
     // expand -(r+r_robot_r)^2
     poly.add(SymbolicPoly(traj->beads.at(traj_->dim_).at(j),
                           traj->beads.at(traj_->dim_).at(j), traj_->times.at(j),
-                          0, 1.0));  // -r^2
+                          0, 1.0)); // -r^2
 
-    rhs += robot_r * robot_r;  // -robot_r^2
+    rhs += robot_r * robot_r; // -robot_r^2
   }
 
- private:
+private:
   decimal_t evaluate() { return poly.evaluate() + rhs; }
   ETV gradient() {
     ETV gradl = poly.gradient(var_u->getId());
@@ -122,7 +122,7 @@ class PosTimeConstraint : public IneqConstraint {
   Variable *v_;
   decimal_t eps_;
 
- public:
+public:
   explicit PosTimeConstraint(Variable *v, decimal_t eps = 0.1)
       : v_(v), eps_(eps) {
     vars.push_back(v);
@@ -137,15 +137,17 @@ class PosTimeConstraint : public IneqConstraint {
 class TimeBound : public IneqConstraint {
   decimal_t bound_;
 
- public:
+public:
   TimeBound(const std::vector<Variable *> &v, decimal_t upper_bound)
       : IneqConstraint(), bound_(upper_bound) {
-    for (auto &vi : v) vars.push_back(vi);
+    for (auto &vi : v)
+      vars.push_back(vi);
     //        std::copy(v.begin(),v.end(),vars.begin());
   }
   decimal_t evaluate() {
     decimal_t val = -bound_;
-    for (auto &v : vars) val += v->getVal();
+    for (auto &v : vars)
+      val += v->getVal();
     return val;
   }
   ETV gradient() {
@@ -165,7 +167,7 @@ class MinDist : public IneqConstraint {
   NonlinearTrajectory *traj_;
   decimal_t total_time;
 
- public:
+public:
   // need 1 poly object per second, precompute all in constructor
   std::vector<SymbolicPoly> polyies;
   // std::vector<SymbolicPoly> polyies_debug;
@@ -190,7 +192,7 @@ class MinDist : public IneqConstraint {
 
     polyies.resize(
         traj_->seg_ *
-        traj_->dim_);  // uncomment this! testing for now with 1 seg 3 dim traj
+        traj_->dim_); // uncomment this! testing for now with 1 seg 3 dim traj
     // polyies_debug.resize(traj_->dim_);
     constant = -distance2;
 
@@ -214,7 +216,7 @@ class MinDist : public IneqConstraint {
         // std::cout << "Poly " << j << " , " << d << " : " << poly <<
         // std::endl; polyies.at(j).add(poly.square()); // x^2
         polyies.at(d + traj_->dim_ * j)
-            .add(poly);  //- 2x c  uncomment these, testing with d
+            .add(poly); //- 2x c  uncomment these, testing with d
         // polyies_debug.at(d).add(poly); // x^2
       }
     }
@@ -225,7 +227,7 @@ class MinDist : public IneqConstraint {
     }
   }
 
- private:
+private:
   decimal_t evaluate() {
     decimal_t time = time_var->val;
     uint i = getTimeSeg();
@@ -282,13 +284,15 @@ class MinDist : public IneqConstraint {
   uint getTimeSeg() {
     decimal_t t_val = time_var->getVal();
     for (int res = 0; res < traj_->seg_; res++) {
-      if (t_val < traj_->times.at(res)->getVal()) return res;
+      if (t_val < traj_->times.at(res)->getVal())
+        return res;
       t_val -= traj_->times.at(res)->getVal();
     }
     return traj_->seg_ - 1;
   }
   void update_time(uint i) {
-    if (i == 0) return;
+    if (i == 0)
+      return;
     for (uint res = 1; res <= i; res++)
       time_var->val -= traj_->times.at(res - 1)->getVal();
   }

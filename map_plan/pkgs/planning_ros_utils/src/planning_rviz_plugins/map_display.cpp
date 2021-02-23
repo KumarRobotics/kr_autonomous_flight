@@ -210,7 +210,8 @@ void MapDisplay::visualizeMesh(const vec_Vec3f &pts, double res) {
   visuals_mesh_.clear();
   vec_E<vec_Vec3f> vss;
   for (const auto &pt : pts) {
-    if (std::abs(pt(2) - mesh_height_) > res / 2) continue;
+    if (std::abs(pt(2) - mesh_height_) > res / 2)
+      continue;
     Vec3f pt1(pt(0) - res / 2, pt(1) - res / 2, pt(2));
     Vec3f pt2(pt(0) + res / 2, pt(1) - res / 2, pt(2));
     Vec3f pt3(pt(0) + res / 2, pt(1) + res / 2, pt(2));
@@ -236,44 +237,45 @@ void MapDisplay::visualizeMesh(const vec_Vec3f &pts, double res) {
 }
 
 void MapDisplay::visualizeMessage(int state) {
-  if (header_ptr_ == nullptr) return;
+  if (header_ptr_ == nullptr)
+    return;
 
   switch (state) {
-    case 0: {
-      visuals_mesh_.clear();
-      sensor_msgs::PointCloud cloud = vec_to_cloud(map_util_->getCloud());
-      cloud.header = *header_ptr_;
-      point_cloud_common_->addMessage(
-          boost::make_shared<sensor_msgs::PointCloud>(cloud));
-      break;
-    }
-    case 1: {
-      sensor_msgs::PointCloud cloud = vec_to_cloud(map_util_->getCloud());
-      cloud.header = *header_ptr_;
-      point_cloud_common_->addMessage(
-          boost::make_shared<sensor_msgs::PointCloud>(cloud));
+  case 0: {
+    visuals_mesh_.clear();
+    sensor_msgs::PointCloud cloud = vec_to_cloud(map_util_->getCloud());
+    cloud.header = *header_ptr_;
+    point_cloud_common_->addMessage(
+        boost::make_shared<sensor_msgs::PointCloud>(cloud));
+    break;
+  }
+  case 1: {
+    sensor_msgs::PointCloud cloud = vec_to_cloud(map_util_->getCloud());
+    cloud.header = *header_ptr_;
+    point_cloud_common_->addMessage(
+        boost::make_shared<sensor_msgs::PointCloud>(cloud));
 
-      vec_Vec3f free_cloud = map_util_->getFreeCloud();
-      visualizeMesh(free_cloud, map_util_->getRes());
-      break;
-    }
-    case 2: {
-      sensor_msgs::PointCloud cloud = vec_to_cloud(map_util_->getCloud());
-      cloud.header = *header_ptr_;
-      point_cloud_common_->addMessage(
-          boost::make_shared<sensor_msgs::PointCloud>(cloud));
+    vec_Vec3f free_cloud = map_util_->getFreeCloud();
+    visualizeMesh(free_cloud, map_util_->getRes());
+    break;
+  }
+  case 2: {
+    sensor_msgs::PointCloud cloud = vec_to_cloud(map_util_->getCloud());
+    cloud.header = *header_ptr_;
+    point_cloud_common_->addMessage(
+        boost::make_shared<sensor_msgs::PointCloud>(cloud));
 
-      vec_Vec3f unknown_cloud = map_util_->getUnknownCloud();
-      visualizeMesh(unknown_cloud, map_util_->getRes());
-      break;
-    }
-    case 3: {
-      point_cloud_common_->reset();
-      visuals_mesh_.clear();
-      break;
-    }
-    default:
-      std::cout << "Invalid State: " << state << std::endl;
+    vec_Vec3f unknown_cloud = map_util_->getUnknownCloud();
+    visualizeMesh(unknown_cloud, map_util_->getRes());
+    break;
+  }
+  case 3: {
+    point_cloud_common_->reset();
+    visuals_mesh_.clear();
+    break;
+  }
+  default:
+    std::cout << "Invalid State: " << state << std::endl;
   }
 }
 
@@ -288,13 +290,15 @@ void MapDisplay::update(float wall_dt, float ros_dt) {
 
 void MapDisplay::updateBoundScale() {
   float scale = bound_scale_property_->getFloat();
-  if (visual_) visual_->setScale(scale);
+  if (visual_)
+    visual_->setScale(scale);
 }
 
 void MapDisplay::updateMeshHeight() {
   mesh_height_ = mesh_height_property_->getFloat();
   int state = state_property_->getOptionInt();
-  if (visual_) visualizeMessage(state);
+  if (visual_)
+    visualizeMessage(state);
 }
 
 void MapDisplay::updateMeshColorAndAlpha() {
@@ -313,7 +317,7 @@ void MapDisplay::reset() {
   visual_ = nullptr;
   visuals_mesh_.clear();
 }
-}  // namespace planning_rviz_plugins
+} // namespace planning_rviz_plugins
 
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_EXPORT_CLASS(planning_rviz_plugins::MapDisplay, rviz::Display)

@@ -30,22 +30,26 @@ void PathArrayDisplay::reset() {
 
 void PathArrayDisplay::updateLineColorAndAlpha() {
   Ogre::ColourValue color = line_color_property_->getOgreColor();
-  if (visual_) visual_->setLineColor(color.r, color.g, color.b, 1);
+  if (visual_)
+    visual_->setLineColor(color.r, color.g, color.b, 1);
 }
 
 void PathArrayDisplay::updateNodeColorAndAlpha() {
   Ogre::ColourValue color = node_color_property_->getOgreColor();
-  if (visual_) visual_->setNodeColor(color.r, color.g, color.b, 1);
+  if (visual_)
+    visual_->setNodeColor(color.r, color.g, color.b, 1);
 }
 
 void PathArrayDisplay::updateLineScale() {
   float s = line_scale_property_->getFloat();
-  if (visual_) visual_->setLineScale(s);
+  if (visual_)
+    visual_->setLineScale(s);
 }
 
 void PathArrayDisplay::updateNodeScale() {
   float s = node_scale_property_->getFloat();
-  if (visual_) visual_->setNodeScale(s);
+  if (visual_)
+    visual_->setNodeScale(s);
 }
 
 void PathArrayDisplay::processMessage(
@@ -73,7 +77,8 @@ void PathArrayDisplay::processMessage(
 }
 
 void PathArrayDisplay::visualizeMessage(int id) {
-  if (id >= (int)paths_.paths.size() || paths_.paths.empty()) return;
+  if (id >= (int)paths_.paths.size() || paths_.paths.empty())
+    return;
 
   std::shared_ptr<PathVisual> visual;
   visual.reset(new PathVisual(context_->getSceneManager(), scene_node_));
@@ -115,7 +120,7 @@ void PathArrayDisplay::updateID() {
   int id = id_property_->getOptionInt();
   visualizeMessage(id);
 }
-}  // namespace planning_rviz_plugins
+} // namespace planning_rviz_plugins
 
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_EXPORT_CLASS(planning_rviz_plugins::PathArrayDisplay, rviz::Display)

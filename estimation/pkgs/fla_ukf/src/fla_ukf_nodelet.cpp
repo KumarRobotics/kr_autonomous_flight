@@ -1,33 +1,33 @@
 // Copyright 2016 KumarRobotics - Kartik Mohta
 #include "fla_ukf/fla_ukf.h"
+#include <Eigen/Geometry>
+#include <algorithm>
 #include <angles/angles.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <limits>
+#include <memory>
 #include <nav_msgs/Odometry.h>
 #include <nodelet/nodelet.h>
+#include <queue>
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
 #include <sensor_msgs/Range.h>
+#include <std_msgs/Bool.h>
+#include <string>
 #include <tf2/utils.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
-#include <std_msgs/Bool.h>
-#include <Eigen/Geometry>
-#include <algorithm>
-#include <memory>
-#include <queue>
-#include <string>
-#include <limits>
 
 class FLAUKFNodelet : public nodelet::Nodelet {
- public:
+public:
   FLAUKFNodelet();
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW; // Need this since we have FLAUKF which
                                    // needs aligned pointer
- private:
+private:
   void onInit(void) override;
   void imu_callback(const sensor_msgs::Imu::ConstPtr &msg);
   void
@@ -87,7 +87,7 @@ class FLAUKFNodelet : public nodelet::Nodelet {
  *
  */
 template <typename T>
-FLAUKF::Vec<3> quatToEulerZYX(const Eigen::Quaternion<T>& q) {
+FLAUKF::Vec<3> quatToEulerZYX(const Eigen::Quaternion<T> &q) {
   T q0 = q.w(), q1 = q.x(), q2 = q.y(), q3 = q.z();
 
   T sth = 2 * (q0 * q2 - q1 * q3);
@@ -113,12 +113,11 @@ FLAUKF::Vec<3> quatToEulerZYX(const Eigen::Quaternion<T>& q) {
   }
 
   FLAUKF::Vec<3> rpy;
-  rpy[0] = phi;    //  x, [-pi,pi]
-  rpy[1] = theta;  //  y, [-pi/2,pi/2]
-  rpy[2] = psi;    //  z, [-pi,pi]
+  rpy[0] = phi;   //  x, [-pi,pi]
+  rpy[1] = theta; //  y, [-pi/2,pi/2]
+  rpy[2] = psi;   //  z, [-pi,pi]
   return rpy;
 }
-
 
 FLAUKFNodelet::FLAUKFNodelet() {}
 void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {

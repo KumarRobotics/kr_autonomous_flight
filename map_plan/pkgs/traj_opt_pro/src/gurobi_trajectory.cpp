@@ -28,7 +28,8 @@ TrajSection1D::TrajSection1D(GRBModel *model_, uint n_p_, uint k_r_,
   model->update();
 }
 void TrajSection1D::getLinCost(GRBLinExpr &expr, uint i) {
-  if (i > n_p - k_r) return;
+  if (i > n_p - k_r)
+    return;
   int index = i + k_r;
   decimal_t delta = std::pow(dt, 1 - 2 * static_cast<int>(k_r));
   expr = coeffs_var.at(index) * std::sqrt(delta);
@@ -77,11 +78,13 @@ decimal_t TrajSection1D::getCostDerr() {
 }
 void TrajSection4D::getCost(GRBQuadExpr &objective) {
   // add cost from each dimension
-  for (auto &sec : secs) sec->getCost(objective);
+  for (auto &sec : secs)
+    sec->getCost(objective);
 }
 decimal_t TrajSection4D::getCostDerr() {
   decimal_t cost = 0;
-  for (auto &sec : secs) cost += sec->getCostDerr();
+  for (auto &sec : secs)
+    cost += sec->getCostDerr();
   return cost;
 }
 
@@ -192,7 +195,8 @@ void TrajSection4D::addLineCost(const Vec3 &p0, const Vec3 &p1,
 
 void TrajSection4D::evaluate(decimal_t t, uint derr, VecD &out) const {
   out == VecD::Zero(dim, 1);
-  for (int i = 0; i < dim; i++) out(i, 0) = secs.at(i)->evaluate(t, derr);
+  for (int i = 0; i < dim; i++)
+    out(i, 0) = secs.at(i)->evaluate(t, derr);
 }
 TrajSection4D::TrajSection4D(GRBModel *model, uint n_p_, uint k_r, decimal_t dt,
                              boost::shared_ptr<BasisBundlePro> basis,
@@ -209,19 +213,23 @@ TrajSection4D::TrajSection4D(GRBModel *model, uint n_p_, uint k_r, decimal_t dt,
 
 void TrajSection1D::recoverVars(decimal_t ratio) {
   coeffs.clear();
-  for (auto &var : coeffs_var) coeffs.push_back(var.get(GRB_DoubleAttr_X));
+  for (auto &var : coeffs_var)
+    coeffs.push_back(var.get(GRB_DoubleAttr_X));
   generated = true;
 }
 void TrajSection4D::recoverVars(decimal_t ratio) {
-  for (auto &sec : secs) sec->recoverVars(ratio);
+  for (auto &sec : secs)
+    sec->recoverVars(ratio);
 }
 void TrajSection1D::recoverVarsF(decimal_t ratio) {
   coeffs.clear();
-  for (auto &var : coeffs_var) coeffs.push_back(var.get(GRB_DoubleAttr_UB));
+  for (auto &var : coeffs_var)
+    coeffs.push_back(var.get(GRB_DoubleAttr_UB));
   generated = true;
 }
 void TrajSection4D::recoverVarsF(decimal_t ratio) {
-  for (auto &sec : secs) sec->recoverVarsF(ratio);
+  for (auto &sec : secs)
+    sec->recoverVarsF(ratio);
 }
 bool LegendreTrajectory::recoverVarsF(decimal_t ratio) {
   try {
@@ -256,7 +264,7 @@ bool LegendreTrajectory::recoverVars(decimal_t ratio) {
   }
 }
 bool LegendreTrajectory::evaluate(decimal_t t, uint derr,
-                                  VecD &out) const {  // returns false when out
+                                  VecD &out) const { // returns false when out
   // of time range, but still
   // sets out to endpoint
   if (t < 0) {
@@ -384,28 +392,29 @@ void LegendreTrajectory::setLinearCost() {
           GRBLinExpr varconstr;
           subsec->getLinCost(varconstr, j);
           rowcontr += varconstr * magic2(k, j);
-        }  // end j
+        } // end j
         model->addConstr(rowcontr <= slack_vars.at(i));
         //        std::cout << "constr " << rowcontr << std::endl;
-      }  // end k
+      } // end k
       cost += slack_vars.at(i);
       i++;
-    }  // end auto sub sec
-  }    // end auto sec
+    } // end auto sub sec
+  }   // end auto sec
 
   //  std::cout << "cost " << cost << std::endl;
   model->setObjective(cost, GRB_MINIMIZE);
 }
 void LegendreTrajectory::setQuadraticCost() {
   GRBQuadExpr cost;
-  for (auto &sec : individual_sections) sec->getCost(cost);
+  for (auto &sec : individual_sections)
+    sec->getCost(cost);
   model->setObjective(cost, GRB_MINIMIZE);
 }
 
 void LegendreTrajectory::setSlackCost() {
   GRBLinExpr cost;
   for (auto &sec : individual_sections) {
-    auto &sec1d = sec->secs.back();  // only set cost on last param
+    auto &sec1d = sec->secs.back(); // only set cost on last param
     for (uint i = 0; i < sec1d->coeffs_var.size(); i++) {
       cost +=
           sec1d->basis->getVal(1.0, sec1d->dt, i, -1) * sec1d->coeffs_var.at(i);
@@ -451,7 +460,7 @@ void LegendreTrajectory::addWayPointConstrains(
       sec_id = num_secs + waypnt.knot_id + 1;
 
     // get grb constraints
-    decimal_t valuation = 0;  // where to evaluate section
+    decimal_t valuation = 0; // where to evaluate section
     if (sec_id == num_secs) {
       valuation = 1.0;
       sec_id--;
@@ -529,7 +538,8 @@ void LegendreTrajectory::addMaximumBound(decimal_t bound, uint derr) {
 }
 decimal_t LegendreTrajectory::getTotalTime() const {
   decimal_t t = 0;
-  for (auto &dt : dts) t += dt;
+  for (auto &dt : dts)
+    t += dt;
   //  ROS_WARN("Getting total time");
   return t;
 }
@@ -551,12 +561,13 @@ void LegendreTrajectory::addVolumeContraints(const Mat4Vec &constr) {
           expr += subexpr;
         }
         model->addConstr(expr >= -con(r, 3));
-      }  // end r
-    }    // end t
-  }      // end i
+      } // end r
+    }   // end t
+  }     // end i
 }
 void TrajSection4D::setDt(decimal_t dt) {
-  for (auto &sec : secs) sec->setDt(dt);
+  for (auto &sec : secs)
+    sec->setDt(dt);
   dt_ = dt;
 }
 
@@ -594,8 +605,8 @@ void LegendreTrajectory::addAxbConstraints(const std::vector<MatD> &A,
           }
           //                std::cout << "expr " << expr << std::endl;
           model->addConstr(expr <= conb(r));
-        }  // end r
-      }    // end t
+        } // end r
+      }   // end t
       // std::cout << "using sampling method " << std::endl;
 
     } else if (con_mode_ == CONTROL) {
@@ -633,8 +644,8 @@ void LegendreTrajectory::addAxbConstraints(const std::vector<MatD> &A,
           }
           //                std::cout << "expr " << expr << std::endl;
           model->addConstr(expr <= conb(r));
-        }  // end r
-      }    // end t
+        } // end r
+      }   // end t
     } else if (con_mode_ == ELLIPSE) {
       for (int j = 0; j <= n_p_; j++) {
         GRBQuadExpr expr;
@@ -653,8 +664,8 @@ void LegendreTrajectory::addAxbConstraints(const std::vector<MatD> &A,
         }
         model->addQConstr(expr <= 1.0);
       }
-    }  // end con mode
-  }    // end i
+    } // end con mode
+  }   // end i
 }
 
 // empty detructors
@@ -670,7 +681,8 @@ bool LegendreTrajectory::adjustTimes(decimal_t epsilon) {
   bool success = recoverVars();
   if (!success || cost_diverging) {
     // check if proceedure iterated
-    if (old_dts.size() == 0) return false;
+    if (old_dts.size() == 0)
+      return false;
 
     // revert model
     int numConst = model->get(GRB_IntAttr_NumConstrs);
@@ -877,7 +889,8 @@ void LegendreTrajectory::adjustTimeToMaxs(decimal_t max_vel, decimal_t max_acc,
     VecD temp;
     evaluate(0, 1, temp);
     b = v0 / temp.norm();
-    if (b > 2) std::cout << "composite adjustment failed" << std::endl;
+    if (b > 2)
+      std::cout << "composite adjustment failed" << std::endl;
     a = 1.0 - b;
 
     std::cout << "Comp adjustment a: " << a << " b: " << b
@@ -951,4 +964,4 @@ void LegendreTrajectory::setCost(bool lp) {
     setQuadraticCost();
 }
 
-}  // namespace traj_opt
+} // namespace traj_opt

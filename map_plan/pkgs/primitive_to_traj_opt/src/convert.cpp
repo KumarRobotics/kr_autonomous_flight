@@ -11,8 +11,8 @@ uint factorial(uint i) {
 /**
  * @brief convert traj msg for visualization?
  */
-planning_ros_msgs::Trajectory_traj_opt PrimitiveToTrajOpt::convert(
-    const planning_ros_msgs::Trajectory &msg) {
+planning_ros_msgs::Trajectory_traj_opt
+PrimitiveToTrajOpt::convert(const planning_ros_msgs::Trajectory &msg) {
   planning_ros_msgs::Trajectory_traj_opt traj;
   traj.header = msg.header;
 
@@ -26,9 +26,12 @@ planning_ros_msgs::Trajectory_traj_opt PrimitiveToTrajOpt::convert(
     for (uint s = 0; s < msg.primitives.size(); s++) {
       const std::vector<double> *co;
       // get correct field
-      if (d == 0) co = &(msg.primitives.at(s).cx);
-      if (d == 1) co = &(msg.primitives.at(s).cy);
-      if (d == 2) co = &(msg.primitives.at(s).cz);
+      if (d == 0)
+        co = &(msg.primitives.at(s).cx);
+      if (d == 1)
+        co = &(msg.primitives.at(s).cy);
+      if (d == 2)
+        co = &(msg.primitives.at(s).cz);
       planning_ros_msgs::Polynomial poly;
       for (uint c = 0; c < co->size(); c++) {
         uint cr = co->size() - 1 - c;

@@ -11,16 +11,16 @@
 // Timing stuff
 ros::Publisher time_pub;
 
-std::unique_ptr<VoxelMapper> voxel_mapper_; // mapper
+std::unique_ptr<VoxelMapper> voxel_mapper_;  // mapper
 ros::Publisher map_pub;
 ros::Publisher global_occ_map_pub;
 ros::Publisher local_cloud_pub;
 
 bool debug_;
-bool real_robot_;         // define it's real-robot experiment or not
-std::string map_frame_;   // map frame
-std::string lidar_frame_; // map frame
-vec_Vec3i ns_;            // inflation array
+bool real_robot_;          // define it's real-robot experiment or not
+std::string map_frame_;    // map frame
+std::string lidar_frame_;  // map frame
+vec_Vec3i ns_;             // inflation array
 double robot_r_, robot_h_, max_range_;
 double occ_map_height_;
 double local_dim_x_, local_dim_y_, local_dim_z_;
@@ -29,8 +29,7 @@ int counter_ = 0;
 int counter_clear_ = 0;
 
 void processCloud(const sensor_msgs::PointCloud &cloud) {
-  if (voxel_mapper_ == nullptr)
-    return;
+  if (voxel_mapper_ == nullptr) return;
 
   // get the transform from fixed frame to lidar frame
   static TFListener tf_listener;
@@ -62,7 +61,7 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
   const Aff3f T_m_c = toTF(pose_map_cloud);
 
   ros::Time t0 = ros::Time::now();
-  double min_range = 0.75; // points within this distance will be discarded
+  double min_range = 0.75;  // points within this distance will be discarded
   double min_range_squared;
   min_range_squared = min_range * min_range;
   const auto pts = cloud_to_vec_filter(cloud, min_range_squared);
@@ -136,10 +135,8 @@ void mapInfoUpdate(const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
   for (int nx = -rn; nx <= rn; ++nx) {
     for (int ny = -rn; ny <= rn; ++ny) {
       for (int nz = -hn; nz <= hn; ++nz) {
-        if (nx == 0 && ny == 0)
-          continue;
-        if (std::hypot(nx, ny) > rn)
-          continue;
+        if (nx == 0 && ny == 0) continue;
+        if (std::hypot(nx, ny) > rn) continue;
         ns_.push_back(Vec3i(nx, ny, nz));
       }
     }

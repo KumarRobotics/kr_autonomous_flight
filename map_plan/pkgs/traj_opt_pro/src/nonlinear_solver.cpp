@@ -15,8 +15,7 @@ std::ostream &operator<<(std::ostream &os, const Variable &var) {
   return os;
 }
 std::ostream &operator<<(std::ostream &os, const EqConstraint &var) {
-  for (auto &p : var.coeff)
-    os << *(p.first) << " * " << p.second << " + ";
+  for (auto &p : var.coeff) os << *(p.first) << " * " << p.second << " + ";
   os << " = " << var.rhs;
   return os;
 }
@@ -26,8 +25,7 @@ std::ostream &operator<<(std::ostream &os, const ET &trip) {
 }
 
 std::ostream &operator<<(std::ostream &os, const ETV &trip) {
-  for (auto &t : trip)
-    os << t << std::endl;
+  for (auto &t : trip) os << t << std::endl;
   return os;
 }
 // to be able to sort
@@ -42,27 +40,23 @@ bool operator<(const Variable &var1, const Variable &var2) {
 ETV EqConstraint::ai() {
   ETV a;
   a.reserve(coeff.size());
-  for (auto &p : coeff)
-    a.push_back(ET(var_v->id, p.first->getId(), p.second));
+  for (auto &p : coeff) a.push_back(ET(var_v->id, p.first->getId(), p.second));
   return a;
 }
 ET EqConstraint::bi() {
   decimal_t val = -rhs;
-  for (auto &p : coeff)
-    val += p.first->val * p.second;
+  for (auto &p : coeff) val += p.first->val * p.second;
   return ET(var_v->id, 0, val);
 }
 ETV EqConstraint::audio_video() {
   ETV av;
-  for (auto &p : coeff)
-    av.push_back(ET(p.first->id, 0, var_v->val * p.second));
+  for (auto &p : coeff) av.push_back(ET(p.first->id, 0, var_v->val * p.second));
   return av;
 }
 std::pair<ETV, ET> EqConstraint::get_presolve() {
   ETV a_i;
   ET b_i(id, 0, rhs);
-  for (auto &c : coeff)
-    a_i.push_back(ET(id, c.first->id, c.second));
+  for (auto &c : coeff) a_i.push_back(ET(id, c.first->id, c.second));
   return std::pair<ETV, ET>(a_i, b_i);
 }
 
@@ -77,20 +71,19 @@ ETV IneqConstraint::gradientS() {
   ETV grad = gradient();
   ETV gradS;
   gradS.reserve(grad.size());
-  for (auto t : grad)
-    gradS.push_back(ET(t.col(), 0, t.value() * var_u->val));
+  for (auto t : grad) gradS.push_back(ET(t.col(), 0, t.value() * var_u->val));
   return gradS;
 }
 decimal_t IneqConstraint::linesearch(const VecD &delta, decimal_t max_h) {
   max_h = 1.0;
   decimal_t ui = var_u->val;
   decimal_t dui = delta(var_u->id);
-  if (dui > 1e-6) { // negative dui is fine
+  if (dui > 1e-6) {  // negative dui is fine
     max_h = std::min(ui / dui, max_h);
   }
   decimal_t si = var_s->val;
   decimal_t dsi = delta(var_s->id);
-  if (dsi > 1e-6) { // negative dui is fine
+  if (dsi > 1e-6) {  // negative dui is fine
     max_h = std::min(si / dsi, max_h);
   }
 
@@ -142,8 +135,7 @@ ETV NonlinearSolver::transpose(const ETV &vec) {
 decimal_t NonlinearSolver::duality() {
   decimal_t gap = 0.0;
   int num_u = ineq_con.size();
-  for (auto &con : ineq_con)
-    gap += con->var_u->val * con->var_s->val;
+  for (auto &con : ineq_con) gap += con->var_u->val * con->var_s->val;
   gap /= decimal_t(num_u);
   if (num_u == 0)
     return 0.0;
@@ -157,7 +149,7 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
   // Timer tm;
   int num_u = ineq_con.size();
   int total_v = vars.size();
-  int num_z = total_v - 2 * num_u; // - num_v;
+  int num_z = total_v - 2 * num_u;  // - num_v;
 
   SpMat M(total_v, total_v);
   SpMat b(total_v, 1);
@@ -195,10 +187,10 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
     bcoeffs.push_back(ineq->sports_util(nu(ineq->id)));
     // S,I and Z
     coeffs.push_back(
-        ET(ineq->var_s->id, ineq->var_u->id, ineq->var_s->val)); // S
-    coeffs.push_back(ET(ineq->var_u->id, ineq->var_s->id, 1.0)); // I
+        ET(ineq->var_s->id, ineq->var_u->id, ineq->var_s->val));  // S
+    coeffs.push_back(ET(ineq->var_u->id, ineq->var_s->id, 1.0));  // I
     coeffs.push_back(
-        ET(ineq->var_s->id, ineq->var_s->id, ineq->var_u->val)); // Z
+        ET(ineq->var_s->id, ineq->var_s->id, ineq->var_u->val));  // Z
   }
   ETV GT = transpose(G);
   if (G.size() > 0) {
@@ -308,8 +300,7 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
   }
   for (auto &pv : positive_vars) {
     decimal_t max_i = pv->val / delta_x(pv->id);
-    if (max_i > 0)
-      max_h = std::min(max_i, max_h);
+    if (max_i > 0) max_h = std::min(max_i, max_h);
   }
   //    max_h = std::min(max_h,cost_linesearch(delta_x));
   max_h = std::max(max_h, 0.0);
@@ -322,15 +313,13 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
   for (auto &con : ineq_con) {
     decimal_t new_s = con->var_s->val - max_h * delta_x(con->var_s->id);
     decimal_t new_u = con->var_u->val - max_h * delta_x(con->var_u->id);
-    if (new_s > 0 && new_u > 0)
-      mu_aff += new_s * new_u;
+    if (new_s > 0 && new_u > 0) mu_aff += new_s * new_u;
   }
   mu_aff /= decimal_t(ineq_con.size());
   //    std::cout << "mu: " << mu << std::endl;
   // centering param
   decimal_t sigma = std::pow(mu_aff / mu, 3);
-  if (mu == 0.0)
-    sigma = 0.0;
+  if (mu == 0.0) sigma = 0.0;
   //    std::cout << "Sigma " << sigma << std::endl;
 
   nu = mu * sigma * VecD::Ones(num_u);
@@ -366,8 +355,7 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
   for (auto &pv : positive_vars) {
     decimal_t max_i = pv->val / delta_x(pv->id);
     std::cout << "pval " << pv->val << " pr " << delta_x(pv->id) << std::endl;
-    if (max_i > 0)
-      max_h = std::min(max_i, max_h);
+    if (max_i > 0) max_h = std::min(max_i, max_h);
   }
 
   //     // check duality gap reduction
@@ -383,8 +371,7 @@ bool NonlinearSolver::iterate(std::vector<Variable *> sensitive_vars) {
 
   //     max_h = std::min(max_h,cost_linesearch(delta_x));
   max_h = std::max(max_h, 0.0);
-  if (mu != 0.0)
-    max_h *= 0.99;
+  if (mu != 0.0) max_h *= 0.99;
   //  else
   //    std::cout << "delta_x  " << delta_x.transpose() << std::endl;
 
@@ -463,9 +450,9 @@ bool NonlinearSolver::solve(bool verbose, decimal_t epsilon,
     its = i;
     if (verbose) {
       std::cout << "Starting iteration " << i << " Gap: " << duality()
-                << std::endl; // << "\033[1A";
-                              //            std::cout << "x: ";
-                              //            for(int i=0;i<num_z;i++)
+                << std::endl;  // << "\033[1A";
+                               //            std::cout << "x: ";
+                               //            for(int i=0;i<num_z;i++)
       //                std::cout << vars.at(i).val << " ";
       //            std::cout << std::endl;
       //            std::cout << "v: ";
@@ -483,8 +470,7 @@ bool NonlinearSolver::solve(bool verbose, decimal_t epsilon,
       std::cout << "Cost: " << cost->evaluate() << std::endl;
       //            tm.tic();
     }
-    if (!iterate(sensitive_vars))
-      break;
+    if (!iterate(sensitive_vars)) break;
 
     // check cost regression
     //        decimal_t new_cost = cost->evaluate();
@@ -514,8 +500,7 @@ bool NonlinearSolver::solve(bool verbose, decimal_t epsilon,
     //        else
     //            std::cout << "Due to lack of slack" << std::endl;
     std::cout << "x: ";
-    for (int i = 0; i < num_z; i++)
-      std::cout << vars.at(i).val << " ";
+    for (int i = 0; i < num_z; i++) std::cout << vars.at(i).val << " ";
     std::cout << std::endl;
     //        std::cout << "v: ";
     //        for(auto &v:eq_con)
@@ -598,21 +583,17 @@ bool NonlinearSolver::presolve() {
   //    std::cout << "z_init: " << z_init.transpose() << std::endl;
 
   // add solved variable values
-  for (int i = 0; i < num_z; i++)
-    vars.at(i).val = z_init(i);
+  for (int i = 0; i < num_z; i++) vars.at(i).val = z_init(i);
 
   // add initial slack
-  for (auto &con : ineq_con)
-    con->update_slack();
-  for (auto &con : eq_con)
-    std::cout << *con << std::endl;
+  for (auto &con : ineq_con) con->update_slack();
+  for (auto &con : eq_con) std::cout << *con << std::endl;
 
   return true;
 }
 decimal_t NonlinearSolver::cost_linesearch(const VecD &delta) {
   std::vector<decimal_t> old_vars;
-  for (auto &v : vars)
-    old_vars.push_back(v.val);
+  for (auto &v : vars) old_vars.push_back(v.val);
   decimal_t old_cost = cost->evaluate();
   decimal_t max_h = 1.0;
   int max_bisects = 50;
@@ -626,8 +607,7 @@ decimal_t NonlinearSolver::cost_linesearch(const VecD &delta) {
     else
       max_h /= 2.0;
   }
-  if (cost->evaluate() >= old_cost)
-    max_h = 0.0;
+  if (cost->evaluate() >= old_cost) max_h = 0.0;
 
   // return iterate
   for (uint j = 0; j < vars.size(); j++) {
@@ -702,8 +682,7 @@ double NonlinearSolver::nlopt_wrapper_g(uint n, const double *x, double *grad,
     ETV gradef;
     gradef.reserve(grade.size());
 
-    for (auto &g : grade)
-      gradef.push_back(ET(g.col(), 0, g.value()));
+    for (auto &g : grade) gradef.push_back(ET(g.col(), 0, g.value()));
 
     SpMat gv(n, 1);
     gv.setFromTriplets(gradef.begin(), gradef.end());
@@ -748,10 +727,9 @@ bool NonlinearSolver::solve_nlopt() {
   }
   std::cout << "nlopt found min " << minf << " with ret code " << retc << " in "
             << 1000.0 * tm_t.toc() << " ms" << std::endl;
-  for (int i = 0; i < n; i++)
-    vars.at(i).val = ic.at(i);
+  for (int i = 0; i < n; i++) vars.at(i).val = ic.at(i);
 
   return true;
 }
 
-} // namespace traj_opt
+}  // namespace traj_opt

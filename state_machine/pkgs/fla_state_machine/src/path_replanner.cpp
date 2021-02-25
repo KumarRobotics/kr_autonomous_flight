@@ -12,7 +12,7 @@ using actionlib::SimpleActionClient;
 using actionlib::SimpleActionServer;
 using kr_mav_msgs::PositionCommand;
 class RePlanner {
-public:
+ public:
   RePlanner();
   // private:
   std::unique_ptr<SimpleActionServer<fla_state_machine::ReplanAction>>
@@ -49,8 +49,7 @@ public:
 
   void plan(const geometry_msgs::Pose &pose_goal,
             const std::vector<geometry_msgs::Pose> &pose_goals) {
-    if (!is_equal(pose_goal, last_pose_goal_))
-      finished_replanning = false;
+    if (!is_equal(pose_goal, last_pose_goal_)) finished_replanning = false;
 
     ROS_INFO("Number of pose_goals: %zu", pose_goals.size());
 
@@ -90,8 +89,7 @@ public:
       ROS_ERROR("[PathReplanner]: Planner timed out");
       fla_state_machine::ReplanResult critical;
       critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
-      if (replan_server_->isActive())
-        replan_server_->setSucceeded(critical);
+      if (replan_server_->isActive()) replan_server_->setSucceeded(critical);
       return false;
     }
 
@@ -131,8 +129,7 @@ public:
       ROS_WARN("[PathReplanner]: Abort full mission manually...");
       fla_state_machine::ReplanResult abort;
       abort.status = fla_state_machine::ReplanResult::ABORT_FULL_MISSION;
-      if (replan_server_->isActive())
-        replan_server_->setSucceeded(abort);
+      if (replan_server_->isActive()) replan_server_->setSucceeded(abort);
       return false;
     }
   }

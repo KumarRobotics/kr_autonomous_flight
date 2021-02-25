@@ -21,8 +21,7 @@ vec_Vec3f VoxelGrid::getCloud() {
   for (n(0) = 0; n(0) < dim_(0); n(0)++) {
     for (n(1) = 0; n(1) < dim_(1); n(1)++) {
       for (n(2) = 0; n(2) < dim_(2); n(2)++) {
-        if (map_[n(0)][n(1)][n(2)] > val_free)
-          pts.push_back(intToFloat(n));
+        if (map_[n(0)][n(1)][n(2)] > val_free) pts.push_back(intToFloat(n));
       }
     }
   }
@@ -30,14 +29,12 @@ vec_Vec3f VoxelGrid::getCloud() {
 }
 
 void VoxelGrid::clear(int nx, int ny) {
-  for (int nz = 0; nz < dim_(2); nz++)
-    map_[nx][ny][nz] = val_free;
+  for (int nz = 0; nz < dim_(2); nz++) map_[nx][ny][nz] = val_free;
 }
 
 void VoxelGrid::fill(int nx, int ny) {
   if (nx >= 0 && nx < dim_(0) && ny >= 0 && ny < dim_(1)) {
-    for (int nz = 0; nz < dim_(2); nz++)
-      map_[nx][ny][nz] = val_occ;
+    for (int nz = 0; nz < dim_(2); nz++) map_[nx][ny][nz] = val_occ;
   }
 }
 
@@ -52,12 +49,10 @@ vec_Vec3f VoxelGrid::getLocalCloud(const Vec3f &pos, const Vec3f &ori,
   Vec3i dim_low, dim_up;
 
   Vec3i dim1 = floatToInt(pos + ori);
-  for (int i = 0; i < 3; i++)
-    dim_low(i) = dim1(i) < 0 ? 0 : dim1(i);
+  for (int i = 0; i < 3; i++) dim_low(i) = dim1(i) < 0 ? 0 : dim1(i);
 
   Vec3i dim2 = floatToInt(pos + ori + dim);
-  for (int i = 0; i < 3; i++)
-    dim_up(i) = dim2(i) > dim_(i) ? dim_(i) : dim2(i);
+  for (int i = 0; i < 3; i++) dim_up(i) = dim2(i) > dim_(i) ? dim_(i) : dim2(i);
 
   vec_Vec3f pts;
   Vec3i n;
@@ -134,8 +129,7 @@ planning_ros_msgs::VoxelMap VoxelGrid::getInflatedMap() {
 bool VoxelGrid::allocate(const Vec3f &new_dim_d, const Vec3f &new_ori_d) {
   Vec3i new_dim(new_dim_d(0) / res_, new_dim_d(1) / res_, new_dim_d(2) / res_);
   Vec3i new_ori(new_ori_d(0) / res_, new_ori_d(1) / res_, new_ori_d(2) / res_);
-  if (new_dim(2) == 0 && new_ori(2) == 0)
-    new_dim(2) = 1;
+  if (new_dim(2) == 0 && new_ori(2) == 0) new_dim(2) = 1;
 
   if (new_dim(0) == dim_(0) && new_dim(1) == dim_(1) && new_dim(2) == dim_(2) &&
       new_ori(0) == origin_(0) && new_ori(1) == origin_(1) &&
@@ -180,8 +174,7 @@ bool VoxelGrid::allocate(const Vec3f &new_dim_d, const Vec3f &new_ori_d) {
 void VoxelGrid::addCloud(const vec_Vec3f &pts) {
   for (const auto &it : pts) {
     Vec3i n = floatToInt(it);
-    if (isOutSide(n))
-      continue;
+    if (isOutSide(n)) continue;
     map_[n(0)][n(1)][n(2)] = val_occ;
   }
 }
@@ -190,8 +183,7 @@ vec_Vec3i VoxelGrid::addCloud(const vec_Vec3f &pts, const vec_Vec3i &ns) {
   vec_Vec3i new_obs;
   for (const auto &it : pts) {
     Vec3i n = floatToInt(it);
-    if (isOutSide(n))
-      continue;
+    if (isOutSide(n)) continue;
     if (map_[n(0)][n(1)][n(2)] != val_occ) {
       for (const auto &it_n : ns) {
         Vec3i n2 = n + it_n;

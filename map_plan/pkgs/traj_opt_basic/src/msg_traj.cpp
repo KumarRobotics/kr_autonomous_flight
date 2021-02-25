@@ -9,8 +9,7 @@ MsgTrajectory::MsgTrajectory(const TrajData &traj) : traj_(traj) {
   num_secs_ = traj_.data.front().segments;
   dim_ = traj_.dimensions;
 
-  for (auto &poly : traj_.data.front().segs)
-    dts.push_back(poly.dt);
+  for (auto &poly : traj_.data.front().segs) dts.push_back(poly.dt);
   exec_t = traj.data.front().t_total;
 
   deg_ = traj_.data.front().segs.front().degree;
@@ -50,7 +49,7 @@ MsgTrajectory::MsgTrajectory(const TrajData &traj) : traj_(traj) {
 }
 
 bool MsgTrajectory::evaluate(decimal_t t, uint derr,
-                             VecD &out) const { // returns false when out
+                             VecD &out) const {  // returns false when out
   out = VecD::Zero(dim_, 1);
   //  out << 0.0,0.0,0.0,0.0;
   bool success = false;
@@ -88,8 +87,7 @@ bool MsgTrajectory::evaluate(decimal_t t, uint derr,
     success = false;
   }
   decimal_t ratio = std::pow(1 / dt, decimal_t(derr));
-  for (int i = 0; i < dim_; i++)
-    out(i) = ratio * poly->at(i)->evaluate(dx);
+  for (int i = 0; i < dim_; i++) out(i) = ratio * poly->at(i)->evaluate(dx);
 
   //  if(t < 0.1)
   //  if(derr == 0)
@@ -100,8 +98,7 @@ bool MsgTrajectory::evaluate(decimal_t t, uint derr,
 
 decimal_t MsgTrajectory::getTotalTime() const {
   decimal_t tt = 0.0;
-  for (auto &t : dts)
-    tt += t;
+  for (auto &t : dts) tt += t;
   return tt;
 }
 
@@ -142,4 +139,4 @@ bool MsgTrajectory::evaluateST(decimal_t t, VecD &out) {
   return true;
 }
 
-} // namespace traj_opt
+}  // namespace traj_opt

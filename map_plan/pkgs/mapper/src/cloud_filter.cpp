@@ -34,8 +34,7 @@ void filter(const sensor_msgs::PointCloud &cloud) {
   cloud_pub.publish(cloud_out);
 
   double dt = (ros::Time::now() - t0).toSec();
-  if (dt > 0.05)
-    ROS_WARN_THROTTLE(1.0, "Time to create map %f", dt);
+  if (dt > 0.05) ROS_WARN_THROTTLE(1.0, "Time to create map %f", dt);
 }
 
 void cloudCallback(const topic_tools::ShapeShifter::ConstPtr &msg) {

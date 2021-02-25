@@ -3,10 +3,10 @@
 #include <action_planner/PlanWaypointsAction.h>
 #include <actionlib/server/simple_action_server.h>
 #include <eigen_conversions/eigen_msg.h>
-#include <mapper/data_conversions.h>         // setMap, getMap, etc
-#include <mpl_basis/trajectory.h>            // mpl related
-#include <mpl_collision/map_util.h>          // mpl related
-#include <mpl_planner/planner/map_planner.h> // mpl related
+#include <mapper/data_conversions.h>          // setMap, getMap, etc
+#include <mpl_basis/trajectory.h>             // mpl related
+#include <mpl_collision/map_util.h>           // mpl related
+#include <mpl_planner/planner/map_planner.h>  // mpl related
 #include <planning_ros_utils/data_ros_utils.h>
 #include <planning_ros_utils/primitive_ros_utils.h>
 #include <primitive_to_traj_opt/convert.h>
@@ -22,7 +22,7 @@ using boost::irange;
 
 // Local planning server for Sikang's motion primitive planner
 class LocalPlanServer {
-private:
+ private:
   // local global map sub
   ros::Subscriber local_map_sub_;
 
@@ -34,7 +34,7 @@ private:
   ros::Publisher expanded_cloud_pub;
 
   // mutexes
-  boost::mutex map_mtx, traj_mtx; // TODO: do we need this?
+  boost::mutex map_mtx, traj_mtx;  // TODO: do we need this?
 
   // motion primitive planner util and its map util
   std::shared_ptr<MPL::VoxelMapPlanner> mp_planner_util_;
@@ -86,7 +86,7 @@ private:
   bool local_plan_process(const Waypoint3D &start, const Waypoint3D &goal,
                           const planning_ros_msgs::VoxelMap &map);
 
-public:
+ public:
   /**
    * @brief Constructor, initialization
    */
@@ -149,28 +149,28 @@ LocalPlanServer::LocalPlanServer(ros::NodeHandle &nh) {
   priv_nh.param("ndt", ndt, -1);
   priv_nh.param("max_num", max_num, -1);
 
-  mp_planner_util_.reset(new MPL::VoxelMapPlanner(verbose_)); // verbose
-  mp_planner_util_->setMapUtil(mp_map_util_); // Set collision checking function
-  mp_planner_util_->setEpsilon(1.0); // Set greedy param (default equal to 1)
-  mp_planner_util_->setVmax(v_max);  // Set max velocity
-  mp_planner_util_->setAmax(a_max);  // Set max acceleration
-  mp_planner_util_->setJmax(j_max);  // Set max jerk
+  mp_planner_util_.reset(new MPL::VoxelMapPlanner(verbose_));  // verbose
+  mp_planner_util_->setMapUtil(
+      mp_map_util_);                  // Set collision checking function
+  mp_planner_util_->setEpsilon(1.0);  // Set greedy param (default equal to 1)
+  mp_planner_util_->setVmax(v_max);   // Set max velocity
+  mp_planner_util_->setAmax(a_max);   // Set max acceleration
+  mp_planner_util_->setJmax(j_max);   // Set max jerk
   // mp_planner_util_->setUmax(u_max); // Set max control input
-  mp_planner_util_->setDt(dt);         // Set dt for each primitive
-  mp_planner_util_->setTmax(ndt * dt); // Set max time horizon of planning
+  mp_planner_util_->setDt(dt);          // Set dt for each primitive
+  mp_planner_util_->setTmax(ndt * dt);  // Set max time horizon of planning
   mp_planner_util_->setMaxNum(
-      max_num); // Set maximum allowed expansion, -1 means no limitation
-  mp_planner_util_->setU(U); // 2D discretization if false, 3D if true
+      max_num);  // Set maximum allowed expansion, -1 means no limitation
+  mp_planner_util_->setU(U);  // 2D discretization if false, 3D if true
   mp_planner_util_->setTol(tol_pos, tol_vel,
-                           tol_acc);   // Tolerance for goal region
-  mp_planner_util_->setLPAstar(false); // Use Astar
+                           tol_acc);    // Tolerance for goal region
+  mp_planner_util_->setLPAstar(false);  // Use Astar
 }
 
 void LocalPlanServer::process_all() {
   boost::mutex::scoped_lock lockm(map_mtx);
 
-  if (goal_ == NULL)
-    return;
+  if (goal_ == NULL) return;
   ros::Time t0 = ros::Time::now();
   // record goal position, specify use jrk, acc or vel
   process_goal();
@@ -189,7 +189,7 @@ void LocalPlanServer::process_all() {
 
 void LocalPlanServer::process_result(const Trajectory3D &traj, bool solved) {
   result_ = boost::make_shared<action_planner::PlanTwoPointResult>();
-  result_->success = solved; // set success status
+  result_->success = solved;  // set success status
   result_->policy_status = solved ? 1 : -1;
   if (solved) {
     // covert traj to a ros message
@@ -203,14 +203,14 @@ void LocalPlanServer::process_result(const Trajectory3D &traj, bool solved) {
     TrajRosBridge::publish_msg(result_->traj);
 
     decimal_t endt =
-        goal_->execution_time.toSec(); // execution_time (set in replanner)
-                                       // equals 1.0/replan_rate
+        goal_->execution_time.toSec();  // execution_time (set in replanner)
+                                        // equals 1.0/replan_rate
 
     // evaluate trajectory for 5 steps, each step duration equals
     // execution_time, get corresponding waypoints and record in result
     // (result_->p_stop etc.) (evaluate the whole traj if execution_time is not
     // set (i.e. not in replan mode))
-    int num_goals = 5; // TODO: why 5? should be >= max_horizon in replanner?
+    int num_goals = 5;  // TODO: why 5? should be >= max_horizon in replanner?
     if (endt <= 0) {
       endt = traj.getTotalTime();
       num_goals = 1;
@@ -247,8 +247,8 @@ void LocalPlanServer::process_result(const Trajectory3D &traj, bool solved) {
       result_->j_stop.push_back(j_fin);
     }
     result_->execution_time =
-        goal_->execution_time; // execution_time (set in replanner)
-                               // equals 1.0/replan_rate
+        goal_->execution_time;  // execution_time (set in replanner)
+                                // equals 1.0/replan_rate
     result_->epoch = goal_->epoch;
     Waypoint3D pt = traj.evaluate(traj.getTotalTime());
     result_->traj_end.position.x = pt.pos(0);
@@ -270,8 +270,7 @@ void LocalPlanServer::process_result(const Trajectory3D &traj, bool solved) {
     // local_as_->setAborted();
   }
 
-  if (local_as_->isActive())
-    local_as_->setSucceeded(*result_);
+  if (local_as_->isActive()) local_as_->setSucceeded(*result_);
 }
 
 // record goal position, specify use jrk, acc or vel
@@ -335,7 +334,7 @@ bool LocalPlanServer::local_plan_process(
   sg.push_back(start.pos);
   sg.push_back(goal.pos);
   planning_ros_msgs::Path sg_msg = path_to_ros(sg);
-  std::string map_frame; // set frame id
+  std::string map_frame;  // set frame id
   map_frame = map.header.frame_id;
   sg_msg.header.frame_id = map_frame;
   sg_pub.publish(sg_msg);
@@ -345,8 +344,8 @@ bool LocalPlanServer::local_plan_process(
   bool valid = false;
   mp_planner_util_->reset();
   valid = mp_planner_util_->plan(
-      start, goal); // start and new_goal contain full informaiton about
-                    // position/velocity/acceleration
+      start, goal);  // start and new_goal contain full informaiton about
+                     // position/velocity/acceleration
   if (valid) {
     traj_ = mp_planner_util_->getTraj();
   }

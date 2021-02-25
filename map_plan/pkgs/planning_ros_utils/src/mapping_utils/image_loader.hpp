@@ -117,8 +117,7 @@ void loadMapFromFile(planning_ros_msgs::VoxelMap &resp, const char *fname,
       // Compute mean of RGB for this pixel
       p = pixels + j * rowstride + i * n_channels;
       color_sum = 0;
-      for (k = 0; k < avg_channels; k++)
-        color_sum += *(p + (k));
+      for (k = 0; k < avg_channels; k++) color_sum += *(p + (k));
       color_avg = color_sum / (double)avg_channels;
 
       if (n_channels == 1)
@@ -126,8 +125,7 @@ void loadMapFromFile(planning_ros_msgs::VoxelMap &resp, const char *fname,
       else
         alpha = *(p + n_channels - 1);
 
-      if (negate)
-        color_avg = 255 - color_avg;
+      if (negate) color_avg = 255 - color_avg;
 
       if (mode == RAW) {
         value = color_avg;
@@ -160,4 +158,4 @@ void loadMapFromFile(planning_ros_msgs::VoxelMap &resp, const char *fname,
   SDL_FreeSurface(img);
 }
 
-} // namespace map_server
+}  // namespace map_server

@@ -136,8 +136,8 @@ void uniform_sampling(vtkSmartPointer<vtkPolyData> polydata, size_t n_samples,
   }
 }
 
-sensor_msgs::PointCloud
-convertToCloud(const pcl::PointCloud<pcl::PointXYZ> &msg) {
+sensor_msgs::PointCloud convertToCloud(
+    const pcl::PointCloud<pcl::PointXYZ> &msg) {
   sensor_msgs::PointCloud2 cloud2;
   pcl::toROSMsg(msg, cloud2);
   sensor_msgs::PointCloud cloud;
@@ -159,17 +159,19 @@ void printHelp(int, char **argv) {
       "                     -n_samples X      = number of samples (default: ");
   print_value("%d", default_number_samples);
   print_info(")\n");
-  print_info("                     -leaf_size X  = the XYZ leaf size for the "
-             "VoxelGrid -- for data reduction (default: ");
+  print_info(
+      "                     -leaf_size X  = the XYZ leaf size for the "
+      "VoxelGrid -- for data reduction (default: ");
   print_value("%f", default_leaf_size);
   print_info(" m)\n");
 }
 
 /* ---[ */
 int main(int argc, char **argv) {
-  print_info("Convert a CAD model to a point cloud using uniform sampling. For "
-             "more information, use: %s -h\n",
-             argv[0]);
+  print_info(
+      "Convert a CAD model to a point cloud using uniform sampling. For "
+      "more information, use: %s -h\n",
+      argv[0]);
 
   printHelp(argc, argv);
 

@@ -53,8 +53,7 @@ sensor_msgs::PointCloud toROS(const PCLPointCloud &cloud_pcl) {
 }
 
 void outlier_removal(PCLPointCloud &cloud, float radius, int N) {
-  if (cloud.points.empty())
-    return;
+  if (cloud.points.empty()) return;
   pcl::RadiusOutlierRemoval<PCLPoint> sor;
   sor.setInputCloud(boost::make_shared<PCLPointCloud>(cloud));
   sor.setRadiusSearch(radius);
@@ -107,4 +106,4 @@ void voxel_filter(PCLPointCloud &cloud, decimal_t res) {
   pcl::fromPCLPointCloud2(cloud_filtered, cloud);
 }
 
-} // namespace PCLUtils
+}  // namespace PCLUtils

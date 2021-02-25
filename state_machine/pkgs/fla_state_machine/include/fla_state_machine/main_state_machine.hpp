@@ -16,6 +16,6 @@ struct take_off {};
 struct land {};
 struct hover {};
 
-} // namespace
+}  // namespace
 
-#endif // MAIN_STATE_MACHINE_HPP
+#endif  // MAIN_STATE_MACHINE_HPP

@@ -27,8 +27,7 @@ Poly PolyCalculus::integrate(const Poly &p) {
 Poly PolyCalculus::differentiate(const Poly &p) {
   // differentiates polynomial
   Poly::size_type rows = p.size();
-  if (rows <= 1)
-    return Poly(0.0);
+  if (rows <= 1) return Poly(0.0);
   std::vector<decimal_t> v;
   for (Poly::size_type i = 1; i < rows; i++) {
     decimal_t val = static_cast<decimal_t>(i);
@@ -111,8 +110,7 @@ decimal_t StandardBasis::innerproduct(uint i, uint j) const {
 Poly StandardBasis::getPoly(uint i) const { return polys.at(i); }
 StandardBasis::StandardBasis(uint n) : Basis(n) {
   type_ = PolyType::STANDARD;
-  if (n == 0)
-    return;
+  if (n == 0) return;
   std::vector<decimal_t> simple;
   simple.push_back(1.0);
   for (uint i = 0; i <= n_p; i++) {
@@ -159,10 +157,9 @@ BasisBundle::BasisBundle(PolyType type, uint n_p_, uint k_r_)
       base->integrate();
       integrals.push_back(base);
     } else {
-      for (int j = 0; j < i; j++)
-        base->differentiate();
+      for (int j = 0; j < i; j++) base->differentiate();
       derrivatives.push_back(base);
     }
   }
 }
-} // namespace traj_opt
+}  // namespace traj_opt

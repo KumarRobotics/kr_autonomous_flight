@@ -4,22 +4,22 @@
 #include <action_trackers/RunTrajectoryAction.h>
 // internal actions
 #include <fla_state_machine/ReplanAction.h>
+
 #include <fla_state_machine/traj_opt_utils.hpp>
 // #include <fla_state_machine/UpdateGoalAction.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/server/simple_action_server.h>
 // traj_opt stuff
-#include <traj_opt_basic/msg_traj.h>
-#include <traj_opt_ros/ros_bridge.h>
-
 #include <action_planner/PlanPathAction.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <kr_mav_msgs/PositionCommand.h>
 #include <planning_ros_utils/data_ros_utils.h>
 #include <std_msgs/Int64.h>
+#include <traj_opt_basic/msg_traj.h>
+#include <traj_opt_ros/ros_bridge.h>
 
 class RePlanner {
-public:
+ public:
   RePlanner();
   int max_horizon_{5};
   bool active_{false};
@@ -38,7 +38,7 @@ public:
    */
   void update_status();
 
-private:
+ private:
   std::unique_ptr<
       actionlib::SimpleActionServer<fla_state_machine::ReplanAction>>
       replan_server_;
@@ -47,22 +47,22 @@ private:
       run_client_;
   std::unique_ptr<
       actionlib::SimpleActionClient<action_planner::PlanTwoPointAction>>
-      local_plan_client_; // local plan action server client
+      local_plan_client_;  // local plan action server client
   std::unique_ptr<
       actionlib::SimpleActionClient<action_planner::PlanTwoPointAction>>
-      global_plan_client_; // global plan action server client
+      global_plan_client_;  // global plan action server client
   boost::mutex mtx_;
 
-  geometry_msgs::Pose pose_goal_; // goal recorder
+  geometry_msgs::Pose pose_goal_;  // goal recorder
   bool finished_replanning_{
-      true}; // one of termination conditions (the other is that commanded
-             // position and traj end position is less than 1e-3)
-  bool do_setup_{false}; // two conditions: if not yet received any goal, don't
-                         // do setup; if already setup once, don't do again.
+      true};  // one of termination conditions (the other is that commanded
+              // position and traj end position is less than 1e-3)
+  bool do_setup_{false};  // two conditions: if not yet received any goal, don't
+                          // do setup; if already setup once, don't do again.
 
-  traj_opt::VecD cmd_pos_{traj_opt::VecD::Zero(4, 1)}; // position command
+  traj_opt::VecD cmd_pos_{traj_opt::VecD::Zero(4, 1)};  // position command
   boost::shared_ptr<traj_opt::Trajectory>
-      last_traj_; // record of latest trajectory
+      last_traj_;  // record of latest trajectory
   ros::NodeHandle nh_;
   ros::Subscriber cmd_sub_;
 
@@ -72,23 +72,23 @@ private:
   ros::Subscriber epoch_sub_;
 
   // local-global framework related params
-  double local_replan_rate_; // should be set in the goal sent from the
-                             // state_machine
+  double local_replan_rate_;  // should be set in the goal sent from the
+                              // state_machine
   int global_replan_interval_{
-      2}; // a global replan will be called once every x local replan calls,
-          // where x = global_replan_interval_. TODO: maybe also specify global
-          // replan rate in goal?
+      2};  // a global replan will be called once every x local replan calls,
+           // where x = global_replan_interval_. TODO: maybe also specify global
+           // replan rate in goal?
   int local_replan_counter_{
-      0}; // counter of local replan calls from the last global replan call
-  vec_Vec3f global_path_; // recorder of path planned by global action server
-  double global_timeout_duration_{2.0}; // global planner timeout duration
-  double local_timeout_duration_{2.0};  // local planner timeout duration
-  Vec3f
-      prev_start_pos_; // replanning records: previous replanning start position
+      0};  // counter of local replan calls from the last global replan call
+  vec_Vec3f global_path_;  // recorder of path planned by global action server
+  double global_timeout_duration_{2.0};  // global planner timeout duration
+  double local_timeout_duration_{2.0};   // local planner timeout duration
+  Vec3f prev_start_pos_;  // replanning records: previous replanning start
+                          // position
   decimal_t executed_dist_{
-      0.0}; // replanning records: accumulated executed distance along the path
-  double crop_radius_; // local path crop radius (local path length will be this
-                       // value)
+      0.0};  // replanning records: accumulated executed distance along the path
+  double crop_radius_;  // local path crop radius (local path length will be
+                        // this value)
   double termination_distance_;
   bool avoid_obstacle_{true};
 
@@ -135,7 +135,7 @@ private:
 
 void RePlanner::epoch_cb(const std_msgs::Int64 &msg) {
   boost::mutex::scoped_lock lock(mtx_);
-  static int epoch_old = -1; // keep a record of last epoch
+  static int epoch_old = -1;  // keep a record of last epoch
 
   // replan ONLY IF current epoch is different than the previously recorded one
   if (epoch_old != msg.data) {
@@ -149,7 +149,7 @@ void RePlanner::epoch_cb(const std_msgs::Int64 &msg) {
       // execution_time, which is 1.0/replan_rate
       horizon = msg.data - last_plan_epoch_ + 1;
     }
-    epoch_old = msg.data; // keep a record of last epoch
+    epoch_old = msg.data;  // keep a record of last epoch
 
     // trigger replan, set horizon
     if (!finished_replanning_) {
@@ -178,11 +178,11 @@ void RePlanner::replan_goal_cb() {
   // http://docs.ros.org/en/jade/api/actionlib/html/classactionlib_1_1SimpleActionServer.html#a4964ef9e28f5620e87909c41f0458ecb)
   auto goal = replan_server_->acceptNewGoal();
   local_replan_rate_ =
-      goal->replan_rate; // set local planner replan_rate to be the same as
-                         // specified in goal (assigned in state machine)
+      goal->replan_rate;  // set local planner replan_rate to be the same as
+                          // specified in goal (assigned in state machine)
   pose_goal_ = goal->p_final;
-  avoid_obstacle_ = goal->avoid_obstacles; // obstacle avoidance mode (assigned
-                                           // in state machine)
+  avoid_obstacle_ = goal->avoid_obstacles;  // obstacle avoidance mode (assigned
+                                            // in state machine)
   // create critical bug report
   fla_state_machine::ReplanResult critical;
   critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
@@ -195,14 +195,13 @@ void RePlanner::replan_goal_cb() {
     return;
   }
 
-  if (!active_)       // if not active, do setup again
-    do_setup_ = true; // only run setup_replanner function after replan_goal_cb
+  if (!active_)        // if not active, do setup again
+    do_setup_ = true;  // only run setup_replanner function after replan_goal_cb
 }
 
 void RePlanner::setup_replanner() {
-  if (!do_setup_ || active_)
-    return;
-  do_setup_ = false; // only run setup_replanner once
+  if (!do_setup_ || active_) return;
+  do_setup_ = false;  // only run setup_replanner once
   boost::mutex::scoped_lock lock(mtx_);
 
   ROS_INFO_STREAM("Setup replan");
@@ -223,8 +222,8 @@ void RePlanner::setup_replanner() {
   global_tpgoal.avoid_obstacles = avoid_obstacle_;
   // send goal to global plan action server
   global_plan_client_->sendGoal(
-      global_tpgoal); // only send goal, because global plan server is
-                      // subscribing to odom and use that as start
+      global_tpgoal);  // only send goal, because global plan server is
+                       // subscribing to odom and use that as start
   bool global_finished_before_timeout = global_plan_client_->waitForResult(
       ros::Duration(global_timeout_duration_));
   // check result of global plan
@@ -240,8 +239,8 @@ void RePlanner::setup_replanner() {
   }
   auto global_result = global_plan_client_->getResult();
   if (global_result->success) {
-    global_path_ =
-        ros_to_path(global_result->path); // extract the global path information
+    global_path_ = ros_to_path(
+        global_result->path);  // extract the global path information
     ROS_WARN("initial global plan succeeded!");
   } else {
     ROS_WARN("initial global plan failed!");
@@ -257,8 +256,8 @@ void RePlanner::setup_replanner() {
   // set goal
   action_planner::PlanTwoPointGoal local_tpgoal;
   TrajOptUtils::vec_to_pose(
-      cmd_pos_, &local_tpgoal.p_init); // use current position command as the
-                                       // start position for local planner
+      cmd_pos_, &local_tpgoal.p_init);  // use current position command as the
+                                        // start position for local planner
   // initialize prev_start_pos_ for replan purpose
   prev_start_pos_(0) = cmd_pos_(0);
   prev_start_pos_(1) = cmd_pos_(1);
@@ -343,8 +342,7 @@ bool RePlanner::plan_trajectory(int horizon) {
     fla_state_machine::ReplanResult abort;
     abort.status = fla_state_machine::ReplanResult::DYNAMICALLY_INFEASIBLE;
     active_ = false;
-    if (replan_server_->isActive())
-      replan_server_->setSucceeded(abort);
+    if (replan_server_->isActive()) replan_server_->setSucceeded(abort);
     return false;
   }
 
@@ -357,8 +355,8 @@ bool RePlanner::plan_trajectory(int horizon) {
   action_planner::PlanTwoPointGoal local_tpgoal;
   double eval_time =
       double(horizon) /
-      local_replan_rate_; // calculate evaluation time, i.e., beginning of
-                          // current plan epoch (in seconds)
+      local_replan_rate_;  // calculate evaluation time, i.e., beginning of
+                           // current plan epoch (in seconds)
   // make the end of last trajectory consistent with the start of current
   // trajectory
   TrajOptUtils::evaluate_to_msgs(last_traj_, eval_time, &local_tpgoal.p_init,
@@ -369,11 +367,11 @@ bool RePlanner::plan_trajectory(int horizon) {
 
   // Re-plan step 1: Global plan
   // ########################################################################################################
-  local_replan_counter_++; // only do global replan once every
-                           // global_replan_interval_ local replans
+  local_replan_counter_++;  // only do global replan once every
+                            // global_replan_interval_ local replans
   if (local_replan_counter_ == global_replan_interval_) {
-    executed_dist_ = 0.0;      // reset the executed distance to be zero
-    local_replan_counter_ = 0; // reset the counter
+    executed_dist_ = 0.0;       // reset the executed distance to be zero
+    local_replan_counter_ = 0;  // reset the counter
     // send goal to global plan action server
     global_plan_client_->sendGoal(global_tpgoal);
     bool global_finished_before_timeout = global_plan_client_->waitForResult(
@@ -394,7 +392,7 @@ bool RePlanner::plan_trajectory(int horizon) {
     if (global_result->success) {
       global_path_.clear();
       global_path_ = ros_to_path(
-          global_result->path); // extract the global path information
+          global_result->path);  // extract the global path information
     } else {
       ROS_WARN("Global plan failed, trying replan");
       return false;
@@ -403,9 +401,9 @@ bool RePlanner::plan_trajectory(int horizon) {
     // incrementally record executed_dist_
     executed_dist_ =
         executed_dist_ + (start_pos - prev_start_pos_)
-                             .norm(); // straight line distance to approximate
-                                      // executed portion of path
-    prev_start_pos_ = start_pos;      // keep updating prev_start_pos_
+                             .norm();  // straight line distance to approximate
+                                       // executed portion of path
+    prev_start_pos_ = start_pos;       // keep updating prev_start_pos_
     if (executed_dist_ > 5.0) {
       ROS_WARN_STREAM(
           "++++ executed distance is larger than 5 meters: " << executed_dist_);
@@ -486,7 +484,7 @@ void RePlanner::update_status() {
     // TODO(xu): maybe instead of doing 1.0/local_replan_rate_, we should use
     // last_traj_->getTotalTime() since this is for checking the termination?
     last_traj_->evaluate(1.0 / local_replan_rate_, 0,
-                         pos_finaln); // TODO(mike) {fix this}.
+                         pos_finaln);  // TODO(mike) {fix this}.
 
     pos_final = TrajOptUtils::make4d(pos_finaln);
     pos_final(2) = 0;
@@ -525,8 +523,7 @@ void RePlanner::update_status() {
       fla_state_machine::ReplanResult success;
       success.status = fla_state_machine::ReplanResult::SUCCESS;
       active_ = false;
-      if (replan_server_->isActive())
-        replan_server_->setSucceeded(success);
+      if (replan_server_->isActive()) replan_server_->setSucceeded(success);
       ROS_INFO("RePlanner success!!");
       last_traj_ = boost::shared_ptr<traj_opt::Trajectory>();
       return;
@@ -545,23 +542,23 @@ void RePlanner::update_status() {
 vec_Vec3f RePlanner::path_crop(const vec_Vec3f &ps, decimal_t d) {
   // return nonempth
   // precondition
-  if (ps.size() < 2 || d < 0)
-    return ps;
+  if (ps.size() < 2 || d < 0) return ps;
 
   vec_Vec3f path;
-  Vec3f crop_end = ps.back(); // if path is shorter than d, crop_end will be
-                              // default as the end of path
+  Vec3f crop_end = ps.back();  // if path is shorter than d, crop_end will be
+                               // default as the end of path
   decimal_t dist = 0;
 
   // add path segments until the accumulated length is farther than distance d
   // from the robot
   for (unsigned int i = 1; i < ps.size(); i++) {
     if (dist + (ps[i] - ps[i - 1]).norm() > d) {
-      crop_end = ps[i - 1] +
-                 (d - dist) *
-                     (ps[i] - ps[i - 1])
-                         .normalized(); // assign end to be exactly at
-                                        // accumulated distance d from the robot
+      crop_end =
+          ps[i - 1] +
+          (d - dist) *
+              (ps[i] - ps[i - 1])
+                  .normalized();  // assign end to be exactly at
+                                  // accumulated distance d from the robot
       path.push_back(ps[i - 1]);
       break;
     } else {
@@ -571,9 +568,9 @@ vec_Vec3f RePlanner::path_crop(const vec_Vec3f &ps, decimal_t d) {
   }
 
   if ((path.back() - crop_end).norm() > 1e-1)
-    path.push_back(crop_end); // crop_end is exactly at accumulated distance d
-                              // from the robot (unless path is shorter than d,
-                              // crop_end will be default as the end of path)
+    path.push_back(crop_end);  // crop_end is exactly at accumulated distance d
+                               // from the robot (unless path is shorter than d,
+                               // crop_end will be default as the end of path)
 
   // post condition
   // CHECK(glog) path is not empty
@@ -625,11 +622,11 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "replanner");
   ros::NodeHandle nh;
   RePlanner replanner;
-  ros::Rate r(5); // Should be at least at the rate of local_replan_rate_!
+  ros::Rate r(5);  // Should be at least at the rate of local_replan_rate_!
   while (nh.ok()) {
     r.sleep();
-    replanner.setup_replanner(); // this function will only run AFTER the
-                                 // replan_goal_cb, and will only run ONCE
+    replanner.setup_replanner();  // this function will only run AFTER the
+                                  // replan_goal_cb, and will only run ONCE
     replanner.update_status();
     ros::spinOnce();
   }

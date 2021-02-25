@@ -14,12 +14,10 @@ void PathVisual::setMessage(const vec_Vec3f &path) {
   nodes_.clear();
   lines_.clear();
 
-  if (path.empty())
-    return;
+  if (path.empty()) return;
 
   for (const auto &it : path) {
-    if (std::isnan(it(0)) || std::isnan(it(1)) || std::isnan(it(2)))
-      return;
+    if (std::isnan(it(0)) || std::isnan(it(1)) || std::isnan(it(2))) return;
   }
 
   nodes_.resize(path.size());
@@ -43,8 +41,7 @@ void PathVisual::setMessage(const vec_Vec3f &path) {
 }
 
 void PathVisual::addMessage(const vec_Vec3f &path) {
-  if (path.empty())
-    return;
+  if (path.empty()) return;
 
   unsigned int nodes_prev_size = nodes_.size();
   nodes_.resize(nodes_prev_size + path.size());
@@ -81,22 +78,18 @@ void PathVisual::setFrameOrientation(const Ogre::Quaternion &orientation) {
 }
 
 void PathVisual::setLineColor(float r, float g, float b, float a) {
-  for (auto &it : lines_)
-    it->setColor(r, g, b, a);
+  for (auto &it : lines_) it->setColor(r, g, b, a);
 }
 
 void PathVisual::setNodeColor(float r, float g, float b, float a) {
-  for (auto &it : nodes_)
-    it->setColor(r, g, b, a);
+  for (auto &it : nodes_) it->setColor(r, g, b, a);
 }
 
 void PathVisual::setLineScale(float s) {
-  for (auto &it : lines_)
-    it->setLineWidth(s);
+  for (auto &it : lines_) it->setLineWidth(s);
 }
 
 void PathVisual::setNodeScale(float s) {
-  for (auto &it : nodes_)
-    it->setScale(Ogre::Vector3(s, s, s));
+  for (auto &it : nodes_) it->setScale(Ogre::Vector3(s, s, s));
 }
-} // namespace planning_rviz_plugins
+}  // namespace planning_rviz_plugins

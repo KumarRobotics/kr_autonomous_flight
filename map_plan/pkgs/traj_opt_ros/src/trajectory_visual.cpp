@@ -13,7 +13,7 @@
 #include <hopf_control/hopf_helper.h>
 #endif
 
-#include "trajectory_visual.h" // NOLINT()
+#include "trajectory_visual.h"  // NOLINT()
 
 namespace traj_opt {
 
@@ -93,12 +93,9 @@ void TrajectoryVisual::draw() {
 
   // allocate space for line objects
   trajectory_lines_.reserve(num_traj_points_);
-  if (vel_on_)
-    vel_arrows_.reserve(num_vel_points_);
-  if (acc_on_)
-    acc_arrows_.reserve(num_vel_points_);
-  if (hopf_on_)
-    hopf_arrows_.reserve(3 * num_vel_points_);
+  if (vel_on_) vel_arrows_.reserve(num_vel_points_);
+  if (acc_on_) acc_arrows_.reserve(num_vel_points_);
+  if (hopf_on_) hopf_arrows_.reserve(3 * num_vel_points_);
 
   // allocate objects
   if (style_ == Style::Mike || style_ == Style::Hopf) {
@@ -154,17 +151,15 @@ void TrajectoryVisual::draw() {
     }
   }
 
-  if (traj_ != NULL)
-    setCurve();
+  if (traj_ != NULL) setCurve();
 }
 
 void TrajectoryVisual::setCurve() {
-  if (traj_ == NULL)
-    return;
+  if (traj_ == NULL) return;
   double t_total = traj_->getTotalTime();
   if (t_total <= 0) {
     ROS_ERROR("Latest trajectory is invalid");
-    return; // trajectory is invalid
+    return;  // trajectory is invalid
   }
   //    ROS_INFO_STREAM("Drawing trajectory with " << num_traj_points_ << "
   //    points.");
@@ -189,8 +184,7 @@ void TrajectoryVisual::setCurve() {
       double dtt = static_cast<double>(i) * dt;
       traj_opt::VecD v;
       traj_->evaluate(dtt, 1, v);
-      if (v.norm() > v_max)
-        v_max = v.norm();
+      if (v.norm() > v_max) v_max = v.norm();
     }
   }
 
@@ -235,15 +229,13 @@ void TrajectoryVisual::setCurve() {
   }
   traj_opt::Quat rot(1, 0, 0, 0);
   // rotate tangent vectors about z
-  if (style_ == Style::Sikang)
-    rot = traj_opt::Quat(0.707, 0, 0, -0.707);
+  if (style_ == Style::Sikang) rot = traj_opt::Quat(0.707, 0, 0, -0.707);
 
   // draw tangents
   dt = t_total / static_cast<double>(num_vel_points_);
   for (int i = 0; i < num_vel_points_; i++) {
     //      std::cout << "i " << i << std::endl;
-    if (!vel_on_ && !acc_on_ && !hopf_on_)
-      break;
+    if (!vel_on_ && !acc_on_ && !hopf_on_) break;
     double dtt = static_cast<double>(i) * dt;
     traj_->evaluate(dtt, 0, p1);
     op1 = vecFromVecD(p1);
@@ -261,10 +253,8 @@ void TrajectoryVisual::setCurve() {
       traj_opt::Vec3 p2_3d;
       p2_3d << 0.0, 0.0, 9.81;
       for (int i = 0; i < 3; i++) {
-        if (i < p1.rows())
-          p1_3d(i) = p1(i);
-        if (i < p2.rows())
-          p2_3d(i) += p2(i);
+        if (i < p1.rows()) p1_3d(i) = p1(i);
+        if (i < p2.rows()) p2_3d(i) += p2(i);
       }
       decimal_t yaw = 0, yawd = 0;
       if (p1.rows() > 3) {
@@ -272,8 +262,7 @@ void TrajectoryVisual::setCurve() {
         yawd = p4(3);
       }
       bool hover = true;
-      if (p1.rows() > 4)
-        hover = p1(4) < 0.5;
+      if (p1.rows() > 4) hover = p1(4) < 0.5;
       //       ROS_WARN_STREAM("Hover " << hover);
 
       Vec3 xid = p3.block<3, 1>(0, 0);
@@ -304,10 +293,8 @@ void TrajectoryVisual::setCurve() {
       traj_opt::Vec3 p1_3d = traj_opt::Vec3::Zero();
       traj_opt::Vec3 p2_3d = traj_opt::Vec3::Zero();
       for (int i = 0; i < 3; i++) {
-        if (i < p1.rows())
-          p1_3d(i) = p1(i);
-        if (i < p2.rows())
-          p2_3d(i) = p2(i);
+        if (i < p1.rows()) p1_3d(i) = p1(i);
+        if (i < p2.rows()) p2_3d(i) = p2(i);
       }
       if (!hopf_on_) {
         p2_3d = rot.matrix() * p2_3d + p1_3d;
@@ -331,10 +318,8 @@ void TrajectoryVisual::setCurve() {
       traj_opt::Vec3 p1_3d = traj_opt::Vec3::Zero();
       traj_opt::Vec3 p2_3d = traj_opt::Vec3::Zero();
       for (int i = 0; i < 3; i++) {
-        if (i < p1.rows())
-          p1_3d(i) = p1(i);
-        if (i < p2.rows())
-          p2_3d(i) = p2(i);
+        if (i < p1.rows()) p1_3d(i) = p1(i);
+        if (i < p2.rows()) p2_3d(i) = p2(i);
       }
 
       p2_3d = rot.matrix() * p2_3d + p1_3d;
@@ -372,20 +357,15 @@ void TrajectoryVisual::setFrameOrientation(
 
 // Color is passed through to the Arrow object.
 void TrajectoryVisual::setColor(float r, float g, float b, float a) {
-  if (style_ == Style::CJ)
-    return;
-  for (auto &line : trajectory_lines_)
-    line->setColor(r, g, b, a);
-  for (auto &ball : trajectory_balls_)
-    ball->setColor(r, g, b, a);
+  if (style_ == Style::CJ) return;
+  for (auto &line : trajectory_lines_) line->setColor(r, g, b, a);
+  for (auto &ball : trajectory_balls_) ball->setColor(r, g, b, a);
 }
 void TrajectoryVisual::setColorV(float r, float g, float b, float a) {
-  for (auto &line : vel_arrows_)
-    line->setColor(r, g, b, a);
+  for (auto &line : vel_arrows_) line->setColor(r, g, b, a);
 }
 void TrajectoryVisual::setColorA(float r, float g, float b, float a) {
-  for (auto &line : acc_arrows_)
-    line->setColor(r, g, b, a);
+  for (auto &line : acc_arrows_) line->setColor(r, g, b, a);
 }
 void TrajectoryVisual::setScale(float thick) {
   thickness_ = thick;
@@ -439,4 +419,4 @@ void TrajectoryVisual::setShapeFromPosePair(const Ogre::Vector3 &p0,
   shape->setDirection(n);
 }
 
-} // namespace traj_opt
+}  // namespace traj_opt

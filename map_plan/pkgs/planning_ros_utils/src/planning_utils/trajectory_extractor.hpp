@@ -4,7 +4,7 @@
 #include <planning_ros_utils/primitive_ros_utils.h>
 
 class TrajectoryExtractor {
-public:
+ public:
   TrajectoryExtractor(const planning_ros_msgs::Trajectory &msg, double dt) {
     const auto traj = toTrajectory3D(msg);
     int N = std::ceil(traj.getTotalTime() / dt);
@@ -35,6 +35,6 @@ public:
     return cmd_array_;
   }
 
-private:
+ private:
   std::vector<planning_ros_msgs::TrajectoryCommand> cmd_array_;
 };

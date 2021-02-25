@@ -32,18 +32,18 @@ using kr_mav_msgs::PositionCommand;
 using kr_tracker_msgs::TrackerStatus;
 
 class TakeOffTracker : public kr_trackers_manager::Tracker {
-public:
+ public:
   TakeOffTracker(void);
 
   void Initialize(const ros::NodeHandle &nh) override;
   bool Activate(const PositionCommand::ConstPtr &cmd) override;
   void Deactivate(void) override;
 
-  PositionCommand::ConstPtr
-  update(const nav_msgs::Odometry::ConstPtr &msg) override;
+  PositionCommand::ConstPtr update(
+      const nav_msgs::Odometry::ConstPtr &msg) override;
   uint8_t status() const override;
 
-private:
+ private:
   void goal_callback();
   void odomTocmd(const nav_msgs::Odometry &msg, PositionCommand &cmd);
   void zeroGains(PositionCommand &cmd);
@@ -106,11 +106,11 @@ void TakeOffTracker::Initialize(const ros::NodeHandle &nh) {
   ros::NodeHandle priv_nh(nh, "take_off_tracker");
 
   priv_nh.param("min_thrust", min_thrust_,
-                -5.0); // see top of file, in m/s/s. This number should be
-                       // negative! If it is 0, the quad would be in hover
-  priv_nh.param("max_thrust", max_thrust_, 5.0); // see top of file, in m/s/s
+                -5.0);  // see top of file, in m/s/s. This number should be
+                        // negative! If it is 0, the quad would be in hover
+  priv_nh.param("max_thrust", max_thrust_, 5.0);  // see top of file, in m/s/s
   priv_nh.param("thrust_rate", thrust_rate_,
-                10.0); // rate of change of thrust in ramp up (m/s/s/s)
+                10.0);  // rate of change of thrust in ramp up (m/s/s/s)
   priv_nh.param("epsilon", epsilon_, 0.05);
 
   double min_takeoff = max_thrust_ * max_thrust_ * max_thrust_ / thrust_rate_ /
@@ -171,8 +171,8 @@ void TakeOffTracker::odomTocmd(const nav_msgs::Odometry &msg,
   cmd.jerk.z = 0;
 }
 
-PositionCommand::ConstPtr
-TakeOffTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
+PositionCommand::ConstPtr TakeOffTracker::update(
+    const nav_msgs::Odometry::ConstPtr &msg) {
   // ROS_ERROR_THROTTLE(1,"Updated action line tracker");
 
   pos_(0) = msg->pose.pose.position.x;
@@ -181,8 +181,7 @@ TakeOffTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
   yaw_ = tf::getYaw(msg->pose.pose.orientation);
   pos_set_ = true;
 
-  if (!active_)
-    return PositionCommand::Ptr();
+  if (!active_) return PositionCommand::Ptr();
 
   PositionCommand::Ptr cmd(new PositionCommand);
   cmd->header.stamp = msg->header.stamp;
@@ -211,14 +210,13 @@ TakeOffTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
       accel = std::min(min_thrust_ + ramp_dt * thrust_rate_, max_thrust_);
     else {
       // ramp down
-      accel = std::max(max_thrust_ - (ramp_dt - max_thrust_ / thrust_rate_) *
-                                         thrust_rate_,
-                       min_thrust_);
+      accel = std::max(
+          max_thrust_ - (ramp_dt - max_thrust_ / thrust_rate_) * thrust_rate_,
+          min_thrust_);
       if (accel == min_thrust_) {
         goal_set_ = false;
         failed_ = false;
-        if (as_->isActive())
-          as_->setAborted();
+        if (as_->isActive()) as_->setAborted();
       }
     }
     cmd->acceleration.z = accel;

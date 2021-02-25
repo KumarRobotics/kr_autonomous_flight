@@ -14,8 +14,8 @@
 // Timing stuff
 ros::Publisher time_pub;
 
-std::unique_ptr<VoxelMapper> global_voxel_mapper_;  // mapper
-std::unique_ptr<VoxelMapper> storage_voxel_mapper_; // mapper
+std::unique_ptr<VoxelMapper> global_voxel_mapper_;   // mapper
+std::unique_ptr<VoxelMapper> storage_voxel_mapper_;  // mapper
 // std::unique_ptr<VoxelMapper> local_voxel_mapper_;  // mapper
 
 planning_ros_msgs::VoxelMap global_map_info_;
@@ -31,21 +31,21 @@ ros::Publisher local_voxel_map_pub;
 // ros::Publisher local_cloud_pub;
 
 bool debug_;
-bool real_robot_;         // define it's real-robot experiment or not
-std::string map_frame_;   // map frame
-std::string lidar_frame_; // lidar frame
-std::string cloud_name_;  // cloud msg name frame
+bool real_robot_;          // define it's real-robot experiment or not
+std::string map_frame_;    // map frame
+std::string lidar_frame_;  // lidar frame
+std::string cloud_name_;   // cloud msg name frame
 // std::string odom_name_;    // odom msg name frame
 // nav_msgs::Odometry last_odom_; // record of robot odom
 // bool odom_received_ = false;
 
-vec_Vec3i global_infla_array_; // inflation array
-vec_Vec3i local_infla_array_;  // inflation array
+vec_Vec3i global_infla_array_;  // inflation array
+vec_Vec3i local_infla_array_;   // inflation array
 
 double robot_r_, robot_h_;
 bool global_use_robot_dim_;
 
-double local_max_raycast_, global_max_raycast_; // maximum raycasting range
+double local_max_raycast_, global_max_raycast_;  // maximum raycasting range
 double occ_map_height_;
 Vec3f local_ori_offset_;
 
@@ -102,10 +102,11 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
   const Aff3f T_m_c = toTF(pose_map_cloud);
   const Vec3f sensor_position(
       T_m_c.translation().x(), T_m_c.translation().y(),
-      T_m_c.translation().z()); // This is the lidar position in the fixed frame
+      T_m_c.translation()
+          .z());  // This is the lidar position in the fixed frame
 
   ros::Time t0 = ros::Time::now();
-  double min_range = 0.75; // points within this distance will be discarded
+  double min_range = 0.75;  // points within this distance will be discarded
   double min_range_squared;
   min_range_squared = min_range * min_range;
   const auto pts = cloud_to_vec_filter(cloud, min_range_squared);
@@ -134,9 +135,10 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
   if (total_t > 0.5) {
     ROS_WARN(
         "[Mapper]: Time for processing storage and local map is too large!!!");
-    ROS_WARN("Time for updating storage map: %f, for publishing it: %f. Total "
-             "time for cropping and publishing local map: %f",
-             dt_storage_add, dt_storage_pub, dt_local_crop_pub);
+    ROS_WARN(
+        "Time for updating storage map: %f, for publishing it: %f. Total "
+        "time for cropping and publishing local map: %f",
+        dt_storage_add, dt_storage_pub, dt_local_crop_pub);
   }
 
   sensor_msgs::Temperature tmsg;
@@ -196,10 +198,8 @@ void mapInit() {
     for (int nx = -global_rn; nx <= global_rn; ++nx) {
       for (int ny = -global_rn; ny <= global_rn; ++ny) {
         for (int nz = -global_hn; nz <= global_hn; ++nz) {
-          if (nx == 0 && ny == 0)
-            continue;
-          if (std::hypot(nx, ny) > global_rn)
-            continue;
+          if (nx == 0 && ny == 0) continue;
+          if (std::hypot(nx, ny) > global_rn) continue;
           global_infla_array_.push_back(Vec3i(nx, ny, nz));
         }
       }
@@ -220,10 +220,8 @@ void mapInit() {
   for (int nx = -rn; nx <= rn; ++nx) {
     for (int ny = -rn; ny <= rn; ++ny) {
       for (int nz = -hn; nz <= hn; ++nz) {
-        if (nx == 0 && ny == 0)
-          continue;
-        if (std::hypot(nx, ny) > rn)
-          continue;
+        if (nx == 0 && ny == 0) continue;
+        if (std::hypot(nx, ny) > rn) continue;
         local_infla_array_.push_back(Vec3i(nx, ny, nz));
       }
     }
@@ -275,7 +273,7 @@ int main(int argc, char **argv) {
   nh.param("global/range_y", global_map_info_.dim.y, 500.);
   nh.param("global/range_z", global_map_info_.dim.z, 2.0);
   // only update voxel once every update_interval_ point clouds
-  nh.param("global/num_point_cloud_skip", update_interval_, 5); // int
+  nh.param("global/num_point_cloud_skip", update_interval_, 5);  // int
   nh.param("global/max_raycast_range", global_max_raycast_, 100.0);
   nh.param("global/consider_robot_dim", global_use_robot_dim_, false);
 
@@ -314,8 +312,8 @@ int main(int argc, char **argv) {
                         local_map_info_.dim.z);
   local_ori_offset_ =
       -local_dim /
-      2; // origin is the left lower corner of the voxel map, therefore, adding
-         // this offset make the map centered around the given position
+      2;  // origin is the left lower corner of the voxel map, therefore, adding
+          // this offset make the map centered around the given position
 
   // dimension (in voxels) of the region to free voxels
   for (int nx = -1; nx <= 1; nx++) {

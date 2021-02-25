@@ -15,21 +15,18 @@ SymbolicPoly::SymbolicPoly(PolyArbitrary poly, decimal_t a) {
     }
   }
 
-  if (std::abs(a) > 1e-11)
-    arbitrary_map[poly] = a;
+  if (std::abs(a) > 1e-11) arbitrary_map[poly] = a;
 }
 
 SymbolicPoly::SymbolicPoly(Variable *coeff, Variable *time, int n,
                            decimal_t a) {
   PolyTriple p = PolyTriple(coeff, time, n);
-  if (std::abs(a) > 1e-11)
-    poly_map[p] = a;
+  if (std::abs(a) > 1e-11) poly_map[p] = a;
 }
 SymbolicPoly::SymbolicPoly(Variable *coeff0, Variable *coeff1, Variable *time,
                            int n, decimal_t a) {
   PolyQuad p = PolyQuad(coeff0, coeff1, time, n);
-  if (std::abs(a) > 1e-11)
-    quad_map[p] = a;
+  if (std::abs(a) > 1e-11) quad_map[p] = a;
 }
 void SymbolicPoly::add(const SymbolicPoly &rhs) {
   for (auto &p : rhs.poly_map) {
@@ -124,21 +121,16 @@ SymbolicPoly operator*(decimal_t lhs, const SymbolicPoly &rhs) {
   p.poly_map = rhs.poly_map;
   p.quad_map = rhs.quad_map;
   p.arbitrary_map = rhs.arbitrary_map;
-  for (auto &pi : p.poly_map)
-    p.poly_map[pi.first] *= lhs;
-  for (auto &pi : p.quad_map)
-    p.quad_map[pi.first] *= lhs;
-  for (auto &pi : p.arbitrary_map)
-    p.arbitrary_map[pi.first] *= lhs;
+  for (auto &pi : p.poly_map) p.poly_map[pi.first] *= lhs;
+  for (auto &pi : p.quad_map) p.quad_map[pi.first] *= lhs;
+  for (auto &pi : p.arbitrary_map) p.arbitrary_map[pi.first] *= lhs;
   p.coeff = rhs.coeff * lhs;
   return p;
 }
 SymbolicPoly operator*(const SymbolicPoly &lhs, const SymbolicPoly &rhs) {
   SymbolicPoly p;
-  if (lhs.arb_size() == 0)
-    return lhs.coeff * rhs;
-  if (rhs.arb_size() == 0)
-    return rhs.coeff * lhs;
+  if (lhs.arb_size() == 0) return lhs.coeff * rhs;
+  if (rhs.arb_size() == 0) return rhs.coeff * lhs;
   for (auto &pl : lhs.arbitrary_map)
     for (auto &pr : rhs.arbitrary_map) {
       SymbolicPoly::PolyArbitrary pa;
@@ -233,13 +225,11 @@ ETV SymbolicPoly::gradient(int u_id) {
       time_grad[time] += dt;
 
     ET gi = ET(u_id, coeff->getId(), p.second * std::pow(time->getVal(), n));
-    if (coeff->getId() >= 0)
-      grad.push_back(gi);
+    if (coeff->getId() >= 0) grad.push_back(gi);
   }
   for (auto &v : time_grad) {
     ET gt = ET(u_id, v.first->getId(), v.second);
-    if (v.first->getId() >= 0)
-      grad.push_back(gt);
+    if (v.first->getId() >= 0) grad.push_back(gt);
   }
   return grad;
 }
@@ -271,14 +261,13 @@ ETV SymbolicPoly::hessian() {
   // d^2g/dtdt
   for (auto &v : time_hess) {
     ET ht = ET(v.first->getId(), v.first->getId(), v.second);
-    if (std::min(v.first->getId(), v.first->getId()) >= 0)
-      hess.push_back(ht);
+    if (std::min(v.first->getId(), v.first->getId()) >= 0) hess.push_back(ht);
   }
   return hess;
 }
 ETV SymbolicPoly::quad_gradient() {
   return NonlinearSolver::transpose(
-      quad_gradient(0)); // for cost function, gradient is single column
+      quad_gradient(0));  // for cost function, gradient is single column
 }
 
 ETV SymbolicPoly::quad_gradient(int u_id) {
@@ -325,13 +314,11 @@ ETV SymbolicPoly::quad_gradient(int u_id) {
   }
   for (auto &v : coeff_grad) {
     ET gt = ET(u_id, v.first->getId(), v.second);
-    if (v.first->getId() >= 0)
-      grad.push_back(gt);
+    if (v.first->getId() >= 0) grad.push_back(gt);
   }
   for (auto &v : time_grad) {
     ET gt = ET(u_id, v.first->getId(), v.second);
-    if (v.first->getId() >= 0)
-      grad.push_back(gt);
+    if (v.first->getId() >= 0) grad.push_back(gt);
   }
   return grad;
 }
@@ -355,8 +342,7 @@ ETV SymbolicPoly::quad_hessian() {
     if (coeff0->getId() == coeff1->getId()) {
       ET gi = ET(coeff0->getId(), coeff0->getId(),
                  2.0 * p.second * std::pow(time->getVal(), n));
-      if (coeff0->getId() >= 0)
-        hess.push_back(gi);
+      if (coeff0->getId() >= 0) hess.push_back(gi);
       // d^2/{dtdc} has 2 terms
       ET gi2 = ET(coeff0->getId(), time->getId(),
                   2.0 * coeff1->getVal() * p.second * decimal_t(n) *
@@ -405,8 +391,7 @@ ETV SymbolicPoly::quad_hessian() {
   // d^2/dt^2
   for (auto &v : time_hess) {
     ET gt = ET(v.first->getId(), v.first->getId(), v.second);
-    if (v.first->getId() >= 0)
-      hess.push_back(gt);
+    if (v.first->getId() >= 0) hess.push_back(gt);
   }
   return hess;
 }
@@ -418,8 +403,7 @@ decimal_t SymbolicPoly::arb_evaluate() {
   for (auto part : arbitrary_map) {
     decimal_t vali = 1.0;
     for (auto mon : part.first) {
-      if (mon.second != 0)
-        vali *= std::pow(mon.first->getVal(), mon.second);
+      if (mon.second != 0) vali *= std::pow(mon.first->getVal(), mon.second);
     }
     val += vali * part.second;
   }
@@ -428,8 +412,7 @@ decimal_t SymbolicPoly::arb_evaluate() {
 // arbitrary part gradient, yuck hessian is much worst
 ETV SymbolicPoly::arb_gradient(int u_id) {
   ETV gradient;
-  if (u_id < 0)
-    return gradient;
+  if (u_id < 0) return gradient;
   for (auto &part : arbitrary_map) {
     // ETV gradi;
     for (auto &mon0 : part.first) {
@@ -467,7 +450,7 @@ ETV SymbolicPoly::arb_hessian(uint max_hess_size) {
         for (auto &mon2 : part.first) {
           // 4 cases when taking the hessian of our thing
           if (mon2.first->id == mon0.first->id &&
-              mon2.first->id == mon1.first->id) { // one var derrive twice
+              mon2.first->id == mon1.first->id) {  // one var derrive twice
             if (mon2.second == 0 || mon2.second == 1) {
               prod *= 0.0;
             } else {
@@ -477,7 +460,7 @@ ETV SymbolicPoly::arb_hessian(uint max_hess_size) {
 
           } else if (mon2.first->id == mon0.first->id ||
                      mon2.first->id ==
-                         mon1.first->id) { // current var derrive once,
+                         mon1.first->id) {  // current var derrive once,
             // should be be XOR, but elseif order handles this
             if (mon2.second == 0) {
               prod *= 0.0;
@@ -486,7 +469,7 @@ ETV SymbolicPoly::arb_hessian(uint max_hess_size) {
                       std::pow(mon2.first->val, mon2.second - 1);
             }
           } else {
-            if (mon2.second != 0) { // current var derrive 0 times
+            if (mon2.second != 0) {  // current var derrive 0 times
               prod *= std::pow(mon2.first->val, mon2.second);
             }
           }
@@ -514,8 +497,7 @@ ETV SymbolicPoly::arb_hessian2() {
 ETV SymbolicPoly::arb_gradient2(int u_id) {
   ETV gradient = arb_gradient(u_id);
   decimal_t eval = arb_evaluate();
-  for (auto &g : gradient)
-    g = ET(g.row(), g.col(), 2.0 * eval * g.value());
+  for (auto &g : gradient) g = ET(g.row(), g.col(), 2.0 * eval * g.value());
   return gradient;
 }
 
@@ -533,8 +515,7 @@ ETV RationalPoly::hessian2() {
 ETV RationalPoly::gradient2(int u_id) {
   ETV gradient = this->gradient(u_id);
   decimal_t eval = evaluate();
-  for (auto &g : gradient)
-    g = ET(g.row(), g.col(), 2.0 * eval * g.value());
+  for (auto &g : gradient) g = ET(g.row(), g.col(), 2.0 * eval * g.value());
   return gradient;
 }
 
@@ -731,16 +712,14 @@ void RationalPoly::calcVars() {
   vars_.clear();
   for (auto &part : num_.arbitrary_map) {
     for (auto &pi : part.first) {
-      if (pi.first->getId() >= 0)
-        vars_.insert(pi.first);
+      if (pi.first->getId() >= 0) vars_.insert(pi.first);
       //      if(pi.first->getId() == 17)
       //        std::cout << std::endl;
     }
   }
   for (auto &part : den_.arbitrary_map) {
     for (auto &pi : part.first) {
-      if (pi.first->getId() >= 0)
-        vars_.insert(pi.first);
+      if (pi.first->getId() >= 0) vars_.insert(pi.first);
       //      if(pi.first->getId() == 17)
       //        std::cout << std::endl;
     }
@@ -774,8 +753,7 @@ ETV RationalPoly::gradient(int u_id) {
 
   ETV resultant;
   for (auto &vi : vars_) {
-    if (vi->getId() < 0)
-      continue;
+    if (vi->getId() < 0) continue;
     decimal_t vn = 0.0;
     if (gnum_map.find(vi->getId()) != gnum_map.end()) {
       vn += gnum_map[vi->getId()] * den;
@@ -857,15 +835,12 @@ ETV RationalPoly::hessian() {
           dgn -= gden_map[i] * gnum_map[j];
         }
       }
-      if (hnum_map.find(in) != hnum_map.end())
-        dgn += hnum_map[in] * den;
-      if (hden_map.find(in) != hden_map.end())
-        dgn -= hden_map[in] * num;
+      if (hnum_map.find(in) != hnum_map.end()) dgn += hnum_map[in] * den;
+      if (hden_map.find(in) != hden_map.end()) dgn -= hden_map[in] * num;
 
       // get results
       decimal_t h = dgn / den / den - 2.0 * gn * gden_map[j] / std::pow(den, 3);
-      if (i > 0 && j > 0)
-        resultant.push_back(ET(i, j, h));
+      if (i > 0 && j > 0) resultant.push_back(ET(i, j, h));
     }
   }
   return resultant;
@@ -876,8 +851,7 @@ decimal_t RationalPoly::evaluate() {
   //  else
   decimal_t num = num_.arb_evaluate();
   decimal_t den = den_.arb_evaluate();
-  if (den == 0.0)
-    return std::numeric_limits<decimal_t>::max();
+  if (den == 0.0) return std::numeric_limits<decimal_t>::max();
   return num / den;
 }
 SymbolicPoly SymbolicPoly::getPartial(Variable *x) {
@@ -898,8 +872,7 @@ SymbolicPoly SymbolicPoly::getPartial(Variable *x) {
         pa.push_back(mon0);
       }
     }
-    if (coeff != 0.0)
-      p.add(SymbolicPoly(pa, coeff));
+    if (coeff != 0.0) p.add(SymbolicPoly(pa, coeff));
   }
   return p;
 }
@@ -910,8 +883,7 @@ SymbolicPoly SymbolicPoly::simplify() {
     // cleanup polies
     PolyArbitrary pa;
     for (auto &p : pi.first) {
-      if (p.second != 0)
-        pa.push_back(p);
+      if (p.second != 0) pa.push_back(p);
     }
     if (pa.size() == 0)
       val.coeff += pi.second;
@@ -931,4 +903,4 @@ SymbolicPoly SymbolicPoly::simplify() {
 
   return val;
 }
-} // namespace traj_opt
+}  // namespace traj_opt

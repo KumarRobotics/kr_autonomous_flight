@@ -34,8 +34,7 @@ void trajCB(const planning_ros_msgs::SplineTrajectory::ConstPtr &traj_msg) {
 void update() {
   ros::Time tn = ros::Time::now();
   double dt = (tn - start).toSec();
-  if (!traj)
-    return;
+  if (!traj) return;
   PositionCommand cmd;
   TrajToQuadCmd::evaluate(traj, dt, &cmd);
   cmd.header.stamp = tn;

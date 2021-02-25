@@ -11,47 +11,30 @@ void TrajToQuadCmd::evaluate(
 
   traj->evaluate(dt, 0, val);
 
-  if (val.rows() > 0)
-    out->position.x = val(0);
-  if (val.rows() > 1)
-    out->position.y = val(1);
-  if (val.rows() > 2)
-    out->position.z = val(2);
-  if (val.rows() > 3)
-    out->yaw = val(3);
+  if (val.rows() > 0) out->position.x = val(0);
+  if (val.rows() > 1) out->position.y = val(1);
+  if (val.rows() > 2) out->position.z = val(2);
+  if (val.rows() > 3) out->yaw = val(3);
   // if (val.rows() == 5) out->chart = val(4) > 0.5;
 
-  if (max_derr_eval < 1)
-    return;
+  if (max_derr_eval < 1) return;
   traj->evaluate(dt, 1, val);
-  if (val.rows() > 0)
-    out->velocity.x = val(0);
-  if (val.rows() > 1)
-    out->velocity.y = val(1);
-  if (val.rows() > 2)
-    out->velocity.z = val(2);
-  if (val.rows() > 3)
-    out->yaw_dot = val(3);
-  if (max_derr_eval < 2)
-    return;
+  if (val.rows() > 0) out->velocity.x = val(0);
+  if (val.rows() > 1) out->velocity.y = val(1);
+  if (val.rows() > 2) out->velocity.z = val(2);
+  if (val.rows() > 3) out->yaw_dot = val(3);
+  if (max_derr_eval < 2) return;
 
   traj->evaluate(dt, 2, val);
-  if (val.rows() > 0)
-    out->acceleration.x = val(0);
-  if (val.rows() > 1)
-    out->acceleration.y = val(1);
-  if (val.rows() > 2)
-    out->acceleration.z = val(2);
-  if (max_derr_eval < 3)
-    return;
+  if (val.rows() > 0) out->acceleration.x = val(0);
+  if (val.rows() > 1) out->acceleration.y = val(1);
+  if (val.rows() > 2) out->acceleration.z = val(2);
+  if (max_derr_eval < 3) return;
 
   traj->evaluate(dt, 3, val);
-  if (val.rows() > 0)
-    out->jerk.x = val(0);
-  if (val.rows() > 1)
-    out->jerk.y = val(1);
-  if (val.rows() > 2)
-    out->jerk.z = val(2);
+  if (val.rows() > 0) out->jerk.x = val(0);
+  if (val.rows() > 1) out->jerk.y = val(1);
+  if (val.rows() > 2) out->jerk.z = val(2);
 }
 
 // send all other interfaces to pointer version
@@ -61,10 +44,9 @@ void TrajToQuadCmd::evaluate(
     traj_opt::decimal_t scaling) {
   evaluate(traj, dt, out.get(), max_derr_eval, scaling);
 }
-kr_mav_msgs::PositionCommand
-TrajToQuadCmd::evaluate(const boost::shared_ptr<traj_opt::Trajectory> &traj,
-                        traj_opt::decimal_t dt, uint max_derr_eval,
-                        traj_opt::decimal_t scaling) {
+kr_mav_msgs::PositionCommand TrajToQuadCmd::evaluate(
+    const boost::shared_ptr<traj_opt::Trajectory> &traj, traj_opt::decimal_t dt,
+    uint max_derr_eval, traj_opt::decimal_t scaling) {
   kr_mav_msgs::PositionCommand cmd;
   evaluate(traj, dt, &cmd, max_derr_eval, scaling);
   return cmd;
@@ -74,7 +56,7 @@ typedef Eigen::Matrix<double, 3, 1> Vec3;
 typedef Eigen::Matrix<double, 3, 3> Mat3;
 typedef Eigen::Quaternion<double> Quat;
 class S2 {
-public:
+ public:
   // need to construct from quaternion because of hairy ball problem
   S2(const Quat &R) : R_(R) {
     R_.normalize();
@@ -84,7 +66,7 @@ public:
     //      np_ = Rm.block<3,1>(0,2);
     nx_ = Rm.block<3, 1>(0, 1);
     ny_ = Rm.block<3, 1>(0, 2);
-    np_ = Rm.block<3, 1>(0, 0); // switch to paper notation
+    np_ = Rm.block<3, 1>(0, 0);  // switch to paper notation
   }
   Vec2 sphereToPlane(const Vec3 &p) {
     Vec3 err = p - np_;
@@ -99,7 +81,7 @@ public:
     return lambda * e + np_;
   }
 
-private:
+ private:
   Vec3 np_, nx_, ny_;
   Quat R_;
 };
@@ -128,7 +110,7 @@ Vec3 distort(const Vec3 &in) {
 void TrajToQuadCmd::handleSphere(
     const boost::shared_ptr<traj_opt::Trajectory> &traj, traj_opt::decimal_t dt,
     kr_mav_msgs::PositionCommand::Ptr &out, geometry_msgs::Point &image_point) {
-  evaluate(traj, dt, out.get()); // add r3 part, but yaw will be invalid
+  evaluate(traj, dt, out.get());  // add r3 part, but yaw will be invalid
   out->yaw_dot = 0;
   traj_opt::VecD val;
   traj->evaluate(dt, 0, val);
@@ -164,7 +146,7 @@ void TrajToQuadCmd::evaluateTagentYaw(
 
   double dyaw = angles::shortest_angular_distance(old_yaw, des_yaw);
   double des_yaw_dot = 0.0;
-  if (dyaw > 0.05) // deadzone
+  if (dyaw > 0.05)  // deadzone
     des_yaw_dot = yaw_speed;
   else if (dyaw < -0.05)
     des_yaw_dot = -yaw_speed;
@@ -184,8 +166,8 @@ bool TrajToQuadCmd::evaluatePos(
       2.0 * std::asin(odom->pose.pose.orientation.z);
 
   VecD val, vel;
-  traj->evaluate(t_des, 0, val); // position of traj
-  traj->evaluate(t_des, 1, vel); // velocity of traj
+  traj->evaluate(t_des, 0, val);  // position of traj
+  traj->evaluate(t_des, 1, vel);  // velocity of traj
 
   // TODO: the following part has problems, replaced with diff_xy
   // // assume val is 4d
@@ -207,7 +189,7 @@ bool TrajToQuadCmd::evaluatePos(
   if (diff_xy.norm() >= err_max) {
     printf("Distance between odom and traj in xy too large! It is: %f \n",
            diff_xy.norm());
-    return_v = false; // return false
+    return_v = false;  // return false
   }
 
   evaluate(traj, t_des, out);

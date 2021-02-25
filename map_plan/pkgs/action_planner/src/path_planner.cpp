@@ -27,17 +27,14 @@ vec_Vec3f original_goals_;
 std::vector<int> original_goals_reached_;
 
 bool equal(const vec_Vec3f &gs1, const vec_Vec3f &gs2) {
-  if (gs1.size() != gs2.size())
-    return false;
+  if (gs1.size() != gs2.size()) return false;
   for (size_t i = 0; i < gs1.size(); ++i)
-    if (gs1[i] != gs2[i])
-      return false;
+    if (gs1[i] != gs2[i]) return false;
   return true;
 }
 
 void mapCB(const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
-  if (verbose_)
-    ROS_WARN_ONCE("[PathPlanner]: Get the voxel map!");
+  if (verbose_) ROS_WARN_ONCE("[PathPlanner]: Get the voxel map!");
 
   map_ = *msg;
   map_initialized_ = true;
@@ -105,8 +102,7 @@ void process(const Vec3f &start, const vec_Vec3f &goals) {
     }
   }
 
-  if (original_goals_reached_.back())
-    solved = false;
+  if (original_goals_reached_.back()) solved = false;
 
   if (as_->isActive()) {
     if (solved) {

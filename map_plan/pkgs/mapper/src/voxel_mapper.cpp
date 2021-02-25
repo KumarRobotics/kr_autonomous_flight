@@ -50,8 +50,7 @@ vec_Vec3f VoxelMapper::getCloud() {
   for (n(0) = 0; n(0) < dim_(0); n(0)++) {
     for (n(1) = 0; n(1) < dim_(1); n(1)++) {
       for (n(2) = 0; n(2) < dim_(2); n(2)++) {
-        if (map_[n(0)][n(1)][n(2)] > val_even)
-          pts.push_back(intToFloat(n));
+        if (map_[n(0)][n(1)][n(2)] > val_even) pts.push_back(intToFloat(n));
       }
     }
   }
@@ -77,20 +76,17 @@ vec_Vec3f VoxelMapper::getLocalCloud(const Vec3f &pos, const Vec3f &ori,
   Vec3i dim_low, dim_up;
 
   Vec3i dim1 = floatToInt(pos + ori);
-  for (int i = 0; i < 3; i++)
-    dim_low(i) = dim1(i) < 0 ? 0 : dim1(i);
+  for (int i = 0; i < 3; i++) dim_low(i) = dim1(i) < 0 ? 0 : dim1(i);
 
   Vec3i dim2 = floatToInt(pos + ori + dim);
-  for (int i = 0; i < 3; i++)
-    dim_up(i) = dim2(i) > dim_(i) ? dim_(i) : dim2(i);
+  for (int i = 0; i < 3; i++) dim_up(i) = dim2(i) > dim_(i) ? dim_(i) : dim2(i);
 
   vec_Vec3f pts;
   Vec3i n;
   for (n(0) = dim_low(0); n(0) < dim_up(0); n(0)++) {
     for (n(1) = dim_low(1); n(1) < dim_up(1); n(1)++) {
       for (n(2) = dim_low(2); n(2) < dim_up(2); n(2)++) {
-        if (map_[n(0)][n(1)][n(2)] > val_even)
-          pts.push_back(intToFloat(n));
+        if (map_[n(0)][n(1)][n(2)] > val_even) pts.push_back(intToFloat(n));
       }
     }
   }
@@ -111,12 +107,10 @@ void VoxelMapper::decayLocalCloud(const Vec3f &pos, double max_decay_range) {
   end_pos(2) = pos(2) + max_decay_range;
 
   Vec3i dim1 = floatToInt(start_pos);
-  for (int i = 0; i < 3; i++)
-    dim_low(i) = dim1(i) < 0 ? 0 : dim1(i);
+  for (int i = 0; i < 3; i++) dim_low(i) = dim1(i) < 0 ? 0 : dim1(i);
 
   Vec3i dim2 = floatToInt(end_pos);
-  for (int i = 0; i < 3; i++)
-    dim_up(i) = dim2(i) > dim_(i) ? dim_(i) : dim2(i);
+  for (int i = 0; i < 3; i++) dim_up(i) = dim2(i) > dim_(i) ? dim_(i) : dim2(i);
 
   // Decaying voxels within robot's local region (voxels will disappear if
   // unobserved for (val_occ - val_even) / val_decay times)
@@ -141,12 +135,10 @@ vec_Vec3f VoxelMapper::getInflatedLocalCloud(const Vec3f &pos, const Vec3f &ori,
   Vec3i dim_low, dim_up;
 
   Vec3i dim1 = floatToInt(pos + ori);
-  for (int i = 0; i < 3; i++)
-    dim_low(i) = dim1(i) < 0 ? 0 : dim1(i);
+  for (int i = 0; i < 3; i++) dim_low(i) = dim1(i) < 0 ? 0 : dim1(i);
 
   Vec3i dim2 = floatToInt(pos + ori + dim);
-  for (int i = 0; i < 3; i++)
-    dim_up(i) = dim2(i) > dim_(i) ? dim_(i) : dim2(i);
+  for (int i = 0; i < 3; i++) dim_up(i) = dim2(i) > dim_(i) ? dim_(i) : dim2(i);
 
   vec_Vec3f pts;
   Vec3i n;
@@ -220,8 +212,8 @@ planning_ros_msgs::VoxelMap VoxelMapper::getInflatedMap() {
 }
 
 // crop a local voxel map from the global voxel map
-planning_ros_msgs::VoxelMap
-VoxelMapper::getInflatedLocalMap(const Vec3f &ori_d, const Vec3f &dim_d) {
+planning_ros_msgs::VoxelMap VoxelMapper::getInflatedLocalMap(
+    const Vec3f &ori_d, const Vec3f &dim_d) {
   planning_ros_msgs::VoxelMap voxel_map;
 
   voxel_map.resolution = res_;
@@ -229,9 +221,9 @@ VoxelMapper::getInflatedLocalMap(const Vec3f &ori_d, const Vec3f &dim_d) {
   voxel_map.origin.y = ori_d(1);
   voxel_map.origin.z = ori_d(2);
 
-  Vec3i dim(dim_d(0) / res_, dim_d(1) / res_,
-            dim_d(2) /
-                res_); // calculated dimesion of local voxel map in voxels
+  Vec3i dim(
+      dim_d(0) / res_, dim_d(1) / res_,
+      dim_d(2) / res_);  // calculated dimesion of local voxel map in voxels
   voxel_map.dim.x = dim(0);
   voxel_map.dim.y = dim(1);
   voxel_map.dim.z = dim(2);
@@ -240,9 +232,9 @@ VoxelMapper::getInflatedLocalMap(const Vec3f &ori_d, const Vec3f &dim_d) {
   Vec3i n;
 
   Vec3i offset_n = floatToInt(
-      ori_d); // offset between the local map and the storage map (in voxels)
-  Vec3i ori_map_idx; // index of voxel in storage map (corresponding to voxel
-                     // with index n in local map)
+      ori_d);  // offset between the local map and the storage map (in voxels)
+  Vec3i ori_map_idx;  // index of voxel in storage map (corresponding to voxel
+                      // with index n in local map)
 
   for (n(0) = 0; n(0) < dim(0); n(0)++) {
     for (n(1) = 0; n(1) < dim(1); n(1)++) {
@@ -264,8 +256,8 @@ VoxelMapper::getInflatedLocalMap(const Vec3f &ori_d, const Vec3f &dim_d) {
           }
         } else {
           int idx = n(0) + dim(0) * n(1) + dim(0) * dim(1) * n(2);
-          voxel_map.data[idx] = val_occ; // outside storage map portion will be
-                                         // regarded as occupied for safety
+          voxel_map.data[idx] = val_occ;  // outside storage map portion will be
+                                          // regarded as occupied for safety
         }
       }
     }
@@ -315,7 +307,7 @@ planning_ros_msgs::VoxelMap VoxelMapper::getInflatedOccMap(double h,
 bool VoxelMapper::allocate(const Vec3f &new_dim_d, const Vec3f &new_ori_d) {
   Vec3i new_dim(new_dim_d(0) / res_, new_dim_d(1) / res_, new_dim_d(2) / res_);
   Vec3i new_ori(new_ori_d(0) / res_, new_ori_d(1) / res_, new_ori_d(2) / res_);
-  if (new_dim(2) == 0) // 2d case, set the z dimension to be 1
+  if (new_dim(2) == 0)  // 2d case, set the z dimension to be 1
     new_dim(2) = 1;
 
   if (new_dim(0) == dim_(0) && new_dim(1) == dim_(1) && new_dim(2) == dim_(2) &&
@@ -419,8 +411,7 @@ void VoxelMapper::addCloud(const vec_Vec3f &pts, const Aff3f &TF,
 
   for (const auto &it : pts) {
     // through away points outside max_range first to save computation
-    if ((max_range > 0) && (it.norm() > max_range))
-      continue;
+    if ((max_range > 0) && (it.norm() > max_range)) continue;
 
     // transform points from lidar frame to global frame
     const Vec3f pt = TF * lidar_rot_ * it;
@@ -430,8 +421,7 @@ void VoxelMapper::addCloud(const vec_Vec3f &pts, const Aff3f &TF,
     // TODO: if unknown vs known matters (i.e. planning algorithm differentiates
     // unknown and free), need to move this after ray_trace. Won't add much
     // computation according to timer feedback.
-    if (isOutSide(n))
-      continue;
+    if (isOutSide(n)) continue;
 
     // for each point do ray trace
     if (ray_trace) {
@@ -451,8 +441,8 @@ void VoxelMapper::addCloud(const vec_Vec3f &pts, const Aff3f &TF,
     if (map_[n(0)][n(1)][n(2)] < val_occ) {
       map_[n(0)][n(1)][n(2)] =
           map_[n(0)][n(1)][n(2)] +
-          val_add; //
-                   // Do the same to voxels in the inflation region
+          val_add;  //
+                    // Do the same to voxels in the inflation region
       if (inflated_map_[n(0)][n(1)][n(2)] < val_occ) {
         inflated_map_[n(0)][n(1)][n(2)] =
             inflated_map_[n(0)][n(1)][n(2)] + val_add;
@@ -499,10 +489,8 @@ vec_Vec3i VoxelMapper::rayTrace(const Vec3f &pt1, const Vec3f &pt2) {
   Vec3i prev_pn = Vec3i::Constant(-1000000);
   for (int n = 1; n < max_diff; n++) {
     Vec3i new_pn = floatToInt(pt1 + step * n);
-    if (isOutSide(new_pn))
-      continue;
-    if (new_pn != prev_pn)
-      pns.push_back(new_pn);
+    if (isOutSide(new_pn)) continue;
+    if (new_pn != prev_pn) pns.push_back(new_pn);
     prev_pn = new_pn;
   }
   return pns;

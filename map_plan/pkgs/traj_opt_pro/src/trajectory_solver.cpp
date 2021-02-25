@@ -32,8 +32,8 @@ void TrajectorySolver::setParams(decimal_t v_max, decimal_t a_max,
   time_eps_ = time_eps;
 }
 
-std::pair<Eigen::VectorXi, MatD>
-Waypoint::getIndexForm() const { // just makes bookkeeping easier.
+std::pair<Eigen::VectorXi, MatD> Waypoint::getIndexForm()
+    const {  // just makes bookkeeping easier.
   int n = static_cast<int>(use_pos) + static_cast<int>(use_vel) +
           static_cast<int>(use_acc) + static_cast<int>(use_jrk);
   MatD form = MatD(pos.rows(), n);
@@ -62,4 +62,4 @@ Waypoint::getIndexForm() const { // just makes bookkeeping easier.
   return std::pair<Eigen::VectorXi, MatD>(ind, form);
 }
 
-} // namespace traj_opt
+}  // namespace traj_opt

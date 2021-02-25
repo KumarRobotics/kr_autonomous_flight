@@ -1,8 +1,8 @@
 #include "mapper/tf_listener.h"
 
-std::optional<geometry_msgs::Pose>
-TFListener::LookupTransform(const std::string &target,
-                            const std::string &source, const ros::Time &time) {
+std::optional<geometry_msgs::Pose> TFListener::LookupTransform(
+    const std::string &target, const std::string &source,
+    const ros::Time &time) {
   geometry_msgs::TransformStamped transformStamped;
   try {
     transformStamped =

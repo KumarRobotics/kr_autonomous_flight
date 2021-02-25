@@ -12,7 +12,7 @@ using kr_mav_msgs::PositionCommand;
 using kr_tracker_msgs::TrackerStatus;
 
 class StoppingPolicy : public kr_trackers_manager::Tracker {
-public:
+ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   StoppingPolicy();
 
@@ -20,11 +20,11 @@ public:
   bool Activate(const PositionCommand::ConstPtr &cmd) override;
   void Deactivate() override;
 
-  PositionCommand::ConstPtr
-  update(const nav_msgs::Odometry::ConstPtr &msg) override;
+  PositionCommand::ConstPtr update(
+      const nav_msgs::Odometry::ConstPtr &msg) override;
   uint8_t status() const override;
 
-private:
+ private:
   double j_des_, a_des_;
   bool active_;
 
@@ -92,15 +92,14 @@ void StoppingPolicy::Deactivate(void) {
   got_traj_ = false;
 }
 
-PositionCommand::ConstPtr
-StoppingPolicy::update(const nav_msgs::Odometry::ConstPtr &msg) {
+PositionCommand::ConstPtr StoppingPolicy::update(
+    const nav_msgs::Odometry::ConstPtr &msg) {
   got_odom_ = true;
   yaw_ = tf::getYaw(msg->pose.pose.orientation);
   ros::Time stamp = msg->header.stamp;
   double duration = (stamp - t0_).toSec();
 
-  if (!active_)
-    return PositionCommand::Ptr();
+  if (!active_) return PositionCommand::Ptr();
 
   // if have not got trajectory, check for free fall
   if (!got_traj_) {

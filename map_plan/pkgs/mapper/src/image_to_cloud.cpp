@@ -63,8 +63,7 @@ void info_callback(const sensor_msgs::CameraInfoConstPtr &info_msg) {
 }
 
 void pointcloud_convert_depth(const sensor_msgs::ImageConstPtr depth_msg) {
-  if (!model_ptr)
-    return;
+  if (!model_ptr) return;
 
   if (count_ < data_skip_) {
     count_++;
@@ -126,8 +125,7 @@ void pointcloud_convert_depth(const sensor_msgs::ImageConstPtr depth_msg) {
   }
 
   PCLUtils::voxel_filter(cloud_msg, res_);
-  if (outlier_removal_)
-    PCLUtils::outlier_removal(cloud_msg, res_, 2);
+  if (outlier_removal_) PCLUtils::outlier_removal(cloud_msg, res_, 2);
   sensor_msgs::PointCloud cloud_output = PCLUtils::toROS(cloud_msg);
 
   cloud_output.header.stamp = depth_msg->header.stamp;
@@ -149,8 +147,7 @@ void pointcloud_convert_depth(const sensor_msgs::ImageConstPtr depth_msg) {
 
 void pointcloud_convert(const sensor_msgs::ImageConstPtr depth_msg,
                         const sensor_msgs::ImageConstPtr rgb_msg) {
-  if (!model_ptr)
-    return;
+  if (!model_ptr) return;
 
   if (count_ < data_skip_) {
     count_++;

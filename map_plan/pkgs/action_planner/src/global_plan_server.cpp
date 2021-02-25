@@ -3,10 +3,10 @@
 #include <action_planner/PlanWaypointsAction.h>
 #include <actionlib/server/simple_action_server.h>
 #include <eigen_conversions/eigen_msg.h>
-#include <jps_collision/map_util.h>              // jps related
-#include <jps_planner/jps_planner/jps_planner.h> // jps related
-#include <mapper/data_conversions.h>             // setMap, getMap, etc
-#include <nav_msgs/Odometry.h>                   // odometry
+#include <jps_collision/map_util.h>               // jps related
+#include <jps_planner/jps_planner/jps_planner.h>  // jps related
+#include <mapper/data_conversions.h>              // setMap, getMap, etc
+#include <nav_msgs/Odometry.h>                    // odometry
 #include <planning_ros_msgs/VoxelMap.h>
 #include <planning_ros_utils/data_ros_utils.h>
 #include <planning_ros_utils/primitive_ros_utils.h>
@@ -22,7 +22,7 @@
 using boost::irange;
 
 class GlobalPlanServer {
-public:
+ public:
   /**
    * @brief Constructor, initialization
    */
@@ -44,7 +44,7 @@ public:
 
   bool aborted_;
 
-private:
+ private:
   // global map sub
   ros::Subscriber global_map_sub_;
   ros::Subscriber odom_sub_;
@@ -144,11 +144,11 @@ GlobalPlanServer::GlobalPlanServer(ros::NodeHandle &nh) {
   if (use_3d_) {
     jps_3d_map_util_ = std::make_shared<JPS::VoxelMapUtil>();
     jps_3d_util_ =
-        std::make_shared<JPSPlanner3D>(false); // verbose set as false
+        std::make_shared<JPSPlanner3D>(false);  // verbose set as false
     jps_3d_util_->setMapUtil(jps_3d_map_util_);
   } else {
     jps_map_util_ = std::make_shared<JPS::OccMapUtil>();
-    jps_util_ = std::make_shared<JPSPlanner2D>(false); // verbose set as false
+    jps_util_ = std::make_shared<JPSPlanner2D>(false);  // verbose set as false
     jps_util_->setMapUtil(jps_map_util_);
   }
 }
@@ -156,8 +156,7 @@ GlobalPlanServer::GlobalPlanServer(ros::NodeHandle &nh) {
 void GlobalPlanServer::process_all() {
   boost::mutex::scoped_lock lockm(map_mtx);
 
-  if (goal_ == NULL)
-    return;
+  if (goal_ == NULL) return;
   ros::Time t0 = ros::Time::now();
   process_goal();
   double dt = (ros::Time::now() - t0).toSec();
@@ -175,7 +174,7 @@ void GlobalPlanServer::process_all() {
 
 void GlobalPlanServer::process_result(bool solved) {
   result_ = boost::make_shared<action_planner::PlanTwoPointResult>();
-  result_->success = solved; // set success status
+  result_->success = solved;  // set success status
   result_->policy_status = solved ? 1 : -1;
   result_->path = global_path_msg_;
   if (!solved && global_as_->isActive()) {
@@ -189,8 +188,7 @@ void GlobalPlanServer::process_result(bool solved) {
 
   // reset goal
   goal_ = boost::shared_ptr<action_planner::PlanTwoPointGoal>();
-  if (global_as_->isActive())
-    global_as_->setSucceeded(*result_);
+  if (global_as_->isActive()) global_as_->setSucceeded(*result_);
 }
 
 void GlobalPlanServer::odom_callback(const nav_msgs::Odometry::ConstPtr &odom) {
@@ -287,9 +285,8 @@ bool GlobalPlanServer::global_plan_process(
   return true;
 }
 
-planning_ros_msgs::VoxelMap
-GlobalPlanServer::sliceMap(double h, double hh,
-                           const planning_ros_msgs::VoxelMap &map) {
+planning_ros_msgs::VoxelMap GlobalPlanServer::sliceMap(
+    double h, double hh, const planning_ros_msgs::VoxelMap &map) {
   // slice a 3D voxel map
   planning_ros_msgs::VoxelMap voxel_map;
   voxel_map.origin.x = map.origin.x;

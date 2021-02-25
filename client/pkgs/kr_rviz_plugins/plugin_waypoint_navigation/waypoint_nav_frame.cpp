@@ -61,9 +61,14 @@ WaypointFrame::WaypointFrame(
     rviz::DisplayContext *context, std::map<int, Ogre::SceneNode *> *map_ptr,
     interactive_markers::InteractiveMarkerServer *server, int *unique_ind,
     QWidget *parent, WaypointNavTool *wp_tool)
-    : QWidget(parent), ui_(new Ui::WaypointNavigationWidget()),
-      context_(context), wp_nav_tool_(wp_tool), sn_map_ptr_(map_ptr),
-      unique_ind_(unique_ind), server_(server), default_height_(0.0),
+    : QWidget(parent),
+      ui_(new Ui::WaypointNavigationWidget()),
+      context_(context),
+      wp_nav_tool_(wp_tool),
+      sn_map_ptr_(map_ptr),
+      unique_ind_(unique_ind),
+      server_(server),
+      default_height_(0.0),
       frame_id_("map"),
       selected_marker_name_(std::string(g_wp_name_prefix) + "1") {
   scene_manager_ = context_->getSceneManager();
@@ -238,8 +243,7 @@ void WaypointFrame::loadFromBag(const std::string &filename) {
 
   BOOST_FOREACH (rosbag::MessageInstance const m, view) {
     nav_msgs::Path::ConstPtr p = m.instantiate<nav_msgs::Path>();
-    if (p == nullptr)
-      continue;
+    if (p == nullptr) continue;
     ROS_INFO("n waypoints %zu", p->poses.size());
 
     for (size_t i = 0; i < p->poses.size(); i++) {
@@ -488,4 +492,4 @@ QString WaypointFrame::getOutputTopic() {
   return output_topic_;
 }
 
-} // namespace kr_rviz_plugins
+}  // namespace kr_rviz_plugins

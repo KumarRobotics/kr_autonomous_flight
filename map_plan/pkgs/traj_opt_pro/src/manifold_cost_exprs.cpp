@@ -270,4 +270,4 @@ decimal_t NestedSum::f(const std::vector<decimal_t> &val) {
 std::vector<decimal_t> NestedSum::df(const std::vector<decimal_t> &val) {
   return weights;
 }
-} // namespace traj_opt
+}  // namespace traj_opt

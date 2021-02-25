@@ -19,32 +19,23 @@ void TrajectoryVisual::setMessage(const planning_ros_msgs::Trajectory &msg) {
   jrks_.clear();
   yaws_.clear();
 
-  if (num_ < 2)
-    return;
+  if (num_ < 2) return;
   for (const auto &pr : msg.primitives) {
     for (size_t i = 0; i < pr.cx.size(); i++)
-      if (std::isnan(pr.cx[i]) || std::isinf(pr.cx[i]))
-        return;
+      if (std::isnan(pr.cx[i]) || std::isinf(pr.cx[i])) return;
     for (size_t i = 0; i < pr.cy.size(); i++)
-      if (std::isnan(pr.cy[i]) || std::isinf(pr.cy[i]))
-        return;
+      if (std::isnan(pr.cy[i]) || std::isinf(pr.cy[i])) return;
     for (size_t i = 0; i < pr.cz.size(); i++)
-      if (std::isnan(pr.cz[i]) || std::isinf(pr.cz[i]))
-        return;
+      if (std::isnan(pr.cz[i]) || std::isinf(pr.cz[i])) return;
     for (size_t i = 0; i < pr.cyaw.size(); i++)
-      if (std::isnan(pr.cyaw[i]) || std::isinf(pr.cyaw[i]))
-        return;
+      if (std::isnan(pr.cyaw[i]) || std::isinf(pr.cyaw[i])) return;
   }
 
   poss_.resize(num_ - 1);
-  if (vel_vis_)
-    vels_.resize(num_);
-  if (acc_vis_)
-    accs_.resize(num_);
-  if (jrk_vis_)
-    jrks_.resize(num_);
-  if (yaw_vis_)
-    yaws_.resize(yaw_num_);
+  if (vel_vis_) vels_.resize(num_);
+  if (acc_vis_) accs_.resize(num_);
+  if (jrk_vis_) jrks_.resize(num_);
+  if (yaw_vis_) yaws_.resize(yaw_num_);
 
   decimal_t theta = M_PI / 2;
   Mat3f R;
@@ -141,57 +132,47 @@ void TrajectoryVisual::setFrameOrientation(
 }
 
 void TrajectoryVisual::setPosColor(float r, float g, float b, float a) {
-  for (auto &it : poss_)
-    it->setColor(r, g, b, a);
+  for (auto &it : poss_) it->setColor(r, g, b, a);
 }
 
 void TrajectoryVisual::setVelColor(float r, float g, float b, float a) {
-  for (auto &it : vels_)
-    it->setColor(r, g, b, a);
+  for (auto &it : vels_) it->setColor(r, g, b, a);
 }
 
 void TrajectoryVisual::setAccColor(float r, float g, float b, float a) {
-  for (auto &it : accs_)
-    it->setColor(r, g, b, a);
+  for (auto &it : accs_) it->setColor(r, g, b, a);
 }
 
 void TrajectoryVisual::setJrkColor(float r, float g, float b, float a) {
-  for (auto &it : jrks_)
-    it->setColor(r, g, b, a);
+  for (auto &it : jrks_) it->setColor(r, g, b, a);
 }
 
 void TrajectoryVisual::setYawColor(float r, float g, float b, float a) {
-  for (auto &it : yaws_)
-    it->setColor(r, g, b, a);
+  for (auto &it : yaws_) it->setColor(r, g, b, a);
 }
 
 void TrajectoryVisual::setPosScale(float s) {
-  for (auto &it : poss_)
-    it->setLineWidth(s);
+  for (auto &it : poss_) it->setLineWidth(s);
 }
 
 void TrajectoryVisual::setVelScale(float s) {
-  for (auto &it : vels_)
-    it->setLineWidth(s);
+  for (auto &it : vels_) it->setLineWidth(s);
 }
 
 void TrajectoryVisual::setAccScale(float s) {
-  for (auto &it : accs_)
-    it->setLineWidth(s);
+  for (auto &it : accs_) it->setLineWidth(s);
 }
 
 void TrajectoryVisual::setJrkScale(float s) {
-  for (auto &it : jrks_)
-    it->setLineWidth(s);
+  for (auto &it : jrks_) it->setLineWidth(s);
 }
 
 void TrajectoryVisual::setYawScale(float s) {
-  for (auto &it : yaws_)
-    it->setLineWidth(s);
+  for (auto &it : yaws_) it->setLineWidth(s);
 }
 
 void TrajectoryVisual::setYawTriangleScale(float s) { syaw_ = s; }
 
 void TrajectoryVisual::setYawTriangleAngle(float d) { dyaw_ = d; }
 
-} // namespace planning_rviz_plugins
+}  // namespace planning_rviz_plugins

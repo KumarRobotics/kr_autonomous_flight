@@ -14,8 +14,7 @@ decimal_t Trajectory::getExecuteTime() const {
 
 bool Trajectory::getCommand(decimal_t t, uint num_derivatives, MatD &data) {
   // check input
-  if (dim_ < 1)
-    return false;
+  if (dim_ < 1) return false;
 
   // allocate data
   data = MatD::Zero(dim_, num_derivatives + 1);
@@ -31,8 +30,7 @@ bool Trajectory::getCommand(decimal_t t, uint num_derivatives, MatD &data) {
 bool Trajectory::getHopfChart(decimal_t t) {
   VecD val;
   evaluate(t, 0, val);
-  if (val.rows() < 5)
-    return true;
+  if (val.rows() < 5) return true;
 
   return val(4) < 0.5;
 }
@@ -69,4 +67,4 @@ std::pair<Vec3, Vec3> Trajectory::getXi(decimal_t t, decimal_t g) {
   return std::make_pair(xi3, xid);
 }
 
-} // namespace traj_opt
+}  // namespace traj_opt

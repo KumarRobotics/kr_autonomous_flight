@@ -6,7 +6,7 @@
 
 // TODO: put this into taj_opt pkg
 class TrajOptUtils {
-public:
+ public:
   // for new traj_opt backend, can only have 3d trajectories
   static traj_opt::VecD make4d(const traj_opt::VecD &vec) {
     traj_opt::VecD out = traj_opt::VecD::Zero(4);
@@ -40,8 +40,7 @@ public:
                                geometry_msgs::Twist *vel,
                                geometry_msgs::Twist *acc,
                                geometry_msgs::Twist *jrk) {
-    if (traj == NULL)
-      return;
+    if (traj == NULL) return;
     traj_opt::VecD val;
     traj->evaluate(dt, 0, val);
     vec_to_pose(val, pos);
@@ -57,4 +56,4 @@ public:
   }
 };
 
-#endif // TRAJ_OPT_UTILS_HPP
+#endif  // TRAJ_OPT_UTILS_HPP

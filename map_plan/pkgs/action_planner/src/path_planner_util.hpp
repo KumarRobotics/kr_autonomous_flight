@@ -4,8 +4,9 @@
 #include <jps_planner/jps_planner/jps_planner.h>
 #include <mapper/data_conversions.h>
 
-template <int Dim> class PathPlannerUtil {
-public:
+template <int Dim>
+class PathPlannerUtil {
+ public:
   PathPlannerUtil(bool verbose) {
     map_util_ = std::make_shared<JPS::MapUtil<Dim>>();
     jps_util_ = std::make_shared<JPSPlanner<Dim>>(verbose);
@@ -52,9 +53,9 @@ public:
       search_radius << 0.8, 0.8, 0.6;
 
       distance_map_planner_->setPotentialRadius(
-          potential_radius); // Set 3D potential field radius
+          potential_radius);  // Set 3D potential field radius
       distance_map_planner_->setSearchRadius(
-          search_radius); // Set the valid search region around given path
+          search_radius);  // Set the valid search region around given path
 
       distance_map_planner_->computePath(start, goal, jps_path);
       /// get the path from distance map
@@ -79,7 +80,7 @@ public:
     return solved;
   }
 
-private:
+ private:
   std::shared_ptr<JPS::MapUtil<Dim>> map_util_;
   std::shared_ptr<JPSPlanner<Dim>> jps_util_;
   std::shared_ptr<DMPlanner<Dim>> distance_map_planner_;

@@ -1,8 +1,10 @@
 // Copyright 2016 KumarRobotics - Kartik Mohta
 #include "fla_ukf/fla_ukf.h"
+
+#include <angles/angles.h>
+
 #include <Eigen/Cholesky>
 #include <Eigen/Geometry>
-#include <angles/angles.h>
 #include <cmath>
 #include <utility>
 
@@ -116,8 +118,7 @@ bool FLAUKF::ProcessUpdate(const InputVec &u, const ros::Time &time) {
   const Scalar_t maxYaw = Xa.row(8).maxCoeff();
   if (std::abs(minYaw - maxYaw) > M_PI) {
     for (unsigned int k = 0; k < Xa.cols(); k++)
-      if (Xa(8, k) < 0)
-        Xa(8, k) += 2 * M_PI;
+      if (Xa(8, k) < 0) Xa(8, k) += 2 * M_PI;
   }
 
   // Mean
@@ -259,7 +260,7 @@ bool FLAUKF::MeasurementUpdateCam(const MeasCamVec &z, const MeasCamCov &RnCam,
     return false;
   }
 
-#if 0 // Linear update
+#if 0  // Linear update
   // Get Measurement
   Mat<meas_cam_count_, state_count_> H;
   H.setZero();
@@ -341,8 +342,7 @@ bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
                                      const MeasHeightCov &RnHeight,
                                      const ros::Time &time) {
   // ROS_INFO("GOT HEIGHT");
-  if (!init_process_ || !init_meas_)
-    return false;
+  if (!init_process_ || !init_meas_) return false;
 
   constexpr unsigned int L = state_count_;
 
@@ -361,8 +361,7 @@ bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
   const Scalar_t h_meas = z(0) * std::cos(xa_(7)) * std::cos(xa_(6));
 
   // Filter out very low or very high measurements
-  if (h_meas < 0.2 || h_meas > 20)
-    return false;
+  if (h_meas < 0.2 || h_meas > 20) return false;
 
 #if 0
   const Scalar_t h_prev =
@@ -397,7 +396,7 @@ bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
   //                      << ", h_ref: " << h_ref);
   if (std::abs(h_ref - h_meas) >= floor_change_threshold_) {
     ROS_WARN("----- Floor Level Changed -----");
-    height_hist_ = decltype(height_hist_)(); // Clear queue
+    height_hist_ = decltype(height_hist_)();  // Clear queue
     height_hist_.push_back(std::make_pair(time, h_meas));
 
     curr_floor_height_ += h_ref - h_meas;
@@ -533,7 +532,7 @@ bool FLAUKF::MeasurementUpdateVio(const MeasVioVec &z, const MeasVioCov &RnVio,
     return false;
   }
 
-#if ENABLE_VIO_YAW_OFFSET // Non-linear update
+#if ENABLE_VIO_YAW_OFFSET  // Non-linear update
   // Generate sigma points
   constexpr unsigned int L = state_count_;
   const Mat<L, 2 *L + 1> Xaa = GenerateSigmaPoints(Mat<0, 0>::Zero());
@@ -591,7 +590,7 @@ bool FLAUKF::MeasurementUpdateVio(const MeasVioVec &z, const MeasVioCov &RnVio,
   // Posterior Covariance
   Pa_ -= K * Pzz * K.transpose();
 
-#else // Linear update
+#else  // Linear update
   Mat<meas_vio_count_, state_count_> H;
   H.setZero();
   for (unsigned int i = 0; i < meas_vio_count_; ++i) {

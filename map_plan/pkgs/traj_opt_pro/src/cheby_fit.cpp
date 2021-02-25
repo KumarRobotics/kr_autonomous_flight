@@ -16,8 +16,7 @@ VecD FitCheby::fit_poly(std::vector<decimal_t> &numerical_eval,
     uint eval_n = std::floor(point * decimal_t(numerical_eval.size() - 1));
     b(i) = numerical_eval.at(eval_n);
 
-    for (int j = 0; j < n; j++)
-      A(i, j) = std::pow(point, j);
+    for (int j = 0; j < n; j++) A(i, j) = std::pow(point, j);
   }
   VecD co_raw = A.fullPivLu().solve(b);
   VecD co_real = bt->getBasisBasisTransform() * co_raw;
@@ -39,4 +38,4 @@ std::vector<decimal_t> FitCheby::getCheby(int n) {
   return res;
 }
 
-} // namespace traj_opt
+}  // namespace traj_opt

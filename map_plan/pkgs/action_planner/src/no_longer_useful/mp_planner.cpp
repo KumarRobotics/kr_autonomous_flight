@@ -20,7 +20,7 @@ using boost::irange;
 
 // Warpper for motion primitive planner
 class MPPlanner {
-private:
+ private:
   // local global map sub
   ros::Subscriber local_map_sub_;
   ros::Subscriber global_map_sub_;
@@ -56,7 +56,7 @@ private:
   void localMapCB(const planning_ros_msgs::VoxelMap::ConstPtr &msg);
   void globalMapCB(const planning_ros_msgs::VoxelMap::ConstPtr &msg);
 
-public:
+ public:
   void initialize(ros::NodeHandle &nh);
   void process_all();
   bool aborted_;
@@ -105,8 +105,7 @@ void MPPlanner::initialize(ros::NodeHandle &nh) {
 void MPPlanner::process_all() {
   boost::mutex::scoped_lock lockm(map_mtx);
 
-  if (goal_ == NULL)
-    return;
+  if (goal_ == NULL) return;
   ros::Time t0 = ros::Time::now();
   // record goal position, specify use jrk, acc or vel
   process_goal();
@@ -128,7 +127,7 @@ void MPPlanner::process_all() {
 
 void MPPlanner::process_result(const Trajectory3D &traj, bool solved) {
   result_ = boost::make_shared<action_planner::PlanTwoPointResult>();
-  result_->success = solved; // set success status
+  result_->success = solved;  // set success status
   result_->policy_status = solved ? 1 : -1;
   if (solved) {
     // covert traj to a ros message
@@ -142,7 +141,7 @@ void MPPlanner::process_result(const Trajectory3D &traj, bool solved) {
 
     decimal_t endt =
         goal_->execution_time
-            .toSec(); // execution_time if set will equal 1.0/replan_rate
+            .toSec();  // execution_time if set will equal 1.0/replan_rate
 
     // look ahead for 5 steps, each step duration equals execution_time, get
     // corresponding waypoints (execute the traj if execution_time is not set
@@ -183,8 +182,8 @@ void MPPlanner::process_result(const Trajectory3D &traj, bool solved) {
       result_->j_stop.push_back(j_fin);
     }
     result_->execution_time =
-        goal_->execution_time; // execution_time if set will
-                               // equal 1.0/replan_rate
+        goal_->execution_time;  // execution_time if set will
+                                // equal 1.0/replan_rate
     result_->epoch = goal_->epoch;
     Waypoint3D pt = traj.evaluate(traj.getTotalTime());
     result_->traj_end.position.x = pt.pos(0);
@@ -208,8 +207,7 @@ void MPPlanner::process_result(const Trajectory3D &traj, bool solved) {
     // as_->setAborted();
   }
 
-  if (as_->isActive())
-    as_->setSucceeded(*result_);
+  if (as_->isActive()) as_->setSucceeded(*result_);
 }
 
 // record goal position, specify use jrk, acc or vel
@@ -242,8 +240,7 @@ void MPPlanner::process_goal() {
   goal.use_acc = start.use_acc;
   goal.use_jrk = start.use_jrk;
 
-  if (goal_->reset)
-    ROS_WARN("RESET!");
+  if (goal_->reset) ROS_WARN("RESET!");
 
   // slice the 3D map to get 2D map, plan jps path, crop the path, and plan mp
   // trajectory in a local region around the robot
@@ -287,8 +284,8 @@ void MPPlanner::process_goal() {
 
     bool valid = (global_planner_succeeded_ && local_planner_succeeded_);
     Trajectory3D traj =
-        server_->get_traj(); // just return traj_ in server, which is returned
-                             // from motion primitive planner
+        server_->get_traj();  // just return traj_ in server, which is returned
+                              // from motion primitive planner
     process_result(traj, valid);
   } else {
     ROS_WARN("+++++++++++++++++++++++++");

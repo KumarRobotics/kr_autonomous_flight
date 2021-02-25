@@ -1,37 +1,39 @@
 // Copyright 2016 KumarRobotics - Kartik Mohta
-#include "fla_ukf/fla_ukf.h"
-#include <Eigen/Geometry>
-#include <algorithm>
 #include <angles/angles.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
-#include <limits>
-#include <memory>
 #include <nav_msgs/Odometry.h>
 #include <nodelet/nodelet.h>
-#include <queue>
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/MagneticField.h>
 #include <sensor_msgs/Range.h>
 #include <std_msgs/Bool.h>
-#include <string>
 #include <tf2/utils.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
 
+#include <Eigen/Geometry>
+#include <algorithm>
+#include <limits>
+#include <memory>
+#include <queue>
+#include <string>
+
+#include "fla_ukf/fla_ukf.h"
+
 class FLAUKFNodelet : public nodelet::Nodelet {
-public:
+ public:
   FLAUKFNodelet();
 
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW; // Need this since we have FLAUKF which
-                                   // needs aligned pointer
-private:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW;  // Need this since we have FLAUKF which
+                                    // needs aligned pointer
+ private:
   void onInit(void) override;
   void imu_callback(const sensor_msgs::Imu::ConstPtr &msg);
-  void
-  cam_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg);
+  void cam_callback(
+      const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg);
   void velodyne_callback(
       const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg);
   void laser_callback(const nav_msgs::Odometry::ConstPtr &msg);
@@ -113,9 +115,9 @@ FLAUKF::Vec<3> quatToEulerZYX(const Eigen::Quaternion<T> &q) {
   }
 
   FLAUKF::Vec<3> rpy;
-  rpy[0] = phi;   //  x, [-pi,pi]
-  rpy[1] = theta; //  y, [-pi/2,pi/2]
-  rpy[2] = psi;   //  z, [-pi,pi]
+  rpy[0] = phi;    //  x, [-pi,pi]
+  rpy[1] = theta;  //  y, [-pi/2,pi/2]
+  rpy[2] = psi;    //  z, [-pi,pi]
   return rpy;
 }
 
@@ -126,7 +128,7 @@ void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {
         transform_velodyne_body;
     try {
       transform_cam_body = tf_buffer_.lookupTransform(
-          cam_frame_id_, robot_frame_id_, ros::Time(0)); // Used for front IMU
+          cam_frame_id_, robot_frame_id_, ros::Time(0));  // Used for front IMU
       if (enable_cam_ || enable_vio_odom_) {
         transform_world_vision = tf_buffer_.lookupTransform(
             world_frame_id_, vision_frame_id_, ros::Time(0));
@@ -148,12 +150,12 @@ void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {
   }
 
   imu_queue_.push(*msg);
-  if (imu_queue_.size() <= cam_delay_)
-    return;
+  if (imu_queue_.size() <= cam_delay_) return;
 
   if (msg->header.stamp - last_vio_timestamp_ >= ros::Duration(0.5)) {
-    ROS_WARN_THROTTLE(0.05, "========= DANGER!!! DANGER!!! No recent VIO "
-                            "messages received =========");
+    ROS_WARN_THROTTLE(0.05,
+                      "========= DANGER!!! DANGER!!! No recent VIO "
+                      "messages received =========");
   }
 
   const sensor_msgs::Imu imu_msg = imu_queue_.front();
@@ -170,10 +172,10 @@ void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {
   u.segment<3>(0) = T_body_cam_.rotation() * u.segment<3>(0);
   u.segment<3>(3) = T_body_cam_.rotation() * u.segment<3>(3);
 
-  if (imu_calib_count_ < imu_calib_limit_) { // Gravity calibration
+  if (imu_calib_count_ < imu_calib_limit_) {  // Gravity calibration
     imu_calib_count_++;
     acc_gravity_ += u.segment<3>(0);
-  } else if (imu_calib_count_ == imu_calib_limit_) { // Save gravity norm
+  } else if (imu_calib_count_ == imu_calib_limit_) {  // Save gravity norm
     imu_calib_count_++;
     acc_gravity_ /= imu_calib_limit_;
     double g = acc_gravity_.norm();
@@ -187,8 +189,8 @@ void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {
     odom_ukf_msg->child_frame_id = robot_frame_id_;
     auto x = fla_ukf_.GetState();
 #if ENABLE_VIO_YAW_OFFSET
-    ROS_INFO_STREAM_THROTTLE(0.1, "VIO Yaw offset: " << x(15) * 180 / M_PI
-                                                     << " deg");
+    ROS_INFO_STREAM_THROTTLE(
+        0.1, "VIO Yaw offset: " << x(15) * 180 / M_PI << " deg");
 #endif
     // ROS_INFO_STREAM("t_world_body (filter): " <<
     // x.segment<3>(0).transpose());
@@ -360,8 +362,7 @@ void FLAUKFNodelet::laser_toggle_callback(const std_msgs::Bool::ConstPtr &msg) {
 
 void FLAUKFNodelet::laser_callback(const nav_msgs::Odometry::ConstPtr &msg) {
   // NODELET_INFO("laser_callback");
-  if (ignore_laser_)
-    return;
+  if (ignore_laser_) return;
 
   FLAUKF::MeasLaserVec z;
   double yaw = tf2::getYaw(msg->pose.pose.orientation);
@@ -373,18 +374,17 @@ void FLAUKFNodelet::laser_callback(const nav_msgs::Odometry::ConstPtr &msg) {
   FLAUKF::MeasLaserCov RnLaser{FLAUKF::MeasLaserCov::Zero()};
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
-      int row_idx = (i < 2) ? i : i + 1; // Skip 3rd row
-      int col_idx = (j < 2) ? j : j + 1; // Skip 3rd col
+      int row_idx = (i < 2) ? i : i + 1;  // Skip 3rd row
+      int col_idx = (j < 2) ? j : j + 1;  // Skip 3rd col
       RnLaser(i, j) = msg->pose.covariance[row_idx + col_idx * 6];
     }
   }
-  RnLaser.block<2, 2>(0, 0) *= 50 * 50; // Inflate covariance for XY
+  RnLaser.block<2, 2>(0, 0) *= 50 * 50;  // Inflate covariance for XY
   fla_ukf_.MeasurementUpdateLaser(z, RnLaser, msg->header.stamp);
 }
 
 void FLAUKFNodelet::height_callback(const sensor_msgs::Range::ConstPtr &msg) {
-  if (ignore_height_)
-    return;
+  if (ignore_height_) return;
   // NODELET_INFO("height_callback, range: %f", msg->range);
   height_measurement_received_ = true;
 
@@ -430,8 +430,8 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg) {
   const Eigen::Quaterniond q_world_body(T_world_body.rotation());
   const Eigen::Vector3d t_world_body(T_world_body.translation());
   const Eigen::Vector3d v_world_body =
-      T_world_vision_.linear() * v_vision_cam; // Ignoring the (omega \times r)
-                                               // since r_cam_body is small
+      T_world_vision_.linear() * v_vision_cam;  // Ignoring the (omega \times r)
+                                                // since r_cam_body is small
 
   const Eigen::Vector3d rpy = quatToEulerZYX(q_world_body);
 
@@ -507,7 +507,7 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg) {
     }
   }
 
-  for (int k = 0; k < 2; ++k) { // Only need to check for position X/Y
+  for (int k = 0; k < 2; ++k) {  // Only need to check for position X/Y
     // Keep the VIO covariance within a reasonable band so that we don't trust
     // it too much or too less
     double const vio_pos_min_std = 1.0;
@@ -559,8 +559,7 @@ void FLAUKFNodelet::gps_callback(const nav_msgs::Odometry::ConstPtr &msg) {
 
 void FLAUKFNodelet::mag_callback(
     const sensor_msgs::MagneticField::ConstPtr &msg) {
-  if (!static_transforms_initialized_)
-    return;
+  if (!static_transforms_initialized_) return;
 
   auto x = fla_ukf_.GetState();
   const Eigen::Quaterniond q_roll_pitch =
@@ -623,8 +622,7 @@ void FLAUKFNodelet::mag_callback(
   FLAUKF::MeasYawCov RnYaw{FLAUKF::MeasYawCov::Zero()};
   RnYaw(0, 0) = angles::from_degrees(10) * angles::from_degrees(10);
 
-  if (enable_mag_)
-    fla_ukf_.MeasurementUpdateYaw(z, RnYaw, msg->header.stamp);
+  if (enable_mag_) fla_ukf_.MeasurementUpdateYaw(z, RnYaw, msg->header.stamp);
 }
 
 void FLAUKFNodelet::yaw_callback(

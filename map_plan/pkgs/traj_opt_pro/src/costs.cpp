@@ -98,7 +98,7 @@ SphereCost::SphereCost(
   for (int j = 0; j < segs_; j++) {
     // get monomial expressions
     std::vector<RationalPoly> coe1,
-        coe2; // expressions for first and second variables on sphere
+        coe2;  // expressions for first and second variables on sphere
     // chart transition
     Quat dchart;
     if (j > 0) {
@@ -213,7 +213,7 @@ S2R3Traj::S2R3Traj(
   solver.setCost(cost);
   //    add_Axb(cons, true);
 
-  solved_ = solver.solve(true, 1e-10); // solve r3
+  solved_ = solver.solve(true, 1e-10);  // solve r3
   scost = boost::make_shared<SphereCost>(trajs2, times, basis, 3, charts);
   solvers2.setCost(scost);
 
@@ -221,7 +221,7 @@ S2R3Traj::S2R3Traj(
   //  }
   //      solved_ = solver.solve(true);
 
-  solved_ &= solvers2.solve_nlopt(); // solve
+  solved_ &= solvers2.solve_nlopt();  // solve
 }
 void S2R3Traj::allocate_poly(const Vec5 &pn, const Vec5 &pf,
                              const std::vector<decimal_t> &ds) {
@@ -246,8 +246,8 @@ void S2R3Traj::allocate_poly(const Vec5 &pn, const Vec5 &pf,
         } else if (j == (seg_ - 1) && k % 2 == 1) {
           pi.push_back(solver_ref->addConstVar(0.0));
         } else if (j > 0 && k % 2 == 0) {
-          pi.push_back(
-              spline.at(j - 1).at(k + 1)); // this is only valid for assumptions
+          pi.push_back(spline.at(j - 1).at(
+              k + 1));  // this is only valid for assumptions
         } else {
           pi.push_back(solver_ref->addVar(0.25));
         }
@@ -285,7 +285,7 @@ void S2R3Traj::add_Axb(const std::vector<std::pair<MatD, VecD>> &cons,
     assert(pair.first.rows() == pair.second.rows());
 
     std::vector<RationalPoly> coe1,
-        coe2; // expressions for first and second variables on sphere
+        coe2;  // expressions for first and second variables on sphere
     Quat dchart;
     if (j > 0) {
       dchart = charts.at(j).inverse() * charts.at(j - 1);
@@ -423,8 +423,7 @@ void SphereCost::testGrad() {
   for (auto &di : traj_)
     for (auto &si : di)
       for (auto &vi : si)
-        if (vi->getId() >= 0)
-          myvars.insert(vi);
+        if (vi->getId() >= 0) myvars.insert(vi);
 
   int i = 0;
   for (auto p : cost_parts) {
@@ -462,4 +461,4 @@ void SphereCost::testGrad() {
   }
 }
 
-} // namespace traj_opt
+}  // namespace traj_opt

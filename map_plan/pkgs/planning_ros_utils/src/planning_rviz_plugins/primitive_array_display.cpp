@@ -73,62 +73,52 @@ void PrimitiveArrayDisplay::updateYawVis() { visualizeMessage(); }
 
 void PrimitiveArrayDisplay::updatePosColorAndAlpha() {
   Ogre::ColourValue color = pos_color_property_->getOgreColor();
-  if (visual_)
-    visual_->setPosColor(color.r, color.g, color.b, 1);
+  if (visual_) visual_->setPosColor(color.r, color.g, color.b, 1);
 }
 
 void PrimitiveArrayDisplay::updateVelColorAndAlpha() {
   Ogre::ColourValue color = vel_color_property_->getOgreColor();
-  if (visual_)
-    visual_->setVelColor(color.r, color.g, color.b, 1);
+  if (visual_) visual_->setVelColor(color.r, color.g, color.b, 1);
 }
 
 void PrimitiveArrayDisplay::updateAccColorAndAlpha() {
   Ogre::ColourValue color = acc_color_property_->getOgreColor();
-  if (visual_)
-    visual_->setAccColor(color.r, color.g, color.b, 1);
+  if (visual_) visual_->setAccColor(color.r, color.g, color.b, 1);
 }
 
 void PrimitiveArrayDisplay::updateJrkColorAndAlpha() {
   Ogre::ColourValue color = jrk_color_property_->getOgreColor();
-  if (visual_)
-    visual_->setJrkColor(color.r, color.g, color.b, 1);
+  if (visual_) visual_->setJrkColor(color.r, color.g, color.b, 1);
 }
 
 void PrimitiveArrayDisplay::updateYawColorAndAlpha() {
   Ogre::ColourValue color = yaw_color_property_->getOgreColor();
-  if (visual_)
-    visual_->setYawColor(color.r, color.g, color.b, 1);
+  if (visual_) visual_->setYawColor(color.r, color.g, color.b, 1);
 }
 
 void PrimitiveArrayDisplay::updatePosScale() {
   float s = pos_scale_property_->getFloat();
-  if (visual_)
-    visual_->setPosScale(s);
+  if (visual_) visual_->setPosScale(s);
 }
 
 void PrimitiveArrayDisplay::updateVelScale() {
   float s = vel_scale_property_->getFloat();
-  if (visual_)
-    visual_->setVelScale(s);
+  if (visual_) visual_->setVelScale(s);
 }
 
 void PrimitiveArrayDisplay::updateAccScale() {
   float s = acc_scale_property_->getFloat();
-  if (visual_)
-    visual_->setAccScale(s);
+  if (visual_) visual_->setAccScale(s);
 }
 
 void PrimitiveArrayDisplay::updateJrkScale() {
   float s = jrk_scale_property_->getFloat();
-  if (visual_)
-    visual_->setJrkScale(s);
+  if (visual_) visual_->setJrkScale(s);
 }
 
 void PrimitiveArrayDisplay::updateYawScale() {
   float s = yaw_scale_property_->getFloat();
-  if (visual_)
-    visual_->setYawScale(s);
+  if (visual_) visual_->setYawScale(s);
 }
 
 void PrimitiveArrayDisplay::updateYawTriangleScale() { visualizeMessage(); }
@@ -215,7 +205,7 @@ void PrimitiveArrayDisplay::visualizeMessage() {
   Ogre::ColourValue yaw_color = yaw_color_property_->getOgreColor();
   visual_->setYawColor(yaw_color.r, yaw_color.g, yaw_color.b, 1);
 }
-} // namespace planning_rviz_plugins
+}  // namespace planning_rviz_plugins
 
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_EXPORT_CLASS(planning_rviz_plugins::PrimitiveArrayDisplay,

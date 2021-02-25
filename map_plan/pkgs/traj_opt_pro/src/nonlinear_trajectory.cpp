@@ -69,7 +69,7 @@ void PolyCost::init_constants() {
         -0.000101287601288, -0.000205350205350, -0.000006937506938,
         0.000011100011100;
   } else {
-    throw 2; // unsupported
+    throw 2;  // unsupported
   }
 }
 
@@ -96,16 +96,13 @@ NonlinearTrajectory::NonlinearTrajectory(
   bool marginalize = true;
   bool use_knots = waypoints.size() > 2;
   bool use_all = false;
-  if (waypoints.size() > 2 && waypoints.at(1).use_vel)
-    use_all = true;
-  if (waypoints.size() > 1 && !waypoints.at(1).use_pos)
-    use_all = true;
+  if (waypoints.size() > 2 && waypoints.at(1).use_vel) use_all = true;
+  if (waypoints.size() > 1 && !waypoints.at(1).use_pos) use_all = true;
   // setup poly
   allocate_poly(ds, path, marginalize, use_knots, use_all, true);
   // equality
   add_boundary(waypoints, marginalize);
-  if (!marginalize)
-    link_sections();
+  if (!marginalize) link_sections();
   // ineq
   if (solver.num_vars() == 0) {
     if (solver.num_const_vars() == 0)
@@ -210,7 +207,7 @@ void NonlinearTrajectory::allocate_poly(
         else if (marginalize && j == (seg_ - 1) && k % 2 == 1 && !use_all)
           pi.push_back(solver.addConstVar(2.0));
         else if (marginalize && j > 0 && k % 2 == 0) {
-          pi.push_back(spline.at(j - 1).at(k + 1)); // this is key
+          pi.push_back(spline.at(j - 1).at(k + 1));  // this is key
           pi.back()->markDuplicate();
         } else if (marginalize && use_all && k % 2 == 1 && k != 1)
           pi.push_back(solver.addConstVar(2.0));
@@ -249,8 +246,7 @@ void NonlinearTrajectory::allocate_beads() {
   beads.clear();
   for (int i = 0; i <= dim_; i++) {
     NLChain chain;
-    for (int j = 0; j < seg_; j++)
-      chain.push_back(solver.addVar(2.0));
+    for (int j = 0; j < seg_; j++) chain.push_back(solver.addVar(2.0));
     beads.push_back(chain);
   }
 }
@@ -290,8 +286,7 @@ void NonlinearTrajectory::add_boundary(const std::vector<Waypoint> &waypoints,
     int id = point.knot_id;
     std::pair<Eigen::VectorXi, MatD> pair = point.getIndexForm();
     // note we use start of each segment, unless id == seg_
-    if (id < 0)
-      id += seg_ + 1;
+    if (id < 0) id += seg_ + 1;
 
     for (int c = 0; c < pair.first.rows(); c++) {
       int co = 2 * pair.first(c);
@@ -338,8 +333,7 @@ void NonlinearTrajectory::addTimeBound(
     con = boost::make_shared<TimeBound>(times, 10.0);
   } else {
     decimal_t T = 0.0;
-    for (auto t : *ds)
-      T += t;
+    for (auto t : *ds) T += t;
     con = boost::make_shared<TimeBound>(times, T);
   }
 
@@ -367,8 +361,7 @@ void NonlinearTrajectory::add_Axb(
 
 decimal_t NonlinearTrajectory::getTotalTime() const {
   decimal_t T = 0;
-  for (auto &v : times)
-    T += v->getVal();
+  for (auto &v : times) T += v->getVal();
   return T;
 }
 
@@ -509,8 +502,7 @@ PolyCost::PolyCost(const NLTraj &traj, const NLTimes &times,
                    int max_dim) {
   init_constants();
   int dim = traj.size();
-  if (max_dim > 0)
-    dim = std::min(dim, max_dim);
+  if (max_dim > 0) dim = std::min(dim, max_dim);
   int segs = times.size();
   int deg = traj.front().front().size();
   for (int d = 0; d < dim; d++) {
@@ -520,7 +512,7 @@ PolyCost::PolyCost(const NLTraj &traj, const NLTimes &times,
           if (i == j)
             poly += SymbolicPoly(traj.at(d).at(s).at(i), traj.at(d).at(s).at(j),
                                  times.at(s), cost_n_(i, j), cost_v_(i, j));
-          else // add symetric elements properly
+          else  // add symetric elements properly
             poly +=
                 SymbolicPoly(traj.at(d).at(s).at(i), traj.at(d).at(s).at(j),
                              times.at(s), cost_n_(i, j), 2.0 * cost_v_(i, j));
@@ -581,12 +573,11 @@ PolyCost::PolyCost(const NLTraj &traj, const NLTimes &lamdas,
             poly += SymbolicPoly(vj, times.at(s), cost_n_(i, j),
                                  -gi * cost_v_(i, j));
           }
-          if (vi == NULL || vj == NULL)
-            throw 3; // bug
+          if (vi == NULL || vj == NULL) throw 3;  // bug
           if (i == j) {
             poly += SymbolicPoly(vi, vj, times.at(s), cost_n_(i, j),
                                  extra * cost_v_(i, j));
-          } else { // add symetric elements properly
+          } else {  // add symetric elements properly
             poly += SymbolicPoly(vi, vj, times.at(s), cost_n_(i, j),
                                  2.0 * extra * cost_v_(i, j));
           }
@@ -654,7 +645,7 @@ void NonlinearTrajectory::addCloudConstraint(const Vec3Vec &points) {
     for (auto &p : points) {
       boost::shared_ptr<BallConstraint> con =
           boost::make_shared<BallConstraint>(this, j, p,
-                                             0.8); // hardcode robot_r for now
+                                             0.8);  // hardcode robot_r for now
       solver.addConstraint(con);
     }
   }
@@ -663,14 +654,12 @@ void NonlinearTrajectory::addCloudConstraint(const Vec3Vec &points) {
 Vec4Vec NonlinearTrajectory::getBeads() {
   Vec4Vec res(seg_, Vec4::Zero());
   for (int i = 0; i < seg_; i++)
-    for (int d = 0; d <= dim_; d++)
-      res.at(i)(d) = beads.at(d).at(i)->getVal();
+    for (int d = 0; d <= dim_; d++) res.at(i)(d) = beads.at(d).at(i)->getVal();
   return res;
 }
 
 void NonlinearTrajectory::scaleTime(decimal_t ratio) {
-  for (auto t : times)
-    t->val *= ratio;
+  for (auto t : times) t->val *= ratio;
 
   std::list<int> duplicates;
   for (int d = 0; d < traj.size(); d++) {
@@ -999,11 +988,10 @@ void NonlinearTrajectory::find_charts() {
       charts.push_back(hover_new);
     }
   }
-  assert(hover == true); // should end in hover
+  assert(hover == true);  // should end in hover
   // merge stuff in
   std::vector<decimal_t> dtts(1, 0.0);
-  for (auto &t : times)
-    dtts.push_back(t->getVal() + dtts.back());
+  for (auto &t : times) dtts.push_back(t->getVal() + dtts.back());
 
   yaw_dts.clear();
   yaw_charts.clear();
@@ -1045,8 +1033,7 @@ void NonlinearTrajectory::find_charts() {
           solver_yaw.addConstVar(yaw_dts.at(i) - yaw_dts.at(i - 1)));
       int n = 0;
       for (int j = 0; j < dts.size(); j++)
-        if (dts.at(j) >= yaw_dts.at(i) - 0.001)
-          n++;
+        if (dts.at(j) >= yaw_dts.at(i) - 0.001) n++;
       yaw_charts.push_back(n % 2 == 0);
     }
   }
@@ -1055,4 +1042,4 @@ void NonlinearTrajectory::find_charts() {
   }
 }
 
-} // namespace traj_opt
+}  // namespace traj_opt

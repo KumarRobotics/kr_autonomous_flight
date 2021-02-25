@@ -1,7 +1,7 @@
 // Copyright 2016 Michael Watterson
 
-#ifndef MOBILITY_PLANNER_TRAJ_OPT_SRC_TRAJECTORY_DISPLAY_H_
-#define MOBILITY_PLANNER_TRAJ_OPT_SRC_TRAJECTORY_DISPLAY_H_
+#ifndef MAP_PLAN_PKGS_TRAJ_OPT_ROS_SRC_TRAJECTORY_DISPLAY_H_
+#define MAP_PLAN_PKGS_TRAJ_OPT_ROS_SRC_TRAJECTORY_DISPLAY_H_
 
 #ifndef Q_MOC_RUN
 #include <planning_ros_msgs/SplineTrajectory.h>
@@ -102,5 +102,5 @@ class TrajectoryDisplay
 
 }  // end namespace traj_opt
 
-#endif  // MOBILITY_PLANNER_TRAJ_OPT_SRC_TRAJECTORY_DISPLAY_H_
+#endif  // MAP_PLAN_PKGS_TRAJ_OPT_ROS_SRC_TRAJECTORY_DISPLAY_H_
 // %EndTag(FULL_SOURCE)%

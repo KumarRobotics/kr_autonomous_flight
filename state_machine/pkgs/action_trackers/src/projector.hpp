@@ -98,7 +98,7 @@ class Projector {
     vec_E<Ellipsoid3D> es;
     for (const auto &it : new_ps) {
       es.push_back(find_sphere(it, obs_, r_max_));
-      if ((int)es.size() > num) break;
+      if (static_cast<int>(es.size()) > num) break;
     }
 
     for (const auto &it : ellipsoid_array_) es.push_back(it);

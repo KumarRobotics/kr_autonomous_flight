@@ -6,5 +6,6 @@
 class PrimitiveToTrajOpt
 {
 public:
-    static planning_ros_msgs::SplineTrajectory convert(const planning_ros_msgs::Trajectory &msg);
+    static planning_ros_msgs::SplineTrajectory
+		convert(const planning_ros_msgs::Trajectory &msg);
 };

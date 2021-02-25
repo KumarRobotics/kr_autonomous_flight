@@ -1,7 +1,7 @@
 // Copyright 2016 Michael Watterson
 
-#ifndef MOBILITY_PLANNER_TRAJ_OPT_SRC_TRAJECTORY_VISUAL_H_
-#define MOBILITY_PLANNER_TRAJ_OPT_SRC_TRAJECTORY_VISUAL_H_
+#ifndef MAP_PLAN_PKGS_TRAJ_OPT_ROS_SRC_TRAJECTORY_VISUAL_H_
+#define MAP_PLAN_PKGS_TRAJ_OPT_ROS_SRC_TRAJECTORY_VISUAL_H_
 
 #include <traj_opt_basic/trajectory.h>
 #include <planning_ros_msgs/SplineTrajectory.h>
@@ -28,8 +28,8 @@ namespace traj_opt {
 // Declare the visual class for this display.
 //
 // Each instance of TrajectoryVisual represents the visualization of a single
-// planning_ros_msgs::SplineTrajectory message.  Currently it just shows an arrow with
-// the direction and magnitude of the acceleration vector, but could
+// planning_ros_msgs::SplineTrajectory message.  Currently it just shows an
+// arrow with the direction and magnitude of the acceleration vector, but could
 // easily be expanded to include more of the message data.
 
 enum Style { Mike, Sikang, CJ, Hopf };
@@ -110,4 +110,4 @@ class TrajectoryVisual {
 
 }  // namespace traj_opt
 
-#endif  // MOBILITY_PLANNER_TRAJ_OPT_SRC_TRAJECTORY_VISUAL_H_
+#endif  // MAP_PLAN_PKGS_TRAJ_OPT_ROS_SRC_TRAJECTORY_VISUAL_H_

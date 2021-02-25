@@ -11,7 +11,8 @@
 class TrajRosBridge {
  public:
   // No need to instantiate pesky variables!
-  static planning_ros_msgs::SplineTrajectory convert(const traj_opt::TrajData &data);
+  static planning_ros_msgs::SplineTrajectory
+	  convert(const traj_opt::TrajData &data);
   static traj_opt::TrajData convert(const planning_ros_msgs::SplineTrajectory &msg);
 
   // make sure to run ros::init() before calling this function or it won't work

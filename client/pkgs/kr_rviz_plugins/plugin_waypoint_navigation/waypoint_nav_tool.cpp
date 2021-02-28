@@ -320,9 +320,9 @@ void WaypointNavTool::processFeedback(
     case visualization_msgs::InteractiveMarkerFeedback::MENU_SELECT: {
       M_StringToSNPtr::iterator sn_entry = sn_map_.find(
           std::stoi(feedback->marker_name.substr(strlen(g_wp_name_prefix))));
-      if (sn_entry == sn_map_.end())
+      if (sn_entry == sn_map_.end()) {
         ROS_ERROR("%s not found in map", feedback->marker_name.c_str());
-      else {
+      } else {
         if (feedback->menu_entry_id == 1) {
           // Delete selected waypoint
           std::stringstream wp_name;
@@ -369,9 +369,9 @@ void WaypointNavTool::processFeedback(
       M_StringToSNPtr::iterator sn_entry = sn_map_.find(
           std::stoi(feedback->marker_name.substr(strlen(g_wp_name_prefix))));
 
-      if (sn_entry == sn_map_.end())
+      if (sn_entry == sn_map_.end()) {
         ROS_ERROR("%s not found in map", feedback->marker_name.c_str());
-      else {
+      } else {
         geometry_msgs::PoseStamped pos;
         pos.pose = feedback->pose;
 

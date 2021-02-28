@@ -3,6 +3,7 @@
 #include <rosbag/view.h>
 
 #include <boost/foreach.hpp>
+#include <vector>
 
 template <typename T>
 void write_bag(std::string file_name, std::string topic_name,

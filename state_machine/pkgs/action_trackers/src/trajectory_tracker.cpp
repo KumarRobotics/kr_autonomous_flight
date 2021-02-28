@@ -228,9 +228,9 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
         init_cmd_->position.z, init_cmd_->yaw;
     next_trajectory_.front()->evaluate(0.0, 0, pos_new);
 
-    if (pos_new.rows() < 4)
+    if (pos_new.rows() < 4) {
       pos_old.conservativeResize(pos_new.rows(), 1);
-    else if (pos_new.rows() == 9) {  // special sphere traj thing
+    } else if (pos_new.rows() == 9) {  // special sphere traj thing
       pos_old = pos_old.block(0, 0, 3, 1);
       pos_new = pos_new.block(0, 0, 3, 1);
     }
@@ -364,7 +364,7 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
 
   // evaluate trajectory and get the cmd, refer to convert.cpp in
   // traj_opt_quadrotor,
-  if (current_trajectory_->getDim() == 9) {  // TODO: what does this indicate?
+  if (current_trajectory_->getDim() == 9) {  // what does this indicate?
     geometry_msgs::PointStamped ps;
     ps.header = msg->header;
     TrajToQuadCmd::handleSphere(current_trajectory_, duration, cmd, ps.point);

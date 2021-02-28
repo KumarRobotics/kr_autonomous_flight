@@ -6,6 +6,7 @@
 #ifndef Q_MOC_RUN
 #include <planning_ros_msgs/SplineTrajectory.h>
 #include <rviz/message_filter_display.h>
+
 #include <boost/circular_buffer.hpp>
 #endif
 
@@ -19,7 +20,7 @@ class FloatProperty;
 class IntProperty;
 class EnumProperty;
 class BoolProperty;
-}
+}  // namespace rviz
 
 // All the source in this plugin is in its own namespace.  This is not
 // required but is good practice.
@@ -46,12 +47,11 @@ class TrajectoryVisual;
 // in the scene, and when they are deleted, they disappear.
 class TrajectoryDisplay
     : public rviz::MessageFilterDisplay<planning_ros_msgs::SplineTrajectory> {
-  Q_OBJECT  // NOLINT
-      public
-      :  // NOLINT
-         // Constructor.  pluginlib::ClassLoader creates instances by calling
-         // the default constructor, so make sure you have one.
-         TrajectoryDisplay();
+  Q_OBJECT      // NOLINT
+      public :  // NOLINT
+                // Constructor.  pluginlib::ClassLoader creates instances by
+                // calling the default constructor, so make sure you have one.
+                TrajectoryDisplay();
   virtual ~TrajectoryDisplay();
 
   // Overrides of protected virtual functions from Display.  As much

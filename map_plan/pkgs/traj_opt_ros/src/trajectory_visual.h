@@ -3,24 +3,24 @@
 #ifndef MOBILITY_PLANNER_TRAJ_OPT_SRC_TRAJECTORY_VISUAL_H_
 #define MOBILITY_PLANNER_TRAJ_OPT_SRC_TRAJECTORY_VISUAL_H_
 
-#include <traj_opt_basic/trajectory.h>
 #include <planning_ros_msgs/SplineTrajectory.h>
+#include <traj_opt_basic/trajectory.h>
 #include <traj_opt_basic/types.h>
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace Ogre {
 class Vector3;
 class Quaternion;
-}
+}  // namespace Ogre
 
 namespace rviz {
 class Arrow;
 class Line;
 class Shape;
 class Object;
-}
+}  // namespace rviz
 
 namespace traj_opt {
 
@@ -28,8 +28,8 @@ namespace traj_opt {
 // Declare the visual class for this display.
 //
 // Each instance of TrajectoryVisual represents the visualization of a single
-// planning_ros_msgs::SplineTrajectory message.  Currently it just shows an arrow with
-// the direction and magnitude of the acceleration vector, but could
+// planning_ros_msgs::SplineTrajectory message.  Currently it just shows an
+// arrow with the direction and magnitude of the acceleration vector, but could
 // easily be expanded to include more of the message data.
 
 enum Style { Mike, Sikang, CJ, Hopf };
@@ -69,8 +69,8 @@ class TrajectoryVisual {
                        bool use_a, bool use_h);
 
  private:
-  traj_opt::Mat3 matFromVecD(const traj_opt::VecD &vec); 
-  Ogre::Vector3 vecFromVecD(const traj_opt::VecD &vec);
+  traj_opt::Mat3 matFromVecD(const traj_opt::VecD& vec);
+  Ogre::Vector3 vecFromVecD(const traj_opt::VecD& vec);
   // Tangent velocity vectors
   std::vector<boost::shared_ptr<rviz::Object> > vel_arrows_;
   std::vector<boost::shared_ptr<rviz::Object> > acc_arrows_;

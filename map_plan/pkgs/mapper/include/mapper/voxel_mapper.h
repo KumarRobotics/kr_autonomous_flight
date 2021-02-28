@@ -37,18 +37,18 @@ class VoxelMapper {
    */
   vec_Vec3f getLocalCloud(const Vec3f& pos, const Vec3f& ori, const Vec3f& dim);
 
-
   /**
-   * @brief crop a local voxel map from the global voxel map 
+   * @brief crop a local voxel map from the global voxel map
    * @param ori the origin of the local voxel map
    * @param dim the range of the local voxel map
    *
    * Assume the map is in a fixed frame
    */
-  planning_ros_msgs::VoxelMap getInflatedLocalMap(const Vec3f& ori, const Vec3f& dim);
+  planning_ros_msgs::VoxelMap getInflatedLocalMap(const Vec3f& ori,
+                                                  const Vec3f& dim);
 
   /**
-   * @brief Decay the occupied voxels within a local range 
+   * @brief Decay the occupied voxels within a local range
    * @param pos the center of the local point cloud
    * @param max_decay_range maximum range of the local region to decay
    *
@@ -57,7 +57,8 @@ class VoxelMapper {
   void decayLocalCloud(const Vec3f& pos, double max_decay_range);
 
   /**
-   * @brief Get the inflated occupied voxels within a local range (local voxel map is a subset of global voxel map)
+   * @brief Get the inflated occupied voxels within a local range (local voxel
+   * map is a subset of global voxel map)
    * @param pos the center of the local point cloud
    * @param dim the range of the local point cloud
    *
@@ -70,7 +71,7 @@ class VoxelMapper {
   planning_ros_msgs::VoxelMap getMap();
   /// Get the inflated map
   planning_ros_msgs::VoxelMap getInflatedMap();
-  
+
   /**
    * @brief Get the 2D slice of inflated point cloud
    * @param h the height (z-axis value) to get the slice
@@ -89,9 +90,9 @@ class VoxelMapper {
    */
   void addCloud(const vec_Vec3f& pts, const Aff3f& TF, const vec_Vec3i& ns,
                 bool ray_trace = false, double max_range = 10);
-  
+
   /**
-   * @brief Add point cloud 
+   * @brief Add point cloud
    * @param pts point cloud in the sensor frame
    * @param TF transform from the sensor frame to the map frame
    * @param ns inflated voxel neighbors
@@ -142,7 +143,8 @@ class VoxelMapper {
   /// Value free
   int8_t val_free = 0;
   /// Value occupied
-  int8_t val_occ = 100; // DON'T CHANGE THIS! This value is hard-coded in the planner. (TODO: remove the hard coding in planner)
+  int8_t val_occ = 100;  // DON'T CHANGE THIS! This value is hard-coded in the
+                         // planner. (TODO: remove the hard coding in planner)
   /// Value unknown
   int8_t val_unknown = -1;
   /// Value even
@@ -151,9 +153,10 @@ class VoxelMapper {
   /// / val_decay times)
   int8_t val_decay = 0;
   // be careful of overflow (should always be within -128 and 128 range)
-  // Add val_add to the voxel whenever a point lies in it. Voxel will be occupied after (val_occ - val_free) / val_add times of such addition.
-  int8_t val_add = 20;  // should always be less than 27 to avoid overflow (should always be within
-                        // -128 and 128 range)
+  // Add val_add to the voxel whenever a point lies in it. Voxel will be
+  // occupied after (val_occ - val_free) / val_add times of such addition.
+  int8_t val_add = 20;  // should always be less than 27 to avoid overflow
+                        // (should always be within -128 and 128 range)
   /// Default map value
   int8_t val_default = 0;
 };

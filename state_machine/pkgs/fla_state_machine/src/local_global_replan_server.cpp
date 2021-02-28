@@ -1,22 +1,17 @@
-#include <ros/ros.h>
-// external actions
+#include <action_planner/PlanPathAction.h>
 #include <action_planner/PlanTwoPointAction.h>
 #include <action_trackers/RunTrajectoryAction.h>
-// internal actions
-#include <fla_state_machine/ReplanAction.h>
-
-#include <fla_state_machine/traj_opt_utils.hpp>
-// #include <fla_state_machine/UpdateGoalAction.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/server/simple_action_server.h>
-// traj_opt stuff
-#include <action_planner/PlanPathAction.h>
+#include <fla_state_machine/ReplanAction.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <kr_mav_msgs/PositionCommand.h>
 #include <planning_ros_utils/data_ros_utils.h>
+#include <ros/ros.h>
 #include <std_msgs/Int64.h>
 #include <traj_opt_basic/msg_traj.h>
 #include <traj_opt_ros/ros_bridge.h>
+#include <fla_state_machine/traj_opt_utils.hpp>
 
 class RePlanner {
  public:

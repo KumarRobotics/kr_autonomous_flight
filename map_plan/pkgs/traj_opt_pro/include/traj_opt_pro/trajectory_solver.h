@@ -24,11 +24,11 @@ struct Waypoint {
 
   // stack constraint into matrix form
   std::pair<Eigen::VectorXi, MatD> getIndexForm() const;
-  void setDefaultIC(uint dim, int id=0){
-    pos = VecD::Zero(dim,1);
-    vel = VecD::Zero(dim,1);
-    acc = VecD::Zero(dim,1);
-    jrk = VecD::Zero(dim,1);
+  void setDefaultIC(uint dim, int id = 0) {
+    pos = VecD::Zero(dim, 1);
+    vel = VecD::Zero(dim, 1);
+    acc = VecD::Zero(dim, 1);
+    jrk = VecD::Zero(dim, 1);
     use_pos = true;
     use_vel = true;
     use_acc = true;
@@ -43,9 +43,9 @@ struct Waypoint {
   }
 };
 
-struct WaypointHopf : public Waypoint{
-  VecD xi_hat{VecD::Zero(3, 1)}; // direction of acceleration
-  int chart{0}; // 0 hover, 1 inverted
+struct WaypointHopf : public Waypoint {
+  VecD xi_hat{VecD::Zero(3, 1)};  // direction of acceleration
+  int chart{0};                   // 0 hover, 1 inverted
   static Waypoint cast(const WaypointHopf &val) {
     Waypoint w;
     w.pos = val.pos;
@@ -59,7 +59,6 @@ struct WaypointHopf : public Waypoint{
     w.knot_id = val.knot_id;
     return w;
   }
-
 };
 
 class TrajectorySolver {

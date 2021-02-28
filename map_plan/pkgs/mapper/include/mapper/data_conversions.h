@@ -88,7 +88,8 @@ inline void getMap(std::shared_ptr<JPS::OccMapUtil>& map_util,
   map.data = map_util->getMap();
 }
 
-// TODO: This function is the same as getInflatedOccMap function in voxel_mapper.cpp, should merge them.
+// TODO: This function is the same as getInflatedOccMap function in
+// voxel_mapper.cpp, should merge them.
 inline planning_ros_msgs::VoxelMap sliceMap(
     const planning_ros_msgs::VoxelMap& map, double h, double hh = 0) {
   // slice a 3D voxel map

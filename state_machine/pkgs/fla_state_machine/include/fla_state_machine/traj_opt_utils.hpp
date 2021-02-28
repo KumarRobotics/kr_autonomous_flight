@@ -1,5 +1,4 @@
-#ifndef TRAJ_OPT_UTILS_HPP
-#define TRAJ_OPT_UTILS_HPP
+#pragma once
 #include <ros/ros.h>
 // traj_opt stuff
 #include <traj_opt_basic/msg_traj.h>
@@ -56,4 +55,3 @@ class TrajOptUtils {
   }
 };
 
-#endif  // TRAJ_OPT_UTILS_HPP

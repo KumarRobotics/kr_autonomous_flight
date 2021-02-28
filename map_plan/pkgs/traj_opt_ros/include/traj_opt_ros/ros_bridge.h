@@ -2,17 +2,19 @@
 #ifndef TRAJ_OPT_ROS_ROS_BRIDGE_H_
 #define TRAJ_OPT_ROS_ROS_BRIDGE_H_
 
+#include <planning_ros_msgs/SplineTrajectory.h>
 #include <ros/ros.h>
 #include <traj_opt_basic/traj_data.h>
-#include <planning_ros_msgs/SplineTrajectory.h>
 
 #include <string>
 
 class TrajRosBridge {
  public:
   // No need to instantiate pesky variables!
-  static planning_ros_msgs::SplineTrajectory convert(const traj_opt::TrajData &data);
-  static traj_opt::TrajData convert(const planning_ros_msgs::SplineTrajectory &msg);
+  static planning_ros_msgs::SplineTrajectory convert(
+      const traj_opt::TrajData &data);
+  static traj_opt::TrajData convert(
+      const planning_ros_msgs::SplineTrajectory &msg);
 
   // make sure to run ros::init() before calling this function or it won't work
   static void publish_msg(const planning_ros_msgs::SplineTrajectory &msg,

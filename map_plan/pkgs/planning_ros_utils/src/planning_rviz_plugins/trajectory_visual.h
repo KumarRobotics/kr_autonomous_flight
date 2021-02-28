@@ -5,12 +5,11 @@
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreVector3.h>
 #include <planning_ros_utils/primitive_ros_utils.h>
-
 #include <rviz/ogre_helpers/billboard_line.h>
 
 namespace planning_rviz_plugins {
 class TrajectoryVisual {
-public:
+ public:
   TrajectoryVisual(Ogre::SceneManager *scene_manager,
                    Ogre::SceneNode *parent_node);
 
@@ -40,7 +39,7 @@ public:
   void setJrkVis(bool vis);
   void setYawVis(bool vis);
 
-private:
+ private:
   std::vector<std::unique_ptr<rviz::BillboardLine>> poss_;
   std::vector<std::unique_ptr<rviz::BillboardLine>> vels_;
   std::vector<std::unique_ptr<rviz::BillboardLine>> accs_;
@@ -52,13 +51,13 @@ private:
 
   int num_;
   int yaw_num_;
-  decimal_t dyaw_{M_PI/6};
+  decimal_t dyaw_{M_PI / 6};
   decimal_t syaw_{0.25};
   bool vel_vis_;
   bool acc_vis_;
   bool jrk_vis_;
   bool yaw_vis_;
 };
-}
+}  // namespace planning_rviz_plugins
 
 #endif

@@ -56,8 +56,8 @@ class StairDetector {
         break;
       }
       // printf("curr_yaw: %f, yaw_ref: %f, diff_yaw: %f\n", curr_yaw,
-      // region.second, std::abs(angles::shortest_angular_distance(region.second,
-      // curr_yaw)) );
+      // region.second,
+      // std::abs(angles::shortest_angular_distance(region.second, curr_yaw)) );
     }
 
     if (!in_region) return false;

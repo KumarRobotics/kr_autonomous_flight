@@ -1,37 +1,35 @@
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreSceneNode.h>
+#include <planning_ros_msgs/Path.h>
 #include <rviz/frame_manager.h>
+#include <rviz/load_resource.h>
+#include <rviz/message_filter_display.h>
 #include <rviz/properties/color_property.h>
 #include <rviz/properties/enum_property.h>
 #include <rviz/properties/float_property.h>
 #include <rviz/visualization_manager.h>
-
-#include <rviz/load_resource.h>
-
-#include <planning_ros_msgs/Path.h>
-#include <rviz/message_filter_display.h>
 
 #include "path_visual.h"
 
 namespace planning_rviz_plugins {
 class PathDisplay : public rviz::MessageFilterDisplay<planning_ros_msgs::Path> {
   Q_OBJECT
-public:
+ public:
   PathDisplay();
   virtual ~PathDisplay();
 
-protected:
+ protected:
   virtual void onInitialize();
 
   virtual void reset();
 
-private Q_SLOTS:
+ private Q_SLOTS:
   void updateLineColorAndAlpha();
   void updateNodeColorAndAlpha();
   void updateLineScale();
   void updateNodeScale();
 
-private:
+ private:
   void processMessage(const planning_ros_msgs::Path::ConstPtr &msg);
   void visualizeMessage();
 
@@ -47,4 +45,4 @@ private:
 
   vec_Vec3f path_;
 };
-}
+}  // namespace planning_rviz_plugins

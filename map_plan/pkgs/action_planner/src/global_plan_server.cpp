@@ -23,10 +23,7 @@ using boost::irange;
 
 class GlobalPlanServer {
  public:
-  /**
-   * @brief Constructor, initialization
-   */
-  GlobalPlanServer(ros::NodeHandle &nh);
+  explicit GlobalPlanServer(const ros::NodeHandle &nh);
 
   /**
    * @brief Call process_goal function, check planner timeout

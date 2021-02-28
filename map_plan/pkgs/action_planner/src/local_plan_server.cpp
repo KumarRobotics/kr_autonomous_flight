@@ -87,10 +87,7 @@ class LocalPlanServer {
                           const planning_ros_msgs::VoxelMap &map);
 
  public:
-  /**
-   * @brief Constructor, initialization
-   */
-  LocalPlanServer(ros::NodeHandle &nh);
+  explicit LocalPlanServer(const ros::NodeHandle &nh);
 
   /**
    * @brief Call process_goal function, check planner timeout

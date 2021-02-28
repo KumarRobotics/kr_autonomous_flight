@@ -1,5 +1,4 @@
-#ifndef TRAJ_OPT_PRO_NESTED_H_
-#define TRAJ_OPT_PRO_NESTED_H_
+#pragma once
 
 #include <traj_opt_pro/nonlinear_solver.h>
 #include <traj_opt_pro/nonlinear_trajectory.h>
@@ -161,5 +160,3 @@ class NestedAxbConstraint : public IneqConstraint {
 };
 
 }  // namespace traj_opt
-
-#endif  // TRAJ_OPT_PRO_NESTED_H_

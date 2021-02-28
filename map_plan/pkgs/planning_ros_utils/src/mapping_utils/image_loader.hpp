@@ -56,9 +56,11 @@ enum MapMode { TRINARY, SCALE, RAW };
 
 namespace map_server {
 
-void loadMapFromFile(planning_ros_msgs::VoxelMap &resp, const char *fname,
-                     double res, bool negate, double occ_th, double free_th,
-                     double *origin, MapMode mode) {
+planning_ros_msgs::VoxelMap loadMapFromFile(const char *fname, double res,
+                                            bool negate, double occ_th,
+                                            double free_th, double *origin,
+                                            MapMode mode) {
+  planning_ros_msgs::VoxelMap resp;
   SDL_Surface *img;
 
   unsigned char *pixels;

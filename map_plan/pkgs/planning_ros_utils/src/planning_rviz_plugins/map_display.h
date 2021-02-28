@@ -1,3 +1,5 @@
+#pragma once
+
 #include <mpl_collision/map_util.h>
 #include <planning_ros_msgs/VoxelMap.h>
 #include <planning_ros_utils/data_ros_utils.h>

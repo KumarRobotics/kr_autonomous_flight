@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 
-#include "bag_writter.hpp"
+#include "bag_writer.hpp"
 #include "trajectory_extractor.hpp"
 
 std::string file_name_, topic_name_;

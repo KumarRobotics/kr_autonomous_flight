@@ -265,8 +265,8 @@ planning_ros_msgs::VoxelMap VoxelMapper::getInflatedLocalMap(
   return voxel_map;
 }
 
-// TODO(xu): This function is the same as sliceMap function in data_conversions.cpp,
-// should merge them.
+// TODO(xu): This function is the same as sliceMap function in
+// data_conversions.cpp, should merge them.
 planning_ros_msgs::VoxelMap VoxelMapper::getInflatedOccMap(double h,
                                                            double hh) {
   planning_ros_msgs::VoxelMap voxel_map;
@@ -418,9 +418,9 @@ void VoxelMapper::addCloud(const vec_Vec3f &pts, const Aff3f &TF,
     const Vec3i n = floatToInt(pt);
 
     // through away points outside voxel box to save computation.
-    // TODO(xu): if unknown vs known matters (i.e. planning algorithm differentiates
-    // unknown and free), need to move this after ray_trace. Won't add much
-    // computation according to timer feedback.
+    // TODO(xu): if unknown vs known matters (i.e. planning algorithm
+    // differentiates unknown and free), need to move this after ray_trace.
+    // Won't add much computation according to timer feedback.
     if (isOutSide(n)) continue;
 
     // for each point do ray trace

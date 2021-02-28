@@ -2,6 +2,8 @@
 #ifndef QP_TRAJ_OPT_UTILS_WEIGHTS_H_
 #define QP_TRAJ_OPT_UTILS_WEIGHTS_H_
 
+#include <vector>
+
 struct QuadWeights {
   /* n = 2 */
   constexpr static double x2[1] = {0.5773502691896257645091488};

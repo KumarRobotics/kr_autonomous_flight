@@ -29,7 +29,7 @@
 // #include <traj_opt_pro/timers.h>
 
 class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
- public:
+public:
   // Initialize, Activate, Deactivate, update functions are all called by
   // trackers_manager.cpp Goal will have information about trajectory
   // (goal->traj), epoch (goal->epoch), replan_rate (goal->replan_rate) and
@@ -62,8 +62,8 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
    * @param use_yaw_ if true and if trajectory dimension is not 9, will check
    * yaw. If both use_lambda_ and use_yaw_ set as false, will check nothing
    */
-  kr_mav_msgs::PositionCommand::ConstPtr update(
-      const nav_msgs::Odometry::ConstPtr &msg) override;
+  kr_mav_msgs::PositionCommand::ConstPtr
+  update(const nav_msgs::Odometry::ConstPtr &msg) override;
 
   /**
    * @brief Goal callback function.
@@ -73,7 +73,7 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
   void preemptCB();
   uint8_t status() const override;
 
- private:
+private:
   boost::shared_ptr<ros::NodeHandle> nh_;
   boost::shared_ptr<traj_opt::Trajectory> current_trajectory_;
   std::vector<boost::shared_ptr<traj_opt::Trajectory>> next_trajectory_;
@@ -106,7 +106,7 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
   double yaw_thr_;
   boost::mutex mtx_;
   bool use_yaw_, use_lambda_;
-  bool ignore_yaw_;  // should we check trajectory yaw
+  bool ignore_yaw_; // should we check trajectory yaw
   double yaw_speed_;
   ros::Publisher epoch_pub_, point_pub_, lambda_pub_;
 
@@ -131,7 +131,7 @@ void ActionTrajectoryTracker::Initialize(const ros::NodeHandle &nh) {
   priv_nh.param("max_pos_error", pos_err_max_, 1.0);
   priv_nh.param("use_yaw", use_yaw_, false);
   priv_nh.param("yaw_thr", yaw_thr_, 3.14159);
-  priv_nh.param("use_lambda", use_lambda_, true);  // pose error checking
+  priv_nh.param("use_lambda", use_lambda_, true); // pose error checking
   priv_nh.param("yaw_speed", yaw_speed_, 0.2);
   priv_nh.param("ignore_yaw", ignore_yaw_, false);
 
@@ -141,7 +141,8 @@ void ActionTrajectoryTracker::Initialize(const ros::NodeHandle &nh) {
 
   active_ = false;
   start_yaw_ = 0;
-  if (ignore_yaw_) use_yaw_ = true;
+  if (ignore_yaw_)
+    use_yaw_ = true;
 
   as_.reset(
       new actionlib::SimpleActionServer<action_trackers::RunTrajectoryAction>(
@@ -172,7 +173,8 @@ bool ActionTrajectoryTracker::Activate(
   } else {
     active_ = true;
     start_yaw_ = yaw_;
-    if (msg != NULL) init_cmd_.reset(new kr_mav_msgs::PositionCommand(*(msg)));
+    if (msg != NULL)
+      init_cmd_.reset(new kr_mav_msgs::PositionCommand(*(msg)));
     return true;
   }
 }
@@ -189,8 +191,8 @@ void ActionTrajectoryTracker::Deactivate(void) {
   started_ = ros::Time(0);
 }
 
-kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
-    const nav_msgs::Odometry::ConstPtr &msg) {
+kr_mav_msgs::PositionCommand::ConstPtr
+ActionTrajectoryTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
   boost::mutex::scoped_lock lock(mtx_);
 
   if (!active_) {
@@ -230,7 +232,7 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
 
     if (pos_new.rows() < 4) {
       pos_old.conservativeResize(pos_new.rows(), 1);
-    } else if (pos_new.rows() == 9) {  // special sphere traj thing
+    } else if (pos_new.rows() == 9) { // special sphere traj thing
       pos_old = pos_old.block(0, 0, 3, 1);
       pos_new = pos_new.block(0, 0, 3, 1);
     }
@@ -249,7 +251,8 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
       next_trajectory_.erase(next_trajectory_.begin());
       traj_epoch.erase(traj_epoch.begin());
       init_cmd_->header.stamp = ros::Time::now();
-      if (next_trajectory_.size() == 0) done_ = true;
+      if (next_trajectory_.size() == 0)
+        done_ = true;
       return init_cmd_;
     } else {
       // incontinuity is within threshold, accept next_trajectory_ as new
@@ -271,7 +274,6 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
     // check_time is the timestamp to stitch old traj and new traj together
     double check_time = execution_time * double(epoch_diff);
     if (duration >= check_time) {
-      // TODO: what exactly does this mean?
       // only do something if trajectory is old
       traj_opt::VecD pos_old, pos_new;
       traj_opt::VecD vel_old, vel_new;
@@ -284,21 +286,10 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
       next_trajectory_.front()->evaluate(0.0, 0, pos_new);
       next_trajectory_.front()->evaluate(0.0, 1, vel_new);
 
-      // robust to wrapping by pi
-      // TODO: why is this commented out?
-      // if(!ignore_yaw_) {
-      //   pos_old(3) = std::cos(pos_old(3));
-      //   pos_new(3) = std::cos(pos_new(3));
-      // }
-      // else {
-      //   pos_old(3) = 0;
-      //   pos_new(3) = 0;
-      // }
-
       if (pos_new.rows() < 4) {
         pos_old.conservativeResize(pos_new.rows(), 1);
         vel_old.conservativeResize(vel_new.rows(), 1);
-      } else if (pos_new.rows() == 9) {  // special sphere traj thing
+      } else if (pos_new.rows() == 9) { // special sphere traj thing
         pos_old = pos_old.block(0, 0, 3, 1);
         pos_new = pos_new.block(0, 0, 3, 1);
       }
@@ -364,7 +355,7 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
 
   // evaluate trajectory and get the cmd, refer to convert.cpp in
   // traj_opt_quadrotor,
-  if (current_trajectory_->getDim() == 9) {  // what does this indicate?
+  if (current_trajectory_->getDim() == 9) { // what does this indicate?
     geometry_msgs::PointStamped ps;
     ps.header = msg->header;
     TrajToQuadCmd::handleSphere(current_trajectory_, duration, cmd, ps.point);
@@ -380,9 +371,8 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
                                     duration, 0.01, cmd)) {
       // started_ = started_ + ros::Duration(0.01); // this slowing down
       // strategy is not working properly, commented out
-      ROS_ERROR(
-          "[Traj Tracker:] Max position error threshold violated!! Slow "
-          "down the execution!!!");
+      ROS_ERROR("[Traj Tracker:] Max position error threshold violated!! Slow "
+                "down the execution!!!");
     }
   } else {
     // no pos or yaw check
@@ -440,7 +430,7 @@ void ActionTrajectoryTracker::trajCB() {
   }
 
   planning_ros_msgs::SplineTrajectory msg =
-      goal->traj;  // extract trajectory msg from goal->traj
+      goal->traj; // extract trajectory msg from goal->traj
   boost::shared_ptr<traj_opt::Trajectory> sp =
       boost::make_shared<traj_opt::MsgTrajectory>(TrajRosBridge::convert(msg));
   next_trajectory_.push_back(sp);
@@ -471,7 +461,8 @@ void ActionTrajectoryTracker::trajCB() {
   TrajRosBridge::publish_msg(msg);
 
   action_trackers::RunTrajectoryResult result;
-  if (as_->isActive() && !goal->block) as_->setSucceeded(result);
+  if (as_->isActive() && !goal->block)
+    as_->setSucceeded(result);
 
   ROS_INFO_STREAM("[Traj Tracker:] Current Epoch: " << current_epoch_);
   static uint prevSize = 0;

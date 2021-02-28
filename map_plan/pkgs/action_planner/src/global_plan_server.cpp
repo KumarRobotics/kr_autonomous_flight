@@ -43,6 +43,7 @@ class GlobalPlanServer {
 
  private:
   // global map sub
+  ros::NodeHandle pnh_;
   ros::Subscriber global_map_sub_;
   ros::Subscriber odom_sub_;
 
@@ -120,22 +121,22 @@ void GlobalPlanServer::globalMapCB(
   global_map_ = *msg;
 }
 
-GlobalPlanServer::GlobalPlanServer(ros::NodeHandle &nh) {
-  path_pub_ = nh.advertise<planning_ros_msgs::Path>("path", 1, true);
-  global_map_sub_ =
-      nh.subscribe("global_voxel_map", 2, &GlobalPlanServer::globalMapCB, this);
+GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
+  path_pub_ = pnh_.advertise<planning_ros_msgs::Path>("path", 1, true);
+  global_map_sub_ = pnh_.subscribe("global_voxel_map", 2,
+                                   &GlobalPlanServer::globalMapCB, this);
 
   global_as_ = std::make_unique<
       actionlib::SimpleActionServer<action_planner::PlanTwoPointAction>>(
-      nh, "plan_global_path", false);
+      pnh_, "plan_global_path", false);
   // Register goal and preempt callbacks
   global_as_->registerGoalCallback(
       boost::bind(&GlobalPlanServer::goalCB, this));
   global_as_->start();
 
   // odom callback
-  odom_sub_ = nh.subscribe("odom", 10, &GlobalPlanServer::odom_callback, this,
-                           ros::TransportHints().tcpNoDelay());
+  odom_sub_ = pnh_.subscribe("odom", 10, &GlobalPlanServer::odom_callback, this,
+                             ros::TransportHints().tcpNoDelay());
 
   // Set map util for jps
   if (use_3d_) {

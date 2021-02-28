@@ -80,7 +80,7 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
   if (real_robot_) {
     // for real robot, the point cloud frame_id may not exist in the tf tree,
     // manually defining it here.
-    // TODO: make this automatic
+    // TODO(xu): make this automatic
     auto tf_map_cloud = tf_listener.LookupTransform(map_frame_, lidar_frame_,
                                                     cloud.header.stamp);
     if (!tf_map_cloud) {
@@ -179,7 +179,7 @@ void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr &msg) {
 }
 
 void mapInit() {
-  // TODO: combine two parts into one.
+  // TODO(xu): combine two parts into one.
   ROS_WARN("[Mapper]: get 3D map info!");
   // part1: global
   const Vec3f global_origin(global_map_info_.origin.x,

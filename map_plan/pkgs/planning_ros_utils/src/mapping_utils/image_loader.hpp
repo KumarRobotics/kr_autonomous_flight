@@ -32,6 +32,7 @@
  *
  * Author: Brian Gerkey
  */
+#pragma once
 
 #include <planning_ros_msgs/VoxelMap.h>
 #include <stdio.h>

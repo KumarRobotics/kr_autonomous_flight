@@ -268,7 +268,7 @@ void RePlanner::setup_replanner() {
   Vec3f local_goal = path_cropped.back();
   local_tpgoal.p_final.position.x = local_goal(0);
   local_tpgoal.p_final.position.y = local_goal(1);
-  // TODO: temporarily setting start and goal to have same z value due to local
+  // TODO(xu): temporarily setting start and goal to have same z value due to local
   // motion primitive planner seems to be unable to handle 3D
   local_tpgoal.p_final.position.z = local_tpgoal.p_init.position.z;
   // local_tpgoal.p_final.position.z = local_goal(2);
@@ -424,7 +424,7 @@ bool RePlanner::plan_trajectory(int horizon) {
   Vec3f local_goal = path_cropped.back();
   local_tpgoal.p_final.position.x = local_goal(0);
   local_tpgoal.p_final.position.y = local_goal(1);
-  // TODO: temporarily setting start and goal to have same z due to local motion
+  // TODO(xu): temporarily setting start and goal to have same z due to local motion
   // primitive planner seems to be unable to handle 3D
   local_tpgoal.p_final.position.z = local_tpgoal.p_init.position.z;
   // local_tpgoal.p_final.position.z = local_goal(2);

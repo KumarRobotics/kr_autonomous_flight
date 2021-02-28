@@ -23,18 +23,15 @@ using boost::irange;
 // Local planning server for Sikang's motion primitive planner
 class LocalPlanServer {
  private:
-  // local global map sub
+  ros::NodeHandle pnh_;
   ros::Subscriber local_map_sub_;
-
-  // traj pub
   ros::Publisher traj_pub;
 
   // visualization messages pub
   ros::Publisher sg_pub;
   ros::Publisher expanded_cloud_pub;
 
-  // mutexes
-  boost::mutex map_mtx, traj_mtx;  // TODO: do we need this?
+  boost::mutex map_mtx, traj_mtx;  // TODO(xu): do we need this?
 
   // motion primitive planner util and its map util
   std::shared_ptr<MPL::VoxelMapPlanner> mp_planner_util_;
@@ -104,32 +101,32 @@ void LocalPlanServer::localMapCB(
   local_map_ = *msg;
 }
 
-LocalPlanServer::LocalPlanServer(ros::NodeHandle &nh) {
-  traj_pub = nh.advertise<planning_ros_msgs::Trajectory>("traj", 1, true);
+LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
+  traj_pub = pnh_.advertise<planning_ros_msgs::Trajectory>("traj", 1, true);
   local_map_sub_ =
-      nh.subscribe("local_voxel_map", 2, &LocalPlanServer::localMapCB, this);
+      pnh_.subscribe("local_voxel_map", 2, &LocalPlanServer::localMapCB, this);
   local_as_ = std::make_unique<
       actionlib::SimpleActionServer<action_planner::PlanTwoPointAction>>(
-      nh, "plan_local_trajectory", false);
+      pnh_, "plan_local_trajectory", false);
   // Register goal and preempt callbacks
   local_as_->registerGoalCallback(boost::bind(&LocalPlanServer::goalCB, this));
   local_as_->start();
 
   // set up visualization publisher for mpl planner
-  sg_pub = nh.advertise<planning_ros_msgs::Path>("start_goal", 1, true);
+  sg_pub = pnh_.advertise<planning_ros_msgs::Path>("start_goal", 1, true);
   expanded_cloud_pub =
-      nh.advertise<sensor_msgs::PointCloud>("expanded_cloud", 1, true);
+      pnh_.advertise<sensor_msgs::PointCloud>("expanded_cloud", 1, true);
 
   // set up mpl planner
   mp_map_util_ = std::make_shared<MPL::VoxelMapUtil>();
-  ros::NodeHandle priv_nh(nh, "trajectory_planner");
-  priv_nh.param("debug", debug_, false);
-  priv_nh.param("verbose", verbose_, false);
+  ros::NodeHandle traj_planner_nh(pnh_, "trajectory_planner");
+  traj_planner_nh.param("debug", debug_, false);
+  traj_planner_nh.param("verbose", verbose_, false);
   double v_max, a_max, j_max, u_max;
-  priv_nh.param("max_v", v_max, 2.0);
-  priv_nh.param("max_a", a_max, 1.0);
-  priv_nh.param("max_j", j_max, 1.0);
-  priv_nh.param("max_u", u_max, 1.0);
+  traj_planner_nh.param("max_v", v_max, 2.0);
+  traj_planner_nh.param("max_a", a_max, 1.0);
+  traj_planner_nh.param("max_j", j_max, 1.0);
+  traj_planner_nh.param("max_u", u_max, 1.0);
 
   vec_E<VecDf> U;
   const decimal_t du = u_max;
@@ -139,12 +136,12 @@ LocalPlanServer::LocalPlanServer(ros::NodeHandle &nh) {
 
   double dt, tol_pos, tol_vel, tol_acc;
   int ndt, max_num;
-  priv_nh.param("tol_pos", tol_pos, 0.5);
-  priv_nh.param("tol_vel", tol_vel, 0.5);
-  priv_nh.param("tol_acc", tol_acc, 0.5);
-  priv_nh.param("dt", dt, 1.0);
-  priv_nh.param("ndt", ndt, -1);
-  priv_nh.param("max_num", max_num, -1);
+  traj_planner_nh.param("tol_pos", tol_pos, 0.5);
+  traj_planner_nh.param("tol_vel", tol_vel, 0.5);
+  traj_planner_nh.param("tol_acc", tol_acc, 0.5);
+  traj_planner_nh.param("dt", dt, 1.0);
+  traj_planner_nh.param("ndt", ndt, -1);
+  traj_planner_nh.param("max_num", max_num, -1);
 
   mp_planner_util_.reset(new MPL::VoxelMapPlanner(verbose_));  // verbose
   mp_planner_util_->setMapUtil(
@@ -207,7 +204,8 @@ void LocalPlanServer::process_result(const Trajectory3D &traj, bool solved) {
     // execution_time, get corresponding waypoints and record in result
     // (result_->p_stop etc.) (evaluate the whole traj if execution_time is not
     // set (i.e. not in replan mode))
-    int num_goals = 5;  // TODO: why 5? should be >= max_horizon in replanner?
+    int num_goals =
+        5;  // TODO(xu): why 5? should be >= max_horizon in replanner?
     if (endt <= 0) {
       endt = traj.getTotalTime();
       num_goals = 1;

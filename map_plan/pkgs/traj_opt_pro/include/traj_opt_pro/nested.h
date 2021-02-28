@@ -10,7 +10,7 @@ class NestedExpression {
  protected:
   Variable *var_;
   decimal_t constant_{0.0};
-  // TODO implement d^2 f
+  // TODO(xu): implement d^2 f
   virtual std::vector<decimal_t> df(const std::vector<decimal_t> &val) {
     return std::vector<decimal_t>();
   }

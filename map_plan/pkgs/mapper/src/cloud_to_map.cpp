@@ -38,7 +38,7 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
   if (real_robot_) {
     // for real robot, the point cloud frame_id may not exist in the tf tree,
     // manually defining it here.
-    // TODO: make this automatic
+    // TODO(xu): make this automatic
     auto tf_map_cloud = tf_listener.LookupTransform(map_frame_, lidar_frame_,
                                                     cloud.header.stamp);
     if (!tf_map_cloud) {

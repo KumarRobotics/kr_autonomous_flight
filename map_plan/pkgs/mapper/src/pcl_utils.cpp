@@ -52,58 +52,26 @@ sensor_msgs::PointCloud toROS(const PCLPointCloud &cloud_pcl) {
   return cloud;
 }
 
-void outlier_removal(PCLPointCloud &cloud, float radius, int N) {
-  if (cloud.points.empty()) return;
+PCLPointCloud outlier_removal(const PCLPointCloud &cloud, float radius, int N) {
+  if (cloud.points.empty()) {
+    return cloud;
+  }
+  auto cloud_tmp = cloud.makeShared();
   pcl::RadiusOutlierRemoval<PCLPoint> sor;
-  sor.setInputCloud(boost::make_shared<PCLPointCloud>(cloud));
+  sor.setInputCloud(cloud_tmp);
   sor.setRadiusSearch(radius);
   sor.setMinNeighborsInRadius(N);
-  sor.filter(cloud);
+  sor.filter(*cloud_tmp);
+  return *cloud_tmp
 }
 
-void bound_filter(PCLPointCloud &cloud, const Vec3f &lower_bound,
-                  const Vec3f &upper_bound) {
-  // build the condition
-  pcl::ConditionAnd<PCLPoint>::Ptr range_cond(
-      new pcl::ConditionAnd<PCLPoint>());
-  range_cond->addComparison(pcl::FieldComparison<PCLPoint>::ConstPtr(
-      new pcl::FieldComparison<PCLPoint>("x", pcl::ComparisonOps::GT,
-                                         lower_bound(0))));
-  range_cond->addComparison(pcl::FieldComparison<PCLPoint>::ConstPtr(
-      new pcl::FieldComparison<PCLPoint>("x", pcl::ComparisonOps::LT,
-                                         upper_bound(0))));
-  range_cond->addComparison(pcl::FieldComparison<PCLPoint>::ConstPtr(
-      new pcl::FieldComparison<PCLPoint>("y", pcl::ComparisonOps::GT,
-                                         lower_bound(1))));
-  range_cond->addComparison(pcl::FieldComparison<PCLPoint>::ConstPtr(
-      new pcl::FieldComparison<PCLPoint>("y", pcl::ComparisonOps::LT,
-                                         upper_bound(1))));
-  range_cond->addComparison(pcl::FieldComparison<PCLPoint>::ConstPtr(
-      new pcl::FieldComparison<PCLPoint>("z", pcl::ComparisonOps::GT,
-                                         lower_bound(2))));
-  range_cond->addComparison(pcl::FieldComparison<PCLPoint>::ConstPtr(
-      new pcl::FieldComparison<PCLPoint>("z", pcl::ComparisonOps::LT,
-                                         upper_bound(2))));
-
-  // build the filter
-  pcl::ConditionalRemoval<PCLPoint> condrem(range_cond);
-  condrem.setInputCloud(boost::make_shared<PCLPointCloud>(cloud));
-  condrem.setKeepOrganized(true);
-  // apply filter
-  condrem.filter(cloud);
-}
-
-void voxel_filter(PCLPointCloud &cloud, decimal_t res) {
-  PCLPointCloud2::Ptr pcl_cloud2(new PCLPointCloud2);
-  PCLPointCloud2 cloud_filtered;
-
-  pcl::toPCLPointCloud2(cloud, *pcl_cloud2);
+PCLPointCloud voxel_filter(const PCLPointCloud &cloud, float res) {
+  auto cloud_tmp = cloud.makeShared();
   pcl::VoxelGrid<PCLPointCloud2> sor;
-  sor.setInputCloud(pcl_cloud2);
+  sor.setInputCloud(cloud_tmp);
   sor.setLeafSize(res, res, res);
-  sor.filter(cloud_filtered);
-
-  pcl::fromPCLPointCloud2(cloud_filtered, cloud);
+  sor.filter(*cloud_tmp);
+  return *cloud_tmp;
 }
 
-}  // namespace PCLUtils
+} // namespace PCLUtils

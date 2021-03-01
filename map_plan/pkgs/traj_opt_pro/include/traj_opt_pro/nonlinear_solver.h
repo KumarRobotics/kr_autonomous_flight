@@ -1,25 +1,24 @@
 // Copyright 2017 Michael Watterson
-#ifndef TRAJ_OPT_PRO_NONLINEAR_SOLVER_H_
-#define TRAJ_OPT_PRO_NONLINEAR_SOLVER_H_
-
-#include <traj_opt_basic/types.h>
-#include <traj_opt_pro/timers.h>
-
+#ifndef MAP_PLAN_PKGS_TRAJ_OPT_PRO_INCLUDE_TRAJ_OPT_PRO_NONLINEAR_SOLVER_H_
+#define MAP_PLAN_PKGS_TRAJ_OPT_PRO_INCLUDE_TRAJ_OPT_PRO_NONLINEAR_SOLVER_H_
 #include <Eigen/Sparse>
 #include <Eigen/SparseCholesky>
 #include <Eigen/SparseLU>
+#include <exception>
+#include <iostream>
+#include <utility>
+#include <vector>
 #ifdef EIGEN_USE_MKL_VML
 #include <Eigen/PardisoSupport>
 #endif
+#include <traj_opt_basic/types.h>
+#include <traj_opt_pro/timers.h>
+
 #include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
-#include <exception>
-#include <iostream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <utility>
-#include <vector>
 // all matricies are triples
 
 namespace traj_opt {
@@ -97,6 +96,7 @@ class IneqConstraint {  // constraint of the form g(x) <= 0
   ET sports_util(decimal_t nu);  // gets Su - \nu   (SUV)
   decimal_t linesearch(const VecD &delta,
                        decimal_t h0);  // computes line search over delta_x
+
  protected:
   Variable *var_u;  // dual var v
   Variable *var_s;  // dual var s
@@ -179,7 +179,7 @@ class NonlinearSolver {
     // do not make all -1, will result in wrong compression with poly
     // simplification
     constant_vars.push_back(
-        Variable(-1 - int(constant_vars.size()), val, true));
+        Variable(-1 - static_cast<int>(constant_vars.size()), val, true));
     // make id -1 for all these
     return &(constant_vars.at(constant_vars.size() - 1));
   }
@@ -205,4 +205,4 @@ class NonlinearSolver {
 
 }  // namespace traj_opt
 
-#endif  // TRAJ_OPT_PRO_NONLINEAR_SOLVER_H_
+#endif  // MAP_PLAN_PKGS_TRAJ_OPT_PRO_INCLUDE_TRAJ_OPT_PRO_NONLINEAR_SOLVER_H_

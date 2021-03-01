@@ -11,6 +11,7 @@
 #include <std_msgs/Int64.h>
 #include <traj_opt_basic/msg_traj.h>
 #include <traj_opt_ros/ros_bridge.h>
+
 #include <fla_state_machine/traj_opt_utils.hpp>
 
 class RePlanner {
@@ -268,7 +269,8 @@ void RePlanner::setup_replanner() {
   Vec3f local_goal = path_cropped.back();
   local_tpgoal.p_final.position.x = local_goal(0);
   local_tpgoal.p_final.position.y = local_goal(1);
-  // TODO(xu): temporarily setting start and goal to have same z value due to local
+  // TODO(xu): temporarily setting start and goal to have same z value due to
+  // local
   // motion primitive planner seems to be unable to handle 3D
   local_tpgoal.p_final.position.z = local_tpgoal.p_init.position.z;
   // local_tpgoal.p_final.position.z = local_goal(2);
@@ -424,8 +426,8 @@ bool RePlanner::plan_trajectory(int horizon) {
   Vec3f local_goal = path_cropped.back();
   local_tpgoal.p_final.position.x = local_goal(0);
   local_tpgoal.p_final.position.y = local_goal(1);
-  // TODO(xu): temporarily setting start and goal to have same z due to local motion
-  // primitive planner seems to be unable to handle 3D
+  // TODO(xu): temporarily setting start and goal to have same z due to local
+  // motion primitive planner seems to be unable to handle 3D
   local_tpgoal.p_final.position.z = local_tpgoal.p_init.position.z;
   // local_tpgoal.p_final.position.z = local_goal(2);
 

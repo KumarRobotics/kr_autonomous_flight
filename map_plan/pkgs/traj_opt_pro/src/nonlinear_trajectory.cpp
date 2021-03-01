@@ -935,8 +935,7 @@ void NonlinearTrajectory::addPosLamda() {
 // }
 
 void NonlinearTrajectory::allocate_yaw(const std::vector<decimal_t> &yaws) {
-  // for now, allocate as constant
-  // TODO (mike)
+  // TODO(mike): for now, allocate as constant
   NLSpline spline;
   for (int j = 0; j < yaw_seg_; j++) {
     NLPoly pi;

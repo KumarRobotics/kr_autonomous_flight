@@ -12,6 +12,7 @@ RUN apt update \
 RUN mkdir -p /root/map_plan_ws/src
 WORKDIR /root/map_plan_ws
 COPY map_plan/pkgs src/pkgs
+COPY map_plan/external-repos.yaml src/
 
 RUN git clone https://github.com/catkin/catkin_simple.git src/catkin_simple
 RUN catkin init && catkin config --extend /root/control_ws/devel

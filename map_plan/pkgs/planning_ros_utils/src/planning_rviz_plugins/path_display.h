@@ -14,6 +14,7 @@
 namespace planning_rviz_plugins {
 class PathDisplay : public rviz::MessageFilterDisplay<planning_ros_msgs::Path> {
   Q_OBJECT
+
  public:
   PathDisplay();
   virtual ~PathDisplay();

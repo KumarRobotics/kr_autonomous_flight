@@ -1,7 +1,10 @@
+/* Copyright 2021 - MRSL - Kumar Robotics */
 #pragma once
 
 #include <traj_opt_pro/nonlinear_solver.h>
 #include <traj_opt_pro/nonlinear_trajectory.h>
+
+#include <vector>
 
 namespace traj_opt {
 
@@ -20,8 +23,8 @@ class NestedExpression {
   NestedExpression() {}
 
  public:
-  NestedExpression(Variable *var) : var_(var) {}
-  NestedExpression(decimal_t constant) : constant_(constant) {}
+  explicit NestedExpression(Variable *var) : var_(var) {}
+  explicit NestedExpression(decimal_t constant) : constant_(constant) {}
 
   virtual decimal_t evaluate() {
     if (f_inputs.size() == 0) {
@@ -62,7 +65,7 @@ class RationalNested : public NestedExpression {
   RationalPoly poly_;
 
  public:
-  RationalNested(RationalPoly poly) : poly_(poly) {}
+  explicit RationalNested(RationalPoly poly) : poly_(poly) {}
   ETV gradient() override { return poly_.gradient(0); }
   decimal_t evaluate() override { return poly_.evaluate(); }
 };

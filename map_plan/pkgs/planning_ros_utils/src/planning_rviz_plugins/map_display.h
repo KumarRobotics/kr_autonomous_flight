@@ -10,9 +10,11 @@
 #include <rviz/ogre_helpers/point_cloud.h>
 #include <rviz/properties/enum_property.h>
 #include <rviz/properties/float_property.h>
+#include <vector>
+#include <memory>
 
-#include "bound_visual.h"
-#include "mesh_visual.h"
+#include "./bound_visual.h"
+#include "./mesh_visual.h"
 
 namespace planning_rviz_plugins {
 class MapDisplay

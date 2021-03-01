@@ -1,5 +1,5 @@
 repositories:
-  quadrotor_control:
+  kr_mav_control:
     type: git
     url: https://github.com/KumarRobotics/kr_mav_control
     version: fa583db510f534692170b3c885b46d9ab22e664e

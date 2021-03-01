@@ -9,6 +9,9 @@
     <arg name="use_motion_primitive" default="true"/>
     <arg name="use_lauras" default="false"/>
     <arg name="takeoff_height" default="5"/>
+	  <arg name="mass" default="1.74"/>
+	  <arg name="lidar_cloud_topic" default="lidar"/>
+    <arg name="gains_file" default="$(find control_launch)/config/so3_control_gains.yaml"/>
 
     <!-- S-MSCKF VIO -->
 	<group if="$(arg onboard_sensing)">
@@ -19,11 +22,14 @@
     <!-- Controller -->
     	<group if="$(arg use_motion_primitive)">
 	    <include file="$(find control_launch)/launch/control_mp.launch">
+		     <arg name="mass" value="$(arg mass)"/>
+		     <arg name="gains_file" value="$(arg gains_file)"/>
 	    </include>
 	</group>
     	
     	<group unless="$(arg use_motion_primitive)">
 	    <include file="$(find control_launch)/launch/control.launch">
+		     <arg name="mass" value="$(arg mass)"/>
 	    </include>
 	</group>
 
@@ -49,7 +55,7 @@
 	<group unless="$(arg use_rgbd)">
      	<!-- Mapper and Planner -->
 		<include file="$(find map_plan_launch)/launch/map_plan.launch">
-		     <arg name="cloud" value="lidar"/>
+		     <arg name="cloud" value="$(arg lidar_cloud_topic)"/>
 		     <arg name="mapper_config" value="$(arg mapper_config)"/>
 		     <arg name="use_mp" value="$(arg use_motion_primitive)"/>
 		     <arg name="use_lauras" value="$(arg use_lauras)"/>

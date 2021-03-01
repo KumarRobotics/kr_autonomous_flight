@@ -12,7 +12,7 @@ decimal_t Trajectory::getExecuteTime() const {
     return exec_t;
 }
 
-bool Trajectory::getCommand(decimal_t t, uint num_derivatives, MatD &data) {
+bool Trajectory::getCommand(decimal_t t, uint num_derivatives, MatD *data) {
   // check input
   if (dim_ < 1) return false;
 

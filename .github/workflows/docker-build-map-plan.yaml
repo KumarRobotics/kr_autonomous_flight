@@ -4,12 +4,9 @@ name: docker-build-map-plan
 # folder are modified
 on:
   workflow_dispatch:
-    inputs:
-      logLevel:
-        description: 'Comment'
-        required: false
-        default: 'no-comment'
-        workflow_run:
+  schedule:
+    - cron: '0 0 * * 0'
+  workflow_run:
     workflows: ["docker-build-control"]
     branches: [master]
     types:
@@ -17,7 +14,7 @@ on:
   push:
     paths:
     - 'map_plan/**'
-    branches: [master, rearrange_traj_msgs]
+    branches: [master]
 
 jobs:
   main:

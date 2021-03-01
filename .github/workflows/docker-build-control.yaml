@@ -36,15 +36,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
-        # Clone quadrotor_control into this repo before building
-        name: Checkout quadrotor_control repo
-        uses: actions/checkout@v2
-        with:
-          repository: 'kumarrobotics/quadrotor_control'
-          token: '${{ secrets.AUTONOMY_STACK_QUADROTOR_CONTROL }}'
-          submodules: 'true'
-          path: 'control/pkgs/quadrotor_control'
-      -
         name: Build and push
         id: docker_build
         uses: docker/build-push-action@v2

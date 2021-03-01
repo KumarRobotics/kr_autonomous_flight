@@ -11,7 +11,7 @@ jobs:
         github_token: ${{ secrets.AUTONOMY_STACK_TOKEN_REVIEWDOG }}
         reporter: github-pr-check
         # flags: --linelength=50 # Optional
-        filter: "-whitespace/comments,-whitespace/indent"
+        filter: "-whitespace/comments,-whitespace/indent,-build/include_order"
         #   ,-readability/braces\
         #   ,-whitespace/braces\
         #   ,-whitespace/newline\

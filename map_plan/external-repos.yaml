@@ -1,13 +1,9 @@
 repositories:
-  catkin_simple:
-    type: git
-    url: git@github.com:catkin/catkin_simple.git
-    version: master
   jps3d:
     type: git
-    url: git@github.com:KumarRobotics/jps3d.git
+    url: https://github.com/KumarRobotics/jps3d
     version: catkin
   motion_primitive_library:
     type: git
-    url: git@github.com:KumarRobotics/motion_primitive_library.git
+    url: https://github.com/KumarRobotics/motion_primitive_library
     version: catkin

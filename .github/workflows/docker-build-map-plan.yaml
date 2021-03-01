@@ -17,7 +17,7 @@ on:
   push:
     paths:
     - 'map_plan/**'
-    branches: [master, add_map_plan, add_map_plan_action]
+    branches: [master, rearrange_traj_msgs]
 
 jobs:
   main:

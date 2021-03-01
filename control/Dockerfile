@@ -9,11 +9,9 @@ RUN apt update \
 RUN mkdir -p /root/control_ws/src
 WORKDIR /root/control_ws
 COPY control/pkgs src/pkgs
+COPY control/external-repos.yaml src/
 RUN catkin init && catkin config --extend /opt/ros/melodic
-
-# FIXME: We don't run vcs import as quadrotor_control is still a private repo. We have
-# to clone it before building with github actions
-# RUN vcs import --input src/external-repos.yaml src/
+RUN vcs import --input src/external-repos.yaml src/
 RUN catkin build -j2 --no-status -DCMAKE_BUILD_TYPE=Release
 
 COPY control/docker/entrypoint.sh /entrypoint.sh

@@ -1,26 +1,26 @@
 // Copyright 2016 Michael Watterson
 
-#ifndef MOBILITY_PLANNER_traj_opt_msgs_SRC_TRAJECTORY_VISUAL_H_
-#define MOBILITY_PLANNER_traj_opt_msgs_SRC_TRAJECTORY_VISUAL_H_
+#ifndef MAP_PLAN_PKGS_TRAJ_OPT_ROS_SRC_TRAJECTORY_VISUAL_H_
+#define MAP_PLAN_PKGS_TRAJ_OPT_ROS_SRC_TRAJECTORY_VISUAL_H_
 
+#include <planning_ros_msgs/SplineTrajectory.h>
 #include <traj_opt_basic/trajectory.h>
-#include <traj_opt_msgs/Trajectory.h>
 #include <traj_opt_basic/types.h>
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace Ogre {
 class Vector3;
 class Quaternion;
-}
+}  // namespace Ogre
 
 namespace rviz {
 class Arrow;
 class Line;
 class Shape;
 class Object;
-}
+}  // namespace rviz
 
 namespace traj_opt {
 
@@ -28,8 +28,8 @@ namespace traj_opt {
 // Declare the visual class for this display.
 //
 // Each instance of TrajectoryVisual represents the visualization of a single
-// traj_opt_msgs::Trajectory message.  Currently it just shows an arrow with
-// the direction and magnitude of the acceleration vector, but could
+// planning_ros_msgs::SplineTrajectory message.  Currently it just shows an
+// arrow with the direction and magnitude of the acceleration vector, but could
 // easily be expanded to include more of the message data.
 
 enum Style { Mike, Sikang, CJ, Hopf };
@@ -46,7 +46,7 @@ class TrajectoryVisual {
 
   void draw();
   // Configure the visual to show the data in the message.
-  void setMessage(const traj_opt_msgs::Trajectory::ConstPtr& msg);
+  void setMessage(const planning_ros_msgs::SplineTrajectory::ConstPtr& msg);
 
   // Set the pose of the coordinate frame the message refers to.
   // These could be done inside setMessage(), but that would require
@@ -69,8 +69,8 @@ class TrajectoryVisual {
                        bool use_a, bool use_h);
 
  private:
-  traj_opt::Mat3 matFromVecD(const traj_opt::VecD &vec); 
-  Ogre::Vector3 vecFromVecD(const traj_opt::VecD &vec);
+  traj_opt::Mat3 matFromVecD(const traj_opt::VecD& vec);
+  Ogre::Vector3 vecFromVecD(const traj_opt::VecD& vec);
   // Tangent velocity vectors
   std::vector<boost::shared_ptr<rviz::Object> > vel_arrows_;
   std::vector<boost::shared_ptr<rviz::Object> > acc_arrows_;
@@ -108,6 +108,6 @@ class TrajectoryVisual {
 };
 // END_TUTORIAL
 
-}  // namespace traj_opt_msgs
+}  // namespace traj_opt
 
-#endif  // MOBILITY_PLANNER_traj_opt_msgs_SRC_TRAJECTORY_VISUAL_H_
+#endif  // MAP_PLAN_PKGS_TRAJ_OPT_ROS_SRC_TRAJECTORY_VISUAL_H_

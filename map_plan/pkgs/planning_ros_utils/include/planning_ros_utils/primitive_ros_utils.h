@@ -55,26 +55,24 @@ inline planning_ros_msgs::Primitive toPrimitiveROSMsg(const Primitive3D &pr) {
 }
 
 /// Multiple Primitive2D to Primitive array ROS message
-inline planning_ros_msgs::PrimitiveArray
-toPrimitiveArrayROSMsg(const vec_E<Primitive2D> &prs, double z = 0) {
+inline planning_ros_msgs::PrimitiveArray toPrimitiveArrayROSMsg(
+    const vec_E<Primitive2D> &prs, double z = 0) {
   planning_ros_msgs::PrimitiveArray msg;
-  for (const auto &pr : prs)
-    msg.primitives.push_back(toPrimitiveROSMsg(pr, z));
+  for (const auto &pr : prs) msg.primitives.push_back(toPrimitiveROSMsg(pr, z));
   return msg;
 }
 
 /// Multiple Primitive3D to Primitive array ROS message
-inline planning_ros_msgs::PrimitiveArray
-toPrimitiveArrayROSMsg(const vec_E<Primitive3D> &prs) {
+inline planning_ros_msgs::PrimitiveArray toPrimitiveArrayROSMsg(
+    const vec_E<Primitive3D> &prs) {
   planning_ros_msgs::PrimitiveArray msg;
-  for (const auto &pr : prs)
-    msg.primitives.push_back(toPrimitiveROSMsg(pr));
+  for (const auto &pr : prs) msg.primitives.push_back(toPrimitiveROSMsg(pr));
   return msg;
 }
 
 /// Trajectory2D class to trajectory ROS message
-inline planning_ros_msgs::Trajectory toTrajectoryROSMsg(const Trajectory2D &traj,
-                                                 double z = 0) {
+inline planning_ros_msgs::Trajectory toTrajectoryROSMsg(
+    const Trajectory2D &traj, double z = 0) {
   planning_ros_msgs::Trajectory msg;
   for (const auto &seg : traj.segs)
     msg.primitives.push_back(toPrimitiveROSMsg(seg, z));
@@ -87,15 +85,15 @@ inline planning_ros_msgs::Trajectory toTrajectoryROSMsg(const Trajectory2D &traj
       msg.lambda[i].ti = l.segs[i].ti;
       msg.lambda[i].tf = l.segs[i].tf;
       msg.lambda[i].ca.resize(4);
-      for (int j = 0; j < 4; j++)
-        msg.lambda[i].ca[j] = l.segs[i].a(j);
+      for (int j = 0; j < 4; j++) msg.lambda[i].ca[j] = l.segs[i].a(j);
     }
   }
   return msg;
 }
 
 /// Trajectory3D class to trajectory ROS message
-inline planning_ros_msgs::Trajectory toTrajectoryROSMsg(const Trajectory3D &traj) {
+inline planning_ros_msgs::Trajectory toTrajectoryROSMsg(
+    const Trajectory3D &traj) {
   planning_ros_msgs::Trajectory msg;
   for (const auto &seg : traj.segs)
     msg.primitives.push_back(toPrimitiveROSMsg(seg));
@@ -108,8 +106,7 @@ inline planning_ros_msgs::Trajectory toTrajectoryROSMsg(const Trajectory3D &traj
       msg.lambda[i].ti = l.segs[i].ti;
       msg.lambda[i].tf = l.segs[i].tf;
       msg.lambda[i].ca.resize(4);
-      for (int j = 0; j < 4; j++)
-        msg.lambda[i].ca[j] = l.segs[i].a(j);
+      for (int j = 0; j < 4; j++) msg.lambda[i].ca[j] = l.segs[i].a(j);
     }
   }
   return msg;
@@ -150,7 +147,8 @@ inline Primitive3D toPrimitive3D(const planning_ros_msgs::Primitive &pr) {
 }
 
 /// ROS message to Trajectory2D class
-inline Trajectory2D toTrajectory2D(const planning_ros_msgs::Trajectory &traj_msg) {
+inline Trajectory2D toTrajectory2D(
+    const planning_ros_msgs::Trajectory &traj_msg) {
   // Constructor from ros msg
   Trajectory2D traj;
   traj.taus.push_back(0);
@@ -175,8 +173,7 @@ inline Trajectory2D toTrajectory2D(const planning_ros_msgs::Trajectory &traj_msg
     }
     traj.lambda_ = l;
     std::vector<decimal_t> ts;
-    for (const auto &tau : traj.taus)
-      ts.push_back(traj.lambda_.getT(tau));
+    for (const auto &tau : traj.taus) ts.push_back(traj.lambda_.getT(tau));
     traj.Ts = ts;
   } else
     traj.total_t_ = traj.taus.back();
@@ -184,7 +181,8 @@ inline Trajectory2D toTrajectory2D(const planning_ros_msgs::Trajectory &traj_msg
 }
 
 /// ROS message to Trajectory3D class
-inline Trajectory3D toTrajectory3D(const planning_ros_msgs::Trajectory &traj_msg) {
+inline Trajectory3D toTrajectory3D(
+    const planning_ros_msgs::Trajectory &traj_msg) {
   Trajectory3D traj;
   traj.taus.push_back(0);
   for (const auto &it : traj_msg.primitives) {
@@ -208,8 +206,7 @@ inline Trajectory3D toTrajectory3D(const planning_ros_msgs::Trajectory &traj_msg
     }
     traj.lambda_ = l;
     std::vector<decimal_t> ts;
-    for (const auto &tau : traj.taus)
-      ts.push_back(traj.lambda_.getT(tau));
+    for (const auto &tau : traj.taus) ts.push_back(traj.lambda_.getT(tau));
     traj.Ts = ts;
   } else
     traj.total_t_ = traj.taus.back();

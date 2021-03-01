@@ -1,11 +1,7 @@
-#ifndef TRAJ_OPT_UTILS_HPP
-#define TRAJ_OPT_UTILS_HPP
+#pragma once
 #include <ros/ros.h>
-// traj_opt stuff
-// #include <traj_opt_msgs/Trajectory.h>
 #include <traj_opt_basic/msg_traj.h>
 
-// TODO: put this into taj_opt pkg
 class TrajOptUtils {
 public:
   // for new traj_opt backend, can only have 3d trajectories
@@ -57,5 +53,3 @@ public:
     vec_to_twist(val, jrk);
   }
 };
-
-#endif // TRAJ_OPT_UTILS_HPP

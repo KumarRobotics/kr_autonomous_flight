@@ -5,7 +5,7 @@
 
 class TrajectoryExtractor {
  public:
-  TrajectoryExtractor(const planning_ros_msgs::Trajectory& msg, double dt) {
+  TrajectoryExtractor(const planning_ros_msgs::Trajectory &msg, double dt) {
     const auto traj = toTrajectory3D(msg);
     int N = std::ceil(traj.getTotalTime() / dt);
     const auto ws = traj.sample(N);

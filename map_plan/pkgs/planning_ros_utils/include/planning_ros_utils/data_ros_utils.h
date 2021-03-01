@@ -7,7 +7,6 @@
 #include <sensor_msgs/PointCloud.h>
 #include <tf_conversions/tf_eigen.h>
 
-
 inline Vec3f pose_to_eigen(const geometry_msgs::Pose &pose) {
   return Vec3f(pose.position.x, pose.position.y, pose.position.z);
 }
@@ -19,7 +18,6 @@ inline Vec3f twist_to_eigen(const geometry_msgs::Twist &twist) {
 inline Vec3f vec_to_eigen(const geometry_msgs::Vector3 &v) {
   return Vec3f(v.x, v.y, v.z);
 }
-
 
 inline vec_Vec3f vec2_to_vec3(const vec_Vec2f &pts2d, decimal_t z = 0) {
   vec_Vec3f pts(pts2d.size());

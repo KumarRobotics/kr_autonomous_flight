@@ -5,7 +5,7 @@ bool return_to_start # for doing hobbit
 ---
 # Action result
 bool success
-traj_opt_msgs/Trajectory traj
+planning_ros_msgs/SplineTrajectory traj
 duration execution_time # time to execute trajectory
 ---
 # Action feedback

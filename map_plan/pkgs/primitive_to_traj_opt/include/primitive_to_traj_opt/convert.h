@@ -1,8 +1,10 @@
+#include <planning_ros_msgs/Polynomial.h>
+#include <planning_ros_msgs/Spline.h>
+#include <planning_ros_msgs/SplineTrajectory.h>
 #include <planning_ros_msgs/Trajectory.h>
-#include <traj_opt_msgs/Trajectory.h>
 
-class PrimitiveToTrajOpt
-{
-public:
-    static traj_opt_msgs::Trajectory convert(const planning_ros_msgs::Trajectory &msg);
+class PrimitiveToTrajOpt {
+ public:
+  static planning_ros_msgs::SplineTrajectory convert(
+      const planning_ros_msgs::Trajectory &msg);
 };

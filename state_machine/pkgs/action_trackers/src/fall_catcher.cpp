@@ -12,18 +12,18 @@ using kr_mav_msgs::PositionCommand;
 using kr_tracker_msgs::TrackerStatus;
 
 class FallCatcher : public kr_trackers_manager::Tracker {
-public:
+ public:
   FallCatcher(void);
 
   void Initialize(const ros::NodeHandle &nh);
   bool Activate(const PositionCommand::ConstPtr &cmd);
   void Deactivate(void);
 
-  const PositionCommand::ConstPtr
-  update(const nav_msgs::Odometry::ConstPtr &msg);
+  const PositionCommand::ConstPtr update(
+      const nav_msgs::Odometry::ConstPtr &msg);
   const TrackerStatus::Ptr status();
 
-private:
+ private:
   double default_v_des_, default_a_des_, epsilon_;
   float v_des_, a_des_;
   bool active_;
@@ -79,8 +79,8 @@ bool FallCatcher::Activate(const PositionCommand::ConstPtr &cmd) {
 
 void FallCatcher::Deactivate(void) { active_ = false; }
 
-const PositionCommand::ConstPtr
-FallCatcher::update(const nav_msgs::Odometry::ConstPtr &msg) {
+const PositionCommand::ConstPtr FallCatcher::update(
+    const nav_msgs::Odometry::ConstPtr &msg) {
   poses_(index_ % window_, 0) = msg->pose.pose.position.x;
   poses_(index_ % window_, 1) = msg->pose.pose.position.y;
   poses_(index_ % window_, 2) = msg->pose.pose.position.z;
@@ -91,13 +91,11 @@ FallCatcher::update(const nav_msgs::Odometry::ConstPtr &msg) {
   ros::Time start_calc = ros::Time::now();
   double duration = (stamp - start_time_).toSec();
   static boost::shared_ptr<qp_traj_opt::GurobiSolver> bezier;
-  if (!active_)
-    return PositionCommand::Ptr();
+  if (!active_) return PositionCommand::Ptr();
 
   // if have not got trajectory, check for free fall
   if (!got_traj_) {
-    if (index_ < window_)
-      return PositionCommand::Ptr();
+    if (index_ < window_) return PositionCommand::Ptr();
 
     ros::Time t0 = stamps_.at((index_ - 1) % window_);
     for (uint i = 0; i < window_; i++) {
@@ -233,8 +231,7 @@ FallCatcher::update(const nav_msgs::Odometry::ConstPtr &msg) {
 
 const TrackerStatus::Ptr FallCatcher::status() {
 #warning "Using status in place of action lib is a bad idea"
-  if (!active_)
-    return TrackerStatus::Ptr();
+  if (!active_) return TrackerStatus::Ptr();
 
   TrackerStatus::Ptr msg(new TrackerStatus);
 

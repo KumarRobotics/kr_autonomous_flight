@@ -13,7 +13,7 @@
 
   <depend>roscpp</depend>
   <depend>traj_opt_basic</depend>
-  <depend>traj_opt_msgs</depend>
+  <depend>planning_ros_msgs</depend>
 
   <export>
     <!-- <rviz plugin="${prefix}/plugin_description.xml"/> -->

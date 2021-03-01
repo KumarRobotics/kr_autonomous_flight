@@ -169,22 +169,6 @@ bool TrajToQuadCmd::evaluatePos(
   traj->evaluate(t_des, 0, val);  // position of traj
   traj->evaluate(t_des, 1, vel);  // velocity of traj
 
-  // TODO: the following part has problems, replaced with diff_xy
-  // // assume val is 4d
-  // //  assert(val.rows() == 4);
-  // if (val.rows() < 4) pos = pos.block(0, 0, val.rows(), 1);
-  // VecD diff = val - pos;
-  // if (val.rows() == 4) {
-  //   diff(3) = angles::shortest_angular_distance(val(3), pos(3));
-  //   vel(3) = 0;
-  // }
-  // // check diff in position of traj and position of odom is less than err_max
-  // // also check to make sure not infront of trajectory
-  // if (diff.norm() >= err_max && diff.dot(vel) > 0 ) {
-  //      t_des -= ddt; // evaluate at a previous timestamp
-  //   return_v = false; // return false
-  // }
-
   Vec2 diff_xy = Vec2(val(0) - pos(0), val(1) - pos(1));
   if (diff_xy.norm() >= err_max) {
     printf("Distance between odom and traj in xy too large! It is: %f \n",

@@ -1,11 +1,11 @@
 #include <ros/ros.h>
 
-#include "bag_writter.hpp"
+#include "bag_writer.hpp"
 #include "trajectory_extractor.hpp"
 
 std::string file_name_, topic_name_;
 
-void trajCallback(const planning_ros_msgs::Trajectory::ConstPtr& msg) {
+void trajCallback(const planning_ros_msgs::Trajectory::ConstPtr &msg) {
   TrajectoryExtractor extractor(*msg, 0.01);
   const auto cmds = extractor.getCommands();
 
@@ -13,7 +13,7 @@ void trajCallback(const planning_ros_msgs::Trajectory::ConstPtr& msg) {
                                                   cmds);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ros::init(argc, argv, "trajectory_extractor_node");
 
   ros::NodeHandle nh("~");

@@ -11,9 +11,9 @@ uint factorial(uint i) {
 /**
  * @brief convert traj msg for visualization?
  */
-traj_opt_msgs::Trajectory PrimitiveToTrajOpt::convert(
+planning_ros_msgs::SplineTrajectory PrimitiveToTrajOpt::convert(
     const planning_ros_msgs::Trajectory &msg) {
-  traj_opt_msgs::Trajectory traj;
+  planning_ros_msgs::SplineTrajectory traj;
   traj.header = msg.header;
 
   double T = 0.0;
@@ -22,14 +22,14 @@ traj_opt_msgs::Trajectory PrimitiveToTrajOpt::convert(
   }
 
   for (uint d = 0; d < 3; d++) {
-    traj_opt_msgs::Spline spline;
+    planning_ros_msgs::Spline spline;
     for (uint s = 0; s < msg.primitives.size(); s++) {
       const std::vector<double> *co;
       // get correct field
       if (d == 0) co = &(msg.primitives.at(s).cx);
       if (d == 1) co = &(msg.primitives.at(s).cy);
       if (d == 2) co = &(msg.primitives.at(s).cz);
-      traj_opt_msgs::Polynomial poly;
+      planning_ros_msgs::Polynomial poly;
       for (uint c = 0; c < co->size(); c++) {
         uint cr = co->size() - 1 - c;
         poly.coeffs.push_back(co->at(cr) * std::pow(msg.primitives.at(s).t, c) /

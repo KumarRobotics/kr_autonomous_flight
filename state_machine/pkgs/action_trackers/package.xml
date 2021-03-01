@@ -30,7 +30,6 @@
   <depend>planning_ros_utils</depend>
   <depend>planning_ros_msgs</depend>
   <depend>decomp_ros_utils</depend>
-  <depend>traj_opt_msgs</depend>
   <depend>traj_opt_pro</depend>
   <depend>traj_opt_basic</depend>
   <depend>traj_opt_ros</depend>

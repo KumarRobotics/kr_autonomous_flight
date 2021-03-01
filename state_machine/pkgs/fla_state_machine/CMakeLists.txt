@@ -8,7 +8,7 @@ find_package(
   COMPONENTS kr_mav_msgs
              planning_ros_utils
              traj_opt_ros
-             traj_opt_msgs
+             planning_ros_msgs 
              actionlib
              actionlib_msgs
              action_planner

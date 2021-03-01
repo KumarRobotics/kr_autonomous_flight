@@ -1,17 +1,15 @@
 #ifndef MESH_VISUAL_H
 #define MESH_VISUAL_H
 
-#include <mpl_basis/data_type.h>
-
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreVector3.h>
-
+#include <mpl_basis/data_type.h>
 #include <rviz/ogre_helpers/mesh_shape.h>
 
 namespace planning_rviz_plugins {
 class MeshVisual {
-public:
+ public:
   MeshVisual(Ogre::SceneManager *scene_manager, Ogre::SceneNode *parent_node);
 
   virtual ~MeshVisual();
@@ -22,13 +20,13 @@ public:
 
   void setColor(float r, float g, float b, float a);
 
-private:
+ private:
   std::unique_ptr<rviz::MeshShape> obj_;
 
   Ogre::SceneNode *frame_node_;
 
   Ogre::SceneManager *scene_manager_;
 };
-}
+}  // namespace planning_rviz_plugins
 
 #endif

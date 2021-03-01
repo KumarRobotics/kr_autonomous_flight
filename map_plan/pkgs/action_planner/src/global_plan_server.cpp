@@ -23,10 +23,7 @@ using boost::irange;
 
 class GlobalPlanServer {
  public:
-  /**
-   * @brief Constructor, initialization
-   */
-  GlobalPlanServer(ros::NodeHandle& nh);
+  explicit GlobalPlanServer(const ros::NodeHandle &nh);
 
   /**
    * @brief Call process_goal function, check planner timeout
@@ -37,7 +34,7 @@ class GlobalPlanServer {
    * @brief Odom callback function, directly subscribing odom to get the path
    * start position
    */
-  void odom_callback(const nav_msgs::Odometry::ConstPtr& odom);
+  void odom_callback(const nav_msgs::Odometry::ConstPtr &odom);
 
   // global path recorder
   planning_ros_msgs::Path global_path_msg_;
@@ -46,8 +43,12 @@ class GlobalPlanServer {
 
  private:
   // global map sub
+  ros::NodeHandle pnh_;
   ros::Subscriber global_map_sub_;
   ros::Subscriber odom_sub_;
+
+  // use 2-d or 3-d
+  bool use_3d_{false};
 
   // pub
   ros::Publisher path_pub_;
@@ -69,8 +70,11 @@ class GlobalPlanServer {
       global_as_;
 
   // planner related
-  std::shared_ptr<JPS::VoxelMapUtil> jps_map_util_;
-  std::shared_ptr<JPSPlanner3D> jps_util_;
+  std::shared_ptr<JPSPlanner3D> jps_3d_util_;
+  std::shared_ptr<JPS::VoxelMapUtil> jps_3d_map_util_;
+
+  std::shared_ptr<JPSPlanner2D> jps_util_;
+  std::shared_ptr<JPS::OccMapUtil> jps_map_util_;
 
   // odom related
   bool odom_set_{false};
@@ -97,41 +101,54 @@ class GlobalPlanServer {
   /**
    * @brief map callback, update global_map_
    */
-  void globalMapCB(const planning_ros_msgs::VoxelMap::ConstPtr& msg);
+  void globalMapCB(const planning_ros_msgs::VoxelMap::ConstPtr &msg);
 
   /**
    * @brief Global planner warpper
    */
-  bool global_plan_process(const Waypoint3D& start, const Waypoint3D& goal,
-                           const planning_ros_msgs::VoxelMap& global_map);
+  bool global_plan_process(const Waypoint3D &start, const Waypoint3D &goal,
+                           const planning_ros_msgs::VoxelMap &global_map);
+
+  /**
+   * @brief Slice map util, only used if plan with a 2d jps planner
+   */
+  planning_ros_msgs::VoxelMap sliceMap(double h, double hh,
+                                       const planning_ros_msgs::VoxelMap &map);
 };
 
 void GlobalPlanServer::globalMapCB(
-    const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
+    const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
   global_map_ = *msg;
 }
 
-GlobalPlanServer::GlobalPlanServer(ros::NodeHandle& nh) {
-  path_pub_ = nh.advertise<planning_ros_msgs::Path>("path", 1, true);
-  global_map_sub_ =
-      nh.subscribe("global_voxel_map", 2, &GlobalPlanServer::globalMapCB, this);
+GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
+  path_pub_ = pnh_.advertise<planning_ros_msgs::Path>("path", 1, true);
+  global_map_sub_ = pnh_.subscribe("global_voxel_map", 2,
+                                   &GlobalPlanServer::globalMapCB, this);
 
   global_as_ = std::make_unique<
       actionlib::SimpleActionServer<action_planner::PlanTwoPointAction>>(
-      nh, "plan_global_path", false);
+      pnh_, "plan_global_path", false);
   // Register goal and preempt callbacks
   global_as_->registerGoalCallback(
       boost::bind(&GlobalPlanServer::goalCB, this));
   global_as_->start();
 
   // odom callback
-  odom_sub_ = nh.subscribe("odom", 10, &GlobalPlanServer::odom_callback, this,
-                           ros::TransportHints().tcpNoDelay());
+  odom_sub_ = pnh_.subscribe("odom", 10, &GlobalPlanServer::odom_callback, this,
+                             ros::TransportHints().tcpNoDelay());
 
   // Set map util for jps
-  jps_map_util_ = std::make_shared<JPS::VoxelMapUtil>();
-  jps_util_ = std::make_shared<JPSPlanner3D>(false);  // verbose set as false
-  jps_util_->setMapUtil(jps_map_util_);
+  if (use_3d_) {
+    jps_3d_map_util_ = std::make_shared<JPS::VoxelMapUtil>();
+    jps_3d_util_ =
+        std::make_shared<JPSPlanner3D>(false);  // verbose set as false
+    jps_3d_util_->setMapUtil(jps_3d_map_util_);
+  } else {
+    jps_map_util_ = std::make_shared<JPS::OccMapUtil>();
+    jps_util_ = std::make_shared<JPSPlanner2D>(false);  // verbose set as false
+    jps_util_->setMapUtil(jps_map_util_);
+  }
 }
 
 void GlobalPlanServer::process_all() {
@@ -172,7 +189,7 @@ void GlobalPlanServer::process_result(bool solved) {
   if (global_as_->isActive()) global_as_->setSucceeded(*result_);
 }
 
-void GlobalPlanServer::odom_callback(const nav_msgs::Odometry::ConstPtr& odom) {
+void GlobalPlanServer::odom_callback(const nav_msgs::Odometry::ConstPtr &odom) {
   if (!odom_set_) {
     odom_set_ = true;
   }
@@ -215,28 +232,95 @@ void GlobalPlanServer::goalCB() {
 }
 
 bool GlobalPlanServer::global_plan_process(
-    const Waypoint3D& start, const Waypoint3D& goal,
-    const planning_ros_msgs::VoxelMap& global_map) {
+    const Waypoint3D &start, const Waypoint3D &goal,
+    const planning_ros_msgs::VoxelMap &global_map) {
   std::string map_frame;
   map_frame = global_map.header.frame_id;
-  setMap(jps_map_util_, global_map);
-  jps_util_->updateMap();
+  if (use_3d_) {
+    setMap(jps_3d_map_util_, global_map);
+    jps_3d_util_->updateMap();
+  } else {
+    // slice the 3D map to get 2D map for path planning, at the height of
+    // z-value of start point
+    planning_ros_msgs::VoxelMap global_occ_map =
+        sliceMap(start.pos(2), global_map.resolution, global_map);
+    setMap(jps_map_util_, global_occ_map);
+    jps_util_->updateMap();
+  }
 
   // Path planning using JPS
-  if (!jps_util_->plan(start.pos, goal.pos, 1.0, true)) {
-    // jps_util_->plan params: start, goal, eps, use_jps
-    ROS_WARN("Fail to plan a global path!");
+  if (use_3d_) {
+    if (!jps_3d_util_->plan(start.pos, goal.pos, 1.0, true)) {
+      // jps_3d_util_->plan params: start, goal, eps, use_jps
+      ROS_WARN("Fail to plan a 3d global path!");
+    } else {
+      vec_Vec3f global_path = jps_3d_util_->getPath();
+      // publish
+      global_path_msg_ = path_to_ros(global_path);
+      global_path_msg_.header.frame_id = map_frame;
+      path_pub_.publish(global_path_msg_);
+    }
   } else {
-    vec_Vec3f global_path = jps_util_->getPath();
-    // publish
-    global_path_msg_ = path_to_ros(global_path);
-    global_path_msg_.header.frame_id = map_frame;
-    path_pub_.publish(global_path_msg_);
+    if (!jps_util_->plan(start.pos.topRows(2), goal.pos.topRows(2), 1.0,
+                         true)) {
+      // jps_util_->plan params: start, goal, eps, use_jps
+      ROS_WARN("Fail to plan a 2d global path!");
+      return false;
+    } else {
+      vec_Vec3f global_path;
+      vec_Vec2f path2d = jps_util_->getPath();
+      // assign z-value of the start position to the whole path
+      for (const auto &it : path2d) {
+        global_path.push_back(Vec3f(it(0), it(1), start.pos(2)));
+      }
+
+      // publish
+      global_path_msg_ = path_to_ros(global_path);
+      global_path_msg_.header.frame_id = map_frame;
+      path_pub_.publish(global_path_msg_);
+    }
   }
   return true;
 }
 
-int main(int argc, char** argv) {
+planning_ros_msgs::VoxelMap GlobalPlanServer::sliceMap(
+    double h, double hh, const planning_ros_msgs::VoxelMap &map) {
+  // slice a 3D voxel map
+  planning_ros_msgs::VoxelMap voxel_map;
+  voxel_map.origin.x = map.origin.x;
+  voxel_map.origin.y = map.origin.y;
+  voxel_map.origin.z = 0;
+  voxel_map.dim.x = map.dim.x;
+  voxel_map.dim.y = map.dim.y;
+  voxel_map.dim.z = 1;
+  voxel_map.resolution = map.resolution;
+  char val_free = 0;
+  char val_occ = 100;
+  voxel_map.data.resize(map.dim.x * map.dim.y, val_free);
+  int hi = hh / map.resolution;
+  int h_min = (h - map.origin.z) / map.resolution - hi;
+  h_min = h_min >= 0 ? h_min : 0;
+  h_min = h_min < map.dim.z ? h_min : map.dim.z - 1;
+  int h_max = (h - map.origin.z) / map.resolution + hi;
+  h_max = h_max > 0 ? h_max : 1;
+  h_max = h_max <= map.dim.z ? h_max : map.dim.z;
+  // printf("h_min: %d, h_max: %d\n", h_min, h_max);
+  Vec3i n;
+  for (n(0) = 0; n(0) < map.dim.x; n(0)++) {
+    for (n(1) = 0; n(1) < map.dim.y; n(1)++) {
+      for (n(2) = h_min; n(2) < h_max; n(2)++) {
+        int map_idx = n(0) + map.dim.x * n(1) + map.dim.x * map.dim.y * n(2);
+        if (map.data[map_idx] > val_free) {
+          int idx = n(0) + map.dim.x * n(1);
+          voxel_map.data[idx] = val_occ;
+        }
+      }
+    }
+  }
+  return voxel_map;
+}
+
+int main(int argc, char **argv) {
   ros::init(argc, argv, "action_planner");
 
   ros::NodeHandle nh("~");

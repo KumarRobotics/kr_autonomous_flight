@@ -12,7 +12,6 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>catkin_simple</build_depend>
-  <depend>traj_opt_msgs</depend>
   <depend>planning_ros_msgs</depend>
 
 

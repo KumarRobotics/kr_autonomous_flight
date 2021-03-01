@@ -24,7 +24,7 @@ void filter(const sensor_msgs::PointCloud &cloud) {
   sensor_msgs::PointCloud cloud_out;
   if (outlier_res_ > 0) {
     PCLPointCloud pcl_pts = PCLUtils::eigenToPCL(pts);
-    PCLUtils::outlier_removal(pcl_pts, outlier_res_, 2);
+    pcl_pts = PCLUtils::outlier_removal(pcl_pts, outlier_res_, 2);
 
     // printf("size of points: [%d, %d, %d]\n", s1, s2, s3);
     cloud_out = PCLUtils::toROS(pcl_pts);

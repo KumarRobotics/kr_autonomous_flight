@@ -6,7 +6,7 @@
 #include <boost/circular_buffer.hpp>
 
 class Projector {
-public:
+ public:
   Projector(int num = 5) { ellipsoid_array_.set_capacity(num); }
   void set_obs(const vec_Vec3f obs) { obs_ = obs; }
   void set_path(const vec_Vec3f &path) { path_ = path; }
@@ -50,17 +50,17 @@ public:
     vec_Vec3f path;
     // Add curr_pos (pt) to the front of path
     if ((path_.front() - pt).norm() <
-        0.5) // directly replace if the distance is less than a threshold (time
-             // delay from when the path is planned to now leads to this
-             // distance)
+        0.5)  // directly replace if the distance is less than a threshold (time
+              // delay from when the path is planned to now leads to this
+              // distance)
     {
       path_.erase(path_.begin());
       path_.insert(path_.begin(), pt);
       path = path_;
     } else {
       path = path_;
-      path.insert(path.begin(), pt); // in this case, only change path variable
-                                     // locally to avoid messing up path_.
+      path.insert(path.begin(), pt);  // in this case, only change path variable
+                                      // locally to avoid messing up path_.
     }
 
     // Projects the goal point onto the projected_illpsoid?
@@ -85,13 +85,11 @@ public:
 
   vec_E<Ellipsoid3D> project_array(const Vec3f &pt, int num, double res) {
     vec_Vec3f path = path_;
-    if ((path.front() - pt).norm() > 0.1)
-      path.insert(path.begin(), pt);
+    if ((path.front() - pt).norm() > 0.1) path.insert(path.begin(), pt);
     const auto ps = path_downsample(path, res);
     vec_Vec3f new_ps;
     for (int i = ps.size() - 1; i >= 0; i--) {
-      if ((ps[i] - pt).norm() < res)
-        break;
+      if ((ps[i] - pt).norm() < res) break;
       new_ps.push_back(ps[i]);
     }
 
@@ -100,12 +98,10 @@ public:
     vec_E<Ellipsoid3D> es;
     for (const auto &it : new_ps) {
       es.push_back(find_sphere(it, obs_, r_max_));
-      if ((int)es.size() > num)
-        break;
+      if (static_cast<int>(es.size()) > num) break;
     }
 
-    for (const auto &it : ellipsoid_array_)
-      es.push_back(it);
+    for (const auto &it : ellipsoid_array_) es.push_back(it);
     return es;
   }
 
@@ -117,16 +113,15 @@ public:
     // Reversed?
     for (int i = ps.size() - 1; i >= 0; i--) {
       new_ps.push_back(ps[i]);
-      if ((ps[i] - pt).norm() <= 0.1) // the threshold tolerance is 0.1 (which
-                                      // is why we stop when within 0.1?
+      if ((ps[i] - pt).norm() <= 0.1)  // the threshold tolerance is 0.1 (which
+                                       // is why we stop when within 0.1?
         break;
     }
     // Reverse back? Which is front and back?
     std::reverse(new_ps.begin(), new_ps.end());
 
     // Make sure there is at least one point on path
-    if (new_ps.empty())
-      new_ps.push_back(pt);
+    if (new_ps.empty()) new_ps.push_back(pt);
 
     double d = 0;
     for (unsigned int i = 1; i < new_ps.size(); i++) {
@@ -134,17 +129,15 @@ public:
       d += (new_ps[i] - new_ps[i - 1]).norm();
       // Once we are greater than outer_r_max_ than return that point on path
       // outer_r_max_ is dist_a = ||v||^2 / (2*a_max_)
-      if (d >= dist)
-        return new_ps[i];
+      if (d >= dist) return new_ps[i];
     }
     return new_ps.back();
   }
 
-private:
+ private:
   vec_Vec3f path_downsample(const vec_Vec3f &ps, decimal_t d) {
     // subdivide according to length
-    if (ps.empty())
-      return ps;
+    if (ps.empty()) return ps;
     vec_Vec3f path;
     for (unsigned int i = 1; i < ps.size(); i++) {
       decimal_t dist = (ps[i] - ps[i - 1]).norm();
@@ -185,8 +178,7 @@ private:
     vec_Vec3f new_O;
     for (const auto &it : O) {
       Vec3f vt = E.C_.inverse() * (it - E.d_);
-      if (vt.norm() <= 1)
-        new_O.push_back(it);
+      if (vt.norm() <= 1) new_O.push_back(it);
     }
     return new_O;
   }
@@ -230,8 +222,7 @@ private:
 
   bool intersect(const Vec3f &p1, const Vec3f &p2, const Vec3f &c, float r,
                  Vec3f &g, bool force) {
-    if (p1 == p2)
-      return false;
+    if (p1 == p2) return false;
 
     Vec3f d = (p2 - p1).normalized();
     Vec3f v = (p1 - c);
@@ -239,8 +230,7 @@ private:
     decimal_t m = d.dot(v);
 
     decimal_t dd = m * m - (v.dot(v) - r * r);
-    if (dd < 0)
-      return false;
+    if (dd < 0) return false;
 
     decimal_t dd1 = -m + sqrt(dd);
     decimal_t dd2 = -m - sqrt(dd);
@@ -272,8 +262,7 @@ private:
     bool find = intersect(ellipsoid.C_.inverse() * (p1_w - ellipsoid.d_),
                           ellipsoid.C_.inverse() * (p2_w - ellipsoid.d_),
                           Vec3f::Zero(), 1, g, force);
-    if (find)
-      g = ellipsoid.C_ * g + ellipsoid.d_;
+    if (find) g = ellipsoid.C_ * g + ellipsoid.d_;
     return find;
   }
 

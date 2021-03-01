@@ -26,21 +26,21 @@ bool map_initialized_ = false;
 vec_Vec3f original_goals_;
 std::vector<int> original_goals_reached_;
 
-bool equal(const vec_Vec3f& gs1, const vec_Vec3f& gs2) {
+bool equal(const vec_Vec3f &gs1, const vec_Vec3f &gs2) {
   if (gs1.size() != gs2.size()) return false;
   for (size_t i = 0; i < gs1.size(); ++i)
     if (gs1[i] != gs2[i]) return false;
   return true;
 }
 
-void mapCB(const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
+void mapCB(const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
   if (verbose_) ROS_WARN_ONCE("[PathPlanner]: Get the voxel map!");
 
   map_ = *msg;
   map_initialized_ = true;
 }
 
-void process(const Vec3f& start, const vec_Vec3f& goals) {
+void process(const Vec3f &start, const vec_Vec3f &goals) {
   // start can be seen as the current pose
   bool solved = true;
   planning_ros_msgs::Path path_msg;
@@ -134,7 +134,7 @@ void goalCB() {
   auto action_goal = as_->acceptNewGoal();
   const Vec3f start = pose_to_eigen(action_goal->p_init);
   vec_Vec3f goals;
-  for (const auto& it : action_goal->p_finals)
+  for (const auto &it : action_goal->p_finals)
     goals.push_back(pose_to_eigen(it));
 
   if (goals.empty()) {
@@ -156,7 +156,7 @@ void goalCB() {
   time_pub.publish(tmsg);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ros::init(argc, argv, "action_planner");
 
   ros::NodeHandle nh("~");

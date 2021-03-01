@@ -15,25 +15,25 @@
 using kr_mav_msgs::PositionCommand;
 
 class LandTracker : public kr_trackers_manager::Tracker {
-private:
-  double done_epsilon_; // will stop when the position command is _ m below the
-                        // odom
-  double land_vel_;     // landing velocity. With no ground effect, will hit the
-                        // ground with this v
-  double land_acc_;     // rate at which we reach the landing vel
+ private:
+  double done_epsilon_;  // will stop when the position command is _ m below the
+                         // odom
+  double land_vel_;  // landing velocity. With no ground effect, will hit the
+                     // ground with this v
+  double land_acc_;  // rate at which we reach the landing vel
 
-public:
+ public:
   LandTracker() = default;
 
   void Initialize(const ros::NodeHandle &nh) override;
   bool Activate(const PositionCommand::ConstPtr &cmd) override;
   void Deactivate() override;
 
-  PositionCommand::ConstPtr
-  update(const nav_msgs::Odometry::ConstPtr &msg) override;
+  PositionCommand::ConstPtr update(
+      const nav_msgs::Odometry::ConstPtr &msg) override;
   uint8_t status() const override;
 
-private:
+ private:
   void goal_callback();
   // action lib
   std::unique_ptr<actionlib::SimpleActionServer<action_trackers::LandAction>>
@@ -44,7 +44,7 @@ private:
   double vel_z;
   float yaw_, start_yaw_;
   bool pos_set_{
-      false}; // safety catch to make sure we don't activate with no odom
+      false};  // safety catch to make sure we don't activate with no odom
   bool active_{false};
   bool done_landing_{false};
   bool start_landing_{false};
@@ -63,9 +63,9 @@ void LandTracker::Initialize(const ros::NodeHandle &nh) {
   kx_[2] *= 0.1;
 
   ros::NodeHandle priv_nh(nh, "land_tracker");
-  priv_nh.param("epsilon", done_epsilon_, 2.0); // see top of file
-  priv_nh.param("vel", land_vel_, 1.0);         // see top of file
-  priv_nh.param("acc", land_acc_, 2.0);         // see top of file
+  priv_nh.param("epsilon", done_epsilon_, 2.0);  // see top of file
+  priv_nh.param("vel", land_vel_, 1.0);          // see top of file
+  priv_nh.param("acc", land_acc_, 2.0);          // see top of file
 
   if (kx_[2] * done_epsilon_ > 9.4) {
     done_epsilon_ = 9.4 / kx_[2];
@@ -113,8 +113,8 @@ void LandTracker::goal_callback() {
   start_landing_ = true;
 }
 
-PositionCommand::ConstPtr
-LandTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
+PositionCommand::ConstPtr LandTracker::update(
+    const nav_msgs::Odometry::ConstPtr &msg) {
   float dt = (msg->header.stamp - old_t).toSec();
   old_t = msg->header.stamp;
 
@@ -123,8 +123,7 @@ LandTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
   pos_(2) = msg->pose.pose.position.z;
   yaw_ = tf::getYaw(msg->pose.pose.orientation);
   pos_set_ = true;
-  if (!active_)
-    return PositionCommand::Ptr();
+  if (!active_) return PositionCommand::Ptr();
 
   PositionCommand::Ptr cmd(new PositionCommand);
   cmd->header.stamp = msg->header.stamp;

@@ -8,10 +8,13 @@
 
 // quad control stuff
 #include <kr_trackers_manager/Tracker.h>
+
+// planning ros msgs stuff
+#include <planning_ros_msgs/SplineTrajectory.h>
+
 // traj_opt stuff
 #include <std_msgs/Empty.h>
 #include <traj_opt_basic/msg_traj.h>
-#include <traj_opt_msgs/Trajectory.h>
 #include <traj_opt_quadrotor/convert.h>
 #include <traj_opt_ros/ros_bridge.h>
 // action stuff
@@ -227,9 +230,9 @@ ActionTrajectoryTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
         init_cmd_->position.z, init_cmd_->yaw;
     next_trajectory_.front()->evaluate(0.0, 0, pos_new);
 
-    if (pos_new.rows() < 4)
+    if (pos_new.rows() < 4) {
       pos_old.conservativeResize(pos_new.rows(), 1);
-    else if (pos_new.rows() == 9) { // special sphere traj thing
+    } else if (pos_new.rows() == 9) { // special sphere traj thing
       pos_old = pos_old.block(0, 0, 3, 1);
       pos_new = pos_new.block(0, 0, 3, 1);
     }
@@ -241,7 +244,7 @@ ActionTrajectoryTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
     }
 
     // check continuity in position
-    if ((pos_old - pos_new).norm() > 1.0) {
+    if ((pos_old - pos_new).norm() > 3.0) {
       // incontinuity is too large, abort
       ROS_ERROR_STREAM("Trajectories not continuous, aborting transition from "
                        << pos_old.transpose() << " to " << pos_new.transpose());
@@ -271,7 +274,6 @@ ActionTrajectoryTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
     // check_time is the timestamp to stitch old traj and new traj together
     double check_time = execution_time * double(epoch_diff);
     if (duration >= check_time) {
-      // TODO: what exactly does this mean?
       // only do something if trajectory is old
       traj_opt::VecD pos_old, pos_new;
       traj_opt::VecD vel_old, vel_new;
@@ -283,17 +285,6 @@ ActionTrajectoryTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
       // evaluate next traj at time=0
       next_trajectory_.front()->evaluate(0.0, 0, pos_new);
       next_trajectory_.front()->evaluate(0.0, 1, vel_new);
-
-      // robust to wrapping by pi
-      // TODO: why is this commented out?
-      // if(!ignore_yaw_) {
-      //   pos_old(3) = std::cos(pos_old(3));
-      //   pos_new(3) = std::cos(pos_new(3));
-      // }
-      // else {
-      //   pos_old(3) = 0;
-      //   pos_new(3) = 0;
-      // }
 
       if (pos_new.rows() < 4) {
         pos_old.conservativeResize(pos_new.rows(), 1);
@@ -364,7 +355,7 @@ ActionTrajectoryTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
 
   // evaluate trajectory and get the cmd, refer to convert.cpp in
   // traj_opt_quadrotor,
-  if (current_trajectory_->getDim() == 9) { // TODO: what does this indicate?
+  if (current_trajectory_->getDim() == 9) { // what does this indicate?
     geometry_msgs::PointStamped ps;
     ps.header = msg->header;
     TrajToQuadCmd::handleSphere(current_trajectory_, duration, cmd, ps.point);
@@ -418,7 +409,6 @@ ActionTrajectoryTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
 }
 
 void ActionTrajectoryTracker::trajCB() {
-
   // traj_opt::Timer t; // Timer initialization
   auto goal = as_->acceptNewGoal();
   boost::mutex::scoped_lock lock(mtx_);
@@ -439,7 +429,7 @@ void ActionTrajectoryTracker::trajCB() {
     traj_epoch.pop_back();
   }
 
-  traj_opt_msgs::Trajectory msg =
+  planning_ros_msgs::SplineTrajectory msg =
       goal->traj; // extract trajectory msg from goal->traj
   boost::shared_ptr<traj_opt::Trajectory> sp =
       boost::make_shared<traj_opt::MsgTrajectory>(TrajRosBridge::convert(msg));

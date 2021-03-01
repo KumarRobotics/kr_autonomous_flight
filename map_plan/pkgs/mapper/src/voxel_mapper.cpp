@@ -25,7 +25,7 @@ void VoxelMapper::setMapFree() {
             inflated_map_.data() + inflated_map_.num_elements(), val_free);
 }
 
-void VoxelMapper::freeVoxels(const Vec3f& pt, const vec_Vec3i ns) {
+void VoxelMapper::freeVoxels(const Vec3f &pt, const vec_Vec3i ns) {
   const Vec3i pn = floatToInt(pt);
 
   if (!isOutSide(pn) && map_[pn(0)][pn(1)][pn(2)] != val_free) {
@@ -34,7 +34,7 @@ void VoxelMapper::freeVoxels(const Vec3f& pt, const vec_Vec3i ns) {
       inflated_map_[pn(0)][pn(1)][pn(2)] = val_free;
   }
 
-  for (const auto& n : ns) {
+  for (const auto &n : ns) {
     Vec3i pnn = pn + n;
     if (!isOutSide(pnn) && map_[pnn(0)][pnn(1)][pnn(2)] != val_free) {
       map_[pnn(0)][pnn(1)][pnn(2)] = val_free;
@@ -71,8 +71,8 @@ vec_Vec3f VoxelMapper::getInflatedCloud() {
   return pts;
 }
 
-vec_Vec3f VoxelMapper::getLocalCloud(const Vec3f& pos, const Vec3f& ori,
-                                     const Vec3f& dim) {
+vec_Vec3f VoxelMapper::getLocalCloud(const Vec3f &pos, const Vec3f &ori,
+                                     const Vec3f &dim) {
   Vec3i dim_low, dim_up;
 
   Vec3i dim1 = floatToInt(pos + ori);
@@ -93,7 +93,7 @@ vec_Vec3f VoxelMapper::getLocalCloud(const Vec3f& pos, const Vec3f& ori,
   return pts;
 }
 
-void VoxelMapper::decayLocalCloud(const Vec3f& pos, double max_decay_range) {
+void VoxelMapper::decayLocalCloud(const Vec3f &pos, double max_decay_range) {
   Vec3i dim_low, dim_up;
   Vec3f start_pos;
   Vec3f end_pos;
@@ -130,8 +130,8 @@ void VoxelMapper::decayLocalCloud(const Vec3f& pos, double max_decay_range) {
 
 // crop a local voxel map from the global voxel map (local voxel map is a subset
 // of global voxel map)
-vec_Vec3f VoxelMapper::getInflatedLocalCloud(const Vec3f& pos, const Vec3f& ori,
-                                             const Vec3f& dim) {
+vec_Vec3f VoxelMapper::getInflatedLocalCloud(const Vec3f &pos, const Vec3f &ori,
+                                             const Vec3f &dim) {
   Vec3i dim_low, dim_up;
 
   Vec3i dim1 = floatToInt(pos + ori);
@@ -213,7 +213,7 @@ planning_ros_msgs::VoxelMap VoxelMapper::getInflatedMap() {
 
 // crop a local voxel map from the global voxel map
 planning_ros_msgs::VoxelMap VoxelMapper::getInflatedLocalMap(
-    const Vec3f& ori_d, const Vec3f& dim_d) {
+    const Vec3f &ori_d, const Vec3f &dim_d) {
   planning_ros_msgs::VoxelMap voxel_map;
 
   voxel_map.resolution = res_;
@@ -265,8 +265,8 @@ planning_ros_msgs::VoxelMap VoxelMapper::getInflatedLocalMap(
   return voxel_map;
 }
 
-// TODO: This function is the same as sliceMap function in data_conversions.cpp,
-// should merge them.
+// TODO(xu): This function is the same as sliceMap function in
+// data_conversions.cpp, should merge them.
 planning_ros_msgs::VoxelMap VoxelMapper::getInflatedOccMap(double h,
                                                            double hh) {
   planning_ros_msgs::VoxelMap voxel_map;
@@ -304,7 +304,7 @@ planning_ros_msgs::VoxelMap VoxelMapper::getInflatedOccMap(double h,
   return voxel_map;
 }
 
-bool VoxelMapper::allocate(const Vec3f& new_dim_d, const Vec3f& new_ori_d) {
+bool VoxelMapper::allocate(const Vec3f &new_dim_d, const Vec3f &new_ori_d) {
   Vec3i new_dim(new_dim_d(0) / res_, new_dim_d(1) / res_, new_dim_d(2) / res_);
   Vec3i new_ori(new_ori_d(0) / res_, new_ori_d(1) / res_, new_ori_d(2) / res_);
   if (new_dim(2) == 0)  // 2d case, set the z dimension to be 1
@@ -394,8 +394,8 @@ bool VoxelMapper::allocate(const Vec3f& new_dim_d, const Vec3f& new_ori_d) {
 //   }
 // }
 
-void VoxelMapper::addCloud(const vec_Vec3f& pts, const Aff3f& TF,
-                           const vec_Vec3i& ns, bool ray_trace,
+void VoxelMapper::addCloud(const vec_Vec3f &pts, const Aff3f &TF,
+                           const vec_Vec3i &ns, bool ray_trace,
                            double max_range) {
   const Vec3f pos(TF.translation().x(), TF.translation().y(),
                   TF.translation().z());
@@ -409,7 +409,7 @@ void VoxelMapper::addCloud(const vec_Vec3f& pts, const Aff3f& TF,
     ROS_WARN_ONCE("[Mapper]: dacaying is disabled");
   };
 
-  for (const auto& it : pts) {
+  for (const auto &it : pts) {
     // through away points outside max_range first to save computation
     if ((max_range > 0) && (it.norm() > max_range)) continue;
 
@@ -418,15 +418,15 @@ void VoxelMapper::addCloud(const vec_Vec3f& pts, const Aff3f& TF,
     const Vec3i n = floatToInt(pt);
 
     // through away points outside voxel box to save computation.
-    // TODO: if unknown vs known matters (i.e. planning algorithm differentiates
-    // unknown and free), need to move this after ray_trace. Won't add much
-    // computation according to timer feedback.
+    // TODO(xu): if unknown vs known matters (i.e. planning algorithm
+    // differentiates unknown and free), need to move this after ray_trace.
+    // Won't add much computation according to timer feedback.
     if (isOutSide(n)) continue;
 
     // for each point do ray trace
     if (ray_trace) {
       vec_Vec3i rays = rayTrace(pos, pt);
-      for (const auto& pn : rays) {
+      for (const auto &pn : rays) {
         if (map_[pn(0)][pn(1)][pn(2)] == val_unknown) {
           map_[pn(0)][pn(1)][pn(2)] = val_free;
           if (inflated_map_[pn(0)][pn(1)][pn(2)] == val_unknown)
@@ -449,7 +449,7 @@ void VoxelMapper::addCloud(const vec_Vec3f& pts, const Aff3f& TF,
       }
       // ns is a vector of values from -inflation_range to +inflation_range
       // excluding 0
-      for (const auto& it_n : ns) {
+      for (const auto &it_n : ns) {
         Vec3i n2 = n + it_n;
         if (!isOutSide(n2) && inflated_map_[n2(0)][n2(1)][n2(2)] < val_occ) {
           inflated_map_[n2(0)][n2(1)][n2(2)] =
@@ -460,15 +460,15 @@ void VoxelMapper::addCloud(const vec_Vec3f& pts, const Aff3f& TF,
   }
 }
 
-void VoxelMapper::freeCloud(const vec_Vec3f& pts, const Aff3f& TF) {
+void VoxelMapper::freeCloud(const vec_Vec3f &pts, const Aff3f &TF) {
   const Vec3f pos(TF.translation().x(), TF.translation().y(),
                   TF.translation().z());
 
-  for (const auto& it : pts) {
+  for (const auto &it : pts) {
     const Vec3f pt = TF * it;
 
     vec_Vec3i rays = rayTrace(pos, pt);
-    for (const auto& pn : rays) {
+    for (const auto &pn : rays) {
       if (map_[pn(0)][pn(1)][pn(2)] == val_unknown) {
         map_[pn(0)][pn(1)][pn(2)] = val_free;
         if (inflated_map_[pn(0)][pn(1)][pn(2)] == val_unknown)
@@ -478,7 +478,7 @@ void VoxelMapper::freeCloud(const vec_Vec3f& pts, const Aff3f& TF) {
   }
 }
 
-vec_Vec3i VoxelMapper::rayTrace(const Vec3f& pt1, const Vec3f& pt2) {
+vec_Vec3i VoxelMapper::rayTrace(const Vec3f &pt1, const Vec3f &pt2) {
   Vec3f diff = pt2 - pt1;
   decimal_t k = 0.8;
   int max_diff = (diff / res_).lpNorm<Eigen::Infinity>() / k;
@@ -496,17 +496,17 @@ vec_Vec3i VoxelMapper::rayTrace(const Vec3f& pt1, const Vec3f& pt2) {
   return pns;
 }
 
-Vec3i VoxelMapper::floatToInt(const Vec3f& pt) {
+Vec3i VoxelMapper::floatToInt(const Vec3f &pt) {
   return Vec3i(std::round((pt(0) - origin_d_(0)) / res_),
                std::round((pt(1) - origin_d_(1)) / res_),
                std::round((pt(2) - origin_d_(2)) / res_));
 }
 
-Vec3f VoxelMapper::intToFloat(const Vec3i& pn) {
+Vec3f VoxelMapper::intToFloat(const Vec3i &pn) {
   return pn.cast<decimal_t>() * res_ + origin_d_;
 }
 
-bool VoxelMapper::isOutSide(const Vec3i& pn) {
+bool VoxelMapper::isOutSide(const Vec3i &pn) {
   return pn(0) < 0 || pn(0) >= dim_(0) || pn(1) < 0 || pn(1) >= dim_(1) ||
          pn(2) < 0 || pn(2) >= dim_(2);
 }

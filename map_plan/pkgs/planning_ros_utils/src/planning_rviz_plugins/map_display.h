@@ -1,37 +1,39 @@
-#include <rviz/message_filter_display.h>
-
-#include <rviz/default_plugin/point_cloud_common.h>
-#include <rviz/display_context.h>
-#include <rviz/frame_manager.h>
-#include <rviz/ogre_helpers/point_cloud.h>
-#include <rviz/properties/enum_property.h>
-#include <rviz/properties/float_property.h>
+#pragma once
 
 #include <mpl_collision/map_util.h>
 #include <planning_ros_msgs/VoxelMap.h>
 #include <planning_ros_utils/data_ros_utils.h>
+#include <rviz/default_plugin/point_cloud_common.h>
+#include <rviz/display_context.h>
+#include <rviz/frame_manager.h>
+#include <rviz/message_filter_display.h>
+#include <rviz/ogre_helpers/point_cloud.h>
+#include <rviz/properties/enum_property.h>
+#include <rviz/properties/float_property.h>
+#include <vector>
+#include <memory>
 
-#include "bound_visual.h"
-#include "mesh_visual.h"
+#include "./bound_visual.h"
+#include "./mesh_visual.h"
 
 namespace planning_rviz_plugins {
 class MapDisplay
     : public rviz::MessageFilterDisplay<planning_ros_msgs::VoxelMap> {
   Q_OBJECT
-public:
+ public:
   MapDisplay();
   ~MapDisplay();
 
   virtual void reset();
   virtual void update(float wall_dt, float ros_dt);
 
-private Q_SLOTS:
+ private Q_SLOTS:
   void updateState();
   void updateBoundScale();
   void updateMeshColorAndAlpha();
   void updateMeshHeight();
 
-protected:
+ protected:
   void setMap(std::shared_ptr<MPL::VoxelMapUtil> &map_util,
               const planning_ros_msgs::VoxelMap &msg);
   void getMap(std::shared_ptr<MPL::VoxelMapUtil> &map_util,
@@ -62,4 +64,4 @@ protected:
   Ogre::Vector3 position_;
 };
 
-} // namespace planning_rviz_plugins
+}  // namespace planning_rviz_plugins

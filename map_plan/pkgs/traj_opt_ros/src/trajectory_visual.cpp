@@ -17,12 +17,12 @@
 
 namespace traj_opt {
 
-traj_opt::Mat3 TrajectoryVisual::matFromVecD(const traj_opt::VecD& vec) {
+traj_opt::Mat3 TrajectoryVisual::matFromVecD(const traj_opt::VecD &vec) {
   return traj_opt::Mat3::Identity();
 }
 
 // make visualization robust to arbitrary length vectors
-Ogre::Vector3 TrajectoryVisual::vecFromVecD(const traj_opt::VecD& vec) {
+Ogre::Vector3 TrajectoryVisual::vecFromVecD(const traj_opt::VecD &vec) {
   Ogre::Vector3 vecr;
   if (vec.rows() == 0)
     vecr = Ogre::Vector3(0.0, 0.0, 0.0);
@@ -36,8 +36,8 @@ Ogre::Vector3 TrajectoryVisual::vecFromVecD(const traj_opt::VecD& vec) {
 }
 
 // BEGIN_TUTORIAL
-TrajectoryVisual::TrajectoryVisual(Ogre::SceneManager* scene_manager,
-                                   Ogre::SceneNode* parent_node) {
+TrajectoryVisual::TrajectoryVisual(Ogre::SceneManager *scene_manager,
+                                   Ogre::SceneNode *parent_node) {
   scene_manager_ = scene_manager;
 
   // Ogre::SceneNode s form a tree, with each node storing the
@@ -339,33 +339,33 @@ void TrajectoryVisual::setCurve() {
 }
 
 void TrajectoryVisual::setMessage(
-    const traj_opt_msgs::Trajectory::ConstPtr& msg) {
+    const planning_ros_msgs::Trajectory::ConstPtr &msg) {
   traj_.reset(new traj_opt::MsgTrajectory(TrajRosBridge::convert(*msg)));
 
   setCurve();
 }
 
 // Position and orientation are passed through to the SceneNode.
-void TrajectoryVisual::setFramePosition(const Ogre::Vector3& position) {
+void TrajectoryVisual::setFramePosition(const Ogre::Vector3 &position) {
   frame_node_->setPosition(position);
 }
 
 void TrajectoryVisual::setFrameOrientation(
-    const Ogre::Quaternion& orientation) {
+    const Ogre::Quaternion &orientation) {
   frame_node_->setOrientation(orientation);
 }
 
 // Color is passed through to the Arrow object.
 void TrajectoryVisual::setColor(float r, float g, float b, float a) {
   if (style_ == Style::CJ) return;
-  for (auto& line : trajectory_lines_) line->setColor(r, g, b, a);
-  for (auto& ball : trajectory_balls_) ball->setColor(r, g, b, a);
+  for (auto &line : trajectory_lines_) line->setColor(r, g, b, a);
+  for (auto &ball : trajectory_balls_) ball->setColor(r, g, b, a);
 }
 void TrajectoryVisual::setColorV(float r, float g, float b, float a) {
-  for (auto& line : vel_arrows_) line->setColor(r, g, b, a);
+  for (auto &line : vel_arrows_) line->setColor(r, g, b, a);
 }
 void TrajectoryVisual::setColorA(float r, float g, float b, float a) {
-  for (auto& line : acc_arrows_) line->setColor(r, g, b, a);
+  for (auto &line : acc_arrows_) line->setColor(r, g, b, a);
 }
 void TrajectoryVisual::setScale(float thick) {
   thickness_ = thick;
@@ -375,9 +375,9 @@ void TrajectoryVisual::setScale(float thick) {
   //    for (auto& line : trajectory_lines_) line->setScale(scale);
   // dont do this, it doesn't work
 }
-void TrajectoryVisual::setShapeFromPosePair(const Ogre::Vector3& p0,
-                                            const Ogre::Vector3& p1,
-                                            double scale, rviz::Shape* shape) {
+void TrajectoryVisual::setShapeFromPosePair(const Ogre::Vector3 &p0,
+                                            const Ogre::Vector3 &p1,
+                                            double scale, rviz::Shape *shape) {
   Ogre::Vector3 n = p1 - p0;
 
   Ogre::Quaternion quat;
@@ -407,9 +407,9 @@ void TrajectoryVisual::setShapeFromPosePair(const Ogre::Vector3& p0,
   shape->setPosition(pc);
   shape->setOrientation(quat);
 }
-void TrajectoryVisual::setShapeFromPosePair(const Ogre::Vector3& p0,
-                                            const Ogre::Vector3& p1,
-                                            double scale, rviz::Arrow* shape) {
+void TrajectoryVisual::setShapeFromPosePair(const Ogre::Vector3 &p0,
+                                            const Ogre::Vector3 &p1,
+                                            double scale, rviz::Arrow *shape) {
   Ogre::Vector3 n = p1 - p0;
 
   shape->set(n.length(), scale, 0.25 * n.length(), 3.0 * scale);

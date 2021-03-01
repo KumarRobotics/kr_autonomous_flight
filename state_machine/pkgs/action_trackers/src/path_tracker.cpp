@@ -19,7 +19,7 @@ using kr_mav_msgs::PositionCommand;
 // dt * max_acc, and direction by finding the intersection between the
 // planned path and a sphere around robot's current position.
 class ActionPathTracker : public kr_trackers_manager::Tracker {
-public:
+ public:
   void Initialize(const ros::NodeHandle &nh) override;
   bool Activate(const PositionCommand::ConstPtr &cmd) override;
   void Deactivate() override;
@@ -32,7 +32,7 @@ public:
   void cloudCB(const sensor_msgs::PointCloud::ConstPtr &msg);
   void desMaxCB(const std_msgs::Float64MultiArray::ConstPtr &msg);
 
-private:
+ private:
   void Decelerate(PositionCommand::Ptr &cmd);
   boost::shared_ptr<ros::NodeHandle> nh_;
   Projector proj_;
@@ -158,9 +158,9 @@ void ActionPathTracker::Decelerate(PositionCommand::Ptr &cmd) {
   if (vel.norm() > a_max * dt) {
     acc =
         -a_max *
-        init_vel_->normalized(); // Compute acceleration to drive velocity to 0
-    vel += dt * acc;             // Update the velocity
-    pos += dt * vel;             // Integrate the position
+        init_vel_->normalized();  // Compute acceleration to drive velocity to 0
+    vel += dt * acc;              // Update the velocity
+    pos += dt * vel;              // Integrate the position
   } else {
     // Set all to 0 (stop moving)
     jrk = Eigen::Vector3d::Zero();
@@ -185,8 +185,8 @@ void ActionPathTracker::Decelerate(PositionCommand::Ptr &cmd) {
   cmd->jerk.z = jrk(2);
 }
 
-PositionCommand::ConstPtr
-ActionPathTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
+PositionCommand::ConstPtr ActionPathTracker::update(
+    const nav_msgs::Odometry::ConstPtr &msg) {
   if (!active_ || !proj_.exist()) {
     return PositionCommand::ConstPtr();
   }
@@ -210,8 +210,7 @@ ActionPathTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
   // ROS_WARN_THROTTLE(1, "dt: %f", dt);
 
   ros::Time t_now = ros::Time::now();
-  if (!started_time_)
-    started_time_ = ros::Time::now();
+  if (!started_time_) started_time_ = ros::Time::now();
   double durration = (t_now - *started_time_).toSec();
 
   PositionCommand::Ptr cmd;
@@ -252,15 +251,13 @@ ActionPathTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
   // outer_r_max or r_max, tune this!)
   double stop_acc = 0.5 * a_max_;
   double dist_a = curr_vel.norm() * curr_vel.norm() /
-                  (2.0 * stop_acc); // s = 1/2 (a*t^2) = 1/2 * (a*(v/a)^2) =
-                                    // v^2 / 2a, where a is stop_acc
+                  (2.0 * stop_acc);  // s = 1/2 (a*t^2) = 1/2 * (a*(v/a)^2) =
+                                     // v^2 / 2a, where a is stop_acc
 
-  if (dist_a < 2.0)
-    dist_a = 2.0;
+  if (dist_a < 2.0) dist_a = 2.0;
   // if (dist_a > 4.0)
   //   dist_a = 4.0;
-  if (dist_a > 20.0)
-    dist_a = 20.0;
+  if (dist_a > 20.0) dist_a = 20.0;
   proj_.set_outer_r_max(dist_a);
 
   // robot's current position will be inserted to the path if it does not
@@ -314,11 +311,9 @@ ActionPathTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
     if (start_moving) {
       es = proj_.project_array(curr_pos, 10, 0.4);
       double r = (projected_goal - curr_pos).norm();
-      if (r <= 0)
-        ROS_ERROR("[ActionPathTracker]: error!!!!!");
+      if (r <= 0) ROS_ERROR("[ActionPathTracker]: error!!!!!");
       for (const auto &it : es) {
-        if (it.C_(0, 0) < r)
-          r = it.C_(0, 0);
+        if (it.C_(0, 0) < r) r = it.C_(0, 0);
       }
 
       double dist_scale = std::pow(r / proj_.r_max(), 1);
@@ -342,10 +337,10 @@ ActionPathTracker::update(const nav_msgs::Odometry::ConstPtr &msg) {
         des_vel_ref = v_min_ * (projected_goal - curr_pos).normalized();
 
       if ((des_vel_ref - curr_vel).norm() > 0.5) {
-        des_acc = a_max_ * (des_vel_ref - curr_vel).normalized(); // / v_max_;
+        des_acc = a_max_ * (des_vel_ref - curr_vel).normalized();  // / v_max_;
         des_vel = curr_vel + des_acc * dt;
       } else {
-        des_acc = a_max_ * (des_vel_ref - curr_vel); // / v_max_;
+        des_acc = a_max_ * (des_vel_ref - curr_vel);  // / v_max_;
         des_vel = curr_vel + des_acc * dt;
       }
 
@@ -407,16 +402,14 @@ void ActionPathTracker::pathCB() {
 
   auto path = ros_to_path(goal->path);
 
-  if (path.empty())
-    ROS_ERROR("[ActionPathTracker]: Get an empty path!");
+  if (path.empty()) ROS_ERROR("[ActionPathTracker]: Get an empty path!");
 
   // robot's current position will be inserted to the path if it does not
   // already exist, see project function in projector.hpp for detail
   proj_.set_path(path);
 
   action_trackers::RunPathResult result;
-  if (as_->isActive() && !goal->block)
-    as_->setSucceeded(result);
+  if (as_->isActive() && !goal->block) as_->setSucceeded(result);
 }
 
 void ActionPathTracker::desMaxCB(

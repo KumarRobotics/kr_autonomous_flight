@@ -25,7 +25,7 @@ void TrajPlot::plot(const boost::shared_ptr<Trajectory> &traj, uint num_derr) {
   // get plot object
   for (uint r = 0; r <= num_derr; r++) {
     plt::figure();
-    std::vector<std::vector<double> > data(dim, std::vector<double>(res, 0.0));
+    std::vector<std::vector<double>> data(dim, std::vector<double>(res, 0.0));
     for (int t = 0; t < res; t++) {
       double tv = double(t) * dt;
       VecD val;

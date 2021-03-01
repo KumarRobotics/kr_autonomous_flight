@@ -28,7 +28,7 @@ int update_interval_;
 int counter_ = 0;
 int counter_clear_ = 0;
 
-void processCloud(const sensor_msgs::PointCloud& cloud) {
+void processCloud(const sensor_msgs::PointCloud &cloud) {
   if (voxel_mapper_ == nullptr) return;
 
   // get the transform from fixed frame to lidar frame
@@ -38,7 +38,7 @@ void processCloud(const sensor_msgs::PointCloud& cloud) {
   if (real_robot_) {
     // for real robot, the point cloud frame_id may not exist in the tf tree,
     // manually defining it here.
-    // TODO: make this automatic
+    // TODO(xu): make this automatic
     auto tf_map_cloud = tf_listener.LookupTransform(map_frame_, lidar_frame_,
                                                     cloud.header.stamp);
     if (!tf_map_cloud) {
@@ -106,7 +106,7 @@ void processCloud(const sensor_msgs::PointCloud& cloud) {
   time_pub.publish(tmsg);
 }
 
-void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
+void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr &msg) {
   // only update voxel once every update_interval_ point clouds
   if (counter_ % update_interval_ == 0) {
     ROS_WARN_ONCE("[Mapper]: got the point cloud!");
@@ -119,7 +119,7 @@ void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
   ++counter_;
 }
 
-void mapInfoUpdate(const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
+void mapInfoUpdate(const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
   const Vec3f origin(msg->origin.x, msg->origin.y, msg->origin.z);
   const Vec3f dim(msg->dim.x, msg->dim.y, msg->dim.z);
   const double res = msg->resolution;
@@ -143,7 +143,7 @@ void mapInfoUpdate(const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ros::init(argc, argv, "cloud_to_map");
   ros::NodeHandle nh("~");
 

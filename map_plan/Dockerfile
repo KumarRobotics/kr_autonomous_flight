@@ -9,13 +9,15 @@ RUN apt update \
     libqt5widgets5 \
     libnlopt-dev
 
-RUN mkdir -p /root/map_plan_ws/src 
+RUN mkdir -p /root/map_plan_ws/src
 WORKDIR /root/map_plan_ws
-COPY pkgs src/pkgs
+COPY map_plan/pkgs src/pkgs
+COPY map_plan/external-repos.yaml src/
 
-RUN git clone https://github.com/catkin/catkin_simple.git src/catkin_simple \
-    && catkin init && catkin config --extend /root/control_ws/devel \
-    && catkin build -j4 -DCMAKE_BUILD_TYPE=RelWithDebInfo
+RUN git clone https://github.com/catkin/catkin_simple.git src/catkin_simple
+RUN catkin init && catkin config --extend /root/control_ws/devel
+RUN vcs import --input src/external-repos.yaml src/
+RUN catkin build -j2 --no-status -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
-COPY docker/entrypoint.sh /entrypoint.sh
+COPY map_plan/docker/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

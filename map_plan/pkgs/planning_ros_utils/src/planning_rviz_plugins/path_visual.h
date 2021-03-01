@@ -1,19 +1,17 @@
 #ifndef PATH_VISUAL_H
 #define PATH_VISUAL_H
 
-#include <planning_ros_msgs/Path.h>
-#include <planning_ros_utils/data_ros_utils.h>
-
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreVector3.h>
-
+#include <planning_ros_msgs/Path.h>
+#include <planning_ros_utils/data_ros_utils.h>
 #include <rviz/ogre_helpers/billboard_line.h>
 #include <rviz/ogre_helpers/shape.h>
 
 namespace planning_rviz_plugins {
 class PathVisual {
-public:
+ public:
   PathVisual(Ogre::SceneManager *scene_manager, Ogre::SceneNode *parent_node);
 
   virtual ~PathVisual();
@@ -29,13 +27,13 @@ public:
   void setLineScale(float s);
   void setNodeScale(float s);
 
-private:
+ private:
   std::vector<std::unique_ptr<rviz::BillboardLine>> lines_;
   std::vector<std::unique_ptr<rviz::Shape>> nodes_;
 
   Ogre::SceneNode *frame_node_;
   Ogre::SceneManager *scene_manager_;
 };
-}
+}  // namespace planning_rviz_plugins
 
 #endif

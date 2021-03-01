@@ -32,6 +32,7 @@
  *
  * Author: Brian Gerkey
  */
+#pragma once
 
 #include <planning_ros_msgs/VoxelMap.h>
 #include <stdio.h>
@@ -55,13 +56,15 @@ enum MapMode { TRINARY, SCALE, RAW };
 
 namespace map_server {
 
-void loadMapFromFile(planning_ros_msgs::VoxelMap& resp, const char* fname,
-                     double res, bool negate, double occ_th, double free_th,
-                     double* origin, MapMode mode) {
-  SDL_Surface* img;
+planning_ros_msgs::VoxelMap loadMapFromFile(const char *fname, double res,
+                                            bool negate, double occ_th,
+                                            double free_th, double *origin,
+                                            MapMode mode) {
+  planning_ros_msgs::VoxelMap resp;
+  SDL_Surface *img;
 
-  unsigned char* pixels;
-  unsigned char* p;
+  unsigned char *pixels;
+  unsigned char *p;
   unsigned char value;
   int rowstride, n_channels, avg_channels;
   unsigned int i, j;
@@ -111,7 +114,7 @@ void loadMapFromFile(planning_ros_msgs::VoxelMap& resp, const char* fname,
     avg_channels = n_channels - 1;
 
   // Copy pixel data into the map structure
-  pixels = (unsigned char*)(img->pixels);
+  pixels = (unsigned char *)(img->pixels);
   for (j = 0; j < resp.dim.y; j++) {
     for (i = 0; i < resp.dim.x; i++) {
       // Compute mean of RGB for this pixel

@@ -67,8 +67,8 @@ int main(int argc, char **argv) {
   ROS_INFO("Loading map from image \"%s\"", mapfname.c_str());
   planning_ros_msgs::VoxelMap map_resp;
   try {
-    map_server::loadMapFromFile(map_resp, mapfname.c_str(), res, negate, occ_th,
-                                free_th, origin, mode);
+    map_resp = map_server::loadMapFromFile(mapfname.c_str(), res, negate,
+                                           occ_th, free_th, origin, mode);
   } catch (std::runtime_error e) {
     ROS_ERROR("%s", e.what());
     exit(-1);

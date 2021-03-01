@@ -1,16 +1,14 @@
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreSceneNode.h>
+#include <planning_ros_msgs/PrimitiveArray.h>
 #include <rviz/frame_manager.h>
+#include <rviz/load_resource.h>
+#include <rviz/message_filter_display.h>
 #include <rviz/properties/bool_property.h>
 #include <rviz/properties/color_property.h>
 #include <rviz/properties/float_property.h>
 #include <rviz/properties/int_property.h>
 #include <rviz/visualization_manager.h>
-
-#include <rviz/load_resource.h>
-
-#include <planning_ros_msgs/PrimitiveArray.h>
-#include <rviz/message_filter_display.h>
 
 #include "primitive_visual.h"
 
@@ -18,16 +16,16 @@ namespace planning_rviz_plugins {
 class PrimitiveArrayDisplay
     : public rviz::MessageFilterDisplay<planning_ros_msgs::PrimitiveArray> {
   Q_OBJECT
-public:
+ public:
   PrimitiveArrayDisplay();
   virtual ~PrimitiveArrayDisplay();
 
-protected:
+ protected:
   virtual void onInitialize();
 
   virtual void reset();
 
-private Q_SLOTS:
+ private Q_SLOTS:
   void updatePosColorAndAlpha();
   void updateVelColorAndAlpha();
   void updateAccColorAndAlpha();
@@ -47,7 +45,7 @@ private Q_SLOTS:
   void updateNum();
   void updateYawNum();
 
-private:
+ private:
   void processMessage(const planning_ros_msgs::PrimitiveArray::ConstPtr &msg);
   void visualizeMessage();
 
@@ -77,4 +75,4 @@ private:
 
   planning_ros_msgs::PrimitiveArray prs_msg_;
 };
-}
+}  // namespace planning_rviz_plugins

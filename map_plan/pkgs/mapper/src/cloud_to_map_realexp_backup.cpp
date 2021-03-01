@@ -24,7 +24,7 @@ double local_dim_x_, local_dim_y_, local_dim_z_;
 int counter_ = 0;
 int counter_clear_ = 0;
 
-void processCloud(const sensor_msgs::PointCloud& cloud) {
+void processCloud(const sensor_msgs::PointCloud &cloud) {
   if (voxel_mapper_ == nullptr) return;
 
   static TFListener tf_listener;
@@ -82,7 +82,7 @@ void processCloud(const sensor_msgs::PointCloud& cloud) {
   time_pub.publish(tmsg);
 }
 
-void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
+void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr &msg) {
   if (counter_ % 5 == 0) {
     ROS_WARN_ONCE("[Mapper]: got point cloud 2, specified frame_id: %s",
                   lidar_frame_.c_str());
@@ -95,7 +95,7 @@ void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
   ++counter_;
 }
 
-void mapInfoCallback(const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
+void mapInfoCallback(const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
   const Vec3f origin(msg->origin.x, msg->origin.y, msg->origin.z);
   const Vec3f dim(msg->dim.x, msg->dim.y, msg->dim.z);
   const double res = msg->resolution;
@@ -119,7 +119,7 @@ void mapInfoCallback(const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ros::init(argc, argv, "cloud_to_map");
   ros::NodeHandle nh("~");
 

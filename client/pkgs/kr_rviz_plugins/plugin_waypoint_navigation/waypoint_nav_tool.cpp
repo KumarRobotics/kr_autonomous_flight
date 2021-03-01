@@ -48,8 +48,11 @@
 namespace kr_rviz_plugins {
 
 WaypointNavTool::WaypointNavTool()
-    : moving_flag_node_(NULL), frame_(NULL), frame_dock_(NULL),
-      server_("waypoint_nav", "", false), unique_ind_(0) {
+    : moving_flag_node_(NULL),
+      frame_(NULL),
+      frame_dock_(NULL),
+      server_("waypoint_nav", "", false),
+      unique_ind_(0) {
   shortcut_key_ = 'l';
 }
 
@@ -182,15 +185,16 @@ int WaypointNavTool::processMouseEvent(rviz::ViewportMouseEvent &event) {
       return Render | Finished;
     }
   } else {
-    moving_flag_node_->setVisible(false); // If the mouse is not pointing at the
-                                          // ground plane, don't show the flag.
+    moving_flag_node_->setVisible(
+        false);  // If the mouse is not pointing at the
+                 // ground plane, don't show the flag.
   }
   return Render;
 }
 
 void WaypointNavTool::makeIm(const Ogre::Vector3 &position,
                              const Ogre::Quaternion &quat, bool full_dof) {
-  unique_ind_++; // increment the index for unique marker names
+  unique_ind_++;  // increment the index for unique marker names
 
   std::stringstream wp_name;
   wp_name << g_wp_name_prefix << unique_ind_;
@@ -313,84 +317,84 @@ void WaypointNavTool::makeIm(const Ogre::Vector3 &position,
 void WaypointNavTool::processFeedback(
     const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
   switch (feedback->event_type) {
-  case visualization_msgs::InteractiveMarkerFeedback::MENU_SELECT: {
-    M_StringToSNPtr::iterator sn_entry = sn_map_.find(
-        std::stoi(feedback->marker_name.substr(strlen(g_wp_name_prefix))));
-    if (sn_entry == sn_map_.end())
-      ROS_ERROR("%s not found in map", feedback->marker_name.c_str());
-    else {
-      if (feedback->menu_entry_id == 1) {
-        // Delete selected waypoint
-        std::stringstream wp_name;
-        wp_name << g_wp_name_prefix << sn_entry->first;
-        std::string wp_name_str(wp_name.str());
-        server_.erase(wp_name_str);
-
-        menu_handler_.reApply(server_);
-        server_.applyChanges();
-        sn_entry->second->detachAllObjects();
-        sn_map_.erase(sn_entry);
-
-        int num_wp = sn_map_.size();
-        frame_->setWpCount(num_wp);
-
+    case visualization_msgs::InteractiveMarkerFeedback::MENU_SELECT: {
+      M_StringToSNPtr::iterator sn_entry = sn_map_.find(
+          std::stoi(feedback->marker_name.substr(strlen(g_wp_name_prefix))));
+      if (sn_entry == sn_map_.end()) {
+        ROS_ERROR("%s not found in map", feedback->marker_name.c_str());
       } else {
-        // Set the pose manually from the line edits
+        if (feedback->menu_entry_id == 1) {
+          // Delete selected waypoint
+          std::stringstream wp_name;
+          wp_name << g_wp_name_prefix << sn_entry->first;
+          std::string wp_name_str(wp_name.str());
+          server_.erase(wp_name_str);
+
+          menu_handler_.reApply(server_);
+          server_.applyChanges();
+          sn_entry->second->detachAllObjects();
+          sn_map_.erase(sn_entry);
+
+          int num_wp = sn_map_.size();
+          frame_->setWpCount(num_wp);
+
+        } else {
+          // Set the pose manually from the line edits
+          Ogre::Vector3 position;
+          Ogre::Quaternion quat;
+
+          frame_->getPose(position, quat);
+
+          geometry_msgs::Pose pos;
+          pos.position.x = position.x;
+          pos.position.y = position.y;
+          pos.position.z = position.z;
+
+          pos.orientation.x = quat.x;
+          pos.orientation.y = quat.y;
+          pos.orientation.z = quat.z;
+          pos.orientation.w = quat.w;
+
+          sn_entry->second->setPosition(position);
+          sn_entry->second->setOrientation(quat);
+
+          frame_->setWpLabel(position);
+
+          server_.setPose(feedback->marker_name, pos);
+          server_.applyChanges();
+        }
+      }
+    } break;
+    case visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE: {
+      M_StringToSNPtr::iterator sn_entry = sn_map_.find(
+          std::stoi(feedback->marker_name.substr(strlen(g_wp_name_prefix))));
+
+      if (sn_entry == sn_map_.end()) {
+        ROS_ERROR("%s not found in map", feedback->marker_name.c_str());
+      } else {
+        geometry_msgs::PoseStamped pos;
+        pos.pose = feedback->pose;
+
         Ogre::Vector3 position;
-        Ogre::Quaternion quat;
-
-        frame_->getPose(position, quat);
-
-        geometry_msgs::Pose pos;
-        pos.position.x = position.x;
-        pos.position.y = position.y;
-        pos.position.z = position.z;
-
-        pos.orientation.x = quat.x;
-        pos.orientation.y = quat.y;
-        pos.orientation.z = quat.z;
-        pos.orientation.w = quat.w;
+        position.x = pos.pose.position.x;
+        position.y = pos.pose.position.y;
+        position.z = pos.pose.position.z;
 
         sn_entry->second->setPosition(position);
+
+        Ogre::Quaternion quat;
+        quat.x = pos.pose.orientation.x;
+        quat.y = pos.pose.orientation.y;
+        quat.z = pos.pose.orientation.z;
+        quat.w = pos.pose.orientation.w;
+
         sn_entry->second->setOrientation(quat);
 
         frame_->setWpLabel(position);
-
-        server_.setPose(feedback->marker_name, pos);
-        server_.applyChanges();
+        frame_->setPose(position, quat);
+        frame_->setSelectedMarkerName(feedback->marker_name);
       }
-    }
-  } break;
-  case visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE: {
-    M_StringToSNPtr::iterator sn_entry = sn_map_.find(
-        std::stoi(feedback->marker_name.substr(strlen(g_wp_name_prefix))));
-
-    if (sn_entry == sn_map_.end())
-      ROS_ERROR("%s not found in map", feedback->marker_name.c_str());
-    else {
-      geometry_msgs::PoseStamped pos;
-      pos.pose = feedback->pose;
-
-      Ogre::Vector3 position;
-      position.x = pos.pose.position.x;
-      position.y = pos.pose.position.y;
-      position.z = pos.pose.position.z;
-
-      sn_entry->second->setPosition(position);
-
-      Ogre::Quaternion quat;
-      quat.x = pos.pose.orientation.x;
-      quat.y = pos.pose.orientation.y;
-      quat.z = pos.pose.orientation.z;
-      quat.w = pos.pose.orientation.w;
-
-      sn_entry->second->setOrientation(quat);
-
-      frame_->setWpLabel(position);
-      frame_->setPose(position, quat);
-      frame_->setSelectedMarkerName(feedback->marker_name);
-    }
-  } break;
+    } break;
   }
   frame_->publishButtonClicked();
 }
@@ -454,18 +458,16 @@ void WaypointNavTool::load(const rviz::Config &config) {
 
   QString topic, frame;
   float height;
-  if (!waypoints_config.mapGetString("topic", &topic))
-    topic = "/waypoints";
+  if (!waypoints_config.mapGetString("topic", &topic)) topic = "/waypoints";
 
-  if (!waypoints_config.mapGetString("frame_id", &frame))
-    frame = "map";
+  if (!waypoints_config.mapGetString("frame_id", &frame)) frame = "map";
 
   waypoints_config.mapGetFloat("default_height", &height);
 
   frame_->setConfig(topic, frame, height);
 }
 
-} // end namespace kr_rviz_plugins
+}  // end namespace kr_rviz_plugins
 
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_EXPORT_CLASS(kr_rviz_plugins::WaypointNavTool, rviz::Tool)

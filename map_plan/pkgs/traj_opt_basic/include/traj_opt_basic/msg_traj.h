@@ -5,6 +5,7 @@
 #include <traj_opt_basic/polynomial_basis.h>
 #include <traj_opt_basic/traj_data.h>
 #include <traj_opt_basic/trajectory.h>
+
 #include <vector>
 
 namespace traj_opt {
@@ -13,7 +14,7 @@ class MsgTrajectory : public Trajectory {
   explicit MsgTrajectory(const TrajData &traj);
 
   bool evaluate(decimal_t t, uint derr, VecD &out) const override;
-//  bool evaluate(decimal_t t, VecD &out);
+  //  bool evaluate(decimal_t t, VecD &out);
   bool evaluateS(decimal_t t, VecD &out);
   bool evaluateST(decimal_t t, VecD &out);
   decimal_t getTotalTime() const override;
@@ -27,7 +28,7 @@ class MsgTrajectory : public Trajectory {
   uint num_secs_;
   std::vector<decimal_t> dts;
   uint deg_;
-//  int seg;
+  //  int seg;
 };
 }  // namespace traj_opt
 #endif  // TRAJ_OPT_BASIC_MSG_TRAJ_H_

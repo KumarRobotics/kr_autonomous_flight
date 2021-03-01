@@ -32,11 +32,11 @@ class PathPlannerUtil {
 
   int getPlannerStatus() { return jps_util_->status(); }
 
-  void setMap(const planning_ros_msgs::VoxelMap& map) {
+  void setMap(const planning_ros_msgs::VoxelMap &map) {
     ::setMap(map_util_, map);
   }
 
-  bool plan(const Vecf<Dim>& start, const Vecf<Dim>& goal) {
+  bool plan(const Vecf<Dim> &start, const Vecf<Dim> &goal) {
     vec_Vecf<Dim> jps_path;
     vec_Vecf<Dim> dist_path;
     // map_util_->freeUnknown();

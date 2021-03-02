@@ -22,6 +22,16 @@ using boost::irange;
 
 // Local planning server for Sikang's motion primitive planner
 class LocalPlanServer {
+ public:
+  explicit LocalPlanServer(const ros::NodeHandle &nh);
+
+  /**
+   * @brief Call process_goal function, check planner timeout
+   */
+  void process_all();
+
+  bool aborted_;
+
  private:
   ros::NodeHandle pnh_;
   ros::Subscriber local_map_sub_;
@@ -54,7 +64,9 @@ class LocalPlanServer {
   bool debug_;
   bool verbose_;
 
-  // methods
+  // planner tolerance
+  double tol_pos_, goal_tol_vel_, goal_tol_acc_;
+
   /**
    * @brief Goal callback function, prevent concurrent planner modes, call
    * process_all function
@@ -82,16 +94,6 @@ class LocalPlanServer {
    */
   bool local_plan_process(const Waypoint3D &start, const Waypoint3D &goal,
                           const planning_ros_msgs::VoxelMap &map);
-
- public:
-  explicit LocalPlanServer(const ros::NodeHandle &nh);
-
-  /**
-   * @brief Call process_goal function, check planner timeout
-   */
-  void process_all();
-
-  bool aborted_;
 };
 
 // map callback, update local_map_
@@ -108,9 +110,6 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   local_as_ = std::make_unique<
       actionlib::SimpleActionServer<action_planner::PlanTwoPointAction>>(
       pnh_, "plan_local_trajectory", false);
-  // Register goal and preempt callbacks
-  local_as_->registerGoalCallback(boost::bind(&LocalPlanServer::goalCB, this));
-  local_as_->start();
 
   // set up visualization publisher for mpl planner
   sg_pub = pnh_.advertise<planning_ros_msgs::Path>("start_goal", 1, true);
@@ -134,11 +133,11 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
     for (decimal_t dy = -u_max; dy <= u_max; dy += du)
       U.push_back(Vec3f(dx, dy, 0));
 
-  double dt, tol_pos, tol_vel, tol_acc;
+  double dt;
   int ndt, max_num;
-  traj_planner_nh.param("tol_pos", tol_pos, 0.5);
-  traj_planner_nh.param("tol_vel", tol_vel, 0.5);
-  traj_planner_nh.param("tol_acc", tol_acc, 0.5);
+  traj_planner_nh.param("tol_pos", tol_pos_, 0.5);
+  traj_planner_nh.param("global_goal_tol_vel", goal_tol_vel_, 0.5);
+  traj_planner_nh.param("global_goal_tol_acc", goal_tol_acc_, 0.5);
   traj_planner_nh.param("dt", dt, 1.0);
   traj_planner_nh.param("ndt", ndt, -1);
   traj_planner_nh.param("max_num", max_num, -1);
@@ -156,9 +155,11 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   mp_planner_util_->setMaxNum(
       max_num);  // Set maximum allowed expansion, -1 means no limitation
   mp_planner_util_->setU(U);  // 2D discretization if false, 3D if true
-  mp_planner_util_->setTol(tol_pos, tol_vel,
-                           tol_acc);    // Tolerance for goal region
   mp_planner_util_->setLPAstar(false);  // Use Astar
+
+  // Register goal and preempt callbacks
+  local_as_->registerGoalCallback(boost::bind(&LocalPlanServer::goalCB, this));
+  local_as_->start();
 }
 
 void LocalPlanServer::process_all() {
@@ -357,6 +358,13 @@ bool LocalPlanServer::local_plan_process(
 // prevent concurrent planner modes
 void LocalPlanServer::goalCB() {
   goal_ = local_as_->acceptNewGoal();
+  // check_vel is true if local planner reaches global goal
+  if (goal_->check_vel) {
+    // Tolerance for goal region, -1 means no limitation
+    mp_planner_util_->setTol(tol_pos_, goal_tol_vel_, goal_tol_acc_);
+  } else {
+    mp_planner_util_->setTol(tol_pos_, -1, -1);
+  }
   aborted_ = false;
   process_all();
 }

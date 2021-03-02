@@ -8,6 +8,7 @@ geometry_msgs/Twist a_final
 geometry_msgs/Twist j_init
 geometry_msgs/Twist j_final
 bool avoid_obstacles  # turns on collision avoidance
+bool check_vel  # check velocity 
 bool use_timeout # will kill trajectory after certain time
 duration execution_time # time to execute trajectory
 int64 epoch

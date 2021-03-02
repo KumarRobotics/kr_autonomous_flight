@@ -72,8 +72,7 @@ class RePlanner {
                               // state_machine
   int global_replan_interval_{
       2};  // a global replan will be called once every x local replan calls,
-           // where x = global_replan_interval_. TODO: maybe also specify global
-           // replan rate in goal?
+           // where x = global_replan_interval_.
   int local_replan_counter_{
       0};  // counter of local replan calls from the last global replan call
   vec_Vec3f global_path_;  // recorder of path planned by global action server
@@ -123,10 +122,17 @@ class RePlanner {
 
   /**
    * @brief Crop global path for local planner
-   * @param ps original path to crop
+   * @param path original path to crop
    * @param d length of the cropped path
    */
-  vec_Vec3f path_crop(const vec_Vec3f &ps, decimal_t d);
+  vec_Vec3f path_crop(const vec_Vec3f &path, decimal_t d);
+
+  /**
+   * @brief Check if cropped path reaches the end of original path
+   */
+  bool close_to_final(const vec_Vec3f &original_path,
+                      const vec_Vec3f &cropped_path,
+                      double dist_threshold = 0.1);
 };
 
 void RePlanner::epoch_cb(const std_msgs::Int64 &msg) {
@@ -246,6 +252,7 @@ void RePlanner::setup_replanner() {
   //  Initial plan step 2: Crop global path to get local goal
   //  #################################################################################
   vec_Vec3f path_cropped = path_crop(global_path_, crop_radius_);
+  bool close_to_final_goal = close_to_final(global_path_, path_cropped, 10.0);
 
   // Initial plan step 3: local plan
   // ##########################################################################################################
@@ -263,17 +270,15 @@ void RePlanner::setup_replanner() {
   local_tpgoal.epoch = 1;
   local_tpgoal.avoid_obstacles = avoid_obstacle_;
   local_tpgoal.execution_time = ros::Duration(1.0 / local_replan_rate_);
+  // if close_to_final_goal, we need to check velocity tolerance as well
+  local_tpgoal.check_vel = close_to_final_goal;
   // set p_final to be path_cropped.back(), which is exactly at accumulated
-  // distance d from the robot (unless path is shorter than d, crop_end will be
-  // default as the end of path)
+  // distance d from the robot (unless path is shorter than d, crop_end will
+  // be default as the end of path)
   Vec3f local_goal = path_cropped.back();
   local_tpgoal.p_final.position.x = local_goal(0);
   local_tpgoal.p_final.position.y = local_goal(1);
-  // TODO(xu): temporarily setting start and goal to have same z value due to
-  // local
-  // motion primitive planner seems to be unable to handle 3D
-  local_tpgoal.p_final.position.z = local_tpgoal.p_init.position.z;
-  // local_tpgoal.p_final.position.z = local_goal(2);
+  local_tpgoal.p_final.position.z = local_goal(2);
 
   // send goal to local trajectory plan action server
   local_plan_client_->sendGoal(local_tpgoal);
@@ -413,6 +418,7 @@ bool RePlanner::plan_trajectory(int horizon) {
   decimal_t crop_dist = executed_dist_ + crop_radius_;
   // ROS_WARN_STREAM("++++ total_crop_dist = " << crop_dist);
   vec_Vec3f path_cropped = path_crop(global_path_, crop_dist);
+  bool close_to_final_goal = close_to_final(global_path_, path_cropped, 10.0);
 
   // Re-plan step 3: local plan
   // ##########################################################################################################
@@ -420,16 +426,15 @@ bool RePlanner::plan_trajectory(int horizon) {
   local_tpgoal.avoid_obstacles = avoid_obstacle_;
   local_tpgoal.execution_time = ros::Duration(1.0 / local_replan_rate_);
   local_tpgoal.epoch = last_plan_epoch_ + horizon;
+  // if close_to_final_goal, we need to check velocity tolerance as well
+  local_tpgoal.check_vel = close_to_final_goal;
   // change p_final to be path_cropped.back(), which is exactly at accumulated
   // distance d from the robot (unless path is shorter than d, crop_end will be
   // default as the end of path)
   Vec3f local_goal = path_cropped.back();
   local_tpgoal.p_final.position.x = local_goal(0);
   local_tpgoal.p_final.position.y = local_goal(1);
-  // TODO(xu): temporarily setting start and goal to have same z due to local
-  // motion primitive planner seems to be unable to handle 3D
-  local_tpgoal.p_final.position.z = local_tpgoal.p_init.position.z;
-  // local_tpgoal.p_final.position.z = local_goal(2);
+  local_tpgoal.p_final.position.z = local_goal(2);
 
   // send goal to local trajectory plan action server
   local_plan_client_->sendGoal(local_tpgoal);
@@ -478,8 +483,6 @@ void RePlanner::update_status() {
 
     // evaluate traj at 1.0/local_replan_rate_, output recorded to pos_finaln,
     // refer to msg_traj.cpp.
-    // TODO(xu): maybe instead of doing 1.0/local_replan_rate_, we should use
-    // last_traj_->getTotalTime() since this is for checking the termination?
     last_traj_->evaluate(1.0 / local_replan_rate_, 0,
                          pos_finaln);  // TODO(mike) {fix this}.
 
@@ -536,42 +539,60 @@ void RePlanner::update_status() {
   }
 }
 
-vec_Vec3f RePlanner::path_crop(const vec_Vec3f &ps, decimal_t d) {
+vec_Vec3f RePlanner::path_crop(const vec_Vec3f &path, decimal_t d) {
   // return nonempth
   // precondition
-  if (ps.size() < 2 || d < 0) return ps;
+  if (path.size() < 2 || d < 0) return path;
 
-  vec_Vec3f path;
-  Vec3f crop_end = ps.back();  // if path is shorter than d, crop_end will be
-                               // default as the end of path
+  vec_Vec3f cropped_path;
+  // crop_end will be exactly at accumulated distance d from the robot
+  // (unless path is shorter than d crop_end will be default as the end of path)
+  Vec3f crop_end = path.back();
+
   decimal_t dist = 0;
 
   // add path segments until the accumulated length is farther than distance d
   // from the robot
-  for (unsigned int i = 1; i < ps.size(); i++) {
-    if (dist + (ps[i] - ps[i - 1]).norm() > d) {
+  for (unsigned int i = 1; i < path.size(); i++) {
+    if (dist + (path[i] - path[i - 1]).norm() > d) {
       crop_end =
-          ps[i - 1] +
+          path[i - 1] +
           (d - dist) *
-              (ps[i] - ps[i - 1])
+              (path[i] - path[i - 1])
                   .normalized();  // assign end to be exactly at
                                   // accumulated distance d from the robot
-      path.push_back(ps[i - 1]);
+      cropped_path.push_back(path[i - 1]);
       break;
     } else {
-      dist += (ps[i] - ps[i - 1]).norm();
-      path.push_back(ps[i - 1]);
+      dist += (path[i] - path[i - 1]).norm();
+      cropped_path.push_back(path[i - 1]);
     }
   }
 
-  if ((path.back() - crop_end).norm() > 1e-1)
-    path.push_back(crop_end);  // crop_end is exactly at accumulated distance d
-                               // from the robot (unless path is shorter than d,
-                               // crop_end will be default as the end of path)
+  if ((cropped_path.back() - crop_end).norm() > 1e-1)
+    cropped_path.push_back(crop_end);
 
   // post condition
-  // CHECK(glog) path is not empty
-  return path;
+  // CHECK(glog) cropped_path is not empty
+  return cropped_path;
+}
+
+bool RePlanner::close_to_final(const vec_Vec3f &original_path,
+                               const vec_Vec3f &cropped_path,
+                               double dist_threshold) {
+  // precondition: original_path and cropped_path are non-empty
+  if (original_path.size() < 2 || cropped_path.size() < 2) {
+    return true;
+  }
+
+  Vec3f original_goal_pos = original_path.back();
+  Vec3f cropped_goal_pos = cropped_path.back();
+
+  if ((cropped_goal_pos - original_goal_pos).norm() < dist_threshold) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 RePlanner::RePlanner() : nh_("~") {

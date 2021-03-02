@@ -12,7 +12,7 @@ on:
   push:
     paths:
     - 'client/**'
-    branches: [master]
+    branches: [master, client_ci]
   # DO NOT add a schedule. This build will be triggered by base schedule.
 
 jobs:

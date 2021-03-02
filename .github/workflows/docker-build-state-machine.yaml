@@ -4,12 +4,7 @@ name: docker-build-state-machine
 # state_machine folder are modified
 on:
   workflow_dispatch:
-    inputs:
-      logLevel:
-        description: 'Comment'
-        required: false
-        default: 'no-comment'
-        workflow_run:
+  workflow_run:
     workflows: ["docker-build-map-plan"]
     branches: [master]
     types:
@@ -17,7 +12,8 @@ on:
   push:
     paths:
     - 'state_machine/**'
-    branches: [master, state_machine_ci]
+    branches: [master]
+  # DO NOT add a schedule. This build will be triggered by base schedule.
 
 jobs:
   main:

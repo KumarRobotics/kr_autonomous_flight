@@ -4,8 +4,6 @@ name: docker-build-map-plan
 # folder are modified
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * 0'
   workflow_run:
     workflows: ["docker-build-control"]
     branches: [master]
@@ -15,6 +13,7 @@ on:
     paths:
     - 'map_plan/**'
     branches: [master]
+  # DO NOT add a schedule. This build will be triggered by base schedule.
 
 jobs:
   main:

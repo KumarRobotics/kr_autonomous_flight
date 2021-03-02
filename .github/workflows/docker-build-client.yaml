@@ -1,18 +1,18 @@
-name: docker-build-control
+name: docker-build-client
 
-# Build control when "base" changes, or when any files in the control folder are
-# modified
+# Build client when "map-plan" changes, or when any files in the client folder
+# are modified
 on:
+  workflow_dispatch:
   workflow_run:
-    workflows: ["docker-build-base"]
+    workflows: ["docker-build-map-plan"]
     branches: [master]
     types:
       - completed
-  workflow_dispatch:
   push:
     paths:
-    - 'control/**'
-    branches: [master]
+    - 'client/**'
+    branches: [master, client_ci]
   # DO NOT add a schedule. This build will be triggered by base schedule.
 
 jobs:
@@ -44,8 +44,8 @@ jobs:
         with:
           context: .
           push: true
-          tags: kumarrobotics/autonomy:control
-          file: ./control/Dockerfile
+          tags: kumarrobotics/autonomy:client
+          file: ./client/Dockerfile
           platforms: linux/amd64,linux/arm64
       -
         name: Image digest

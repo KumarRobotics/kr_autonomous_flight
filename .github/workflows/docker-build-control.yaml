@@ -9,12 +9,11 @@ on:
     types:
       - completed
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * 0'
   push:
     paths:
     - 'control/**'
     branches: [master]
+  # DO NOT add a schedule. This build will be triggered by base schedule.
 
 jobs:
   main:

@@ -13,8 +13,7 @@ on:
     - 'estimation/**'
     branches: [master]
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * 0'
+  # DO NOT add a schedule. This build will be triggered by base schedule.
 
 jobs:
   main:

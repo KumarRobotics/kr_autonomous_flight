@@ -31,21 +31,14 @@ catkin build -DCMAKE_BUILD_TYPE=Release
 
 ## Step 2: Build autonomy stack
 
-Firstly, create a new folder (your_code_directory), clone the following repo into it:
+Firstly, use `vcs` (`sudo apt-get install python3-vcstool` https://github.com/dirk-thomas/vcstool) to clone thrid-party repos:
 ```
-git clone https://github.com/KumarRobotics/autonomy_stack
-git clone https://github.com/KumarRobotics/autonomy_simulation
-git clone https://github.com/catkin/catkin_simple.git
-git clone https://github.com/KumarRobotics/msckf_vio
-git clone --branch catkin https://github.com/KumarRobotics/motion_primitive_library.git
-git clone --branch catkin https://github.com/KumarRobotics/kr_mav_control.git
-git clone --branch catkin https://github.com/KumarRobotics/jps3d
-git clone --branch catkin https://github.com/KumarRobotics/DecompROS.git
-```
-Alternatively, use `vcs` (`sudo apt-get install python3-vcstool` https://github.com/dirk-thomas/vcstool)
-```
-cd your_code_directory
-vcs import < ./autonomy_stack/autonomy_stack_repos.yml
+mkdir -p /path/to/your_code_directory
+cd /path/to/your_code_directory
+vcs import < /path/to/autonomy_stack/calibration/external-repos.yaml
+vcs import < /path/to/autonomy_stack/control/external-repos.yaml
+vcs import < /path/to/autonomy_stack/estimation/external-repos.yaml
+vcs import < /path/to/autonomy_stack/map_plan/external-repos.yaml
 ```
 You can then pull all dependecies later by running `vcs pull` in your_code_directory.
 
@@ -53,7 +46,7 @@ Secondly, go to arl-unity-ros, create symbolic links of the repos you clone:
 ```
 cd ~/arl-unity-ros (or your arl-unity-ros workspace folder)
 cd src
-ln -s ~/path_to_your_code_directory/* .
+ln -s /path/to/your_code_directory/* .
 ```
 after this, you should be able to see symbolic links of all repos that you just cloned in this folder.
 

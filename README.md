@@ -4,6 +4,16 @@ This is the autonomus flight code stack used at KumarRobotics. This repo has to 
  - [KumarRobotics/autonomy_real_robot](https://github.com/KumarRobotics/autonomy_real_robot): to use it with a real quadcopter. For detailed instructions on how to set up the real robot, please visit [this link](https://github.com/KumarRobotics/autonomy_stack/blob/master/docs/RealRobotSetup.md)
  - [KumarRobotics/autonomy_simulation](https://github.com/KumarRobotics/autonomy_simulation): to use it with a Unity simulator. For detailed instructions on how to set up the simulator, please visit [this link](https://github.com/KumarRobotics/autonomy_stack/blob/master/docs/SimulatorSetup.md).
 
+## How to build Docker images
+
+If you need to build a Docker image locally, you may do it as follows. Replace
+`img_name` with the name of the image you would like to build (`base`,
+`calibration`, `client`,...).
+
+```
+IMG=img_name; docker build -t "kumarrobotics/autonomy:$IMG" -f "$IMG/Dockerfile" .
+```
+
 ## Build Status
 ![Docker Build Base](https://github.com/kumarrobotics/autonomy_stack/actions/workflows/docker-build-base.yaml/badge.svg)
 ![Docker Build Calibration](https://github.com/kumarrobotics/autonomy_stack/actions/workflows/docker-build-calibration.yaml/badge.svg)

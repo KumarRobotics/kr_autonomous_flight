@@ -24,18 +24,13 @@
   <depend>kr_tracker_msgs</depend>
   <depend>kr_trackers_manager</depend>
 
-
   <depend>mapper</depend>
-  <depend>quadrotor_msgs</depend>
   <depend>planning_ros_utils</depend>
   <depend>planning_ros_msgs</depend>
   <depend>decomp_ros_utils</depend>
   <depend>traj_opt_pro</depend>
-  <depend>traj_opt_basic</depend>
   <depend>traj_opt_ros</depend>
-  <depend>traj_opt_quadrotor</depend>
   <depend>motion_primitive_library</depend>
-
 
   <export>
     <kr_trackers_manager plugin="${prefix}/nodelet_plugin.xml"/>

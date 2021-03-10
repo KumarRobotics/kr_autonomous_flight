@@ -16,9 +16,7 @@ find_package(
              planning_ros_msgs
              decomp_ros_utils
              traj_opt_pro
-             traj_opt_basic
              traj_opt_ros
-             traj_opt_quadrotor
              motion_primitive_library)
 
 find_package(Eigen3 REQUIRED)
@@ -33,7 +31,8 @@ add_action_files(
   ShortRange.action
   GoalDistance.action
   RunPath.action)
-generate_messages(DEPENDENCIES actionlib_msgs planning_ros_msgs kr_mav_msgs kr_tracker_msgs)
+generate_messages(DEPENDENCIES actionlib_msgs planning_ros_msgs kr_mav_msgs
+                  kr_tracker_msgs)
 
 catkin_package(CATKIN_DEPENDS kr_mav_msgs actionlib_msgs planning_ros_msgs
                kr_tracker_msgs)

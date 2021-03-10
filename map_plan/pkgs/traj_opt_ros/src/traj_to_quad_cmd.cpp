@@ -1,12 +1,14 @@
+#include "traj_opt_ros/traj_to_quad_cmd.h"
+
 #include <angles/angles.h>
-#include <traj_opt_quadrotor/convert.h>
 
-using namespace traj_opt;
+namespace traj_opt {
 
-void TrajToQuadCmd::evaluate(
-    const boost::shared_ptr<traj_opt::Trajectory> &traj, traj_opt::decimal_t dt,
-    kr_mav_msgs::PositionCommand *out, uint max_derr_eval,
-    traj_opt::decimal_t scaling) {
+using kr_mav_msgs::PositionCommand;
+
+void EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj, decimal_t dt,
+                        PositionCommand *out, uint max_derr_eval,
+                        decimal_t scaling) {
   traj_opt::VecD val;
 
   traj->evaluate(dt, 0, val);
@@ -38,23 +40,25 @@ void TrajToQuadCmd::evaluate(
 }
 
 // send all other interfaces to pointer version
-void TrajToQuadCmd::evaluate(
-    const boost::shared_ptr<traj_opt::Trajectory> &traj, traj_opt::decimal_t dt,
-    kr_mav_msgs::PositionCommand::Ptr &out, uint max_derr_eval,
-    traj_opt::decimal_t scaling) {
-  evaluate(traj, dt, out.get(), max_derr_eval, scaling);
+void EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj, decimal_t dt,
+                        PositionCommand::Ptr &out, uint max_derr_eval,
+                        decimal_t scaling) {
+  EvaluateTrajectory(traj, dt, out.get(), max_derr_eval, scaling);
 }
-kr_mav_msgs::PositionCommand TrajToQuadCmd::evaluate(
-    const boost::shared_ptr<traj_opt::Trajectory> &traj, traj_opt::decimal_t dt,
-    uint max_derr_eval, traj_opt::decimal_t scaling) {
-  kr_mav_msgs::PositionCommand cmd;
-  evaluate(traj, dt, &cmd, max_derr_eval, scaling);
+
+PositionCommand EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj,
+                                   decimal_t dt, uint max_derr_eval,
+                                   decimal_t scaling) {
+  PositionCommand cmd;
+  EvaluateTrajectory(traj, dt, &cmd, max_derr_eval, scaling);
   return cmd;
 }
+
 typedef Eigen::Matrix<double, 2, 1> Vec2;
 typedef Eigen::Matrix<double, 3, 1> Vec3;
 typedef Eigen::Matrix<double, 3, 3> Mat3;
 typedef Eigen::Quaternion<double> Quat;
+
 class S2 {
  public:
   // need to construct from quaternion because of hairy ball problem
@@ -85,6 +89,7 @@ class S2 {
   Vec3 np_, nx_, ny_;
   Quat R_;
 };
+
 Vec3 distort(const Vec3 &in) {
   //  std::cout << "in " << in.transpose() << std::endl;
   traj_opt::Vec4 d_real;
@@ -107,10 +112,11 @@ Vec3 distort(const Vec3 &in) {
   return inn;
 }
 
-void TrajToQuadCmd::handleSphere(
-    const boost::shared_ptr<traj_opt::Trajectory> &traj, traj_opt::decimal_t dt,
-    kr_mav_msgs::PositionCommand::Ptr &out, geometry_msgs::Point &image_point) {
-  evaluate(traj, dt, out.get());  // add r3 part, but yaw will be invalid
+void HandleSphereTrajectory(const boost::shared_ptr<Trajectory> &traj,
+                            decimal_t dt, PositionCommand::Ptr &out,
+                            geometry_msgs::Point &image_point) {
+  // add r3 part, but yaw will be invalid
+  EvaluateTrajectory(traj, dt, out.get());
   out->yaw_dot = 0;
   traj_opt::VecD val;
   traj->evaluate(dt, 0, val);
@@ -128,11 +134,11 @@ void TrajToQuadCmd::handleSphere(
   image_point.z = pv(2);
 }
 
-void TrajToQuadCmd::evaluateTagentYaw(
-    const boost::shared_ptr<traj_opt::Trajectory> &traj, traj_opt::decimal_t dt,
-    kr_mav_msgs::PositionCommand::Ptr &out, double old_yaw, double yaw_speed,
-    double ddt, double yaw_thr) {
-  evaluate(traj, dt, out, 2);
+void EvaluateTrajectoryTangentYaw(const boost::shared_ptr<Trajectory> &traj,
+                                  decimal_t dt, PositionCommand::Ptr &out,
+                                  double old_yaw, double yaw_speed, double ddt,
+                                  double yaw_thr) {
+  EvaluateTrajectory(traj, dt, out, 2);
   double des_yaw = old_yaw;
   if (std::hypot(out->velocity.x, out->velocity.y) > 0.1)
     des_yaw = std::atan2(out->velocity.y, out->velocity.x);
@@ -154,10 +160,11 @@ void TrajToQuadCmd::evaluateTagentYaw(
   out->yaw = old_yaw + des_yaw_dot * ddt;
   out->yaw_dot = des_yaw_dot;
 }
-bool TrajToQuadCmd::evaluatePos(
-    const boost::shared_ptr<traj_opt::Trajectory> &traj,
-    const nav_msgs::Odometry::ConstPtr &odom, double err_max, double t_des,
-    double ddt, kr_mav_msgs::PositionCommand::Ptr &out) {
+
+bool EvaluateTrajectoryPos(const boost::shared_ptr<Trajectory> &traj,
+                           const nav_msgs::Odometry::ConstPtr &odom,
+                           double err_max, double t_des, double ddt,
+                           PositionCommand::Ptr &out) {
   // return false if need to adjust time
   bool return_v = true;
   VecD pos = VecD(4, 1);
@@ -176,7 +183,9 @@ bool TrajToQuadCmd::evaluatePos(
     return_v = false;  // return false
   }
 
-  evaluate(traj, t_des, out);
+  EvaluateTrajectory(traj, t_des, out);
 
   return return_v;
 }
+
+}  // namespace traj_opt

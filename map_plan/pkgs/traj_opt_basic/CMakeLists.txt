@@ -1,18 +1,15 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.10)
 project(traj_opt_basic)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
-find_package(catkin_simple REQUIRED)
-find_package(Eigen3 REQUIRED)
-find_package(Boost REQUIRED)
-include_directories(${EIGEN3_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+find_package(catkin REQUIRED)
+find_package(Eigen3 REQUIRED NO_MODULE)
 
-catkin_simple()
+catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} DEPENDS EIGEN3)
 
-cs_add_library(traj_opt_basic src/msg_traj.cpp src/polynomial_basis.cpp
-               src/trajectory.cpp src/hopf_helper.cpp)
-
-cs_install()
-
-cs_export(DEPENDS EIGEN3 Boost)
+add_library(${PROJECT_NAME} src/msg_traj.cpp src/polynomial_basis.cpp
+                            src/trajectory.cpp src/hopf_helper.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC include
+                                                  ${catkin_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES} Eigen3::Eigen)

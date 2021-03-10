@@ -351,15 +351,8 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
   //  if (duration < 1.0 || duration > 10.0)
   // ROS_ERROR_STREAM_THROTTLE(1, "Evaluating duration" << duration);
 
-  // evaluate trajectory and get the cmd, refer to convert.cpp in
-  // traj_opt_quadrotor,
-  if (current_trajectory_->getDim() == 9) {  // what does this indicate?
-    geometry_msgs::PointStamped ps;
-    ps.header = msg->header;
-    traj_opt::HandleSphereTrajectory(current_trajectory_, duration, cmd,
-                                     ps.point);
-    point_pub_.publish(ps);
-  } else if (use_yaw_) {
+  // evaluate trajectory and get the cmd,  see traj_opt_ros/traj_to_quad_cmd.h
+  if (use_yaw_) {
     traj_opt::EvaluateTrajectoryTangentYaw(current_trajectory_, duration, cmd,
                                            init_cmd_->yaw, yaw_speed_, 0.01,
                                            yaw_thr_);

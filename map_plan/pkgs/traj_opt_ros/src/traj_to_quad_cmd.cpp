@@ -54,86 +54,6 @@ PositionCommand EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj,
   return cmd;
 }
 
-typedef Eigen::Matrix<double, 2, 1> Vec2;
-typedef Eigen::Matrix<double, 3, 1> Vec3;
-typedef Eigen::Matrix<double, 3, 3> Mat3;
-typedef Eigen::Quaternion<double> Quat;
-
-class S2 {
- public:
-  // need to construct from quaternion because of hairy ball problem
-  S2(const Quat &R) : R_(R) {
-    R_.normalize();
-    Mat3 Rm = R_.matrix();
-    //      nx_ = Rm.block<3,1>(0,0);
-    //      ny_ = Rm.block<3,1>(0,1);
-    //      np_ = Rm.block<3,1>(0,2);
-    nx_ = Rm.block<3, 1>(0, 1);
-    ny_ = Rm.block<3, 1>(0, 2);
-    np_ = Rm.block<3, 1>(0, 0);  // switch to paper notation
-  }
-  Vec2 sphereToPlane(const Vec3 &p) {
-    Vec3 err = p - np_;
-    double lambda = 1.0 / (1.0 - np_.dot(err));
-    Vec3 pr3 = lambda * err + np_;
-    return Vec2(pr3.dot(nx_), pr3.dot(ny_));
-  }
-  Vec3 planeToSphere(const Vec2 &p) {
-    Vec3 p3 = p(0) * nx_ + p(1) * ny_;
-    Vec3 e = p3 - np_;
-    double lambda = -2.0 * e.dot(np_) / e.dot(e);
-    return lambda * e + np_;
-  }
-
- private:
-  Vec3 np_, nx_, ny_;
-  Quat R_;
-};
-
-Vec3 distort(const Vec3 &in) {
-  //  std::cout << "in " << in.transpose() << std::endl;
-  traj_opt::Vec4 d_real;
-  d_real << -0.01067, -0.0166, 0.01258, -0.00387;
-
-  Vec3 inn = in;
-  inn /= in(2);
-  double r = sqrt(inn(0) * inn(0) + inn(1) * inn(1));
-  double theta = atan(r);
-  double theta2 = theta * theta;
-  double theta4 = theta2 * theta2;
-  double theta6 = theta4 * theta2;
-  double theta8 = theta4 * theta4;
-  double thetad = theta * (1 + d_real(0) * theta2 + d_real(1) * theta4 +
-                           d_real(2) * theta6 + d_real(3) * theta8);
-  double scaling = (r > 1e-8) ? thetad / r : 1.0;
-  inn(0) *= scaling;
-  inn(1) *= scaling;
-  //  std::cout << "inn " << inn.transpose() << std::endl;
-  return inn;
-}
-
-void HandleSphereTrajectory(const boost::shared_ptr<Trajectory> &traj,
-                            decimal_t dt, PositionCommand::Ptr &out,
-                            geometry_msgs::Point &image_point) {
-  // add r3 part, but yaw will be invalid
-  EvaluateTrajectory(traj, dt, out.get());
-  out->yaw_dot = 0;
-  traj_opt::VecD val;
-  traj->evaluate(dt, 0, val);
-  traj_opt::Quat q(val(5), val(6), val(7), val(8));
-  traj_opt::Mat3 K_real;
-
-  K_real << 608.60271, 0, 491.04226, 0, 608.80908, 410.49738, 0, 0, 1;
-
-  S2 sphere(q);
-  Vec2 p = Vec2(val(3), val(4));
-  Vec3 pv = sphere.planeToSphere(p);
-
-  image_point.x = pv(0);
-  image_point.y = pv(1);
-  image_point.z = pv(2);
-}
-
 void EvaluateTrajectoryTangentYaw(const boost::shared_ptr<Trajectory> &traj,
                                   decimal_t dt, PositionCommand::Ptr &out,
                                   double old_yaw, double yaw_speed, double ddt,
@@ -176,7 +96,7 @@ bool EvaluateTrajectoryPos(const boost::shared_ptr<Trajectory> &traj,
   traj->evaluate(t_des, 0, val);  // position of traj
   traj->evaluate(t_des, 1, vel);  // velocity of traj
 
-  Vec2 diff_xy = Vec2(val(0) - pos(0), val(1) - pos(1));
+  Eigen::Vector2d diff_xy(val(0) - pos(0), val(1) - pos(1));
   if (diff_xy.norm() >= err_max) {
     printf("Distance between odom and traj in xy too large! It is: %f \n",
            diff_xy.norm());

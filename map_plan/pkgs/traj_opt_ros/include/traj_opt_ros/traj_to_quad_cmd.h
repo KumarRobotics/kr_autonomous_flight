@@ -26,12 +26,6 @@ void EvaluateTrajectoryTangentYaw(const boost::shared_ptr<Trajectory> &traj,
                                   double old_yaw, double max_yaw_speed,
                                   double ddt, double yaw_thr = M_PI);
 
-// for weird gimbal stuff TODO: Cleanup this function
-void HandleSphereTrajectory(const boost::shared_ptr<Trajectory> &traj,
-                            decimal_t dt,
-                            kr_mav_msgs::PositionCommand::Ptr &out,
-                            geometry_msgs::Point &image_point);
-
 // LQR based trajectory tracking
 bool EvaluateTrajectoryPos(const boost::shared_ptr<Trajectory> &traj,
                            const nav_msgs::Odometry::ConstPtr &odom,

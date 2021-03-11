@@ -10,7 +10,6 @@
 
 
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>catkin_simple</build_depend>
   <depend>action_planner</depend>
   <depend>action_trackers</depend>
   <depend>actionlib</depend>

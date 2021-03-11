@@ -26,6 +26,7 @@ class StoppingPolicy : public kr_trackers_manager::Tracker {
 
  private:
   double j_des_, a_des_, a_yaw_des_;
+  double prev_duration_;
   bool active_;
   double kx_[3], kv_[3];
   traj_opt::Vec4 cmd_pos_, cmd_vel_, cmd_acc_,
@@ -41,13 +42,14 @@ StoppingPolicy::StoppingPolicy(void) : active_(false) {}
 void StoppingPolicy::Initialize(const ros::NodeHandle &nh) {
   ros::NodeHandle priv_nh(nh, "stopping_policy");
 
-  priv_nh.param("acc_xyz_des", a_des_, 5.0);
-  priv_nh.param("jerk_xyz_des", j_des_, 5.0);
+  priv_nh.param("acc_xyz_des", a_des_, 10.0);
+  priv_nh.param("jerk_xyz_des", j_des_, 10.0);
   priv_nh.param("acc_yaw_des", a_yaw_des_, 0.1);
 }
 
 bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
   if (cmd != NULL) {
+    prev_duration_ = 0;
     p0_ = traj_opt::VecD::Zero(4, 1);
     v0_ = traj_opt::VecD::Zero(4, 1);
     v0_dir_xyz_ = traj_opt::VecD::Zero(3, 1);
@@ -57,6 +59,7 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
     p0_ << cmd->position.x, cmd->position.y, cmd->position.z, cmd->yaw;
     cmd_pos_ = p0_;  // initialization of cmd_pos_
     v0_ << cmd->velocity.x, cmd->velocity.y, cmd->velocity.z, cmd->yaw_dot;
+    cmd_vel_ = v0_;
     v0_dir_xyz_ << cmd->velocity.x, cmd->velocity.y, cmd->velocity.z;
     v0_dir_xyz_.normalize();
     if (cmd->yaw_dot == 0) {
@@ -67,7 +70,10 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
       v0_dir_yaw_ = 1.0;
     }
     a0_ << cmd->acceleration.x, cmd->acceleration.y, cmd->acceleration.z, 0.0;
+    cmd_acc_ = traj_opt::VecD::Zero(
+        4, 1);  // assume init acc is zero. TODO(xu) improve this
     j0_ << cmd->jerk.x, cmd->jerk.y, cmd->jerk.z, 0.0;
+    cmd_jrk_ = traj_opt::VecD::Zero(4, 1);
     t0_ = cmd->header.stamp;
     active_ = true;
     return true;
@@ -83,6 +89,8 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     const nav_msgs::Odometry::ConstPtr &msg) {
   ros::Time stamp = msg->header.stamp;
   double duration = (stamp - t0_).toSec();
+  double dt = duration - prev_duration_;
+  prev_duration_ = duration;
 
   if (!active_) return PositionCommand::Ptr();
   double v0_norm = traj_opt::Vec3{v0_(0), v0_(1), v0_(2)}.norm();
@@ -104,67 +112,29 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     t_acc_const = 0;
   }
 
-  // check whether already stopped (xyz)
-  if (0 < duration && duration < t_acc_change) {
-    // stage 1: increase acceleration
+  if (duration < t_acc_change * 2 + t_acc_const) {
     for (int i = 0; i < 3; i++) {
       // evaluate xyz and their derivatives
-      cmd_jrk_(i) = -v0_dir_xyz_(i) * j_des_;  // jerk direction: opposite to v0
-      cmd_acc_(i) = cmd_jrk_(i) * duration;    // build up from 0 inital acc
-      cmd_vel_(i) = v0_(i) + 0.5 * cmd_jrk_(i) * (pow(duration, 2));
-      cmd_pos_(i) = p0_(i) + v0_(i) * duration +
-                    (1.0 / 6.0) * cmd_jrk_(i) * (pow(duration, 3));
+      cmd_pos_(i) = cmd_pos_(i) + cmd_vel_(i) * dt;
+      cmd_vel_(i) = cmd_vel_(i) + cmd_acc_(i) * dt;
+      cmd_acc_(i) =
+          cmd_acc_(i) + cmd_jrk_(i) * dt;  // build up from 0 inital acc
     }
-  } else if (t_acc_change <= duration &&
-             duration < t_acc_change + t_acc_const) {
-    for (int i = 0; i < 3; i++) {
-      cmd_jrk_(i) = 0;
-      // cmd_acc_ has have magintude of a_des_, direction opposite to v0
-      cmd_acc_(i) = -v0_dir_xyz_(i) * a_des_;
-      // cmd_vel_: v0 + 1/2*j_des_*(t1^2) + a_des*(t-t1)
-      cmd_vel_(i) = v0_(i) +
-                    0.5 * -v0_dir_xyz_(i) * j_des_ * (pow(t_acc_change, 2)) +
-                    cmd_acc_(i) * (duration - t_acc_change);
-      // cmd_pos_: p0 + v0*t + 1/6*j_des_*(t1^3) + 1/2*a_des*((t-t1)^2)
-      cmd_pos_(i) =
-          p0_(i) + v0_(i) * duration +
-          (1.0 / 6.0) * -v0_dir_xyz_(i) * j_des_ * (pow(t_acc_change, 3)) +
-          0.5 * cmd_acc_(i) * pow((duration - t_acc_change), 2);
+
+    if (0 < duration && duration < t_acc_change) {
+      cmd_jrk_ = -v0_dir_xyz_ * j_des_;
+    } else if (t_acc_change <= duration &&
+               duration < t_acc_change + t_acc_const) {
+      cmd_jrk_ = traj_opt::VecD::Zero(4, 1);
+    } else {
+      cmd_jrk_ = v0_dir_xyz_ * j_des_;
     }
   } else {
-    if (t_acc_change + t_acc_const <= duration &&
-        duration < 2 * t_acc_change + t_acc_const) {
-      // stage 3: decrease acceleration
-      double cur_dur = duration - (t_acc_change + t_acc_const);
-      for (int i = 0; i < 3; i++) {
-        cmd_jrk_(i) = v0_dir_xyz_(i) * j_des_;
-
-        cmd_acc_(i) = -v0_dir_xyz_(i) * a_des_ + cmd_jrk_(i) * cur_dur;
-
-        // cmd_vel_: v0 + 1/2*j_des_*(t1^2) + a_des*t2 +
-        // a_des*cur_dur + 1/2*cmd_jrk_*(cur_dur^2)
-        cmd_vel_(i) = v0_(i) +
-                      0.5 * -v0_dir_xyz_(i) * j_des_ * pow(t_acc_change, 2) +
-                      -v0_dir_xyz_(i) * a_des_ * t_acc_const +
-                      -v0_dir_xyz_(i) * a_des_ * cur_dur +
-                      0.5 * cmd_jrk_(i) * pow(cur_dur, 2);
-
-        // cmd_pos_: p0 + v0*t1 + 1/6*j_des_*(t1^3) + 1/2*a_des*(t2^2) +
-        // 1/2*a_des*(cur_dur^2) + 1/6*cmd_jrk*(cur_dur^3)
-        cmd_pos_(i) =
-            p0_(i) + v0_(i) * duration +
-            (1.0 / 6.0) * -v0_dir_xyz_(i) * j_des_ * (pow(t_acc_change, 3)) +
-            0.5 * -v0_dir_xyz_(i) * a_des_ * pow(t_acc_const, 2) +
-            0.5 * -v0_dir_xyz_(i) * a_des_ * pow(cur_dur, 2) +
-            (1.0 / 6.0) * cmd_jrk_(i) * pow(cur_dur, 3);
-      }
-    } else {
-      // stage 4: stopping policy finished, cmd_pos_(i) will remain the same
-      for (int i = 0; i < 3; i++) {
-        cmd_jrk_(i) = 0;
-        cmd_acc_(i) = 0;
-        cmd_vel_(i) = 0;
-      }
+    // stage 4: stopping policy finished, cmd_pos_(i) will remain the same
+    for (int i = 0; i < 3; i++) {
+      cmd_jrk_(i) = 0;
+      cmd_acc_(i) = 0;
+      cmd_vel_(i) = 0;
     }
   }
 

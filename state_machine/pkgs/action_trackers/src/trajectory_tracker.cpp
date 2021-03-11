@@ -352,15 +352,11 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
   // ROS_ERROR_STREAM_THROTTLE(1, "Evaluating duration" << duration);
 
   // evaluate trajectory and get the cmd,  see traj_opt_ros/traj_to_quad_cmd.h
-  if (use_yaw_) {
-    traj_opt::EvaluateTrajectoryTangentYaw(current_trajectory_, duration, cmd,
-                                           init_cmd_->yaw, yaw_speed_, 0.01,
-                                           yaw_thr_);
-  } else if (use_lambda_) {
+  if (use_lambda_) {
     // evaluatePos will return false if difference in position between odometry
     // and trajectory is larger than pos_err_max_
     if (!traj_opt::EvaluateTrajectoryPos(current_trajectory_, msg, pos_err_max_,
-                                         duration, 0.01, cmd)) {
+                                         duration, 0.01, cmd.get())) {
       // started_ = started_ + ros::Duration(0.01); // this slowing down
       // strategy is not working properly, commented out
       ROS_ERROR(
@@ -369,7 +365,7 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
     }
   } else {
     // no pos or yaw check
-    traj_opt::EvaluateTrajectory(current_trajectory_, duration, cmd, 2);
+    traj_opt::EvaluateTrajectory(current_trajectory_, duration, cmd.get(), 2);
   }
 
   //  cmd->yaw = start_yaw_, cmd->yaw_dot = 0;

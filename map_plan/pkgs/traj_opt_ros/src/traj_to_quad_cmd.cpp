@@ -39,13 +39,6 @@ void EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj, decimal_t dt,
   if (val.rows() > 2) out->jerk.z = val(2);
 }
 
-// send all other interfaces to pointer version
-void EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj, decimal_t dt,
-                        PositionCommand::Ptr &out, uint max_derr_eval,
-                        decimal_t scaling) {
-  EvaluateTrajectory(traj, dt, out.get(), max_derr_eval, scaling);
-}
-
 PositionCommand EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj,
                                    decimal_t dt, uint max_derr_eval,
                                    decimal_t scaling) {
@@ -54,37 +47,10 @@ PositionCommand EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj,
   return cmd;
 }
 
-void EvaluateTrajectoryTangentYaw(const boost::shared_ptr<Trajectory> &traj,
-                                  decimal_t dt, PositionCommand::Ptr &out,
-                                  double old_yaw, double yaw_speed, double ddt,
-                                  double yaw_thr) {
-  EvaluateTrajectory(traj, dt, out, 2);
-  double des_yaw = old_yaw;
-  if (std::hypot(out->velocity.x, out->velocity.y) > 0.1)
-    des_yaw = std::atan2(out->velocity.y, out->velocity.x);
-  VecD pos;
-  traj->evaluate(100, 0, pos);
-  double des_yaw2 = (des_yaw + std::atan2(pos(1) - out->position.y,
-                                          pos(0) - out->position.x)) /
-                    2;
-  if (std::abs(angles::shortest_angular_distance(des_yaw2, des_yaw)) < yaw_thr)
-    des_yaw = des_yaw2;
-
-  double dyaw = angles::shortest_angular_distance(old_yaw, des_yaw);
-  double des_yaw_dot = 0.0;
-  if (dyaw > 0.05)  // deadzone
-    des_yaw_dot = yaw_speed;
-  else if (dyaw < -0.05)
-    des_yaw_dot = -yaw_speed;
-
-  out->yaw = old_yaw + des_yaw_dot * ddt;
-  out->yaw_dot = des_yaw_dot;
-}
-
 bool EvaluateTrajectoryPos(const boost::shared_ptr<Trajectory> &traj,
                            const nav_msgs::Odometry::ConstPtr &odom,
                            double err_max, double t_des, double ddt,
-                           PositionCommand::Ptr &out) {
+                           PositionCommand *out) {
   // return false if need to adjust time
   bool return_v = true;
   VecD pos = VecD(4, 1);
@@ -104,7 +70,6 @@ bool EvaluateTrajectoryPos(const boost::shared_ptr<Trajectory> &traj,
   }
 
   EvaluateTrajectory(traj, t_des, out);
-
   return return_v;
 }
 

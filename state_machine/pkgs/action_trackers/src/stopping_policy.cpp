@@ -25,60 +25,50 @@ class StoppingPolicy : public kr_trackers_manager::Tracker {
   uint8_t status() const override;
 
  private:
-  double j_des_, a_des_;
+  double j_des_, a_des_, a_yaw_des_;
   bool active_;
-
-  float yaw_, start_yaw_;
   double kx_[3], kv_[3];
-  int window_{0};
-
-  bool got_odom_{false};
-  bool got_traj_{false};
-
-  traj_opt::VecD p0_, v0_, a0_, j0_;
+  traj_opt::Vec4 cmd_pos_, cmd_vel_, cmd_acc_,
+      cmd_jrk_;  // record the lastest cmd calculated in stopping policy
+  traj_opt::VecD p0_, v0_, a0_, j0_, v0_dir_xyz_;
+  double v0_dir_yaw_;
   ros::Time t0_;
-  PositionCommand cmd_0_;
   boost::shared_ptr<traj_opt::NonlinearTrajectory> solver_;
 };
 
 StoppingPolicy::StoppingPolicy(void) : active_(false) {}
 
 void StoppingPolicy::Initialize(const ros::NodeHandle &nh) {
-  nh.param("gains/pos/x", kx_[0], 2.5);
-  nh.param("gains/pos/y", kx_[1], 2.5);
-  nh.param("gains/pos/z", kx_[2], 5.0);
-  nh.param("gains/vel/x", kv_[0], 2.2);
-  nh.param("gains/vel/y", kv_[1], 2.2);
-  nh.param("gains/vel/z", kv_[2], 4.0);
-
   ros::NodeHandle priv_nh(nh, "stopping_policy");
 
-  priv_nh.param("default_a_des", a_des_, 1.0);
-  priv_nh.param("default_j_des", j_des_, 50.0);
-  priv_nh.param("window", window_, 50);
+  priv_nh.param("acc_xyz_des", a_des_, 5.0);
+  priv_nh.param("jerk_xyz_des", j_des_, 5.0);
+  priv_nh.param("acc_yaw_des", a_yaw_des_, 0.1);
 }
 
 bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
   if (cmd != NULL) {
     p0_ = traj_opt::VecD::Zero(4, 1);
     v0_ = traj_opt::VecD::Zero(4, 1);
+    v0_dir_xyz_ = traj_opt::VecD::Zero(3, 1);
+
     a0_ = traj_opt::VecD::Zero(4, 1);
     j0_ = traj_opt::VecD::Zero(4, 1);
     p0_ << cmd->position.x, cmd->position.y, cmd->position.z, cmd->yaw;
+    cmd_pos_ = p0_;  // initialization of cmd_pos_
     v0_ << cmd->velocity.x, cmd->velocity.y, cmd->velocity.z, cmd->yaw_dot;
+    v0_dir_xyz_ << cmd->velocity.x, cmd->velocity.y, cmd->velocity.z;
+    v0_dir_xyz_.normalize();
+    if (cmd->yaw_dot == 0) {
+      v0_dir_yaw_ = 0.0;
+    } else if (std::signbit(cmd->yaw_dot)) {
+      v0_dir_yaw_ = -1.0;
+    } else {
+      v0_dir_yaw_ = 1.0;
+    }
     a0_ << cmd->acceleration.x, cmd->acceleration.y, cmd->acceleration.z, 0.0;
     j0_ << cmd->jerk.x, cmd->jerk.y, cmd->jerk.z, 0.0;
     t0_ = cmd->header.stamp;
-    cmd_0_ = *cmd;
-    cmd_0_.velocity.x = 0.0;
-    cmd_0_.velocity.y = 0.0;
-    cmd_0_.velocity.z = 0.0;
-    cmd_0_.acceleration.x = 0.0;
-    cmd_0_.acceleration.y = 0.0;
-    cmd_0_.acceleration.z = 0.0;
-    cmd_0_.jerk.x = 0.0;
-    cmd_0_.jerk.y = 0.0;
-    cmd_0_.jerk.z = 0.0;
     active_ = true;
     return true;
   } else
@@ -87,116 +77,123 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
   return false;
 }
 
-void StoppingPolicy::Deactivate(void) {
-  active_ = false;
-  got_traj_ = false;
-}
+void StoppingPolicy::Deactivate(void) { active_ = false; }
 
 PositionCommand::ConstPtr StoppingPolicy::update(
     const nav_msgs::Odometry::ConstPtr &msg) {
-  got_odom_ = true;
-  yaw_ = tf::getYaw(msg->pose.pose.orientation);
   ros::Time stamp = msg->header.stamp;
   double duration = (stamp - t0_).toSec();
 
   if (!active_) return PositionCommand::Ptr();
+  double v0_norm = traj_opt::Vec3{v0_(0), v0_(1), v0_(2)}.norm();
+  // double t_xyz = traj_opt::Vec3{v0_(0), v0_(1), v0_(2)}.norm() / a_des_;
+  // time for acceleration to build up to a_des_
+  double t_jerk = a_des_ / j_des_;
 
-  // if have not got trajectory, check for free fall
-  if (!got_traj_) {
-    // set bounding box to 2km box for now
-    traj_opt::VecD b(6);
-    b << 1000, 1000, 1000, 1000, 1000, 1000;
-    traj_opt::MatD A = traj_opt::MatD::Zero(6, 4);
-    A.block<3, 3>(0, 0) = -traj_opt::Mat3::Identity();
-    A.block<3, 3>(3, 0) = traj_opt::Mat3::Identity();
-    std::vector<traj_opt::MatD> As(1, A);
-    std::vector<traj_opt::VecD> bs(1, b);
-    std::vector<traj_opt::Waypoint> con(2);
-    con.at(0).use_pos = true;
-    con.at(0).use_vel = true;
-    con.at(0).use_acc = true;
-    con.at(1).use_pos = false;
-    con.at(1).use_vel = true;
-    con.at(1).use_acc = true;
-    con.at(0).use_jrk = true;
-    con.at(1).use_jrk = true;
-    con.at(0).knot_id = 0;
-    con.at(1).knot_id = -1;
+  // check if acceleration will reach a_des_ based on j_des_ and v0
+  double t_acc_change, t_acc_const;
+  if (t_jerk * a_des_ <= v0_norm) {
+    // start and end period where acceleration increases and decreases
+    t_acc_change = t_jerk;
+    // middle period with constant acceleration a_des_
+    t_acc_const = (v0_norm - (t_jerk * a_des_)) / a_des_;
+  } else {
+    // 0.5 * j * (t^2) = 0.5 * v ==> t = sqrt(v / j)
+    t_acc_change = sqrt(v0_norm / j_des_);
+    // middle period is 0
+    t_acc_const = 0;
+  }
 
-    con.at(0).pos = p0_;
-    con.at(0).vel = v0_;
-    con.at(0).acc = a0_;
-    con.at(0).jrk = j0_;
-
-    double time_v = con.at(0).vel.block<3, 1>(0, 0).norm() / a_des_;
-    double time_a = con.at(0).acc.block<3, 1>(0, 0).norm() / j_des_;
-    double time = std::max(time_a, time_v);
-
-    if (time <= 1e-5) {
-      cmd_0_.header.stamp = stamp;
-      return boost::make_shared<PositionCommand>(cmd_0_);
+  // check whether already stopped (xyz)
+  if (0 < duration && duration < t_acc_change) {
+    // stage 1: increase acceleration
+    for (int i = 0; i < 3; i++) {
+      // evaluate xyz and their derivatives
+      cmd_jrk_(i) = -v0_dir_xyz_(i) * j_des_;  // jerk direction: opposite to v0
+      cmd_acc_(i) = cmd_jrk_(i) * duration;    // build up from 0 inital acc
+      cmd_vel_(i) = v0_(i) + 0.5 * cmd_jrk_(i) * (pow(duration, 2));
+      cmd_pos_(i) = p0_(i) + v0_(i) * duration +
+                    (1.0 / 6.0) * cmd_jrk_(i) * (pow(duration, 3));
     }
-    if (con.at(0).vel.norm() < 0.5) {
-      return boost::make_shared<PositionCommand>(cmd_0_);
+  } else if (t_acc_change <= duration &&
+             duration < t_acc_change + t_acc_const) {
+    for (int i = 0; i < 3; i++) {
+      cmd_jrk_(i) = 0;
+      // cmd_acc_ has have magintude of a_des_, direction opposite to v0
+      cmd_acc_(i) = -v0_dir_xyz_(i) * a_des_;
+      // cmd_vel_: v0 + 1/2*j_des_*(t1^2) + a_des*(t-t1)
+      cmd_vel_(i) = v0_(i) +
+                    0.5 * -v0_dir_xyz_(i) * j_des_ * (pow(t_acc_change, 2)) +
+                    cmd_acc_(i) * (duration - t_acc_change);
+      // cmd_pos_: p0 + v0*t + 1/6*j_des_*(t1^3) + 1/2*a_des*((t-t1)^2)
+      cmd_pos_(i) =
+          p0_(i) + v0_(i) * duration +
+          (1.0 / 6.0) * -v0_dir_xyz_(i) * j_des_ * (pow(t_acc_change, 3)) +
+          0.5 * cmd_acc_(i) * pow((duration - t_acc_change), 2);
     }
-    std::vector<std::pair<traj_opt::MatD, traj_opt::VecD>> polyhedra;
-    polyhedra.push_back(std::make_pair(A, b));
+  } else {
+    if (t_acc_change + t_acc_const <= duration &&
+        duration < 2 * t_acc_change + t_acc_const) {
+      // stage 3: decrease acceleration
+      double cur_dur = duration - (t_acc_change + t_acc_const);
+      for (int i = 0; i < 3; i++) {
+        cmd_jrk_(i) = v0_dir_xyz_(i) * j_des_;
 
-    std::vector<double> ds(1, time);
-    boost::shared_ptr<std::vector<traj_opt::decimal_t>> pds =
-        boost::make_shared<std::vector<traj_opt::decimal_t>>(ds);
+        cmd_acc_(i) = -v0_dir_xyz_(i) * a_des_ + cmd_jrk_(i) * cur_dur;
 
-    // solver call:
-    solver_ = boost::make_shared<traj_opt::NonlinearTrajectory>(con, polyhedra,
-                                                                7, 3, pds);
-    // solver_->setParams(0, 0, 0, 0, 0.15);
+        // cmd_vel_: v0 + 1/2*j_des_*(t1^2) + a_des*t2 +
+        // a_des*cur_dur + 1/2*cmd_jrk_*(cur_dur^2)
+        cmd_vel_(i) = v0_(i) +
+                      0.5 * -v0_dir_xyz_(i) * j_des_ * pow(t_acc_change, 2) +
+                      -v0_dir_xyz_(i) * a_des_ * t_acc_const +
+                      -v0_dir_xyz_(i) * a_des_ * cur_dur +
+                      0.5 * cmd_jrk_(i) * pow(cur_dur, 2);
 
-    // solver_->setPolyParams(7, traj_opt::LEGENDRE, 2);
-    ROS_INFO_STREAM("Trying to stop with time: " << time);
-    got_traj_ = solver_->isSolved();
-    //    got_traj_ = solver_->solveTrajectory(con, As, bs, ds, 0, NULL, 0);
-
-    if (!got_traj_) {
-      ROS_ERROR_STREAM("Failed to optimize trajectory");
-      return PositionCommand::Ptr();
+        // cmd_pos_: p0 + v0*t1 + 1/6*j_des_*(t1^3) + 1/2*a_des*(t2^2) +
+        // 1/2*a_des*(cur_dur^2) + 1/6*cmd_jrk*(cur_dur^3)
+        cmd_pos_(i) =
+            p0_(i) + v0_(i) * duration +
+            (1.0 / 6.0) * -v0_dir_xyz_(i) * j_des_ * (pow(t_acc_change, 3)) +
+            0.5 * -v0_dir_xyz_(i) * a_des_ * pow(t_acc_const, 2) +
+            0.5 * -v0_dir_xyz_(i) * a_des_ * pow(cur_dur, 2) +
+            (1.0 / 6.0) * cmd_jrk_(i) * pow(cur_dur, 3);
+      }
     } else {
-      ROS_INFO("Got trajectory");
-      TrajRosBridge::publish_msg(solver_->serialize());
-      t0_ = msg->header.stamp;
+      // stage 4: stopping policy finished, cmd_pos_(i) will remain the same
+      for (int i = 0; i < 3; i++) {
+        cmd_jrk_(i) = 0;
+        cmd_acc_(i) = 0;
+        cmd_vel_(i) = 0;
+      }
     }
   }
 
-  if (solver_ == NULL) {
-    ROS_ERROR_STREAM("Shared pointer dealocate?");
-    return PositionCommand::Ptr();
+  double t_yaw = v0_(3) / a_des_;  // use consant acc for yaw
+  // check whether already stopped (yaw)
+  if (duration < t_yaw) {
+    // evaluate yaw and yaw_dot
+    cmd_vel_(3) = v0_(3) - v0_dir_yaw_ * a_yaw_des_;
+    cmd_pos_(3) = p0_(3) + ((v0_(3) + cmd_vel_(3)) / 2.0) * duration;
+  } else {
+    cmd_vel_(3) = 0.0;
+    // cmd_pos_(3) remain the same
   }
+
   PositionCommand::Ptr cmd(new PositionCommand);
   cmd->header.stamp = stamp;
   cmd->header.frame_id = msg->header.frame_id;
-  cmd->yaw = start_yaw_;
-  cmd->yaw_dot = 0;
   cmd->kx[0] = kx_[0], cmd->kx[1] = kx_[1], cmd->kx[2] = kx_[2];
   cmd->kv[0] = kv_[0], cmd->kv[1] = kv_[1], cmd->kv[2] = kv_[2];
 
-  traj_opt::VecD pos, vel, acc, jrk;
-  // if (duration < 1.0 || duration > 10.0){
-  //   ROS_ERROR_STREAM_THROTTLE(1, "Evaluating duration"
-  //                                   << duration << " total time "
-  //                                   << solver_->getTotalTime());
-  // }
-
-  solver_->evaluate(duration, 0, pos);
-  solver_->evaluate(duration, 1, vel);
-  solver_->evaluate(duration, 2, acc);
-  solver_->evaluate(duration, 3, jrk);
-
-  cmd->position.x = pos(0), cmd->position.y = pos(1), cmd->position.z = pos(2);
-  cmd->velocity.x = vel(0), cmd->velocity.y = vel(1), cmd->velocity.z = vel(2);
-  cmd->acceleration.x = acc(0), cmd->acceleration.y = acc(1),
-  cmd->acceleration.z = acc(2);
-  cmd->jerk.x = jrk(0), cmd->jerk.y = jrk(1), cmd->jerk.z = jrk(2);
-
-  cmd->yaw = pos(3), cmd->yaw_dot = vel(3);
+  cmd->position.x = cmd_pos_(0), cmd->position.y = cmd_pos_(1),
+  cmd->position.z = cmd_pos_(2);
+  cmd->velocity.x = cmd_vel_(0), cmd->velocity.y = cmd_vel_(1),
+  cmd->velocity.z = cmd_vel_(2);
+  cmd->acceleration.x = cmd_acc_(0), cmd->acceleration.y = cmd_acc_(1),
+  cmd->acceleration.z = cmd_acc_(2);
+  cmd->jerk.x = cmd_jrk_(0), cmd->jerk.y = cmd_jrk_(1),
+  cmd->jerk.z = cmd_jrk_(2);
+  cmd->yaw = cmd_pos_(3), cmd->yaw_dot = cmd_vel_(3);
 
   return cmd;
 }

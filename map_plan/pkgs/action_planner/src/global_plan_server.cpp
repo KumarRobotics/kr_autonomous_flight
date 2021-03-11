@@ -10,7 +10,6 @@
 #include <planning_ros_msgs/VoxelMap.h>
 #include <planning_ros_utils/data_ros_utils.h>
 #include <planning_ros_utils/primitive_ros_utils.h>
-#include <primitive_to_traj_opt/convert.h>
 #include <ros/ros.h>
 #include <traj_opt_ros/ros_bridge.h>
 

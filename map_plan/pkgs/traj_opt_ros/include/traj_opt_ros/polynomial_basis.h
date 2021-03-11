@@ -1,9 +1,5 @@
 // Copyright 2015 Michael Watterson
-#ifndef TRAJ_OPT_BASIC_POLYNOMIAL_BASIS_H_
-#define TRAJ_OPT_BASIC_POLYNOMIAL_BASIS_H_
-
-#include <traj_opt_basic/traj_data.h>
-#include <traj_opt_basic/types.h>
+#pragma once
 
 #include <boost/make_shared.hpp>
 #include <boost/math/special_functions/binomial.hpp>
@@ -11,7 +7,9 @@
 #include <cassert>
 #include <cmath>
 #include <memory>
-#include <vector>
+
+#include "traj_opt_ros/traj_data.h"
+#include "traj_opt_ros/types.h"
 
 namespace traj_opt {
 
@@ -100,4 +98,3 @@ class StandardBasis : public Basis {
 };
 
 }  // namespace traj_opt
-#endif  // TRAJ_OPT_BASIC_POLYNOMIAL_BASIS_H_

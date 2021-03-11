@@ -1,8 +1,8 @@
 // Copyright 2015 Michael Watterson
-#include <traj_opt_basic/msg_traj.h>
+#include "traj_opt_ros/msg_traj.h"
 
 #include <boost/shared_ptr.hpp>
-#include <vector>
+
 namespace traj_opt {
 
 MsgTrajectory::MsgTrajectory(const TrajData &traj) : traj_(traj) {
@@ -24,16 +24,6 @@ MsgTrajectory::MsgTrajectory(const TrajData &traj) : traj_(traj) {
     for (int j = 0; j < dim_; j++) {
       polys.push_back(boost::make_shared<Poly>(
           traj.data.at(j).segs.at(i).coeffs.data(), deg_));
-      //      std::vector<decimal_t> vals;
-      //      vals.clear();
-      //      vals.reserve(traj_.degree + 1);
-      //      for (int k = 0; k <= traj_.degree; k++) {
-      //        vals.push_back(*it);
-      //        it++;
-      //      }
-      //      polys.push_back(std::make_shared<LPoly>(vals.data(),
-      //      traj_.degree));
-      //      //      ROS_ERROR_STREAM("Poly " << *(polys.back()));
     }
     polyies_.push_back(polys);
   }
@@ -89,10 +79,6 @@ bool MsgTrajectory::evaluate(decimal_t t, uint derr,
   decimal_t ratio = std::pow(1 / dt, decimal_t(derr));
   for (int i = 0; i < dim_; i++) out(i) = ratio * poly->at(i)->evaluate(dx);
 
-  //  if(t < 0.1)
-  //  if(derr == 0)
-  //      ROS_INFO_STREAM("result " << out.transpose());
-  //  ROS_INFO_STREAM("result " << out.transpose());
   return success;
 }
 

@@ -1,14 +1,13 @@
 // Copyright 2015 Michael Watterson
-#ifndef TRAJ_OPT_BASIC_MSG_TRAJ_H_
-#define TRAJ_OPT_BASIC_MSG_TRAJ_H_
-
-#include <traj_opt_basic/polynomial_basis.h>
-#include <traj_opt_basic/traj_data.h>
-#include <traj_opt_basic/trajectory.h>
-
+#pragma once
 #include <vector>
 
+#include "traj_opt_ros/polynomial_basis.h"
+#include "traj_opt_ros/traj_data.h"
+#include "traj_opt_ros/trajectory.h"
+
 namespace traj_opt {
+
 class MsgTrajectory : public Trajectory {
  public:
   explicit MsgTrajectory(const TrajData &traj);
@@ -31,4 +30,3 @@ class MsgTrajectory : public Trajectory {
   //  int seg;
 };
 }  // namespace traj_opt
-#endif  // TRAJ_OPT_BASIC_MSG_TRAJ_H_

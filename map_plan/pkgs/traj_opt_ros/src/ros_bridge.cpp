@@ -1,7 +1,7 @@
 // Copyright 2016 Michael Watterson
-#include <traj_opt_ros/ros_bridge.h>
+#include "traj_opt_ros/ros_bridge.h"
 
-#include <string>
+namespace traj_opt {
 
 TrajRosBridge::TrajRosBridge() : nh_("~") {
   pub_ =
@@ -17,14 +17,13 @@ void TrajRosBridge::publish_msg(const planning_ros_msgs::SplineTrajectory &msg,
   msgc.header.frame_id = frame_id;
   instance().pub_.publish(msgc);
 }
-void TrajRosBridge::publish_msg(const traj_opt::TrajData &data,
-                                std::string frame_id) {
-  publish_msg(convert(data), frame_id);
+void TrajRosBridge::publish_msg(const TrajData &data, std::string frame_id) {
+  publish_msg(SplineTrajectoryFromTrajData(data), frame_id);
 }
 
 // these convert functions can be written more cleanly with templates
-planning_ros_msgs::SplineTrajectory TrajRosBridge::convert(
-    const traj_opt::TrajData &data) {
+planning_ros_msgs::SplineTrajectory SplineTrajectoryFromTrajData(
+    const TrajData &data) {
   planning_ros_msgs::SplineTrajectory traj;
   traj.header.stamp = ros::Time::now();
   traj.header.frame_id = "map";
@@ -48,19 +47,20 @@ planning_ros_msgs::SplineTrajectory TrajRosBridge::convert(
   }
   return traj;
 }
-traj_opt::TrajData TrajRosBridge::convert(
+
+TrajData TrajDataFromSplineTrajectory(
     const planning_ros_msgs::SplineTrajectory &msg) {
-  traj_opt::TrajData data;
+  TrajData data;
   // copy all fields
   data.dimension_names = msg.dimension_names;
   data.dimensions = msg.dimensions;
   for (auto spline : msg.data) {
-    traj_opt::SplineData s;
+    SplineData s;
     for (auto poly : spline.segs) {
-      traj_opt::PolynomialData p;
+      PolynomialData p;
       p.degree = poly.degree;
       p.dt = poly.dt;
-      p.basis = (traj_opt::PolyType)poly.basis;
+      p.basis = (PolyType)poly.basis;
       p.coeffs = poly.coeffs;
       s.segs.push_back(p);
     }
@@ -70,3 +70,48 @@ traj_opt::TrajData TrajRosBridge::convert(
   }
   return data;
 }
+// too lazy to include boost math
+uint factorial(uint i) {
+  if (i == 0)
+    return 1;
+  else
+    return i * factorial(i - 1);
+}
+
+planning_ros_msgs::SplineTrajectory SplineTrajectoryFromTrajectory(
+    const planning_ros_msgs::Trajectory &msg) {
+  planning_ros_msgs::SplineTrajectory traj;
+  traj.header = msg.header;
+
+  double T = 0.0;
+  for (uint s = 0; s < msg.primitives.size(); s++) {
+    T += msg.primitives.at(s).t;
+  }
+
+  for (uint d = 0; d < 3; d++) {
+    planning_ros_msgs::Spline spline;
+    for (uint s = 0; s < msg.primitives.size(); s++) {
+      const std::vector<double> *co;
+      // get correct field
+      if (d == 0) co = &(msg.primitives.at(s).cx);
+      if (d == 1) co = &(msg.primitives.at(s).cy);
+      if (d == 2) co = &(msg.primitives.at(s).cz);
+      planning_ros_msgs::Polynomial poly;
+      for (uint c = 0; c < co->size(); c++) {
+        uint cr = co->size() - 1 - c;
+        poly.coeffs.push_back(co->at(cr) * std::pow(msg.primitives.at(s).t, c) /
+                              double(factorial(c)));
+      }
+      poly.dt = msg.primitives.at(s).t;
+      poly.degree = co->size() - 1;
+      spline.segs.push_back(poly);
+    }
+    spline.segments = msg.primitives.size();
+    spline.t_total = T;
+    traj.data.push_back(spline);
+  }
+  traj.dimensions = 3;
+  return traj;
+}
+
+}  // namespace traj_opt

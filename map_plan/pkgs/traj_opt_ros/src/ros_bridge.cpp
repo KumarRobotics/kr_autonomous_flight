@@ -71,7 +71,7 @@ TrajData TrajDataFromSplineTrajectory(
   return data;
 }
 // too lazy to include boost math
-uint factorial(uint i) {
+int factorial(int i) {
   if (i == 0)
     return 1;
   else
@@ -100,7 +100,7 @@ planning_ros_msgs::SplineTrajectory SplineTrajectoryFromTrajectory(
       for (uint c = 0; c < co->size(); c++) {
         uint cr = co->size() - 1 - c;
         poly.coeffs.push_back(co->at(cr) * std::pow(msg.primitives.at(s).t, c) /
-                              double(factorial(c)));
+                              static_cast<double>(factorial(c)));
       }
       poly.dt = msg.primitives.at(s).t;
       poly.degree = co->size() - 1;

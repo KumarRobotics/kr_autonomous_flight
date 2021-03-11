@@ -15,7 +15,6 @@ find_package(
              planning_ros_utils
              planning_ros_msgs
              decomp_ros_utils
-             traj_opt_pro
              traj_opt_ros
              motion_primitive_library)
 

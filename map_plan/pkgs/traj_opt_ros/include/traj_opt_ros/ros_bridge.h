@@ -5,6 +5,8 @@
 #include <planning_ros_msgs/Trajectory.h>
 #include <ros/ros.h>
 
+#include <string>
+
 #include "traj_opt_ros/traj_data.h"
 
 namespace traj_opt {

@@ -29,6 +29,7 @@ struct PolynomialData {
   PolynomialData() {}
   explicit PolynomialData(int d) : degree(d), coeffs(degree + 1) {}
 };
+
 struct SplineData {
   int segments;
   float t_total;
@@ -54,5 +55,7 @@ struct TrajData {
   TrajData(int dim, int segs, int deg)
       : dimensions(dim), data(dimensions, SplineData(deg, segs)) {}
 };
+
 }  // namespace traj_opt
+
 #endif  // TRAJ_OPT_BASIC_TRAJ_DATA_H_

@@ -2,16 +2,8 @@
 #ifndef TRAJ_OPT_BASIC_TRAJECTORY_H_
 #define TRAJ_OPT_BASIC_TRAJECTORY_H_
 
-// package includes
-#include <traj_opt_basic/traj_data.h>
-#include <traj_opt_basic/types.h>
-
-// library includes
-#include <boost/smart_ptr/shared_ptr.hpp>
-
-// STL includes
-#include <iostream>
-#include <vector>
+#include "traj_opt_basic/traj_data.h"
+#include "traj_opt_basic/types.h"
 
 namespace traj_opt {
 

@@ -16,9 +16,7 @@ find_package(
              planning_ros_msgs
              decomp_ros_utils
              traj_opt_pro
-             traj_opt_basic
              traj_opt_ros
-             traj_opt_quadrotor
              motion_primitive_library)
 
 find_package(Eigen3 REQUIRED)
@@ -33,7 +31,8 @@ add_action_files(
   ShortRange.action
   GoalDistance.action
   RunPath.action)
-generate_messages(DEPENDENCIES actionlib_msgs planning_ros_msgs kr_mav_msgs kr_tracker_msgs)
+generate_messages(DEPENDENCIES actionlib_msgs planning_ros_msgs kr_mav_msgs
+                  kr_tracker_msgs)
 
 catkin_package(CATKIN_DEPENDS kr_mav_msgs actionlib_msgs planning_ros_msgs
                kr_tracker_msgs)
@@ -45,8 +44,8 @@ target_link_libraries(${PROJECT_NAME} INTERFACE ${catkin_LIBRARIES}
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
 
-add_library(stopping_policy src/stopping_policy.cpp)
-target_link_libraries(stopping_policy PRIVATE ${PROJECT_NAME})
+# add_library(stopping_policy src/stopping_policy.cpp)
+# target_link_libraries(stopping_policy PRIVATE ${PROJECT_NAME})
 
 add_library(action_path_tracker src/path_tracker.cpp)
 target_link_libraries(action_path_tracker PRIVATE ${PROJECT_NAME})

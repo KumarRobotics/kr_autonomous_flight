@@ -31,7 +31,7 @@ class StoppingPolicy : public kr_trackers_manager::Tracker {
   double kx_[3], kv_[3];
   traj_opt::Vec4 cmd_pos_, cmd_vel_, cmd_acc_,
       cmd_jrk_;  // record the lastest cmd calculated in stopping policy
-  traj_opt::VecD p0_, v0_, a0_, j0_, v0_dir_xyz_;
+  traj_opt::VecD p0_, v0_, a0_, j0_, v0_dir_xyz_, a0_dir_xyz_;
   double v0_dir_yaw_;
   ros::Time t0_;
   boost::shared_ptr<traj_opt::NonlinearTrajectory> solver_;
@@ -42,8 +42,8 @@ StoppingPolicy::StoppingPolicy(void) : active_(false) {}
 void StoppingPolicy::Initialize(const ros::NodeHandle &nh) {
   ros::NodeHandle priv_nh(nh, "stopping_policy");
 
-  priv_nh.param("acc_xyz_des", a_des_, 10.0);
-  priv_nh.param("jerk_xyz_des", j_des_, 10.0);
+  priv_nh.param("acc_xyz_des", a_des_, 5.0);
+  priv_nh.param("jerk_xyz_des", j_des_, 2.0);
   priv_nh.param("acc_yaw_des", a_yaw_des_, 0.1);
 }
 
@@ -53,7 +53,7 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
     p0_ = traj_opt::VecD::Zero(4, 1);
     v0_ = traj_opt::VecD::Zero(4, 1);
     v0_dir_xyz_ = traj_opt::VecD::Zero(3, 1);
-
+    a0_dir_xyz_ = traj_opt::VecD::Zero(3, 1);
     a0_ = traj_opt::VecD::Zero(4, 1);
     j0_ = traj_opt::VecD::Zero(4, 1);
     p0_ << cmd->position.x, cmd->position.y, cmd->position.z, cmd->yaw;
@@ -70,10 +70,13 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
       v0_dir_yaw_ = 1.0;
     }
     a0_ << cmd->acceleration.x, cmd->acceleration.y, cmd->acceleration.z, 0.0;
-    cmd_acc_ = traj_opt::VecD::Zero(
-        4, 1);  // assume init acc is zero. TODO(xu) improve this
+    cmd_acc_ = a0_;
+    a0_dir_xyz_ << cmd->acceleration.x, cmd->acceleration.y,
+        cmd->acceleration.z;
+    a0_dir_xyz_.normalize();
+
     j0_ << cmd->jerk.x, cmd->jerk.y, cmd->jerk.z, 0.0;
-    cmd_jrk_ = traj_opt::VecD::Zero(4, 1);
+    cmd_jrk_ = j0_;
     t0_ = cmd->header.stamp;
     active_ = true;
     return true;
@@ -93,6 +96,13 @@ PositionCommand::ConstPtr StoppingPolicy::update(
   prev_duration_ = duration;
 
   if (!active_) return PositionCommand::Ptr();
+
+  double a0_norm = traj_opt::Vec3{a0_(0), a0_(1), a0_(2)}.norm();
+  double deacc_time = 0.0;
+  if (a0_norm > 0.1) {
+    deacc_time = a0_norm / j_des_;
+  }
+
   double v0_norm = traj_opt::Vec3{v0_(0), v0_(1), v0_(2)}.norm();
   // double t_xyz = traj_opt::Vec3{v0_(0), v0_(1), v0_(2)}.norm() / a_des_;
   // time for acceleration to build up to a_des_
@@ -112,7 +122,24 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     t_acc_const = 0;
   }
 
-  if (duration < t_acc_change * 2 + t_acc_const) {
+  if (deacc_time != 0) {
+    if (duration < deacc_time) {
+      for (int i = 0; i < 3; i++) {
+        // evaluate xyz and their derivatives
+        cmd_pos_(i) = cmd_pos_(i) + cmd_vel_(i) * dt;
+        cmd_vel_(i) = cmd_vel_(i) + cmd_acc_(i) * dt;
+        cmd_acc_(i) =
+            cmd_acc_(i) + cmd_jrk_(i) * dt;  // build up from 0 inital acc
+      }
+      // duration < deacc_time, first bring existing acc to zero
+      cmd_jrk_ = -a0_dir_xyz_ * j_des_;
+    }
+    v0_dir_xyz_ = cmd_vel_;
+  }
+
+  double dur_remain = duration - deacc_time;
+
+  if ((0 = < dur_remain) && (dur_remain < t_acc_change * 2 + t_acc_const)) {
     for (int i = 0; i < 3; i++) {
       // evaluate xyz and their derivatives
       cmd_pos_(i) = cmd_pos_(i) + cmd_vel_(i) * dt;
@@ -121,15 +148,16 @@ PositionCommand::ConstPtr StoppingPolicy::update(
           cmd_acc_(i) + cmd_jrk_(i) * dt;  // build up from 0 inital acc
     }
 
-    if (0 < duration && duration < t_acc_change) {
+    // only when dur_remain >= 0
+    if (0 <= dur_remain && dur_remain < t_acc_change) {
       cmd_jrk_ = -v0_dir_xyz_ * j_des_;
-    } else if (t_acc_change <= duration &&
-               duration < t_acc_change + t_acc_const) {
+    } else if (t_acc_change <= dur_remain &&
+               dur_remain < t_acc_change + t_acc_const) {
       cmd_jrk_ = traj_opt::VecD::Zero(4, 1);
-    } else {
+    } else if (dur_remain >= t_acc_change + t_acc_const) {
       cmd_jrk_ = v0_dir_xyz_ * j_des_;
     }
-  } else {
+  } else if (dur_remain >= t_acc_change * 2 + t_acc_const) {
     // stage 4: stopping policy finished, cmd_pos_(i) will remain the same
     for (int i = 0; i < 3; i++) {
       cmd_jrk_(i) = 0;

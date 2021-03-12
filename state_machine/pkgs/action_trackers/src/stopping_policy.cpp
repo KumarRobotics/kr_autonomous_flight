@@ -139,7 +139,7 @@ PositionCommand::ConstPtr StoppingPolicy::update(
 
   double dur_remain = duration - deacc_time;
 
-  if ((0 = < dur_remain) && (dur_remain < t_acc_change * 2 + t_acc_const)) {
+  if ((0 <= dur_remain) && (dur_remain < t_acc_change * 2 + t_acc_const)) {
     for (int i = 0; i < 3; i++) {
       // evaluate xyz and their derivatives
       cmd_pos_(i) = cmd_pos_(i) + cmd_vel_(i) * dt;

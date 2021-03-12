@@ -3,7 +3,6 @@
 
 #include <mpl_basis/data_type.h>
 #include <planning_ros_msgs/VoxelMap.h>
-#include <ros/ros.h>
 
 #include <boost/multi_array.hpp>
 

@@ -1,9 +1,10 @@
 #pragma once
 
-#include <decomp_ros_utils/data_ros_utils.h>
 #include <planning_ros_utils/data_ros_utils.h>
 
 #include <boost/circular_buffer.hpp>
+
+#include "decompros.h"
 
 class Projector {
  public:

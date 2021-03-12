@@ -1,4 +1,6 @@
-#include <mapper/voxel_mapper.h>
+#include "mapper/voxel_mapper.h"
+
+#include <ros/ros.h>
 
 VoxelMapper::VoxelMapper(Vec3f origin, Vec3f dim, decimal_t res, int8_t val) {
   origin_ = Vec3i::Zero();

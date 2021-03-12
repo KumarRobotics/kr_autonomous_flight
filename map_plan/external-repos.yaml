@@ -7,7 +7,3 @@ repositories:
     type: git
     url: https://github.com/KumarRobotics/motion_primitive_library
     version: catkin
-  DecompROS:
-    type: git
-    url: https://github.com/KumarRobotics/DecompROS
-    version: catkin

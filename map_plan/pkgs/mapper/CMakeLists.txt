@@ -9,13 +9,10 @@ find_package(
              image_geometry
              planning_ros_msgs
              planning_ros_utils
-             decomp_util
-             decomp_ros_utils
-             decomp_ros_msgs
              depth_image_proc
              eigen_conversions
-             jps3d
-             tf_conversions)
+             tf_conversions
+             jps3d)
 
 catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME})
 

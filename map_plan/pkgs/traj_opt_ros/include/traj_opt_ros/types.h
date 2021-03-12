@@ -1,6 +1,5 @@
 // Copyright 2015 Michael Watterson
-#ifndef TRAJ_OPT_BASIC_TYPES_H_
-#define TRAJ_OPT_BASIC_TYPES_H_
+#pragma once
 
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
@@ -39,5 +38,5 @@ typedef std::vector<VecD> VecDVec;
 typedef std::vector<MatD> MatDVec;
 
 typedef Eigen::Quaternion<decimal_t> Quat;
+
 }  // namespace traj_opt
-#endif  // TRAJ_OPT_BASIC_TYPES_H_

@@ -3,7 +3,7 @@
 #include <kr_mav_msgs/PositionCommand.h>
 #include <nav_msgs/Odometry.h>
 
-#include "traj_opt_basic/trajectory.h"  // Trajectory
+#include "traj_opt_ros/trajectory.h"  // Trajectory
 
 namespace traj_opt {
 

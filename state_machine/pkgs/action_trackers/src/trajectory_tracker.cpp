@@ -14,7 +14,7 @@
 
 // traj_opt stuff
 #include <std_msgs/Empty.h>
-#include <traj_opt_basic/msg_traj.h>
+#include <traj_opt_ros/msg_traj.h>
 #include <traj_opt_ros/ros_bridge.h>
 #include <traj_opt_ros/traj_to_quad_cmd.h>
 
@@ -27,7 +27,6 @@
 // angles
 #include <angles/angles.h>
 #include <geometry_msgs/Vector3.h>
-// #include <traj_opt_pro/timers.h>
 
 class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
  public:
@@ -417,11 +416,11 @@ void ActionTrajectoryTracker::trajCB() {
     next_trajectory_.pop_back();
     traj_epoch.pop_back();
   }
-
-  planning_ros_msgs::SplineTrajectory msg =
-      goal->traj;  // extract trajectory msg from goal->traj
+  // extract trajectory msg from goal->traj
+  planning_ros_msgs::SplineTrajectory msg = goal->traj;
   boost::shared_ptr<traj_opt::Trajectory> sp =
-      boost::make_shared<traj_opt::MsgTrajectory>(TrajRosBridge::convert(msg));
+      boost::make_shared<traj_opt::MsgTrajectory>(
+          traj_opt::TrajDataFromSplineTrajectory(msg));
   next_trajectory_.push_back(sp);
   prempted = false;
   // ROS_ERROR_STREAM("Done Callback with epoch " << goal->epoch);
@@ -447,7 +446,7 @@ void ActionTrajectoryTracker::trajCB() {
   }
 
   // check for continuity
-  TrajRosBridge::publish_msg(msg);
+  traj_opt::TrajRosBridge::publish_msg(msg);
 
   action_trackers::RunTrajectoryResult result;
   if (as_->isActive() && !goal->block) as_->setSucceeded(result);

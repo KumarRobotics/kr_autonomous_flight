@@ -1,9 +1,8 @@
 // Copyright 2015 Michael Watterson
-#ifndef TRAJ_OPT_BASIC_TRAJECTORY_H_
-#define TRAJ_OPT_BASIC_TRAJECTORY_H_
+#pragma once
 
-#include "traj_opt_basic/traj_data.h"
-#include "traj_opt_basic/types.h"
+#include "traj_opt_ros/traj_data.h"
+#include "traj_opt_ros/types.h"
 
 namespace traj_opt {
 
@@ -33,5 +32,5 @@ class Trajectory {
   decimal_t exec_t{-1.0};  // duration of execute time
   int dim_{0};
 };
+
 }  // namespace traj_opt
-#endif  // TRAJ_OPT_BASIC_TRAJECTORY_H_

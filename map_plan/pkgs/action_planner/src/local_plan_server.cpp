@@ -9,7 +9,6 @@
 #include <mpl_planner/planner/map_planner.h>  // mpl related
 #include <planning_ros_utils/data_ros_utils.h>
 #include <planning_ros_utils/primitive_ros_utils.h>
-#include <primitive_to_traj_opt/convert.h>
 #include <ros/ros.h>
 #include <traj_opt_ros/ros_bridge.h>
 
@@ -193,20 +192,20 @@ void LocalPlanServer::process_result(const Trajectory3D &traj, bool solved) {
     traj_pub.publish(traj_msg);
 
     // record trajectory in result
-    result_->traj = PrimitiveToTrajOpt::convert(traj_msg);
+    result_->traj = traj_opt::SplineTrajectoryFromTrajectory(traj_msg);
     result_->traj.header.frame_id = local_map_.header.frame_id;
-    TrajRosBridge::publish_msg(result_->traj);
+    traj_opt::TrajRosBridge::publish_msg(result_->traj);
 
-    decimal_t endt =
-        goal_->execution_time.toSec();  // execution_time (set in replanner)
-                                        // equals 1.0/replan_rate
+    // execution_time (set in replanner)
+    // equals 1.0/replan_rate
+    decimal_t endt = goal_->execution_time.toSec();
 
     // evaluate trajectory for 5 steps, each step duration equals
     // execution_time, get corresponding waypoints and record in result
     // (result_->p_stop etc.) (evaluate the whole traj if execution_time is not
     // set (i.e. not in replan mode))
-    int num_goals =
-        5;  // TODO(xu): why 5? should be >= max_horizon in replanner?
+    // TODO(xu): why 5? should be >= max_horizon in replanner?
+    int num_goals = 5;
     if (endt <= 0) {
       endt = traj.getTotalTime();
       num_goals = 1;

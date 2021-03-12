@@ -1,6 +1,5 @@
 // Copyright 2015 Michael Watterson
-#ifndef TRAJ_OPT_BASIC_TRAJ_DATA_H_
-#define TRAJ_OPT_BASIC_TRAJ_DATA_H_
+#pragma once
 
 #include <string>
 #include <vector>
@@ -57,5 +56,3 @@ struct TrajData {
 };
 
 }  // namespace traj_opt
-
-#endif  // TRAJ_OPT_BASIC_TRAJ_DATA_H_

@@ -1,7 +1,5 @@
 // Copyright 2015 Michael Watterson
-#include <traj_opt_basic/trajectory.h>
-
-#include <vector>
+#include "traj_opt_ros/trajectory.h"
 
 namespace traj_opt {
 

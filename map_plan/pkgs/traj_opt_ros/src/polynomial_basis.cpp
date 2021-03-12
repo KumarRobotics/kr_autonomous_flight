@@ -1,7 +1,7 @@
 // Copyright 2015 Michael Watterson
 // Implementation File
 // Look at polynomial.h for documentation
-#include <traj_opt_basic/polynomial_basis.h>
+#include "traj_opt_ros/polynomial_basis.h"
 
 #include <boost/math/special_functions/factorials.hpp>
 #include <boost/pointer_cast.hpp>

@@ -9,7 +9,7 @@
 #include <planning_ros_utils/data_ros_utils.h>
 #include <ros/ros.h>
 #include <std_msgs/Int64.h>
-#include <traj_opt_basic/msg_traj.h>
+#include <traj_opt_ros/msg_traj.h>
 #include <traj_opt_ros/ros_bridge.h>
 
 #include <fla_state_machine/traj_opt_utils.hpp>
@@ -307,7 +307,7 @@ void RePlanner::setup_replanner() {
 
   // get the result
   last_traj_ = boost::make_shared<traj_opt::MsgTrajectory>(
-      TrajRosBridge::convert(local_result->traj));
+      traj_opt::TrajDataFromSplineTrajectory(local_result->traj));
   last_plan_epoch_ = local_result->epoch;
 
   // setup state vars
@@ -326,7 +326,8 @@ void RePlanner::run_trajectory() {
 
   // set up run goal
   action_trackers::RunTrajectoryGoal rungoal;
-  rungoal.traj = TrajRosBridge::convert(last_traj_->serialize());
+  rungoal.traj =
+      traj_opt::SplineTrajectoryFromTrajData(last_traj_->serialize());
   rungoal.epoch = last_plan_epoch_;
   rungoal.replan_rate = local_replan_rate_;
 
@@ -456,7 +457,7 @@ bool RePlanner::plan_trajectory(int horizon) {
   auto local_result = local_plan_client_->getResult();
   if (local_result->success) {
     last_traj_ = boost::make_shared<traj_opt::MsgTrajectory>(
-        TrajRosBridge::convert(local_result->traj));
+        traj_opt::TrajDataFromSplineTrajectory(local_result->traj));
     last_plan_epoch_ = local_result->epoch;
     // ROS_INFO_STREAM("Got local plan with epoch " << last_plan_epoch_);
     return true;

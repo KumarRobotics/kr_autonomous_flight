@@ -19,7 +19,7 @@ except ImportError:
 from rqt_gui_py.plugin import Plugin
 
 import std_msgs.msg
-import mav_high_level_msgs.msg as MHL
+import planning_ros_msgs.msg as MHL
 from std_srvs.srv import Empty
 from std_srvs.srv import Trigger
 import mavros_msgs.srv as MR

@@ -9,7 +9,7 @@ import smach
 import smach_ros
 from std_srvs.srv import Empty
 from std_srvs.srv import EmptyResponse
-import mav_high_level_msgs.msg as MHL
+import planning_ros_msgs.msg as MHL
 
 # from Helpers import *
 from MainStates import *
@@ -35,7 +35,7 @@ def main():
     # Create holder for tracker object
 
     quad_tracker = QuadTracker(rospy.names.get_namespace() + "abort")
-    # specify replan rate, this will be recorded in the goal msg, as well as 
+    # specify replan rate, this will be recorded in the goal msg, as well as
     replan_rate = 5
     quad_tracker.replan_rate = replan_rate
     quad_tracker.avoid = True  # obstacle avoidance in planner
@@ -48,41 +48,63 @@ def main():
         # On and Off States:
         smach.StateMachine.add(
             "IdleTransition",
-        TrackerTransition(
-                "trackers_manager/transition", "action_trackers/TakeOffTracker", quad_tracker
-            ),
-            transitions={"succeeded": "Off", "aborted": "Off", "preempted": "Off"},
+            TrackerTransition("trackers_manager/transition",
+                              "action_trackers/TakeOffTracker", quad_tracker),
+            transitions={
+                "succeeded": "Off",
+                "aborted": "Off",
+                "preempted": "Off"
+            },
         )
         smach.StateMachine.add(
             "Off",
-            SwitchState("state_trigger", MHL.StateTransition, ["motors_on"], quad_tracker),
-            transitions={"invalid": "Off", "preempted": "Off", "motors_on": "MotorOn"},
+            SwitchState("state_trigger", MHL.StateTransition, ["motors_on"],
+                        quad_tracker),
+            transitions={
+                "invalid": "Off",
+                "preempted": "Off",
+                "motors_on": "MotorOn"
+            },
         )
 
         smach.StateMachine.add(
             "MotorOn",
             PublishBoolMsgState("motors", True),
-            transitions={"succeeded": "WaitForOne", "failed": "Off"},
+            transitions={
+                "succeeded": "WaitForOne",
+                "failed": "Off"
+            },
         )
 
-        smach.StateMachine.add("WaitForOne", WaitState(1), transitions={"done": "Idle"})
+        smach.StateMachine.add("WaitForOne",
+                               WaitState(1),
+                               transitions={"done": "Idle"})
 
         smach.StateMachine.add(
             "MavrosArm",
             ArmDisarmMavros("mavros/cmd/arming", True),
-            transitions={"succeeded": "WaitForOne", "failed": "Off"},
+            transitions={
+                "succeeded": "WaitForOne",
+                "failed": "Off"
+            },
         )
 
         smach.StateMachine.add(
             "MavrosDisarm",
             ArmDisarmMavros("mavros/cmd/arming", False),
-            transitions={"succeeded": "Off", "failed": "Off"},
+            transitions={
+                "succeeded": "Off",
+                "failed": "Off"
+            },
         )
 
         smach.StateMachine.add(
             "MotorOff",
             PublishBoolMsgState("motors", False),
-            transitions={"succeeded": "MavrosDisarm", "failed": "MotorOff"},
+            transitions={
+                "succeeded": "MavrosDisarm",
+                "failed": "MotorOff"
+            },
         )
         smach.StateMachine.add(
             "Idle",
@@ -104,25 +126,39 @@ def main():
         smach.StateMachine.add(
             "TakingOff",
             TakingOff("trackers_manager/take_off", quad_tracker),
-            transitions={"succeeded": "Hover", "aborted": "Idle", "preempted": "Idle"},
+            transitions={
+                "succeeded": "Hover",
+                "aborted": "Idle",
+                "preempted": "Idle"
+            },
         )
 
         smach.StateMachine.add(
             "Landing",
             Landing("trackers_manager/land", quad_tracker),
-            transitions={"succeeded": "Idle", "aborted": "Hover", "preempted": "Hover"},
+            transitions={
+                "succeeded": "Idle",
+                "aborted": "Hover",
+                "preempted": "Hover"
+            },
         )
         smach.StateMachine.add(
             "SetHomeHere",
             SetHomeHere(quad_tracker),
-            transitions={"succeeded": "LandTransition", "failed": "Hover"},
+            transitions={
+                "succeeded": "LandTransition",
+                "failed": "Hover"
+            },
         )
         smach.StateMachine.add(
             "LandTransition",
-            TrackerTransition(
-                "trackers_manager/transition", "action_trackers/LandTracker", quad_tracker
-            ),
-            transitions={"succeeded": "Landing", "aborted": "Hover", "preempted": "Hover"},
+            TrackerTransition("trackers_manager/transition",
+                              "action_trackers/LandTracker", quad_tracker),
+            transitions={
+                "succeeded": "Landing",
+                "aborted": "Hover",
+                "preempted": "Hover"
+            },
         )
         # Hover States
         smach.StateMachine.add(
@@ -130,7 +166,7 @@ def main():
             SwitchState(
                 "state_trigger",
                 MHL.StateTransition,
-                ["land_here", "short_range", "waypoints","motion_plan"],
+                ["land_here", "short_range", "waypoints", "motion_plan"],
                 quad_tracker,
             ),
             transitions={
@@ -139,7 +175,8 @@ def main():
                 "land_here": "SetHomeHere",
                 "short_range": "GetShort",
                 # "waypoints": "GetWaypoints",
-                "waypoints": "GetMPWaypoints", #TODO: temporary change for test mp planner
+                "waypoints":
+                "GetMPWaypoints",  #TODO: temporary change for test mp planner
                 "motion_plan": "GetMPWaypoints",
             },
         )
@@ -147,33 +184,52 @@ def main():
         smach.StateMachine.add(
             "GetWaypoints",
             GetWaypoints(quad_tracker),
-            transitions={"succeeded": "GetPath", "multi": "GetPath", "failed": "Hover"},
+            transitions={
+                "succeeded": "GetPath",
+                "multi": "GetPath",
+                "failed": "Hover"
+            },
         )
 
         smach.StateMachine.add(
             "GetShort",
             GetWaypoints(quad_tracker),
-            transitions={"succeeded": "ShortRange", "multi": "ShortRange", "failed": "Hover"},
+            transitions={
+                "succeeded": "ShortRange",
+                "multi": "ShortRange",
+                "failed": "Hover"
+            },
         )
 
         # the tpplanner is launched in map_plan_launch planner.launch
         smach.StateMachine.add(
             "GetPath",
             PlanPath("tpplanner/plan_path", quad_tracker),
-            transitions={"succeeded": "ShortRange", "aborted": "Hover", "preempted": "Hover"},
+            transitions={
+                "succeeded": "ShortRange",
+                "aborted": "Hover",
+                "preempted": "Hover"
+            },
         )
 
         smach.StateMachine.add(
             "ShortRange",
             REPLANNER(quad_tracker),
-            transitions={"succeeded": "Hover", "no_path": "Hover", "failed": "Hover"},
+            transitions={
+                "succeeded": "Hover",
+                "no_path": "Hover",
+                "failed": "Hover"
+            },
         )
 
         # for motion primitive planner:
-        smach.StateMachine.add('GetMPWaypoints', GetWaypoints(quad_tracker),
-                               transitions={'succeeded': 'ExecuteMotionPrimitive',
-                                            'multi': 'ExecuteMotionPrimitive',
-                                            'failed': 'Hover'})
+        smach.StateMachine.add('GetMPWaypoints',
+                               GetWaypoints(quad_tracker),
+                               transitions={
+                                   'succeeded': 'ExecuteMotionPrimitive',
+                                   'multi': 'ExecuteMotionPrimitive',
+                                   'failed': 'Hover'
+                               })
         # smach.StateMachine.add('GetTrajectory', PlanTrajectory("tpplanner/plan_trajectory", quad_tracker),
         #                        transitions={'succeeded':'ExecuteMotionPrimitive',
         #                                     'aborted':'Hover',
@@ -185,7 +241,11 @@ def main():
         smach.StateMachine.add(
             "ExecuteMotionPrimitive",
             MP_Replanner.REPLANNER(quad_tracker),
-            transitions={"succeeded": "Hover", "no_path": "Hover", "failed": "Hover"},
+            transitions={
+                "succeeded": "Hover",
+                "no_path": "Hover",
+                "failed": "Hover"
+            },
         )
         # the following moved to MP_Replanner
         # smach.StateMachine.add('CheckTrajectory', CheckTrajectory( quad_tracker),
@@ -205,7 +265,8 @@ def main():
     sis = smach_ros.IntrospectionServer("introspection_server", sm, "/SM_ROOT")
     sis.start()
 
-    sm_with_monitor = smach.Concurrence(outcomes=["done"], default_outcome="done")
+    sm_with_monitor = smach.Concurrence(outcomes=["done"],
+                                        default_outcome="done")
 
     with sm_with_monitor:
         smach.Concurrence.add("MAIN", sm)

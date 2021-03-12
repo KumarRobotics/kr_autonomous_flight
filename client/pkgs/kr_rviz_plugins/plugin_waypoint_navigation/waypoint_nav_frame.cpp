@@ -38,6 +38,7 @@
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreSceneNode.h>
 #include <interactive_markers/interactive_marker_server.h>
+#include <planning_ros_msgs/StateTransition.h>
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
 #include <rviz/display_context.h>
@@ -78,7 +79,7 @@ WaypointFrame::WaypointFrame(
 
   wp_pub_ = nh_.advertise<nav_msgs::Path>("waypoints", 1);
   sm_pub_ =
-      nh_.advertise<mav_high_level_msgs::StateTransition>("state_trigger", 1);
+      nh_.advertise<planning_ros_msgs::StateTransition>("state_trigger", 1);
   make_sub_ = nh_.subscribe("make_marker", 1, &WaypointFrame::makeCB, this);
 
   // connect the Qt signals and slots
@@ -320,7 +321,7 @@ void WaypointFrame::publishButtonClicked() {
 
   ros::Rate r(20);
   r.sleep();
-  mav_high_level_msgs::StateTransition st;
+  planning_ros_msgs::StateTransition st;
   st.transition.data = std::string("waypoints");
   sm_pub_.publish(st);
 }

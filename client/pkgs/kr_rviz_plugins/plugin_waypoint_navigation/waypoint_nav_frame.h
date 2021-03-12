@@ -41,7 +41,6 @@
 #include <boost/thread/mutex.hpp>
 #endif
 
-#include <mav_high_level_msgs/StateTransition.h>
 #include <nav_msgs/Path.h>
 
 #include <QWidget>

@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(planning_ros_msgs)
 
-find_package(catkin REQUIRED COMPONENTS geometry_msgs message_generation)
+find_package(catkin REQUIRED COMPONENTS geometry_msgs nav_msgs
+                                        message_generation)
 
 add_message_files(
   DIRECTORY
@@ -18,8 +19,9 @@ add_message_files(
   SplineTrajectory.msg
   Trajectory.msg
   TrajectoryCommand.msg
+  StateTransition.msg
   VoxelMap.msg)
 
-generate_messages(DEPENDENCIES geometry_msgs)
+generate_messages(DEPENDENCIES geometry_msgs nav_msgs)
 
-catkin_package(CATKIN_DEPENDS geometry_msgs message_runtime)
+catkin_package(CATKIN_DEPENDS geometry_msgs nav_msgs message_runtime)

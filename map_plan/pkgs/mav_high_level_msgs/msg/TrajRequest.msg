@@ -1,9 +1,0 @@
-Header header
-int32 id
-geometry_msgs/Vector3 start
-geometry_msgs/Vector3 goal
-geometry_msgs/Vector3 vel
-geometry_msgs/Vector3 acc
-geometry_msgs/Vector3 jrk
-planning_ros_msgs/Path path
-float32 delta_t

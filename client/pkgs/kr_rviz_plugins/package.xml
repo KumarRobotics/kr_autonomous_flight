@@ -13,7 +13,7 @@
 
   <depend>rviz</depend>
   <depend>rosbag</depend>
-  <depend>mav_high_level_msgs</depend>
+  <depend>planning_ros_msgs</depend>
 
   <export>
     <rosdoc config="${prefix}/rosdoc.yaml"/>

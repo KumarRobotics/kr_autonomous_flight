@@ -18,7 +18,6 @@
   <depend>roscpp</depend>
   <depend>actionlib</depend>
   <depend>eigen_conversions</depend>
-  <depend>mav_high_level_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>tf_conversions</depend>
   <depend>pcl_ros</depend>
@@ -28,7 +27,6 @@
   <depend>planning_ros_msgs</depend>
   <depend>traj_opt_ros</depend>
   <depend>motion_primitive_library</depend>
-  <depend>nav_msgs</depend>
 
   <export>
   </export>

@@ -3,7 +3,7 @@ project(kr_rviz_plugins)
 
 set(CMAKE_CXX_STANDARD 17)
 
-find_package(catkin REQUIRED COMPONENTS rviz rosbag mav_high_level_msgs)
+find_package(catkin REQUIRED COMPONENTS rviz rosbag planning_ros_msgs)
 catkin_package()
 
 include_directories(${catkin_INCLUDE_DIRS})

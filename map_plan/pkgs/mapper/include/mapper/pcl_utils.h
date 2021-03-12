@@ -28,4 +28,4 @@ sensor_msgs::PointCloud toROS(const PCLPointCloud &cloud_pcl);
 PCLPointCloud outlier_removal(const PCLPointCloud &cloud, float radius = 0.4,
                               int N = 4);
 PCLPointCloud voxel_filter(const PCLPointCloud &cloud, float res);
-} // namespace PCLUtils
+}  // namespace PCLUtils

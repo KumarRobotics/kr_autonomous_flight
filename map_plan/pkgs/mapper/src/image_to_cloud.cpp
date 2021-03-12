@@ -2,7 +2,6 @@
 #include <eigen_conversions/eigen_msg.h>
 #include <image_geometry/pinhole_camera_model.h>
 #include <mapper/pcl_utils.h>
-#include <mapper/rgb_type.h>
 #include <mapper/tf_listener.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
@@ -63,8 +62,7 @@ void info_callback(const sensor_msgs::CameraInfoConstPtr &info_msg) {
 }
 
 void pointcloud_convert_depth(const sensor_msgs::ImageConstPtr depth_msg) {
-  if (!model_ptr)
-    return;
+  if (!model_ptr) return;
 
   if (count_ < data_skip_) {
     count_++;
@@ -150,8 +148,7 @@ void pointcloud_convert_depth(const sensor_msgs::ImageConstPtr depth_msg) {
 
 void pointcloud_convert(const sensor_msgs::ImageConstPtr depth_msg,
                         const sensor_msgs::ImageConstPtr rgb_msg) {
-  if (!model_ptr)
-    return;
+  if (!model_ptr) return;
 
   if (count_ < data_skip_) {
     count_++;

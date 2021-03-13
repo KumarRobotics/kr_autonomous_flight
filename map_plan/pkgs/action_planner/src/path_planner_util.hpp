@@ -2,7 +2,8 @@
 
 #include <jps_planner/distance_map_planner/distance_map_planner.h>
 #include <jps_planner/jps_planner/jps_planner.h>
-#include <mapper/data_conversions.h>
+
+#include "data_conversions.h"
 
 template <int Dim>
 class PathPlannerUtil {

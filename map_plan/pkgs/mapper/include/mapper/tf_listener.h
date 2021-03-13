@@ -1,3 +1,5 @@
+#pragma once
+
 #include <geometry_msgs/Pose.h>
 #include <ros/time.h>
 #include <tf2_ros/transform_listener.h>

@@ -5,7 +5,6 @@
 #include <eigen_conversions/eigen_msg.h>
 #include <jps_collision/map_util.h>               // jps related
 #include <jps_planner/jps_planner/jps_planner.h>  // jps related
-#include <mapper/data_conversions.h>              // setMap, getMap, etc
 #include <nav_msgs/Odometry.h>                    // odometry
 #include <planning_ros_msgs/VoxelMap.h>
 #include <planning_ros_utils/data_ros_utils.h>
@@ -17,6 +16,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
+
+#include "data_conversions.h"  // setMap, getMap, etc
 
 using boost::irange;
 

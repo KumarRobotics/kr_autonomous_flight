@@ -1,7 +1,5 @@
 #include "mapper/voxel_mapper.h"
 
-#include <ros/ros.h>
-
 VoxelMapper::VoxelMapper(Vec3f origin, Vec3f dim, decimal_t res, int8_t val) {
   origin_ = Vec3i::Zero();
   origin_d_ = Vec3f::Zero();
@@ -405,11 +403,8 @@ void VoxelMapper::addCloud(const vec_Vec3f &pts, const Aff3f &TF,
   // Decay cloud which is within a local region around the robot
   if (val_decay > 0) {
     double max_decay_range = max_range * 2.0;
-    ROS_WARN_ONCE("[Mapper]: dacaying the point cloud within local range");
     decayLocalCloud(pos, max_decay_range);
-  } else {
-    ROS_WARN_ONCE("[Mapper]: dacaying is disabled");
-  };
+  }
 
   for (const auto &it : pts) {
     // through away points outside max_range first to save computation

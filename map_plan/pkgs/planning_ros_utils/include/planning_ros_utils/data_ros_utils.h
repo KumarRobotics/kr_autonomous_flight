@@ -37,8 +37,7 @@ inline Aff3f toTF(const geometry_msgs::Pose &p) {
 }
 
 template <int Dim>
-sensor_msgs::PointCloud vec_to_cloud(const vec_Vecf<Dim> &pts,
-                                     double h = 0) {
+sensor_msgs::PointCloud vec_to_cloud(const vec_Vecf<Dim> &pts, double h = 0) {
   sensor_msgs::PointCloud cloud;
   cloud.points.resize(pts.size());
 
@@ -88,8 +87,7 @@ inline vec_Vec3f ros_to_path(const planning_ros_msgs::Path &msg) {
 }
 
 template <int Dim>
-planning_ros_msgs::Path path_to_ros(const vec_Vecf<Dim> &path,
-                                    double h = 0) {
+planning_ros_msgs::Path path_to_ros(const vec_Vecf<Dim> &path, double h = 0) {
   planning_ros_msgs::Path msg;
   for (const auto &itt : path) {
     geometry_msgs::Point pt;

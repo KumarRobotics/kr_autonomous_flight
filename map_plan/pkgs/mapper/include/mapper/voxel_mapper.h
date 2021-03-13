@@ -1,10 +1,17 @@
-#ifndef VOXEL_MAPPER_H
-#define VOXEL_MAPPER_H
+#pragma once
 
-#include <mpl_basis/data_type.h>
 #include <planning_ros_msgs/VoxelMap.h>
 
+#include <Eigen/Geometry>
 #include <boost/multi_array.hpp>
+
+namespace mapper {
+
+template <typename T>
+using EigenAlignedVector = std::vector<T, Eigen::aligned_allocator<T>>;
+
+using vec_Vec3d = EigenAlignedVector<Eigen::Vector3d>;
+using vec_Vec3i = EigenAlignedVector<Eigen::Vector3i>;
 
 class VoxelMapper {
  public:
@@ -15,17 +22,18 @@ class VoxelMapper {
    * @param res voxel resolution
    * @param val set default map value
    */
-  VoxelMapper(Vec3f origin, Vec3f dim, double res, int8_t val = 0);
+  VoxelMapper(const Eigen::Vector3d& origin, const Eigen::Vector3d& dim,
+              double res, int8_t val = 0);
 
   /// Set all voxels as unknown
-  void setMapUnknown();
+  //  void setMapUnknown();
   /// Set all voxels as free
-  void setMapFree();
+  //  void setMapFree();
 
   /// Get the occupied voxels
-  vec_Vec3f getCloud();
+  vec_Vec3d getCloud();
   /// Get the inflated occupied voxels
-  vec_Vec3f getInflatedCloud();
+  vec_Vec3d getInflatedCloud();
 
   /**
    * @brief Get the occupied voxels within a local range
@@ -34,7 +42,9 @@ class VoxelMapper {
    *
    * Assume the map is in a fixed frame
    */
-  vec_Vec3f getLocalCloud(const Vec3f& pos, const Vec3f& ori, const Vec3f& dim);
+  vec_Vec3d getLocalCloud(const Eigen::Vector3d& pos,
+                          const Eigen::Vector3d& ori,
+                          const Eigen::Vector3d& dim);
 
   /**
    * @brief crop a local voxel map from the global voxel map
@@ -43,8 +53,8 @@ class VoxelMapper {
    *
    * Assume the map is in a fixed frame
    */
-  planning_ros_msgs::VoxelMap getInflatedLocalMap(const Vec3f& ori,
-                                                  const Vec3f& dim);
+  planning_ros_msgs::VoxelMap getInflatedLocalMap(const Eigen::Vector3d& ori,
+                                                  const Eigen::Vector3d& dim);
 
   /**
    * @brief Decay the occupied voxels within a local range
@@ -53,7 +63,7 @@ class VoxelMapper {
    *
    * Assume the map is in a fixed frame
    */
-  void decayLocalCloud(const Vec3f& pos, double max_decay_range);
+  void decayLocalCloud(const Eigen::Vector3d& pos, double max_decay_range);
 
   /**
    * @brief Get the inflated occupied voxels within a local range (local voxel
@@ -63,8 +73,9 @@ class VoxelMapper {
    *
    * Assume the map is in a fixed frame
    */
-  vec_Vec3f getInflatedLocalCloud(const Vec3f& pos, const Vec3f& ori,
-                                  const Vec3f& dim);
+  vec_Vec3d getInflatedLocalCloud(const Eigen::Vector3d& pos,
+                                  const Eigen::Vector3d& ori,
+                                  const Eigen::Vector3d& dim);
 
   /// Get the map
   planning_ros_msgs::VoxelMap getMap();
@@ -87,8 +98,9 @@ class VoxelMapper {
    *
    * return the new added occupied cells
    */
-  void addCloud(const vec_Vec3f& pts, const Aff3f& TF, const vec_Vec3i& ns,
-                bool ray_trace = false, double max_range = 10);
+  void addCloud(const vec_Vec3d& pts, const Eigen::Affine3d& TF,
+                const vec_Vec3i& ns, bool ray_trace = false,
+                double max_range = 10);
 
   /**
    * @brief Add point cloud
@@ -101,36 +113,38 @@ class VoxelMapper {
    *
    * return the new added occupied cells
    */
-  void addCloud2D(const vec_Vec3f& pts, const Aff3f& TF, const vec_Vec3i& ns,
-                  bool ray_trace, double uh, double lh, double max_range);
+  void addCloud2D(const vec_Vec3d& pts, const Eigen::Affine3d& TF,
+                  const vec_Vec3i& ns, bool ray_trace, double uh, double lh,
+                  double max_range);
 
   /// Free voxels
-  void freeVoxels(const Vec3f& pt, const vec_Vec3i ns);
+  void freeVoxels(const Eigen::Vector3d& pt, const vec_Vec3i& ns);
   /// Set corresponding voxels as free
-  void freeCloud(const vec_Vec3f& pts, const Aff3f& TF);
+  void freeCloud(const vec_Vec3d& pts, const Eigen::Affine3d& TF);
   // /// Decay the voxel value to unknown with growing time
   // void decay();
 
  private:
   /// Initialize a space for the map
-  bool allocate(const Vec3f& new_dim_d, const Vec3f& new_ori_d);
+  bool allocate(const Eigen::Vector3d& new_dim_d,
+                const Eigen::Vector3d& new_ori_d);
   /// Raytrace from p1 to p2
-  vec_Vec3i rayTrace(const Vec3f& pt1, const Vec3f& pt2);
+  vec_Vec3i rayTrace(const Eigen::Vector3d& pt1, const Eigen::Vector3d& pt2);
   /// Convert the float point into the int coordinate
-  Vec3i floatToInt(const Vec3f& pt);
+  Eigen::Vector3i floatToInt(const Eigen::Vector3d& pt);
   /// Convert the int coordinate into the float point
-  Vec3f intToFloat(const Vec3i& pn);
+  Eigen::Vector3d intToFloat(const Eigen::Vector3i& pn);
   /// Check if the coordinate is outside or not
-  bool isOutSide(const Vec3i& pn);
+  bool isOutSide(const Eigen::Vector3i& pn);
 
   /// Map dimension: number of voxels in each axis
-  Vec3i dim_;
+  Eigen::Vector3i dim_;
   /// Map origin coordinate
-  Vec3i origin_;
+  Eigen::Vector3i origin_;
   /// Map origin point
-  Vec3f origin_d_;
+  Eigen::Vector3d origin_d_;
 
-  Aff3f lidar_rot_;
+  Eigen::Affine3d lidar_rot_;
 
   /// Map resolution
   float res_;
@@ -160,4 +174,4 @@ class VoxelMapper {
   int8_t val_default = 0;
 };
 
-#endif
+}  // namespace mapper

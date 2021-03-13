@@ -14,8 +14,8 @@
 // Timing stuff
 ros::Publisher time_pub;
 
-std::unique_ptr<VoxelMapper> global_voxel_mapper_;   // mapper
-std::unique_ptr<VoxelMapper> storage_voxel_mapper_;  // mapper
+std::unique_ptr<mapper::VoxelMapper> global_voxel_mapper_;   // mapper
+std::unique_ptr<mapper::VoxelMapper> storage_voxel_mapper_;  // mapper
 // std::unique_ptr<VoxelMapper> local_voxel_mapper_;  // mapper
 
 planning_ros_msgs::VoxelMap global_map_info_;
@@ -47,7 +47,7 @@ bool global_use_robot_dim_;
 
 double local_max_raycast_, global_max_raycast_;  // maximum raycasting range
 double occ_map_height_;
-Vec3f local_ori_offset_;
+Eigen::Vector3d local_ori_offset_;
 
 int update_interval_;
 int counter_ = 0;
@@ -55,10 +55,10 @@ int counter_clear_ = 0;
 
 vec_Vec3i clear_ns_;
 
-void cropLocalMap(const Vec3f &center_position) {
-  const Vec3f local_dim(local_map_info_.dim.x, local_map_info_.dim.y,
-                        local_map_info_.dim.z);
-  Vec3f local_origin = center_position + local_ori_offset_;
+void cropLocalMap(const Eigen::Vector3d &center_position) {
+  const Eigen::Vector3d local_dim(local_map_info_.dim.x, local_map_info_.dim.y,
+                                  local_map_info_.dim.z);
+  Eigen::Vector3d local_origin = center_position + local_ori_offset_;
   local_origin(2) = local_map_info_.origin.z;
 
   // core function: crop local map from the storage map
@@ -99,8 +99,8 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
     }
     pose_map_cloud = *tf_map_cloud;
   }
-  const Aff3f T_m_c = toTF(pose_map_cloud);
-  const Vec3f sensor_position(
+  const Eigen::Affine3d T_m_c = toTF(pose_map_cloud);
+  const Eigen::Vector3d sensor_position(
       T_m_c.translation().x(), T_m_c.translation().y(),
       T_m_c.translation()
           .z());  // This is the lidar position in the fixed frame
@@ -182,15 +182,15 @@ void mapInit() {
   // TODO(xu): combine two parts into one.
   ROS_WARN("[Mapper]: get 3D map info!");
   // part1: global
-  const Vec3f global_origin(global_map_info_.origin.x,
-                            global_map_info_.origin.y,
-                            global_map_info_.origin.z);
-  const Vec3f global_dim(global_map_info_.dim.x, global_map_info_.dim.y,
-                         global_map_info_.dim.z);
+  const Eigen::Vector3d global_origin(global_map_info_.origin.x,
+                                      global_map_info_.origin.y,
+                                      global_map_info_.origin.z);
+  const Eigen::Vector3d global_dim(
+      global_map_info_.dim.x, global_map_info_.dim.y, global_map_info_.dim.z);
   const double global_res = global_map_info_.resolution;
   // Initialize the mapper
   global_voxel_mapper_.reset(
-      new VoxelMapper(global_origin, global_dim, global_res));
+      new mapper::VoxelMapper(global_origin, global_dim, global_res));
   global_infla_array_.clear();
   if (global_use_robot_dim_) {
     int global_rn = std::ceil(robot_r_ / global_res);
@@ -200,20 +200,21 @@ void mapInit() {
         for (int nz = -global_hn; nz <= global_hn; ++nz) {
           if (nx == 0 && ny == 0) continue;
           if (std::hypot(nx, ny) > global_rn) continue;
-          global_infla_array_.push_back(Vec3i(nx, ny, nz));
+          global_infla_array_.push_back(Eigen::Vector3i(nx, ny, nz));
         }
       }
     }
   }
 
   // part2: local
-  const Vec3f origin(storage_map_info_.origin.x, storage_map_info_.origin.y,
-                     storage_map_info_.origin.z);
-  const Vec3f dim(storage_map_info_.dim.x, storage_map_info_.dim.y,
-                  storage_map_info_.dim.z);
+  const Eigen::Vector3d origin(storage_map_info_.origin.x,
+                               storage_map_info_.origin.y,
+                               storage_map_info_.origin.z);
+  const Eigen::Vector3d dim(storage_map_info_.dim.x, storage_map_info_.dim.y,
+                            storage_map_info_.dim.z);
   const double res = storage_map_info_.resolution;
   // Initialize the mapper
-  storage_voxel_mapper_.reset(new VoxelMapper(origin, dim, res));
+  storage_voxel_mapper_.reset(new mapper::VoxelMapper(origin, dim, res));
   local_infla_array_.clear();
   int rn = std::ceil(robot_r_ / res);
   int hn = std::ceil(robot_h_ / res);
@@ -222,7 +223,7 @@ void mapInit() {
       for (int nz = -hn; nz <= hn; ++nz) {
         if (nx == 0 && ny == 0) continue;
         if (std::hypot(nx, ny) > rn) continue;
-        local_infla_array_.push_back(Vec3i(nx, ny, nz));
+        local_infla_array_.push_back(Eigen::Vector3i(nx, ny, nz));
       }
     }
   }
@@ -308,8 +309,8 @@ int main(int argc, char **argv) {
   local_map_info_.dim.z = storage_map_info_.dim.z;
   local_map_info_.origin.z = storage_map_info_.origin.z;
 
-  const Vec3f local_dim(local_map_info_.dim.x, local_map_info_.dim.y,
-                        local_map_info_.dim.z);
+  const Eigen::Vector3d local_dim(local_map_info_.dim.x, local_map_info_.dim.y,
+                                  local_map_info_.dim.z);
   local_ori_offset_ =
       -local_dim /
       2;  // origin is the left lower corner of the voxel map, therefore, adding
@@ -319,7 +320,7 @@ int main(int argc, char **argv) {
   for (int nx = -1; nx <= 1; nx++) {
     for (int ny = -1; ny <= 1; ny++) {
       for (int nz = -1; nz <= 1; nz++) {
-        clear_ns_.push_back(Vec3i(nx, ny, nz));
+        clear_ns_.push_back(Eigen::Vector3i(nx, ny, nz));
       }
     }
   }

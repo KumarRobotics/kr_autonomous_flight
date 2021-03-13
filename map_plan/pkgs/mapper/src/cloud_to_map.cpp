@@ -10,7 +10,7 @@
 // Timing stuff
 ros::Publisher time_pub;
 
-std::unique_ptr<VoxelMapper> voxel_mapper_;  // mapper
+std::unique_ptr<mapper::VoxelMapper> voxel_mapper_;  // mapper
 ros::Publisher map_pub;
 ros::Publisher global_occ_map_pub;
 ros::Publisher local_cloud_pub;
@@ -57,7 +57,7 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
     pose_map_cloud = *tf_map_cloud;
   }
 
-  const Aff3f T_m_c = toTF(pose_map_cloud);
+  const Eigen::Affine3d T_m_c = toTF(pose_map_cloud);
 
   ros::Time t0 = ros::Time::now();
   double min_range = 0.75;  // points within this distance will be discarded
@@ -66,8 +66,8 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
   const auto pts = cloud_to_vec_filter(cloud, min_range_squared);
   voxel_mapper_->addCloud(pts, T_m_c, ns_, false, max_range_);
 
-  const Vec3f pos(T_m_c.translation().x(), T_m_c.translation().y(),
-                  T_m_c.translation().z());
+  const Eigen::Vector3d pos(T_m_c.translation().x(), T_m_c.translation().y(),
+                            T_m_c.translation().z());
   double dt1 = (ros::Time::now() - t0).toSec();
 
   t0 = ros::Time::now();
@@ -81,8 +81,8 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
   global_occ_map.header.frame_id = map_frame_;
   global_occ_map_pub.publish(global_occ_map);
 
-  const Vec3f local_dim(local_dim_x_, local_dim_y_, local_dim_z_);
-  const Vec3f local_ori = -local_dim / 2;
+  const Eigen::Vector3d local_dim(local_dim_x_, local_dim_y_, local_dim_z_);
+  const Eigen::Vector3d local_ori = -local_dim / 2;
 
   auto inflated_cloud =
       voxel_mapper_->getInflatedLocalCloud(pos, local_ori, local_dim);
@@ -119,11 +119,11 @@ void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr &msg) {
 }
 
 void mapInfoUpdate(const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
-  const Vec3f origin(msg->origin.x, msg->origin.y, msg->origin.z);
-  const Vec3f dim(msg->dim.x, msg->dim.y, msg->dim.z);
+  const Eigen::Vector3d origin(msg->origin.x, msg->origin.y, msg->origin.z);
+  const Eigen::Vector3d dim(msg->dim.x, msg->dim.y, msg->dim.z);
   const double res = msg->resolution;
   // Initialize the mapper
-  voxel_mapper_.reset(new VoxelMapper(origin, dim, res));
+  voxel_mapper_.reset(new mapper::VoxelMapper(origin, dim, res));
 
   ROS_WARN("[Mapper]: get 3D map info!");
   ns_.clear();
@@ -136,7 +136,7 @@ void mapInfoUpdate(const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
       for (int nz = -hn; nz <= hn; ++nz) {
         if (nx == 0 && ny == 0) continue;
         if (std::hypot(nx, ny) > rn) continue;
-        ns_.push_back(Vec3i(nx, ny, nz));
+        ns_.push_back(Eigen::Vector3i(nx, ny, nz));
       }
     }
   }

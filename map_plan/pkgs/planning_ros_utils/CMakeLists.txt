@@ -32,31 +32,21 @@ find_package(Qt5 ${rviz_QT_VERSION} EXACT REQUIRED Core Widgets)
 set(QT_LIBRARIES Qt5::Widgets)
 
 include(${VTK_USE_FILE})
-# add_executable(mesh_sampling src/mapping_utils/mesh_sampling.cpp)
-# target_link_libraries(mesh_sampling PUBLIC ${catkin_LIBRARIES})
 
 catkin_package(
   INCLUDE_DIRS
   include
   LIBRARIES
+  ${PROJECT_NAME}
   planning_rviz_plugins
-  voxel_grid
   CATKIN_DEPENDS
   planning_ros_msgs
   motion_primitive_library)
 
-add_library(voxel_grid src/mapping_utils/voxel_grid.cpp)
-target_include_directories(voxel_grid PUBLIC ${catkin_INCLUDE_DIRS} include)
-target_link_libraries(voxel_grid PUBLIC ${catkin_LIBRARIES} Eigen3::Eigen)
-
-add_executable(cloud_to_map src/mapping_utils/cloud_to_map.cpp)
-target_link_libraries(cloud_to_map PUBLIC voxel_grid ${catkin_LIBRARIES})
-
-# add_executable(trajectory_extractor_node
-# src/planning_utils/trajectory_extractor_node.cpp)
-# target_include_directories(trajectory_extractor_node PUBLIC
-# ${catkin_INCLUDE_DIRS}) target_link_libraries(trajectory_extractor_node PUBLIC
-# ${catkin_LIBRARIES})
+add_library(${PROJECT_NAME} src/data_ros_utils.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC ${catkin_INCLUDE_DIRS}
+                                                  include)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES} Eigen3::Eigen)
 
 set(SOURCE_FILES
     src/planning_rviz_plugins/bound_visual.cpp

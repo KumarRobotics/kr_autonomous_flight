@@ -128,9 +128,9 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   traj_planner_nh.param("max_u", u_max, 1.0);
 
   vec_E<VecDf> U;
-  const decimal_t du = u_max;
-  for (decimal_t dx = -u_max; dx <= u_max; dx += du)
-    for (decimal_t dy = -u_max; dy <= u_max; dy += du)
+  const double du = u_max;
+  for (double dx = -u_max; dx <= u_max; dx += du)
+    for (double dy = -u_max; dy <= u_max; dy += du)
       U.push_back(Vec3f(dx, dy, 0));
 
   double dt;
@@ -199,7 +199,7 @@ void LocalPlanServer::process_result(const Trajectory3D &traj, bool solved) {
 
     // execution_time (set in replanner)
     // equals 1.0/replan_rate
-    decimal_t endt = goal_->execution_time.toSec();
+    double endt = goal_->execution_time.toSec();
 
     // evaluate trajectory for 5 steps, each step duration equals
     // execution_time, get corresponding waypoints and record in result

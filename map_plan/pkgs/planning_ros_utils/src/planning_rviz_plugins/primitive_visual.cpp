@@ -49,7 +49,7 @@ void PrimitiveVisual::setMessage(
   if (jrk_vis_) jrks_.resize(N * num_);
   if (yaw_vis_) yaws_.resize(N * yaw_num_);
 
-  decimal_t theta = M_PI / 2;
+  double theta = M_PI / 2;
   Mat3f R;
   R << cos(theta), -sin(theta), 0, sin(theta), cos(theta), 0, 0, 0, 1;
 
@@ -105,9 +105,9 @@ void PrimitiveVisual::setMessage(
         yaws_[n * yaw_num_ + i].reset(
             new rviz::BillboardLine(scene_manager_, frame_node_));
         const auto keyframe = yaw_waypoints[i];
-        decimal_t yaw = keyframe.yaw;
-        decimal_t yaw1 = yaw + dyaw_;
-        decimal_t yaw2 = yaw - dyaw_;
+        double yaw = keyframe.yaw;
+        double yaw1 = yaw + dyaw_;
+        double yaw2 = yaw - dyaw_;
         Mat3f Ryaw1, Ryaw2;
         Ryaw1 << cos(yaw1), -sin(yaw1), 0, sin(yaw1), cos(yaw1), 0, 0, 0, 1;
         Ryaw2 << cos(yaw2), -sin(yaw2), 0, sin(yaw2), cos(yaw2), 0, 0, 0, 1;

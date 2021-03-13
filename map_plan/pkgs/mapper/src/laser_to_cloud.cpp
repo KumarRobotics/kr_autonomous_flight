@@ -93,7 +93,7 @@ void scanCallback(const sensor_msgs::LaserScan::ConstPtr &msg) {
 
     Eigen::Affine3d laser_to_horizon_eigen;
     tf::poseMsgToEigen(laser_to_horizon_pose, laser_to_horizon_eigen);
-    cloud = transform_cloud(cloud, laser_to_horizon_eigen.cast<decimal_t>());
+    cloud = transform_cloud(cloud, laser_to_horizon_eigen.cast<double>());
 
     cloud.header.stamp = msg->header.stamp;
     cloud.header.frame_id = horizon_frame;

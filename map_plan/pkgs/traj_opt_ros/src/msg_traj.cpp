@@ -38,13 +38,13 @@ MsgTrajectory::MsgTrajectory(const TrajData &traj) : traj_(traj) {
   }
 }
 
-bool MsgTrajectory::evaluate(decimal_t t, uint derr,
+bool MsgTrajectory::evaluate(double t, uint derr,
                              VecD &out) const {  // returns false when out
   out = VecD::Zero(dim_, 1);
   //  out << 0.0,0.0,0.0,0.0;
   bool success = false;
 
-  decimal_t dt, dx;
+  double dt, dx;
 
   // of time range, but still
   // sets out to endpoint
@@ -76,21 +76,21 @@ bool MsgTrajectory::evaluate(decimal_t t, uint derr,
     }
     success = false;
   }
-  decimal_t ratio = std::pow(1 / dt, decimal_t(derr));
+  double ratio = std::pow(1 / dt, double(derr));
   for (int i = 0; i < dim_; i++) out(i) = ratio * poly->at(i)->evaluate(dx);
 
   return success;
 }
 
-decimal_t MsgTrajectory::getTotalTime() const {
-  decimal_t tt = 0.0;
+double MsgTrajectory::getTotalTime() const {
+  double tt = 0.0;
   for (auto &t : dts) tt += t;
   return tt;
 }
 
 TrajData MsgTrajectory::serialize() { return traj_; }
-decimal_t MsgTrajectory::getCost() { return NAN; }
-bool MsgTrajectory::evaluateS(decimal_t t, VecD &out) {
+double MsgTrajectory::getCost() { return NAN; }
+bool MsgTrajectory::evaluateS(double t, VecD &out) {
   assert(dim_ == 9);
   out = VecD::Zero(6, 1);
   VecD r5;
@@ -109,7 +109,7 @@ bool MsgTrajectory::evaluateS(decimal_t t, VecD &out) {
   //  ", "<< q.z()  << std::endl;
   return true;
 }
-bool MsgTrajectory::evaluateST(decimal_t t, VecD &out) {
+bool MsgTrajectory::evaluateST(double t, VecD &out) {
   // plots in tangent space
   assert(dim_ == 9);
   out = VecD::Zero(6, 1);

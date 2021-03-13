@@ -172,7 +172,7 @@ inline Trajectory2D toTrajectory2D(
       traj.total_t_ += seg.dT;
     }
     traj.lambda_ = l;
-    std::vector<decimal_t> ts;
+    std::vector<double> ts;
     for (const auto &tau : traj.taus) ts.push_back(traj.lambda_.getT(tau));
     traj.Ts = ts;
   } else
@@ -205,7 +205,7 @@ inline Trajectory3D toTrajectory3D(
       traj.total_t_ += seg.dT;
     }
     traj.lambda_ = l;
-    std::vector<decimal_t> ts;
+    std::vector<double> ts;
     for (const auto &tau : traj.taus) ts.push_back(traj.lambda_.getT(tau));
     traj.Ts = ts;
   } else

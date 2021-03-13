@@ -15,10 +15,10 @@ namespace traj_opt {
 Poly PolyCalculus::integrate(const Poly &p) {
   // integrates polynomial with 0 as constant of integration
   Poly::size_type rows = p.size();
-  std::vector<decimal_t> v;
+  std::vector<double> v;
   v.push_back(0.0);
   for (Poly::size_type i = 0; i < rows; i++) {
-    decimal_t val = static_cast<decimal_t>(i + 1);
+    double val = static_cast<double>(i + 1);
     v.push_back(p[i] / val);
   }
   Poly result(v.data(), rows);
@@ -28,9 +28,9 @@ Poly PolyCalculus::differentiate(const Poly &p) {
   // differentiates polynomial
   Poly::size_type rows = p.size();
   if (rows <= 1) return Poly(0.0);
-  std::vector<decimal_t> v;
+  std::vector<double> v;
   for (Poly::size_type i = 1; i < rows; i++) {
-    decimal_t val = static_cast<decimal_t>(i);
+    double val = static_cast<double>(i);
     v.push_back(p[i] * val);
   }
   Poly result(v.data(), rows - 2);
@@ -57,7 +57,7 @@ void StandardBasis::integrate() {
   }
 }
 
-decimal_t StandardBasis::evaluate(decimal_t x, uint coeff) const {
+double StandardBasis::evaluate(double x, uint coeff) const {
   //    std::cout << "poly size " << polys.size() << std::endl;
   assert(coeff < polys.size());
 
@@ -75,13 +75,13 @@ std::ostream &operator<<(std::ostream &os, const StandardBasis &lb) {
   return os;
 }
 
-decimal_t BasisBundle::getVal(decimal_t x, decimal_t dt, uint coeff,
+double BasisBundle::getVal(double x, double dt, uint coeff,
                               int derr) const {
   assert(derr < static_cast<int>(derrivatives.size()));
   if (derr < 0) {
     assert(-derr <= static_cast<int>(integrals.size()));
     if (dt != 0.0) {
-      decimal_t factor = std::pow(dt, -static_cast<int>(derr));
+      double factor = std::pow(dt, -static_cast<int>(derr));
       return factor * integrals.at(-derr - 1)->evaluate(x, coeff);
     } else {
       return integrals.at(-derr - 1)->evaluate(x, coeff);
@@ -89,7 +89,7 @@ decimal_t BasisBundle::getVal(decimal_t x, decimal_t dt, uint coeff,
 
   } else {
     if (dt != 0.0) {
-      decimal_t factor = std::pow(dt, -static_cast<int>(derr));
+      double factor = std::pow(dt, -static_cast<int>(derr));
       return factor * derrivatives.at(derr)->evaluate(x, coeff);
     } else {
       return derrivatives.at(derr)->evaluate(x, coeff);
@@ -101,7 +101,7 @@ decimal_t BasisBundle::getVal(decimal_t x, decimal_t dt, uint coeff,
 Basis::Basis(uint n_p_) : n_p(n_p_) { type_ = PolyType::STANDARD; }
 // Basis::~Basis() {}
 
-decimal_t StandardBasis::innerproduct(uint i, uint j) const {
+double StandardBasis::innerproduct(uint i, uint j) const {
   Poly L = polys.at(i) * polys.at(j);
   Poly Lint = PolyCalculus::integrate(L);
   return Lint.evaluate(1.0);
@@ -111,7 +111,7 @@ Poly StandardBasis::getPoly(uint i) const { return polys.at(i); }
 StandardBasis::StandardBasis(uint n) : Basis(n) {
   type_ = PolyType::STANDARD;
   if (n == 0) return;
-  std::vector<decimal_t> simple;
+  std::vector<double> simple;
   simple.push_back(1.0);
   for (uint i = 0; i <= n_p; i++) {
     Poly poly(simple.data(), simple.size() - 1);

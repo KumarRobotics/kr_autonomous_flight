@@ -13,29 +13,6 @@ PCLPointCloud toPCL(const sensor_msgs::PointCloud &cloud_ros) {
   return cloud;
 }
 
-vec_Vec3f fromPCL(const PCLPointCloud &cloud) {
-  vec_Vec3f pts;
-  pts.resize(cloud.points.size());
-  for (unsigned int i = 0; i < cloud.points.size(); i++) {
-    pts[i](0) = cloud.points[i].x;
-    pts[i](1) = cloud.points[i].y;
-    pts[i](2) = cloud.points[i].z;
-  }
-  return pts;
-}
-
-PCLPointCloud eigenToPCL(const vec_Vec3f &pts) {
-  PCLPointCloud cloud;
-  cloud.points.resize(pts.size());
-  for (unsigned int i = 0; i < pts.size(); i++) {
-    cloud.points[i].x = pts[i](0);
-    cloud.points[i].y = pts[i](1);
-    cloud.points[i].z = pts[i](2);
-  }
-
-  return cloud;
-}
-
 sensor_msgs::PointCloud toROS(const PCLPointCloud &cloud_pcl) {
   sensor_msgs::PointCloud cloud;
   cloud.points.resize(cloud_pcl.points.size());
@@ -74,4 +51,4 @@ PCLPointCloud voxel_filter(const PCLPointCloud &cloud, float res) {
   return *cloud_tmp;
 }
 
-} // namespace PCLUtils
+}  // namespace PCLUtils

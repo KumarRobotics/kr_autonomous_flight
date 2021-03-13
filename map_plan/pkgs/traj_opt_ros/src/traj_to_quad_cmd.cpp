@@ -6,9 +6,9 @@ namespace traj_opt {
 
 using kr_mav_msgs::PositionCommand;
 
-void EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj, decimal_t dt,
+void EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj, double dt,
                         PositionCommand *out, uint max_derr_eval,
-                        decimal_t scaling) {
+                        double scaling) {
   traj_opt::VecD val;
 
   traj->evaluate(dt, 0, val);
@@ -40,8 +40,8 @@ void EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj, decimal_t dt,
 }
 
 PositionCommand EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj,
-                                   decimal_t dt, uint max_derr_eval,
-                                   decimal_t scaling) {
+                                   double dt, uint max_derr_eval,
+                                   double scaling) {
   PositionCommand cmd;
   EvaluateTrajectory(traj, dt, &cmd, max_derr_eval, scaling);
   return cmd;

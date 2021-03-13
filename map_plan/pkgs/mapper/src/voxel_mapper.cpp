@@ -1,6 +1,6 @@
 #include "mapper/voxel_mapper.h"
 
-VoxelMapper::VoxelMapper(Vec3f origin, Vec3f dim, decimal_t res, int8_t val) {
+VoxelMapper::VoxelMapper(Vec3f origin, Vec3f dim, double res, int8_t val) {
   origin_ = Vec3i::Zero();
   origin_d_ = Vec3f::Zero();
   dim_ = Vec3i::Zero();
@@ -477,9 +477,9 @@ void VoxelMapper::freeCloud(const vec_Vec3f &pts, const Aff3f &TF) {
 
 vec_Vec3i VoxelMapper::rayTrace(const Vec3f &pt1, const Vec3f &pt2) {
   Vec3f diff = pt2 - pt1;
-  decimal_t k = 0.8;
+  double k = 0.8;
   int max_diff = (diff / res_).lpNorm<Eigen::Infinity>() / k;
-  decimal_t s = 1.0 / max_diff;
+  double s = 1.0 / max_diff;
   Vec3f step = diff * s;
 
   vec_Vec3i pns;
@@ -500,7 +500,7 @@ Vec3i VoxelMapper::floatToInt(const Vec3f &pt) {
 }
 
 Vec3f VoxelMapper::intToFloat(const Vec3i &pn) {
-  return pn.cast<decimal_t>() * res_ + origin_d_;
+  return pn.cast<double>() * res_ + origin_d_;
 }
 
 bool VoxelMapper::isOutSide(const Vec3i &pn) {

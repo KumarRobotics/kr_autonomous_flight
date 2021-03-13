@@ -20,9 +20,6 @@ typedef pcl::PCLPointCloud2 PCLPointCloud2;
 namespace PCLUtils {
 PCLPointCloud toPCL(const sensor_msgs::PointCloud &cloud_ros);
 
-vec_Vec3f fromPCL(const PCLPointCloud &cloud);
-
-PCLPointCloud eigenToPCL(const vec_Vec3f &pts);
 sensor_msgs::PointCloud toROS(const PCLPointCloud &cloud_pcl);
 
 PCLPointCloud outlier_removal(const PCLPointCloud &cloud, float radius = 0.4,

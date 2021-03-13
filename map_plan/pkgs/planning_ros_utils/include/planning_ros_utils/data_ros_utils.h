@@ -19,7 +19,7 @@ inline Vec3f vec_to_eigen(const geometry_msgs::Vector3 &v) {
   return Vec3f(v.x, v.y, v.z);
 }
 
-inline vec_Vec3f vec2_to_vec3(const vec_Vec2f &pts2d, decimal_t z = 0) {
+inline vec_Vec3f vec2_to_vec3(const vec_Vec2f &pts2d, double z = 0) {
   vec_Vec3f pts(pts2d.size());
 
   for (size_t i = 0; i < pts.size(); i++)
@@ -33,12 +33,12 @@ inline Aff3f toTF(const geometry_msgs::Pose &p) {
   tf::poseMsgToTF(p, Ttf);
   Eigen::Affine3d Td;
   tf::poseTFToEigen(Ttf, Td);
-  return Td.cast<decimal_t>();
+  return Td.cast<double>();
 }
 
 template <int Dim>
 sensor_msgs::PointCloud vec_to_cloud(const vec_Vecf<Dim> &pts,
-                                     decimal_t h = 0) {
+                                     double h = 0) {
   sensor_msgs::PointCloud cloud;
   cloud.points.resize(pts.size());
 
@@ -63,7 +63,7 @@ inline vec_Vec3f cloud_to_vec(const sensor_msgs::PointCloud &cloud) {
 }
 
 inline vec_Vec3f cloud_to_vec_filter(const sensor_msgs::PointCloud &cloud,
-                                     const decimal_t eps) {
+                                     const double eps) {
   vec_Vec3f pts;
   pts.reserve(cloud.points.size());
   for (unsigned int i = 0; i < cloud.points.size(); i++) {
@@ -89,7 +89,7 @@ inline vec_Vec3f ros_to_path(const planning_ros_msgs::Path &msg) {
 
 template <int Dim>
 planning_ros_msgs::Path path_to_ros(const vec_Vecf<Dim> &path,
-                                    decimal_t h = 0) {
+                                    double h = 0) {
   planning_ros_msgs::Path msg;
   for (const auto &itt : path) {
     geometry_msgs::Point pt;
@@ -103,7 +103,7 @@ planning_ros_msgs::Path path_to_ros(const vec_Vecf<Dim> &path,
 
 template <int Dim>
 planning_ros_msgs::PathArray path_array_to_ros(
-    const vec_E<vec_Vecf<Dim>> &paths, decimal_t h = 0) {
+    const vec_E<vec_Vecf<Dim>> &paths, double h = 0) {
   planning_ros_msgs::PathArray msg;
   for (const auto &it : paths) msg.paths.push_back(path_to_ros(it, h));
   return msg;
@@ -112,7 +112,7 @@ planning_ros_msgs::PathArray path_array_to_ros(
 template <int Dim>
 planning_ros_msgs::PathArray path_array_to_ros(
     const std::vector<std::pair<std::string, vec_Vecf<Dim>>> &paths,
-    decimal_t h = 0) {
+    double h = 0) {
   planning_ros_msgs::PathArray msg;
   for (const auto &it : paths) {
     planning_ros_msgs::Path path_msg = path_to_ros(it.second, h);

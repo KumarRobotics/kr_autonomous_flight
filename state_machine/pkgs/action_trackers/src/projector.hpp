@@ -136,12 +136,12 @@ class Projector {
   }
 
  private:
-  vec_Vec3f path_downsample(const vec_Vec3f &ps, decimal_t d) {
+  vec_Vec3f path_downsample(const vec_Vec3f &ps, double d) {
     // subdivide according to length
     if (ps.empty()) return ps;
     vec_Vec3f path;
     for (unsigned int i = 1; i < ps.size(); i++) {
-      decimal_t dist = (ps[i] - ps[i - 1]).norm();
+      double dist = (ps[i] - ps[i - 1]).norm();
       int cnt = std::ceil(dist / d);
       for (int j = 0; j < cnt; j++)
         path.push_back(ps[i - 1] + j * (ps[i] - ps[i - 1]) / cnt);
@@ -188,7 +188,7 @@ class Projector {
   // intersect any obs_ (points in point cloud)
   // It starts at r_max_, but can get smaller
   // At the minimum it will be r_min_
-  Ellipsoid3D find_sphere(const Vec3f &pt, const vec_Vec3f &obs, decimal_t f) {
+  Ellipsoid3D find_sphere(const Vec3f &pt, const vec_Vec3f &obs, double f) {
     Ellipsoid3D E(f * Mat3f::Identity(), pt);
 
     // Find which cloud points (obs) are in the ellipsoid
@@ -204,7 +204,7 @@ class Projector {
     // Make a ball that is smaller than the distance from curr_pos (pt) and the
     // closest point
     Vec3f closest_o = pt;
-    decimal_t min_dist = f;
+    double min_dist = f;
     for (const auto &it : Os) {
       if ((it - pt).norm() < min_dist) {
         min_dist = (it - pt).norm();
@@ -228,17 +228,17 @@ class Projector {
     Vec3f d = (p2 - p1).normalized();
     Vec3f v = (p1 - c);
 
-    decimal_t m = d.dot(v);
+    double m = d.dot(v);
 
-    decimal_t dd = m * m - (v.dot(v) - r * r);
+    double dd = m * m - (v.dot(v) - r * r);
     if (dd < 0) return false;
 
-    decimal_t dd1 = -m + sqrt(dd);
-    decimal_t dd2 = -m - sqrt(dd);
+    double dd1 = -m + sqrt(dd);
+    double dd2 = -m - sqrt(dd);
 
-    decimal_t k = std::max(dd1, dd2);
+    double k = std::max(dd1, dd2);
 
-    decimal_t k_max = (p2 - p1).norm();
+    double k_max = (p2 - p1).norm();
     if (k > k_max || k < 0) {
       if (force && k > k_max) {
         g = p2;

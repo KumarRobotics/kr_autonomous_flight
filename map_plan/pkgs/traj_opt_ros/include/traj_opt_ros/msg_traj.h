@@ -12,12 +12,12 @@ class MsgTrajectory : public Trajectory {
  public:
   explicit MsgTrajectory(const TrajData &traj);
 
-  bool evaluate(decimal_t t, uint derr, VecD &out) const override;
-  //  bool evaluate(decimal_t t, VecD &out);
-  bool evaluateS(decimal_t t, VecD &out);
-  bool evaluateST(decimal_t t, VecD &out);
-  decimal_t getTotalTime() const override;
-  decimal_t getCost() override;
+  bool evaluate(double t, uint derr, VecD &out) const override;
+  //  bool evaluate(double t, VecD &out);
+  bool evaluateS(double t, VecD &out);
+  bool evaluateST(double t, VecD &out);
+  double getTotalTime() const override;
+  double getCost() override;
   TrajData serialize() override;
 
  protected:
@@ -25,7 +25,7 @@ class MsgTrajectory : public Trajectory {
   std::vector<std::vector<boost::shared_ptr<Poly>>> polyies_;
   std::vector<std::vector<std::vector<boost::shared_ptr<Poly>>>> derrives_;
   uint num_secs_;
-  std::vector<decimal_t> dts;
+  std::vector<double> dts;
   uint deg_;
   //  int seg;
 };

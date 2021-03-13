@@ -15,7 +15,7 @@ class VoxelMapper {
    * @param res voxel resolution
    * @param val set default map value
    */
-  VoxelMapper(Vec3f origin, Vec3f dim, decimal_t res, int8_t val = 0);
+  VoxelMapper(Vec3f origin, Vec3f dim, double res, int8_t val = 0);
 
   /// Set all voxels as unknown
   void setMapUnknown();

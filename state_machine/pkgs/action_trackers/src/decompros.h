@@ -6,10 +6,10 @@ struct Hyperplane {
   Hyperplane(const Vecf<Dim> &p, const Vecf<Dim> &n) : p_(p), n_(n) {}
 
   /// Calculate the signed distance from point
-  decimal_t signed_dist(const Vecf<Dim> &pt) const { return n_.dot(pt - p_); }
+  double signed_dist(const Vecf<Dim> &pt) const { return n_.dot(pt - p_); }
 
   /// Calculate the distance from point
-  decimal_t dist(const Vecf<Dim> &pt) const {
+  double dist(const Vecf<Dim> &pt) const {
     return std::abs(signed_dist(pt));
   }
 
@@ -96,7 +96,7 @@ struct LinearConstraint {
 
     for (unsigned int i = 0; i < size; i++) {
       auto n = vs[i].n_;
-      decimal_t c = vs[i].p_.dot(n);
+      double c = vs[i].p_.dot(n);
       if (n.dot(p0) - c > 0) {
         n = -n;
         c = -c;
@@ -139,7 +139,7 @@ struct Ellipsoid {
   Ellipsoid(const Matf<Dim, Dim> &C, const Vecf<Dim> &d) : C_(C), d_(d) {}
 
   /// Calculate distance to the center
-  decimal_t dist(const Vecf<Dim> &pt) const {
+  double dist(const Vecf<Dim> &pt) const {
     return (C_.inverse() * (pt - d_)).norm();
   }
 
@@ -158,9 +158,9 @@ struct Ellipsoid {
   /// Find the closest point
   Vecf<Dim> closest_point(const vec_Vecf<Dim> &O) const {
     Vecf<Dim> pt = Vecf<Dim>::Zero();
-    decimal_t min_dist = std::numeric_limits<decimal_t>::max();
+    double min_dist = std::numeric_limits<double>::max();
     for (const auto &it : O) {
-      decimal_t d = dist(it);
+      double d = dist(it);
       if (d < min_dist) {
         min_dist = d;
         pt = it;
@@ -180,8 +180,8 @@ struct Ellipsoid {
   template <int U = Dim>
   typename std::enable_if<U == 2, vec_Vecf<U>>::type sample(int num) const {
     vec_Vecf<Dim> pts;
-    decimal_t dyaw = M_PI * 2 / num;
-    for (decimal_t yaw = 0; yaw < M_PI * 2; yaw += dyaw) {
+    double dyaw = M_PI * 2 / num;
+    for (double yaw = 0; yaw < M_PI * 2; yaw += dyaw) {
       Vecf<Dim> pt;
       pt << cos(yaw), sin(yaw);
       pts.push_back(C_ * pt + d_);
@@ -195,7 +195,7 @@ struct Ellipsoid {
   }
 
   /// Get ellipsoid volume
-  decimal_t volume() const { return C_.determinant(); }
+  double volume() const { return C_.determinant(); }
 
   /// Get C matrix
   Matf<Dim, Dim> C() const { return C_; }

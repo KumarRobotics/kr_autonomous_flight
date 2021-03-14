@@ -6,6 +6,8 @@
 
 #include <optional>
 
+namespace mapper {
+
 class TFListener {
  public:
   TFListener() : listener_(buffer_) {}
@@ -18,3 +20,5 @@ class TFListener {
   tf2_ros::Buffer buffer_;
   tf2_ros::TransformListener listener_;
 };
+
+}  // namespace mapper

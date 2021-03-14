@@ -8,10 +8,10 @@
 namespace mapper {
 
 template <typename T>
-using EigenAlignedVector = std::vector<T, Eigen::aligned_allocator<T>>;
+using AlignedVector = std::vector<T, Eigen::aligned_allocator<T>>;
 
-using vec_Vec3d = EigenAlignedVector<Eigen::Vector3d>;
-using vec_Vec3i = EigenAlignedVector<Eigen::Vector3i>;
+using vec_Vec3d = AlignedVector<Eigen::Vector3d>;
+using vec_Vec3i = AlignedVector<Eigen::Vector3i>;
 
 class VoxelMapper {
  public:
@@ -120,7 +120,7 @@ class VoxelMapper {
   /// Free voxels
   void freeVoxels(const Eigen::Vector3d& pt, const vec_Vec3i& ns);
   /// Set corresponding voxels as free
-  void freeCloud(const vec_Vec3d& pts, const Eigen::Affine3d& TF);
+  void freeCloud(const vec_Vec3d& pts, const Eigen::Affine3d& tf);
   // /// Decay the voxel value to unknown with growing time
   // void decay();
 

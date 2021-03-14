@@ -75,7 +75,7 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
   }
 
   // get the transform from fixed frame to lidar frame
-  static TFListener tf_listener;
+  static mapper::TFListener tf_listener;
   geometry_msgs::Pose pose_map_cloud;
   if (real_robot_) {
     // for real robot, the point cloud frame_id may not exist in the tf tree,

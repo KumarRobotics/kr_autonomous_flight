@@ -422,12 +422,12 @@ void VoxelMapper::addCloud(const vec_Vec3d &pts, const Eigen::Affine3d &TF,
   }
 }
 
-void VoxelMapper::freeCloud(const vec_Vec3d &pts, const Eigen::Affine3d &TF) {
-  const Eigen::Vector3d pos(TF.translation().x(), TF.translation().y(),
-                            TF.translation().z());
+void VoxelMapper::freeCloud(const vec_Vec3d &pts, const Eigen::Affine3d &tf) {
+  const Eigen::Vector3d pos(tf.translation().x(), tf.translation().y(),
+                            tf.translation().z());
 
   for (const auto &it : pts) {
-    const Eigen::Vector3d pt = TF * it;
+    const Eigen::Vector3d pt = tf * it;
 
     vec_Vec3i rays = rayTrace(pos, pt);
     for (const auto &pn : rays) {

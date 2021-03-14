@@ -1,5 +1,7 @@
 #include "mapper/tf_listener.h"
 
+namespace mapper {
+
 std::optional<geometry_msgs::Pose> TFListener::LookupTransform(
     const std::string &target, const std::string &source,
     const ros::Time &time) {
@@ -25,3 +27,5 @@ std::optional<geometry_msgs::Pose> TFListener::LookupTransform(
 
   return pose;
 }
+
+}  // namespace mapper

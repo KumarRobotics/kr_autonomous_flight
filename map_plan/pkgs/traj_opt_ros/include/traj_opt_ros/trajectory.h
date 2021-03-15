@@ -1,7 +1,7 @@
 // Copyright 2015 Michael Watterson
 #pragma once
 
-#include < utility>  // pair
+#include <utility>  // pair
 
 #include "traj_opt_ros/traj_data.h"
 #include "traj_opt_ros/types.h"

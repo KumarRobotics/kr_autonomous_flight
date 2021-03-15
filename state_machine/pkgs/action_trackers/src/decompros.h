@@ -107,9 +107,8 @@ struct LinearConstraint {
       A.row(i) = n;
       b(i) = c;
     }
-    >
 
-        A_ = A;
+    A_ = A;
     b_ = b;
   }
 

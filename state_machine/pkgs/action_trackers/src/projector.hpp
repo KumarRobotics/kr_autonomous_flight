@@ -23,7 +23,7 @@ class Projector {
   Vec3f direction_goal() { return direction_goal_; }
   double r() { return projected_ellipsoid_.C_(0, 0); }
   double r_max() { return r_max_ - shrink_distance_; }
-  double > outer_r_max() { return outer_r_max_; }
+  double outer_r_max() { return outer_r_max_; }
   vec_Vec3f path() { return path_; }
   bool on_ellipsoid() { return on_ellipsoid_; }
 

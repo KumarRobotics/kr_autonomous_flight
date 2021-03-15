@@ -1,5 +1,10 @@
 #pragma once
 
+#include <mpl_basis/data_type.h>
+
+#include <limits>   // numeric_limits
+#include <utility>  // pair
+
 template <int Dim>
 struct Hyperplane {
   Hyperplane() {}
@@ -9,9 +14,7 @@ struct Hyperplane {
   double signed_dist(const Vecf<Dim> &pt) const { return n_.dot(pt - p_); }
 
   /// Calculate the distance from point
-  double dist(const Vecf<Dim> &pt) const {
-    return std::abs(signed_dist(pt));
-  }
+  double dist(const Vecf<Dim> &pt) const { return std::abs(signed_dist(pt)); }
 
   /// Point on the plane
   Vecf<Dim> p_;
@@ -104,8 +107,9 @@ struct LinearConstraint {
       A.row(i) = n;
       b(i) = c;
     }
+    >
 
-    A_ = A;
+        A_ = A;
     b_ = b;
   }
 

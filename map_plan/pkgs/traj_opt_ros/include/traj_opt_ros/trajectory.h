@@ -1,6 +1,8 @@
 // Copyright 2015 Michael Watterson
 #pragma once
 
+#include < utility>  // pair
+
 #include "traj_opt_ros/traj_data.h"
 #include "traj_opt_ros/types.h"
 
@@ -21,7 +23,6 @@ class Trajectory {
   // returns a matrix (dim X num_derivatives + 1) of the trajectory evalutated
   // at time t
   bool getCommand(double t, uint num_derivatives, MatD &data);
-
   void setDim(uint ndim) { dim_ = ndim; }
   void setExecuteTime(double t) { exec_t = t; }
 

@@ -17,7 +17,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 
-#include "data_conversions.h"  // setMap, getMap, etc
+#include "./data_conversions.h"  // setMap, getMap, etc
 
 using boost::irange;
 

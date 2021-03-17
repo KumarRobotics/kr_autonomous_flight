@@ -4,7 +4,7 @@
 
 #include <boost/circular_buffer.hpp>
 
-#include "decompros.h"
+#include "./decompros.h"
 
 class Projector {
  public:

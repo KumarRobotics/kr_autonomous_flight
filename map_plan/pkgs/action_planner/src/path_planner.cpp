@@ -4,7 +4,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Temperature.h>
 
-#include "path_planner_util.hpp"
+#include "./path_planner_util.hpp"
 
 ros::Publisher time_pub;
 /// traj pub

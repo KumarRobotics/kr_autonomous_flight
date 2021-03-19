@@ -8,12 +8,12 @@
 namespace traj_opt {
 
 kr_mav_msgs::PositionCommand EvaluateTrajectory(
-    const boost::shared_ptr<Trajectory> &traj, decimal_t dt,
-    uint max_derr_eval = 3, decimal_t scaling = 1.0);
+    const boost::shared_ptr<Trajectory> &traj, double dt,
+    uint max_derr_eval = 3, double scaling = 1.0);
 
-void EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj, decimal_t dt,
+void EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj, double dt,
                         kr_mav_msgs::PositionCommand *out,
-                        uint max_derr_eval = 3, decimal_t scaling = 1.0);
+                        uint max_derr_eval = 3, double scaling = 1.0);
 
 // LQR based trajectory tracking
 bool EvaluateTrajectoryPos(const boost::shared_ptr<Trajectory> &traj,

@@ -143,8 +143,8 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     polyhedra.push_back(std::make_pair(A, b));
 
     std::vector<double> ds(1, time);
-    boost::shared_ptr<std::vector<traj_opt::decimal_t>> pds =
-        boost::make_shared<std::vector<traj_opt::decimal_t>>(ds);
+    boost::shared_ptr<std::vector<traj_opt::double>> pds =
+        boost::make_shared<std::vector<traj_opt::double>>(ds);
 
     // solver call:
     solver_ = boost::make_shared<traj_opt::NonlinearTrajectory>(con, polyhedra,

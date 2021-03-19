@@ -1,24 +1,20 @@
-#pragma once
+#include "./data_conversions.h"
 
-#include <jps_collision/map_util.h>
-#include <mpl_collision/map_util.h>
-#include <planning_ros_msgs/VoxelMap.h>
-
-inline void setMap(std::shared_ptr<MPL::VoxelMapUtil>& map_util,
-                   const planning_ros_msgs::VoxelMap& msg) {
+void setMap(std::shared_ptr<MPL::VoxelMapUtil>& map_util,
+            const planning_ros_msgs::VoxelMap& msg) {
   Vec3f ori(msg.origin.x, msg.origin.y, msg.origin.z);
   Vec3i dim(msg.dim.x, msg.dim.y, msg.dim.z);
-  decimal_t res = msg.resolution;
+  double res = msg.resolution;
   std::vector<signed char> map = msg.data;
 
   map_util->setMap(ori, dim, map, res);
 }
 
-inline void getMap(std::shared_ptr<MPL::VoxelMapUtil>& map_util,
-                   planning_ros_msgs::VoxelMap& map) {
+void getMap(std::shared_ptr<MPL::VoxelMapUtil>& map_util,
+            planning_ros_msgs::VoxelMap& map) {
   Vec3f ori = map_util->getOrigin();
   Vec3i dim = map_util->getDim();
-  decimal_t res = map_util->getRes();
+  double res = map_util->getRes();
 
   map.origin.x = ori(0);
   map.origin.y = ori(1);
@@ -32,21 +28,21 @@ inline void getMap(std::shared_ptr<MPL::VoxelMapUtil>& map_util,
   map.data = map_util->getMap();
 }
 
-inline void setMap(std::shared_ptr<JPS::VoxelMapUtil>& map_util,
-                   const planning_ros_msgs::VoxelMap& msg) {
+void setMap(std::shared_ptr<JPS::VoxelMapUtil>& map_util,
+            const planning_ros_msgs::VoxelMap& msg) {
   Vec3f ori(msg.origin.x, msg.origin.y, msg.origin.z);
   Vec3i dim(msg.dim.x, msg.dim.y, msg.dim.z);
-  decimal_t res = msg.resolution;
+  double res = msg.resolution;
   std::vector<signed char> map = msg.data;
 
   map_util->setMap(ori, dim, map, res);
 }
 
-inline void getMap(std::shared_ptr<JPS::VoxelMapUtil>& map_util,
-                   planning_ros_msgs::VoxelMap& map) {
+void getMap(std::shared_ptr<JPS::VoxelMapUtil>& map_util,
+            planning_ros_msgs::VoxelMap& map) {
   Vec3f ori = map_util->getOrigin();
   Vec3i dim = map_util->getDim();
-  decimal_t res = map_util->getRes();
+  double res = map_util->getRes();
 
   map.origin.x = ori(0);
   map.origin.y = ori(1);
@@ -60,21 +56,21 @@ inline void getMap(std::shared_ptr<JPS::VoxelMapUtil>& map_util,
   map.data = map_util->getMap();
 }
 
-inline void setMap(std::shared_ptr<JPS::OccMapUtil>& map_util,
-                   const planning_ros_msgs::VoxelMap& msg) {
+void setMap(std::shared_ptr<JPS::OccMapUtil>& map_util,
+            const planning_ros_msgs::VoxelMap& msg) {
   Vec2f ori(msg.origin.x, msg.origin.y);
   Vec2i dim(msg.dim.x, msg.dim.y);
-  decimal_t res = msg.resolution;
+  double res = msg.resolution;
   std::vector<signed char> map = msg.data;
 
   map_util->setMap(ori, dim, map, res);
 }
 
-inline void getMap(std::shared_ptr<JPS::OccMapUtil>& map_util,
-                   planning_ros_msgs::VoxelMap& map) {
+void getMap(std::shared_ptr<JPS::OccMapUtil>& map_util,
+            planning_ros_msgs::VoxelMap& map) {
   Vec2f ori = map_util->getOrigin();
   Vec2i dim = map_util->getDim();
-  decimal_t res = map_util->getRes();
+  double res = map_util->getRes();
 
   map.origin.x = ori(0);
   map.origin.y = ori(1);
@@ -88,10 +84,8 @@ inline void getMap(std::shared_ptr<JPS::OccMapUtil>& map_util,
   map.data = map_util->getMap();
 }
 
-// NOTE: This function is the same as getInflatedOccMap function in
-// voxel_mapper.cpp, should merge them.
-inline planning_ros_msgs::VoxelMap sliceMap(
-    const planning_ros_msgs::VoxelMap& map, double h, double hh = 0) {
+planning_ros_msgs::VoxelMap sliceMap(const planning_ros_msgs::VoxelMap& map,
+                                     double h, double hh) {
   // slice a 3D voxel map
   double res = map.resolution;
   int hhi = hh / res;

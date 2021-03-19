@@ -80,7 +80,7 @@ class RePlanner {
   double local_timeout_duration_{2.0};   // local planner timeout duration
   Vec3f prev_start_pos_;  // replanning records: previous replanning start
                           // position
-  decimal_t executed_dist_{
+  double executed_dist_{
       0.0};  // replanning records: accumulated executed distance along the path
   double crop_radius_;  // local path crop radius (local path length will be
                         // this value)
@@ -125,7 +125,7 @@ class RePlanner {
    * @param path original path to crop
    * @param d length of the cropped path
    */
-  vec_Vec3f path_crop(const vec_Vec3f &path, decimal_t d);
+  vec_Vec3f path_crop(const vec_Vec3f &path, double d);
 
   /**
    * @brief Check if cropped path reaches the end of original path
@@ -416,7 +416,7 @@ bool RePlanner::plan_trajectory(int horizon) {
   //  Re-plan step 2: Crop global path to get local goal
   //  #################################################################################
   // total crop distance
-  decimal_t crop_dist = executed_dist_ + crop_radius_;
+  double crop_dist = executed_dist_ + crop_radius_;
   // ROS_WARN_STREAM("++++ total_crop_dist = " << crop_dist);
   vec_Vec3f path_cropped = path_crop(global_path_, crop_dist);
   bool close_to_final_goal = close_to_final(global_path_, path_cropped, 10.0);
@@ -540,7 +540,7 @@ void RePlanner::update_status() {
   }
 }
 
-vec_Vec3f RePlanner::path_crop(const vec_Vec3f &path, decimal_t d) {
+vec_Vec3f RePlanner::path_crop(const vec_Vec3f &path, double d) {
   // return nonempth
   // precondition
   if (path.size() < 2 || d < 0) return path;
@@ -550,7 +550,7 @@ vec_Vec3f RePlanner::path_crop(const vec_Vec3f &path, decimal_t d) {
   // (unless path is shorter than d crop_end will be default as the end of path)
   Vec3f crop_end = path.back();
 
-  decimal_t dist = 0;
+  double dist = 0;
 
   // add path segments until the accumulated length is farther than distance d
   // from the robot

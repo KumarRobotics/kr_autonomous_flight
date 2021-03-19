@@ -46,7 +46,7 @@ void MapDisplay::setMap(std::shared_ptr<MPL::VoxelMapUtil> &map_util,
                         const planning_ros_msgs::VoxelMap &msg) {
   Vec3f ori(msg.origin.x, msg.origin.y, msg.origin.z);
   Vec3i dim(msg.dim.x, msg.dim.y, msg.dim.z);
-  decimal_t res = msg.resolution;
+  double res = msg.resolution;
   std::vector<signed char> map = msg.data;
 
   map_util->setMap(ori, dim, map, res);
@@ -56,7 +56,7 @@ void MapDisplay::getMap(std::shared_ptr<MPL::VoxelMapUtil> &map_util,
                         planning_ros_msgs::VoxelMap &map) {
   Vec3f ori = map_util->getOrigin();
   Vec3i dim = map_util->getDim();
-  decimal_t res = map_util->getRes();
+  double res = map_util->getRes();
 
   map.origin.x = ori(0);
   map.origin.y = ori(1);

@@ -10,6 +10,7 @@
 #include "traj_opt_ros/traj_data.h"
 
 namespace traj_opt {
+
 class TrajRosBridge {
  public:
   // make sure to run ros::init() before calling this function or it won't work

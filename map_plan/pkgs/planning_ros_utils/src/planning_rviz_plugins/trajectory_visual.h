@@ -51,8 +51,8 @@ class TrajectoryVisual {
 
   int num_;
   int yaw_num_;
-  decimal_t dyaw_{M_PI / 6};
-  decimal_t syaw_{0.25};
+  double dyaw_{M_PI / 6};
+  double syaw_{0.25};
   bool vel_vis_;
   bool acc_vis_;
   bool jrk_vis_;

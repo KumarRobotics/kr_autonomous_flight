@@ -1,14 +1,9 @@
-#include <ros/ros.h>
-// quad control stuff
-#include <kr_trackers_manager/Tracker.h>
-// action stuff
 #include <action_trackers/RunPathAction.h>
 #include <actionlib/server/simple_action_server.h>
-// angles
 #include <angles/angles.h>
-// data type
-#include <decomp_ros_utils/data_ros_utils.h>
+#include <kr_trackers_manager/Tracker.h>
 #include <planning_ros_utils/data_ros_utils.h>
+#include <ros/ros.h>
 #include <std_msgs/Float64MultiArray.h>
 
 #include "projector.hpp"
@@ -59,7 +54,7 @@ class ActionPathTracker : public kr_trackers_manager::Tracker {
   bool start_dec_{false};
 
   boost::optional<Vec3f> init_vel_;
-  ros::Publisher ellipsoid_pub, project_goal_pub;
+  ros::Publisher project_goal_pub;
   ros::Subscriber cloud_sub;
   ros::Subscriber des_max_sub;
 };
@@ -95,8 +90,6 @@ void ActionPathTracker::Initialize(const ros::NodeHandle &nh) {
   des_max_sub =
       nh_->subscribe("des_max", 1, &ActionPathTracker::desMaxCB, this);
 
-  ellipsoid_pub =
-      nh_->advertise<decomp_ros_msgs::EllipsoidArray>("ellipsoid", 1, true);
   project_goal_pub = nh_->advertise<planning_ros_msgs::Path>("sg", 1, true);
 
   active_ = false;
@@ -364,21 +357,6 @@ PositionCommand::ConstPtr ActionPathTracker::update(
       cmd->jerk.z = des_jrk[2];
     } else
       Decelerate(cmd);
-
-    if (proj_.r() > 0.01 && ellipsoid_pub.getNumSubscribers() > 0) {
-      vec_E<Ellipsoid3D> Es;
-      Es.push_back(proj_.projected_ellipsoid());
-      /*
-      for(const auto& it: es)
-        Es.push_back(it);
-        */
-
-      decomp_ros_msgs::EllipsoidArray ellipsoids =
-          DecompROS::ellipsoid_array_to_ros(Es);
-      ellipsoids.header.frame_id = "map";
-      ellipsoids.header.frame_id = msg->header.frame_id;
-      ellipsoid_pub.publish(ellipsoids);
-    }
 
   } else {
     ROS_ERROR("Fail to find a project point!");

@@ -3,14 +3,14 @@
 
 namespace traj_opt {
 
-decimal_t Trajectory::getExecuteTime() const {
+double Trajectory::getExecuteTime() const {
   if (exec_t <= 0)
     return getTotalTime();
   else
     return exec_t;
 }
 
-bool Trajectory::getCommand(decimal_t t, uint num_derivatives, MatD &data) {
+bool Trajectory::getCommand(double t, uint num_derivatives, MatD &data) {
   // check input
   if (dim_ < 1) return false;
 
@@ -25,7 +25,7 @@ bool Trajectory::getCommand(decimal_t t, uint num_derivatives, MatD &data) {
   return true;
 }
 
-bool Trajectory::getHopfChart(decimal_t t) {
+bool Trajectory::getHopfChart(double t) {
   VecD val;
   evaluate(t, 0, val);
   if (val.rows() < 5) return true;
@@ -33,7 +33,7 @@ bool Trajectory::getHopfChart(decimal_t t) {
   return val(4) < 0.5;
 }
 
-std::pair<decimal_t, decimal_t> Trajectory::getYaws(decimal_t t) {
+std::pair<double, double> Trajectory::getYaws(double t) {
   VecD pos, vel;
   evaluate(t, 0, pos);
   evaluate(t, 1, vel);
@@ -43,7 +43,7 @@ std::pair<decimal_t, decimal_t> Trajectory::getYaws(decimal_t t) {
   else
     return std::make_pair(pos(3), vel(3));
 }
-std::pair<Vec3, Vec3> Trajectory::getXi(decimal_t t, decimal_t g) {
+std::pair<Vec3, Vec3> Trajectory::getXi(double t, double g) {
   VecD gv = VecD::Zero(3, 1);
   gv(2) = g;
   VecD evalv, evald;

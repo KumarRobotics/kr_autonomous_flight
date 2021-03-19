@@ -22,9 +22,9 @@ class Basis {
   virtual void integrate() = 0;
 
   // evaluates ith element of basis at x where x is normalized to 0 to 1
-  virtual decimal_t evaluate(decimal_t x, uint i) const = 0;
+  virtual double evaluate(double x, uint i) const = 0;
   // innerproduct bewtween ith and jth basis functions
-  virtual decimal_t innerproduct(uint i, uint j) const = 0;
+  virtual double innerproduct(uint i, uint j) const = 0;
 
   virtual uint dim();
   const PolyType &type() const { return type_; }
@@ -39,7 +39,7 @@ class Basis {
 // Poly Calculus Functions
 // //////////////////////////////////////////////////////////////////////////
 
-typedef boost::math::tools::polynomial<decimal_t> Poly;
+typedef boost::math::tools::polynomial<double> Poly;
 
 class PolyCalculus {
  public:
@@ -60,7 +60,7 @@ class BasisBundle {  // bundles the basis with its derrivatives
   BasisBundle() {}
 
   //  ~BasisBundle();
-  decimal_t getVal(decimal_t x, decimal_t dt, uint coeff,
+  double getVal(double x, double dt, uint coeff,
                    int derr) const;  // returns value of basis at value x, with
                                      // time dt, basis function coeff, and
                                      // derrivative derr
@@ -87,9 +87,9 @@ class StandardBasis : public Basis {
   explicit StandardBasis(uint n_p_);
   virtual void differentiate();
   virtual void integrate();
-  virtual decimal_t evaluate(decimal_t x, uint coeff) const;
+  virtual double evaluate(double x, uint coeff) const;
   friend std::ostream &operator<<(std::ostream &os, const StandardBasis &lb);
-  virtual decimal_t innerproduct(uint i, uint j) const;
+  virtual double innerproduct(uint i, uint j) const;
   virtual Poly getPoly(uint i) const;
 
  protected:

@@ -87,6 +87,8 @@ class RePlanner {
   double termination_distance_;
   bool avoid_obstacle_{true};
 
+  double times_ = 0.0;  // TODO(xu) remove!
+
   /**
    * @brief Epoch callback function, triggered by epoch msg published by
    trajectory_tracker, it will trigger the replan process (ONLY IF current epoch
@@ -454,6 +456,19 @@ bool RePlanner::plan_trajectory(int horizon) {
     }
     return false;
   }
+
+  // TODO(xu:temp test, remove!!)###########################################
+  times_ += 1;
+  if (times_ > 20.0) {
+    ROS_ERROR("Abort!");
+    active_ = false;
+    if (replan_server_->isActive()) {
+      replan_server_->setSucceeded(local_critical);
+    }
+    return false;
+  }
+  //#######################################################################
+
   auto local_result = local_plan_client_->getResult();
   if (local_result->success) {
     last_traj_ = boost::make_shared<traj_opt::MsgTrajectory>(

@@ -3,6 +3,7 @@
 #include <action_planner/PlanWaypointsAction.h>
 #include <actionlib/server/simple_action_server.h>
 #include <eigen_conversions/eigen_msg.h>
+#include <mapper/data_conversions.h>          // setMap, getMap, etc
 #include <mpl_basis/trajectory.h>             // mpl related
 #include <mpl_collision/map_util.h>           // mpl related
 #include <mpl_planner/planner/map_planner.h>  // mpl related
@@ -16,7 +17,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 
-#include "./data_conversions.h"  // setMap, getMap, etc
+#include "data_conversions.h"  // setMap, getMap, etc
 
 using boost::irange;
 
@@ -127,11 +128,28 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   traj_planner_nh.param("max_j", j_max, 1.0);
   traj_planner_nh.param("max_u", u_max, 1.0);
 
+  bool use3d;
+  traj_planner_nh.param("use_3d", use3d, false);
+  double vz_max, az_max, jz_max, uz_max;
+  traj_planner_nh.param("max_v_z", vz_max, 2.0);
+  traj_planner_nh.param("max_a_z", az_max, 1.0);
+  traj_planner_nh.param("max_j_z", jz_max, 1.0);
+  traj_planner_nh.param("max_u_z", uz_max, 1.0);
+
   vec_E<VecDf> U;
-  const double du = u_max;
-  for (double dx = -u_max; dx <= u_max; dx += du)
-    for (double dy = -u_max; dy <= u_max; dy += du)
-      U.push_back(Vec3f(dx, dy, 0));
+  if (!use3d) {
+    const decimal_t du = u_max;
+    for (decimal_t dx = -u_max; dx <= u_max; dx += du)
+      for (decimal_t dy = -u_max; dy <= u_max; dy += du)
+        U.push_back(Vec3f(dx, dy, 0));
+  } else {
+    const decimal_t du = u_max;
+    const decimal_t du_z = uz_max;
+    for (decimal_t dx = -u_max; dx <= u_max; dx += du)
+      for (decimal_t dy = -u_max; dy <= u_max; dy += du)
+        for (decimal_t dz = -uz_max; dz <= uz_max; dz += du_z)
+          U.push_back(Vec3f(dx, dy, dz));
+  }
 
   double dt;
   int ndt, max_num;

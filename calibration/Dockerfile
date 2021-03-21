@@ -31,8 +31,7 @@ RUN apt update \
 
 RUN mkdir -p /root/calibration_ws/src
 WORKDIR /root/calibration_ws
-COPY calibration/pkgs src/pkg
-COPY calibration/external-repos.yaml src/
+COPY calibration/ src/
 
 RUN catkin init && catkin config --extend /opt/ros/melodic
 RUN vcs import --recursive --input src/external-repos.yaml src/

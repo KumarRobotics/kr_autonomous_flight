@@ -17,9 +17,6 @@ find_package(
              motion_primitive_library)
 
 find_package(Eigen3 REQUIRED)
-find_package(VTK REQUIRED)
-find_package(SDL REQUIRED)
-find_package(SDL_image REQUIRED)
 
 add_definitions(-DQT_NO_KEYWORDS)
 
@@ -30,8 +27,6 @@ set(CMAKE_AUTOMOC ON)
 message(STATUS "Using Qt5 based on the rviz_QT_VERSION: ${rviz_QT_VERSION}")
 find_package(Qt5 ${rviz_QT_VERSION} EXACT REQUIRED Core Widgets)
 set(QT_LIBRARIES Qt5::Widgets)
-
-include(${VTK_USE_FILE})
 
 catkin_package(
   INCLUDE_DIRS

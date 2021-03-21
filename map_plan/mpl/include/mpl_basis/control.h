@@ -2,10 +2,10 @@
  * @file control.h
  * @brief Control classes
  */
-#ifndef MPL_CONTROL_H
-#define MPL_CONTROL_H
+#pragma once
 
-namespace Control {
+namespace MPL {
+
 /// Enum for control input
 enum Control {
   NONE = 0,           ///< default uninitialized value
@@ -18,5 +18,5 @@ enum Control {
   JRKxYAW = 0b10111,  ///< control input is jrk and yaw
   SNPxYAW = 0b11111   ///< control input is snp and yaw
 };
-}  // namespace Control
-#endif
+
+}  // namespace MPL

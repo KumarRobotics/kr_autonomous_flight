@@ -64,7 +64,7 @@ class env_base {
     }
     // return 0;
     // return w_*(state.pos - goal.pos).norm();
-    if (state.control == Control::JRK && goal.control == Control::JRK) {
+    if (state.control == MPL::JRK && goal.control == MPL::JRK) {
       const Vecf<Dim> dp = goal.pos - state.pos;
       const Vecf<Dim> v0 = state.vel;
       const Vecf<Dim> v1 = goal.vel;
@@ -95,7 +95,7 @@ class env_base {
       return min_cost;
     }
 
-    else if (state.control == Control::JRK && goal.control == Control::ACC) {
+    else if (state.control == MPL::JRK && goal.control == MPL::ACC) {
       const Vecf<Dim> dp = goal.pos - state.pos;
       const Vecf<Dim> v0 = state.vel;
       const Vecf<Dim> v1 = goal.vel;
@@ -126,7 +126,7 @@ class env_base {
       return min_cost;
     }
 
-    else if (state.control == Control::JRK && goal.control == Control::VEL) {
+    else if (state.control == MPL::JRK && goal.control == MPL::VEL) {
       const Vecf<Dim> dp = goal.pos - state.pos;
       const Vecf<Dim> v0 = state.vel;
       const Vecf<Dim> a0 = state.acc;
@@ -155,7 +155,7 @@ class env_base {
       return min_cost;
     }
 
-    else if (state.control == Control::ACC && goal.control == Control::ACC) {
+    else if (state.control == MPL::ACC && goal.control == MPL::ACC) {
       const Vecf<Dim> dp = goal.pos - state.pos;
       const Vecf<Dim> v0 = state.vel;
       const Vecf<Dim> v1 = goal.vel;
@@ -181,7 +181,7 @@ class env_base {
       return cost;
     }
 
-    else if (state.control == Control::ACC && goal.control == Control::VEL) {
+    else if (state.control == MPL::ACC && goal.control == MPL::VEL) {
       const Vecf<Dim> dp = goal.pos - state.pos;
       const Vecf<Dim> v0 = state.vel;
 
@@ -204,7 +204,7 @@ class env_base {
       }
 
       return cost;
-    } else if (state.control == Control::VEL && goal.control == Control::VEL)
+    } else if (state.control == MPL::VEL && goal.control == MPL::VEL)
       return (w_ + 1) * (state.pos - goal.pos).norm();
     else
       return w_ * (state.pos - goal.pos).norm() / v_max_;

@@ -10,6 +10,7 @@
 #include <deque>
 #include <memory>
 
+namespace MPL {
 /**
  * @brief Trajectory class for solving n-th polynomial with PolySolver
  */
@@ -47,4 +48,7 @@ typedef PolyTraj<2> PolyTraj2D;
 
 /// PolyTraj in 3D
 typedef PolyTraj<3> PolyTraj3D;
+
+}  // namespace MPL
+
 #endif

@@ -11,6 +11,8 @@
 #include <Eigen/LU>
 #include <Eigen/StdVector>
 
+namespace MPL {
+
 /**
  * @brief Trajectory generator back-end class
  *
@@ -58,4 +60,7 @@ typedef PolySolver<2> PolySolver2D;
 
 /// PolySolver for 3D
 typedef PolySolver<3> PolySolver3D;
+
+}  // namespace MPL
+
 #endif

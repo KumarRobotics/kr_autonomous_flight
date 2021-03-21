@@ -3,11 +3,12 @@
  * @brief Trajectory class
  */
 
-#ifndef MPL_TRAJECTORY_H
-#define MPL_TRAJECTORY_H
+#pragma once
 
 #include <mpl_basis/lambda.h>
 #include <mpl_basis/primitive.h>
+
+namespace MPL {
 
 /**
  * @brief Command class
@@ -247,7 +248,7 @@ class Trajectory {
    * `Control::JRK` or `Control::JRKxYAW` corresponds to \f$i = 3\f$;
    * `Control::SNP` or `Control::SNPxYAW` corresponds to \f$i = 4\f$.
    */
-  decimal_t J(const Control::Control &control) const {
+  decimal_t J(const MPL::Control &control) const {
     decimal_t j = 0;
     for (const auto &seg : segs) j += seg.J(control);
     return j;
@@ -317,4 +318,4 @@ typedef Trajectory<2> Trajectory2D;
 /// Trajectory in 3D
 typedef Trajectory<3> Trajectory3D;
 
-#endif
+}  // namespace MPL

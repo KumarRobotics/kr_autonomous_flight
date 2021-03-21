@@ -12,6 +12,8 @@
 #include <iostream>
 #include <unsupported/Eigen/Polynomials>
 
+namespace MPL {
+
 inline decimal_t normalize_angle(decimal_t angle) {
   while (angle > M_PI) angle -= 2.0 * M_PI;
   while (angle < -M_PI) angle += 2.0 * M_PI;
@@ -234,3 +236,5 @@ typename Derived::PlainObject matrixSquareRoot(
   }
   return Derived::PlainObject::Zero(mat.rows(), mat.cols());
 }
+
+}  // namespace MPL

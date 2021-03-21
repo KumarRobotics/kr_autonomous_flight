@@ -4,9 +4,11 @@
  */
 #ifndef MPL_TRAJ_SOLVER_H
 #define MPL_TRAJ_SOLVER_H
+
 #include <mpl_basis/trajectory.h>
 #include <mpl_traj_solver/poly_solver.h>
 
+namespace MPL {
 /// Trajectory generator
 template <int Dim>
 class TrajSolver {
@@ -16,23 +18,23 @@ class TrajSolver {
    * @param control define the control flag for start and end
    * @param yaw_control define the control flag for yaw start and end
    */
-  TrajSolver(Control::Control control,
-             Control::Control yaw_control = Control::VEL, bool debug = false)
+  TrajSolver(MPL::Control control, MPL::Control yaw_control = MPL::VEL,
+             bool debug = false)
       : control_(control), yaw_control_(yaw_control) {
-    if (control == Control::VEL || control == Control::VELxYAW)
+    if (control == MPL::VEL || control == MPL::VELxYAW)
       poly_solver_.reset(new PolySolver<Dim>(0, 1, debug));
-    else if (control == Control::ACC || control == Control::ACCxYAW)
+    else if (control == MPL::ACC || control == MPL::ACCxYAW)
       poly_solver_.reset(new PolySolver<Dim>(1, 2, debug));
-    else if (control == Control::JRK || control == Control::JRKxYAW)
+    else if (control == MPL::JRK || control == MPL::JRKxYAW)
       poly_solver_.reset(new PolySolver<Dim>(2, 3, debug));
     // Due to dimension issue, only workd up to thrid order
     // if(control == Control::SNP || control == Control::SNPxYAW)
     // poly_solver_.reset(new PolySolver<Dim>(3, 4));
-    if (yaw_control == Control::VEL)
+    if (yaw_control == MPL::VEL)
       yaw_solver_.reset(new PolySolver<1>(0, 1));
-    else if (yaw_control == Control::ACC)
+    else if (yaw_control == MPL::ACC)
       yaw_solver_.reset(new PolySolver<1>(1, 2));
-    else if (yaw_control == Control::JRK)
+    else if (yaw_control == MPL::JRK)
       yaw_solver_.reset(new PolySolver<1>(2, 3));
   }
 
@@ -62,7 +64,7 @@ class TrajSolver {
       waypoints_[i].acc = Vecf<Dim>::Zero();
       waypoints_[i].jrk = Vecf<Dim>::Zero();
       waypoints_[i].yaw = 0;
-      waypoints_[i].control = Control::VEL;
+      waypoints_[i].control = MPL::VEL;
     }
 
     waypoints_.front().control = control_;
@@ -86,7 +88,7 @@ class TrajSolver {
       // solve for yaw
       vec_E<Waypoint<1>> yaws;
       for (const auto& it : waypoints_) {
-        Waypoint<1> yaw(Control::VEL);
+        Waypoint<1> yaw(MPL::VEL);
         yaw.pos(0) = it.yaw;
         yaw.vel(0) = 0;
         yaw.acc(0) = 0;
@@ -142,10 +144,10 @@ class TrajSolver {
   decimal_t v_{1};
 
   /// Control constraints for start and goal
-  Control::Control control_;
+  MPL::Control control_;
 
   /// Control constraints for start and goal yaw
-  Control::Control yaw_control_;
+  MPL::Control yaw_control_;
 
   /// Poly solver
   std::unique_ptr<PolySolver<Dim>> poly_solver_;
@@ -159,4 +161,7 @@ typedef TrajSolver<2> TrajSolver2D;
 
 /// TrajSolver for 3D
 typedef TrajSolver<3> TrajSolver3D;
+
+}  // namespace MPL
+
 #endif

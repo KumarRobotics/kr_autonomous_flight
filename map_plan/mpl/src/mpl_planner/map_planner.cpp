@@ -1,6 +1,6 @@
 #include <mpl_planner/planner/map_planner.h>
 
-using namespace MPL;
+namespace MPL {
 
 template <int Dim>
 MapPlanner<Dim>::MapPlanner(bool verbose) {
@@ -432,3 +432,5 @@ bool MapPlanner<Dim>::iterativePlan(const Waypoint<Dim> &start,
 template class MapPlanner<2>;
 
 template class MapPlanner<3>;
+
+}  // namespace MPL

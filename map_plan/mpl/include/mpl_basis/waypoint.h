@@ -3,14 +3,16 @@
  * @brief Waypoint classes
  */
 
-#ifndef MPL_WAYPOINT_H
-#define MPL_WAYPOINT_H
+#pragma once
+
 #include <bitset>
 #include <boost/functional/hash.hpp>
 #include <iostream>
 
 #include "control.h"
 #include "data_type.h"
+
+namespace MPL {
 
 /**
  * @brief Waypoint base class
@@ -22,12 +24,12 @@
 template <int Dim>
 struct Waypoint {
   /// Empty constructor
-  Waypoint() : control(Control::NONE) {}
+  Waypoint() : control(MPL::NONE) {}
   /**
    * @brief Simple constructor
    * @param c control value
    */
-  Waypoint(Control::Control c) : control(c) {}
+  Waypoint(MPL::Control c) : control(c) {}
 
   Vecf<Dim> pos{Vecf<Dim>::Zero()};  ///< position in \f$R^{n}\f$
   Vecf<Dim> vel{Vecf<Dim>::Zero()};  ///< velocity in \f$R^{n}\f$
@@ -51,7 +53,7 @@ struct Waypoint {
       bool use_jrk : 1;  ///< If true, jrk will be used in primitive generation
       bool use_yaw : 1;  ///< If true, yaw will be used in primitive generation
     };
-    Control::Control control : 5;  ///< Control value
+    MPL::Control control : 5;  ///< Control value
   };
 
   bool enable_t{false};  ///< if enabled, use \f$t\f$ when calculating
@@ -67,21 +69,21 @@ struct Waypoint {
     if (use_yaw) std::cout << "yaw: " << yaw << std::endl;
     if (enable_t) std::cout << " t: " << t << std::endl;
 
-    if (control == Control::VEL)
+    if (control == MPL::VEL)
       std::cout << "use vel!" << std::endl;
-    else if (control == Control::ACC)
+    else if (control == MPL::ACC)
       std::cout << "use acc!" << std::endl;
-    else if (control == Control::JRK)
+    else if (control == MPL::JRK)
       std::cout << "use jrk!" << std::endl;
-    else if (control == Control::SNP)
+    else if (control == MPL::SNP)
       std::cout << "use snp!" << std::endl;
-    else if (control == Control::VELxYAW)
+    else if (control == MPL::VELxYAW)
       std::cout << "use vel & yaw!" << std::endl;
-    else if (control == Control::ACCxYAW)
+    else if (control == MPL::ACCxYAW)
       std::cout << "use acc & yaw!" << std::endl;
-    else if (control == Control::JRKxYAW)
+    else if (control == MPL::JRKxYAW)
       std::cout << "use jrk & yaw!" << std::endl;
-    else if (control == Control::SNPxYAW)
+    else if (control == MPL::SNPxYAW)
       std::cout << "use snp & yaw!" << std::endl;
     else
       std::cout << "use null!" << std::endl;
@@ -146,4 +148,4 @@ typedef Waypoint<2> Waypoint2D;
 /// Waypoint for 3D
 typedef Waypoint<3> Waypoint3D;
 
-#endif
+}  // namespace MPL

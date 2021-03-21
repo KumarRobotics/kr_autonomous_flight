@@ -3,9 +3,9 @@
 #include <action_planner/PlanWaypointsAction.h>
 #include <actionlib/server/simple_action_server.h>
 #include <eigen_conversions/eigen_msg.h>
-#include <jps_collision/map_util.h>               // jps related
-#include <jps_planner/jps_planner/jps_planner.h>  // jps related
-#include <nav_msgs/Odometry.h>                    // odometry
+#include <jps/jps_planner.h>    // jps related
+#include <jps/map_util.h>       // jps related
+#include <nav_msgs/Odometry.h>  // odometry
 #include <planning_ros_msgs/VoxelMap.h>
 #include <planning_ros_utils/data_ros_utils.h>
 #include <planning_ros_utils/primitive_ros_utils.h>
@@ -70,10 +70,10 @@ class GlobalPlanServer {
       global_as_;
 
   // planner related
-  std::shared_ptr<JPSPlanner3D> jps_3d_util_;
+  std::shared_ptr<JPS::JPSPlanner3D> jps_3d_util_;
   std::shared_ptr<JPS::VoxelMapUtil> jps_3d_map_util_;
 
-  std::shared_ptr<JPSPlanner2D> jps_util_;
+  std::shared_ptr<JPS::JPSPlanner2D> jps_util_;
   std::shared_ptr<JPS::OccMapUtil> jps_map_util_;
 
   // odom related
@@ -141,12 +141,11 @@ GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   // Set map util for jps
   if (use_3d_) {
     jps_3d_map_util_ = std::make_shared<JPS::VoxelMapUtil>();
-    jps_3d_util_ =
-        std::make_shared<JPSPlanner3D>(false);  // verbose set as false
+    jps_3d_util_ = std::make_shared<JPS::JPSPlanner3D>(false);
     jps_3d_util_->setMapUtil(jps_3d_map_util_);
   } else {
     jps_map_util_ = std::make_shared<JPS::OccMapUtil>();
-    jps_util_ = std::make_shared<JPSPlanner2D>(false);  // verbose set as false
+    jps_util_ = std::make_shared<JPS::JPSPlanner2D>(false);
     jps_util_->setMapUtil(jps_map_util_);
   }
 }

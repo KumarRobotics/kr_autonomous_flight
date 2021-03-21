@@ -7,14 +7,9 @@ find_package(catkin REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
-catkin_package(INCLUDE_DIRS include LIBRARIES jps_lib dmp_lib)
+catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME})
 
-add_library(jps_lib src/jps_planner/graph_search.cpp
-                    src/jps_planner/jps_planner.cpp)
-target_include_directories(jps_lib PUBLIC include ${YAMLCPP_INCLUDE_DIRS})
-target_link_libraries(jps_lib PUBLIC Eigen3::Eigen ${YAMLCPP_LIBRARIES})
-
-add_library(dmp_lib src/distance_map_planner/graph_search.cpp
-                    src/distance_map_planner/distance_map_planner.cpp)
-target_include_directories(dmp_lib PUBLIC include ${YAMLCPP_INCLUDE_DIRS})
-target_link_libraries(dmp_lib PUBLIC Eigen3::Eigen ${YAMLCPP_LIBRARIES})
+add_library(${PROJECT_NAME} src/graph_search.cpp src/jps_planner.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC include
+                                                  ${YAMLCPP_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen ${YAMLCPP_LIBRARIES})

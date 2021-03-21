@@ -260,7 +260,7 @@ void RePlanner::setup_replanner() {
   // ##########################################################################################################
   // set goal
   action_planner::PlanTwoPointGoal local_tpgoal;
-  TrajOptUtils::vec_to_pose(
+  fla_state_machine::VecToPose(
       cmd_pos_, &local_tpgoal.p_init);  // use current position command as the
                                         // start position for local planner
   // initialize prev_start_pos_ for replan purpose
@@ -364,9 +364,9 @@ bool RePlanner::plan_trajectory(int horizon) {
                            // current plan epoch (in seconds)
   // make the end of last trajectory consistent with the start of current
   // trajectory
-  TrajOptUtils::evaluate_to_msgs(last_traj_, eval_time, &local_tpgoal.p_init,
-                                 &local_tpgoal.v_init, &local_tpgoal.a_init,
-                                 &local_tpgoal.j_init);
+  fla_state_machine::EvaluateToMsgs(last_traj_, eval_time, &local_tpgoal.p_init,
+                                    &local_tpgoal.v_init, &local_tpgoal.a_init,
+                                    &local_tpgoal.j_init);
   Vec3f start_pos;
   start_pos = pose_to_eigen(local_tpgoal.p_init);
 
@@ -502,7 +502,7 @@ void RePlanner::update_status() {
     last_traj_->evaluate(1.0 / local_replan_rate_, 0,
                          pos_finaln);  // TODO(mike) {fix this}.
 
-    pos_final = TrajOptUtils::make4d(pos_finaln);
+    pos_final = fla_state_machine::Make4d(pos_finaln);
     pos_final(2) = 0;
     pos_final(3) = 0;
 
@@ -524,7 +524,7 @@ void RePlanner::update_status() {
     last_traj_->evaluate(last_traj_->getTotalTime(), 0, pos_finaln);
     last_traj_->evaluate(last_traj_->getTotalTime(), 0, pos_finaln);
     last_traj_->evaluate(last_traj_->getTotalTime(), 0, pos_finaln);
-    pos_final = TrajOptUtils::make4d(pos_finaln);
+    pos_final = fla_state_machine::Make4d(pos_finaln);
 
     pos_no_yaw(2) = 0;
     pos_no_yaw(3) = 0;

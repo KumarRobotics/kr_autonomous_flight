@@ -234,4 +234,3 @@ typename Derived::PlainObject matrixSquareRoot(
   }
   return Derived::PlainObject::Zero(mat.rows(), mat.cols());
 }
-

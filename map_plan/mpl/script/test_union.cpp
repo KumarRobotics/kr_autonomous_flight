@@ -1,7 +1,7 @@
 #include <bitset>
 #include <iostream>
 
-namespace Control {
+namespace MPL {
 enum Control {
   VEL = 0b00001,
   ACC = 0b00011,
@@ -23,7 +23,7 @@ typedef union {
     bool use_yaw : 1;
   };
 
-  Control::Control use_xxx : 5;
+  MPL::Control use_xxx : 5;
 
 } USE;
 
@@ -35,21 +35,21 @@ void print(USE u) {
   std::bitset<5> x(u.use_xxx);
   std::cout << "raw use_xxx: " << u.use_xxx << std::endl;
   std::cout << "use_xxx: " << x << std::endl;
-  if (u.use_xxx == Control::VEL)
+  if (u.use_xxx == MPL::VEL)
     std::cout << "use vel!" << std::endl;
-  else if (u.use_xxx == Control::ACC)
+  else if (u.use_xxx == MPL::ACC)
     std::cout << "use acc!" << std::endl;
-  else if (u.use_xxx == Control::JRK)
+  else if (u.use_xxx == MPL::JRK)
     std::cout << "use jrk!" << std::endl;
-  else if (u.use_xxx == Control::SNP)
+  else if (u.use_xxx == MPL::SNP)
     std::cout << "use snp!" << std::endl;
-  else if (u.use_xxx == Control::VELxYAW)
+  else if (u.use_xxx == MPL::VELxYAW)
     std::cout << "use vel & yaw!" << std::endl;
-  else if (u.use_xxx == Control::ACCxYAW)
+  else if (u.use_xxx == MPL::ACCxYAW)
     std::cout << "use acc & yaw!" << std::endl;
-  else if (u.use_xxx == Control::JRKxYAW)
+  else if (u.use_xxx == MPL::JRKxYAW)
     std::cout << "use jrk & yaw!" << std::endl;
-  else if (u.use_xxx == Control::SNPxYAW)
+  else if (u.use_xxx == MPL::SNPxYAW)
     std::cout << "use snp & yaw!" << std::endl;
   else
     std::cout << "use null!" << std::endl;
@@ -97,9 +97,9 @@ int main() {
 
   print(u6);
 
-  std::cout << "VEL_CONTROL: " << Control::VEL << std::endl;
-  std::cout << "ACC_CONTROL: " << Control::ACC << std::endl;
-  std::cout << "JRK_CONTROL: " << Control::JRK << std::endl;
-  std::cout << "SNP_CONTROL: " << Control::SNP << std::endl;
+  std::cout << "VEL_CONTROL: " << MPL::VEL << std::endl;
+  std::cout << "ACC_CONTROL: " << MPL::ACC << std::endl;
+  std::cout << "JRK_CONTROL: " << MPL::JRK << std::endl;
+  std::cout << "SNP_CONTROL: " << MPL::SNP << std::endl;
   return 0;
 }

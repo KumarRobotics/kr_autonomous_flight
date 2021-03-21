@@ -1,5 +1,7 @@
 #include <mpl_traj_solver/poly_solver.h>
 
+namespace MPL {
+
 template <int Dim>
 PolySolver<Dim>::PolySolver(unsigned int smooth_derivative_order,
                             unsigned int minimize_derivative, bool debug)
@@ -225,3 +227,5 @@ template class PolySolver<1>;
 template class PolySolver<2>;
 
 template class PolySolver<3>;
+
+}  // namespace MPL

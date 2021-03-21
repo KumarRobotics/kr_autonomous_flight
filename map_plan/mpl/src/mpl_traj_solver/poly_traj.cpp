@@ -1,5 +1,7 @@
 #include <mpl_traj_solver/poly_traj.h>
 
+namespace MPL {
+
 template <int Dim>
 PolyTraj<Dim>::PolyTraj() {}
 
@@ -106,3 +108,5 @@ template class PolyTraj<1>;
 template class PolyTraj<2>;
 
 template class PolyTraj<3>;
+
+}  // namespace MPL

@@ -3,12 +3,14 @@
  * @brief Primitive classes
  */
 
-#ifndef MPL_PRIMITIVE_H
-#define MPL_PRIMITIVE_H
+#pragma once
+
 #include <mpl_basis/data_type.h>
 #include <mpl_basis/waypoint.h>
 
 #include "math.h"
+
+namespace MPL {
 
 /**
  * @brief Primitive1D class
@@ -89,9 +91,9 @@ class Primitive1D {
    * @param t assume the duration is from 0 to t
    * @param control effort is defined as \f$i\f$-th derivative of polynomial
    */
-  decimal_t J(decimal_t t, const Control::Control& control) const {
+  decimal_t J(decimal_t t, const MPL::Control& control) const {
     // i = 1, return integration of square of vel
-    if (control == Control::VEL || control == Control::VELxYAW)
+    if (control == MPL::VEL || control == MPL::VELxYAW)
       return c(0) * c(0) / 5184 * power(t, 9) +
              c(0) * c(1) / 576 * power(t, 8) +
              (c(1) * c(1) / 252 + c(0) * c(2) / 168) * power(t, 7) +
@@ -102,19 +104,19 @@ class Primitive1D {
              (c(3) * c(3) / 3 + c(2) * c(4) / 3) * power(t, 3) +
              c(3) * c(4) * t * t + c(4) * c(4) * t;
     // i = 2, return integration of square of acc
-    else if (control == Control::ACC || control == Control::ACCxYAW)
+    else if (control == MPL::ACC || control == MPL::ACCxYAW)
       return c(0) * c(0) / 252 * power(t, 7) + c(0) * c(1) / 36 * power(t, 6) +
              (c(1) * c(1) / 20 + c(0) * c(2) / 15) * power(t, 5) +
              (c(0) * c(3) / 12 + c(1) * c(2) / 4) * power(t, 4) +
              (c(2) * c(2) / 3 + c(1) * c(3) / 3) * power(t, 3) +
              c(2) * c(3) * t * t + c(3) * c(3) * t;
     // i = 3, return integration of square of jerk
-    else if (control == Control::JRK || control == Control::JRKxYAW)
+    else if (control == MPL::JRK || control == MPL::JRKxYAW)
       return c(0) * c(0) / 20 * power(t, 5) + c(0) * c(1) / 4 * power(t, 4) +
              (c(1) * c(1) + c(0) * c(2)) / 3 * power(t, 3) +
              c(1) * c(2) * t * t + c(2) * c(2) * t;
     // i = 4, return integration of square of snap
-    else if (control == Control::SNP || control == Control::SNPxYAW)
+    else if (control == MPL::SNP || control == MPL::SNPxYAW)
       return c(0) * c(0) / 3 * power(t, 3) + c(0) * c(1) * t * t +
              c(1) * c(1) * t;
     else
@@ -219,36 +221,36 @@ class Primitive {
    */
   Primitive(const Waypoint<Dim>& p, const VecDf& u, decimal_t t)
       : t_(t), control_(p.control) {
-    if (control_ == Control::SNP) {
+    if (control_ == MPL::SNP) {
       for (int i = 0; i < Dim; i++) {
         Vec4f vec;
         vec << p.pos(i), p.vel(i), p.acc(i), p.jrk(i);
         prs_[i] = Primitive1D(vec, u(i));
       }
-    } else if (control_ == Control::JRK) {
+    } else if (control_ == MPL::JRK) {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(Vec3f(p.pos(i), p.vel(i), p.acc(i)), u(i));
-    } else if (control_ == Control::ACC) {
+    } else if (control_ == MPL::ACC) {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(Vec2f(p.pos(i), p.vel(i)), u(i));
-    } else if (control_ == Control::VEL) {
+    } else if (control_ == MPL::VEL) {
       for (int i = 0; i < Dim; i++) prs_[i] = Primitive1D(p.pos(i), u(i));
-    } else if (control_ == Control::SNPxYAW) {
+    } else if (control_ == MPL::SNPxYAW) {
       for (int i = 0; i < Dim; i++) {
         Vec4f vec;
         vec << p.pos(i), p.vel(i), p.acc(i), p.jrk(i);
         prs_[i] = Primitive1D(vec, u(i));
       }
       pr_yaw_ = Primitive1D(p.yaw, u(Dim));
-    } else if (control_ == Control::JRKxYAW) {
+    } else if (control_ == MPL::JRKxYAW) {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(Vec3f(p.pos(i), p.vel(i), p.acc(i)), u(i));
       pr_yaw_ = Primitive1D(p.yaw, u(Dim));
-    } else if (control_ == Control::ACCxYAW) {
+    } else if (control_ == MPL::ACCxYAW) {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(Vec2f(p.pos(i), p.vel(i)), u(i));
       pr_yaw_ = Primitive1D(p.yaw, u(Dim));
-    } else if (control_ == Control::VELxYAW) {
+    } else if (control_ == MPL::VELxYAW) {
       for (int i = 0; i < Dim; i++) prs_[i] = Primitive1D(p.pos(i), u(i));
       pr_yaw_ = Primitive1D(p.yaw, u(Dim));
     } else
@@ -262,36 +264,36 @@ class Primitive {
   Primitive(const Waypoint<Dim>& p1, const Waypoint<Dim>& p2, decimal_t t)
       : t_(t), control_(p1.control) {
     // Use jrk control
-    if (p1.control == Control::JRK && p2.control == Control::JRK) {
+    if (p1.control == MPL::JRK && p2.control == MPL::JRK) {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(p1.pos(i), p1.vel(i), p1.acc(i), p2.pos(i),
                               p2.vel(i), p2.acc(i), t_);
     }
     // Use acc control
-    else if (p1.control == Control::ACC && p2.control == Control::ACC) {
+    else if (p1.control == MPL::ACC && p2.control == MPL::ACC) {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(p1.pos(i), p1.vel(i), p2.pos(i), p2.vel(i), t_);
     }
     // Use vel control
-    else if (p1.control == Control::VEL && p2.control == Control::VEL) {
+    else if (p1.control == MPL::VEL && p2.control == MPL::VEL) {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(p1.pos(i), p2.pos(i), t_);
     }
     // Use jrk & yaw control
-    else if (p1.control == Control::JRKxYAW && p2.control == Control::JRKxYAW) {
+    else if (p1.control == MPL::JRKxYAW && p2.control == MPL::JRKxYAW) {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(p1.pos(i), p1.vel(i), p1.acc(i), p2.pos(i),
                               p2.vel(i), p2.acc(i), t_);
       pr_yaw_ = Primitive1D(p1.yaw, p2.yaw, t_);
     }
     // Use acc & yaw control
-    else if (p1.control == Control::ACCxYAW && p2.control == Control::ACCxYAW) {
+    else if (p1.control == MPL::ACCxYAW && p2.control == MPL::ACCxYAW) {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(p1.pos(i), p1.vel(i), p2.pos(i), p2.vel(i), t_);
       pr_yaw_ = Primitive1D(p1.yaw, p2.yaw, t_);
     }
     // Use vel & yaw control
-    else if (p1.control == Control::VELxYAW && p2.control == Control::VELxYAW) {
+    else if (p1.control == MPL::VELxYAW && p2.control == MPL::VELxYAW) {
       for (int i = 0; i < Dim; i++)
         prs_[i] = Primitive1D(p1.pos(i), p2.pos(i), t_);
       pr_yaw_ = Primitive1D(p1.yaw, p2.yaw, t_);
@@ -306,7 +308,7 @@ class Primitive {
    *
    * Note: flag `use_xxx` is not set in this constructor
    */
-  Primitive(const vec_E<Vec6f>& cs, decimal_t t, Control::Control control)
+  Primitive(const vec_E<Vec6f>& cs, decimal_t t, MPL::Control control)
       : t_(t), control_(control) {
     for (int i = 0; i < Dim; i++) prs_[i] = Primitive1D(cs[i]);
     if (cs.size() == Dim + 1) pr_yaw_ = Primitive1D(cs[Dim]);
@@ -336,7 +338,7 @@ class Primitive {
   decimal_t t() const { return t_; }
 
   /// Get the control indicator
-  Control::Control control() const { return control_; }
+  MPL::Control control() const { return control_; }
 
   /**
    * @brief Get the 1D primitive
@@ -400,14 +402,14 @@ class Primitive {
    * Return J is the summation of efforts in all three dimensions and
    * \f$J(i) = \int_0^t |p^{i}(t)|^2dt\f$
    */
-  decimal_t J(const Control::Control& control) const {
+  decimal_t J(const MPL::Control& control) const {
     decimal_t j = 0;
     for (const auto& pr : prs_) j += pr.J(t_, control);
     return j;
   }
 
   /// Return total yaw efforts for the given duration
-  decimal_t Jyaw() const { return pr_yaw_.J(t_, Control::VEL); }
+  decimal_t Jyaw() const { return pr_yaw_.J(t_, MPL::VEL); }
 
   /**
    * @brief Sample N+1 Waypoints using uniformed time
@@ -423,7 +425,7 @@ class Primitive {
   /// Duration
   decimal_t t_;
   /// Control
-  Control::Control control_;
+  MPL::Control control_;
   /// By default, primitive class contains `Dim` 1D primitive
   std::array<Primitive1D, Dim> prs_;
   /// Primitive for yaw
@@ -450,26 +452,23 @@ template <int Dim>
 bool validate_primitive(const Primitive<Dim>& pr, decimal_t mv = 0,
                         decimal_t ma = 0, decimal_t mj = 0,
                         decimal_t myaw = 0) {
-  if (pr.control() == Control::ACC)
-    return validate_xxx(pr, mv, Control::VEL);
-  else if (pr.control() == Control::JRK)
-    return validate_xxx(pr, mv, Control::VEL) &&
-           validate_xxx(pr, ma, Control::ACC);
-  else if (pr.control() == Control::SNP)
-    return validate_xxx(pr, mv, Control::VEL) &&
-           validate_xxx(pr, ma, Control::ACC) &&
-           validate_xxx(pr, mj, Control::JRK);
-  else if (pr.control() == Control::VELxYAW)
+  if (pr.control() == MPL::ACC)
+    return validate_xxx(pr, mv, MPL::VEL);
+  else if (pr.control() == MPL::JRK)
+    return validate_xxx(pr, mv, MPL::VEL) && validate_xxx(pr, ma, MPL::ACC);
+  else if (pr.control() == MPL::SNP)
+    return validate_xxx(pr, mv, MPL::VEL) && validate_xxx(pr, ma, MPL::ACC) &&
+           validate_xxx(pr, mj, MPL::JRK);
+  else if (pr.control() == MPL::VELxYAW)
     return validate_yaw(pr, myaw);
-  else if (pr.control() == Control::ACCxYAW)
-    return validate_yaw(pr, myaw) && validate_xxx(pr, mv, Control::VEL);
-  else if (pr.control() == Control::JRKxYAW)
-    return validate_yaw(pr, myaw) && validate_xxx(pr, mv, Control::VEL) &&
-           validate_xxx(pr, ma, Control::ACC);
-  else if (pr.control() == Control::SNPxYAW)
-    return validate_yaw(pr, myaw) && validate_xxx(pr, mv, Control::VEL) &&
-           validate_xxx(pr, ma, Control::ACC) &&
-           validate_xxx(pr, mj, Control::JRK);
+  else if (pr.control() == MPL::ACCxYAW)
+    return validate_yaw(pr, myaw) && validate_xxx(pr, mv, MPL::VEL);
+  else if (pr.control() == MPL::JRKxYAW)
+    return validate_yaw(pr, myaw) && validate_xxx(pr, mv, MPL::VEL) &&
+           validate_xxx(pr, ma, MPL::ACC);
+  else if (pr.control() == MPL::SNPxYAW)
+    return validate_yaw(pr, myaw) && validate_xxx(pr, mv, MPL::VEL) &&
+           validate_xxx(pr, ma, MPL::ACC) && validate_xxx(pr, mj, MPL::JRK);
   else
     return true;
 }
@@ -480,16 +479,15 @@ bool validate_primitive(const Primitive<Dim>& pr, decimal_t mv = 0,
  * Use L1 norm for the maximum
  */
 template <int Dim>
-bool validate_xxx(const Primitive<Dim>& pr, decimal_t max,
-                  Control::Control xxx) {
+bool validate_xxx(const Primitive<Dim>& pr, decimal_t max, MPL::Control xxx) {
   if (max <= 0) return true;
   // check if max vel is violating the constraint
   for (int i = 0; i < Dim; i++) {
-    if (xxx == Control::VEL && pr.max_vel(i) > max)
+    if (xxx == MPL::VEL && pr.max_vel(i) > max)
       return false;
-    else if (xxx == Control::ACC && pr.max_acc(i) > max)
+    else if (xxx == MPL::ACC && pr.max_acc(i) > max)
       return false;
-    else if (xxx == Control::JRK && pr.max_jrk(i) > max)
+    else if (xxx == MPL::JRK && pr.max_jrk(i) > max)
       return false;
   }
   return true;
@@ -549,4 +547,4 @@ void print_max(const Primitive<Dim>& p) {
   std::cout << "max_jrk: " << max_j.transpose() << std::endl;
 }
 
-#endif
+}  // namespace MPL

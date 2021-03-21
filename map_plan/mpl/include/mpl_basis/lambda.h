@@ -3,12 +3,13 @@
  * @brief Lambda class
  */
 
-#ifndef MPL_LAMBDA_H
-#define MPL_LAMBDA_H
+#pragma once
 
 #include <mpl_basis/data_type.h>
 
 #include "math.h"
+
+namespace MPL {
 
 /**
  * @brief Used for scaling, ignored for most case
@@ -170,4 +171,4 @@ class Lambda {
   std::vector<LambdaSeg> segs;
 };
 
-#endif
+}  // namespace MPL

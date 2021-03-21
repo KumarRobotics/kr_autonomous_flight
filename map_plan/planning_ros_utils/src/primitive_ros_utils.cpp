@@ -1,6 +1,6 @@
 #include "planning_ros_utils/primitive_ros_utils.h"
 
-planning_ros_msgs::Primitive toPrimitiveROSMsg(const Primitive2D &pr,
+planning_ros_msgs::Primitive toPrimitiveROSMsg(const MPL::Primitive2D &pr,
                                                double z) {
   const auto cx = pr.pr(0).coeff();
   const auto cy = pr.pr(1).coeff();
@@ -23,7 +23,7 @@ planning_ros_msgs::Primitive toPrimitiveROSMsg(const Primitive2D &pr,
   return msg;
 }
 
-planning_ros_msgs::Primitive toPrimitiveROSMsg(const Primitive3D &pr) {
+planning_ros_msgs::Primitive toPrimitiveROSMsg(const MPL::Primitive3D &pr) {
   const auto cx = pr.pr(0).coeff();
   const auto cy = pr.pr(1).coeff();
   const auto cz = pr.pr(2).coeff();
@@ -45,7 +45,7 @@ planning_ros_msgs::Primitive toPrimitiveROSMsg(const Primitive3D &pr) {
 }
 
 planning_ros_msgs::PrimitiveArray toPrimitiveArrayROSMsg(
-    const vec_E<Primitive2D> &prs, double z) {
+    const vec_E<MPL::Primitive2D> &prs, double z) {
   planning_ros_msgs::PrimitiveArray msg;
   for (const auto &pr : prs) {
     msg.primitives.push_back(toPrimitiveROSMsg(pr, z));
@@ -54,7 +54,7 @@ planning_ros_msgs::PrimitiveArray toPrimitiveArrayROSMsg(
 }
 
 planning_ros_msgs::PrimitiveArray toPrimitiveArrayROSMsg(
-    const vec_E<Primitive3D> &prs) {
+    const vec_E<MPL::Primitive3D> &prs) {
   planning_ros_msgs::PrimitiveArray msg;
   for (const auto &pr : prs) {
     msg.primitives.push_back(toPrimitiveROSMsg(pr));
@@ -62,7 +62,7 @@ planning_ros_msgs::PrimitiveArray toPrimitiveArrayROSMsg(
   return msg;
 }
 
-planning_ros_msgs::Trajectory toTrajectoryROSMsg(const Trajectory2D &traj,
+planning_ros_msgs::Trajectory toTrajectoryROSMsg(const MPL::Trajectory2D &traj,
                                                  double z) {
   planning_ros_msgs::Trajectory msg;
   for (const auto &seg : traj.segs)
@@ -82,7 +82,8 @@ planning_ros_msgs::Trajectory toTrajectoryROSMsg(const Trajectory2D &traj,
   return msg;
 }
 
-planning_ros_msgs::Trajectory toTrajectoryROSMsg(const Trajectory3D &traj) {
+planning_ros_msgs::Trajectory toTrajectoryROSMsg(
+    const MPL::Trajectory3D &traj) {
   planning_ros_msgs::Trajectory msg;
   for (const auto &seg : traj.segs)
     msg.primitives.push_back(toPrimitiveROSMsg(seg));
@@ -101,7 +102,7 @@ planning_ros_msgs::Trajectory toTrajectoryROSMsg(const Trajectory3D &traj) {
   return msg;
 }
 
-Primitive2D toPrimitive2D(const planning_ros_msgs::Primitive &pr) {
+MPL::Primitive2D toPrimitive2D(const planning_ros_msgs::Primitive &pr) {
   Vec6f cx, cy, cyaw;
   for (int i = 0; i < 6; i++) {
     cx(i) = pr.cx[i];
@@ -113,10 +114,10 @@ Primitive2D toPrimitive2D(const planning_ros_msgs::Primitive &pr) {
   cs.push_back(cy);
   cs.push_back(cyaw);
 
-  return Primitive2D(cs, pr.t, Control::SNPxYAW);
+  return MPL::Primitive2D(cs, pr.t, MPL::SNPxYAW);
 }
 
-Primitive3D toPrimitive3D(const planning_ros_msgs::Primitive &pr) {
+MPL::Primitive3D toPrimitive3D(const planning_ros_msgs::Primitive &pr) {
   Vec6f cx, cy, cz, cyaw;
   for (int i = 0; i < 6; i++) {
     cx(i) = pr.cx[i];
@@ -130,12 +131,13 @@ Primitive3D toPrimitive3D(const planning_ros_msgs::Primitive &pr) {
   cs.push_back(cz);
   cs.push_back(cyaw);
 
-  return Primitive3D(cs, pr.t, Control::SNPxYAW);
+  return MPL::Primitive3D(cs, pr.t, MPL::SNPxYAW);
 }
 
-Trajectory2D toTrajectory2D(const planning_ros_msgs::Trajectory &traj_msg) {
+MPL::Trajectory2D toTrajectory2D(
+    const planning_ros_msgs::Trajectory &traj_msg) {
   // Constructor from ros msg
-  Trajectory2D traj;
+  MPL::Trajectory2D traj;
   traj.taus.push_back(0);
   for (const auto &it : traj_msg.primitives) {
     traj.segs.push_back(toPrimitive2D(it));
@@ -143,9 +145,9 @@ Trajectory2D toTrajectory2D(const planning_ros_msgs::Trajectory &traj_msg) {
   }
 
   if (!traj_msg.lambda.empty()) {
-    Lambda l;
+    MPL::Lambda l;
     for (int i = 0; i < (int)traj_msg.lambda.size(); i++) {
-      LambdaSeg seg;
+      MPL::LambdaSeg seg;
       seg.a(0) = traj_msg.lambda[i].ca[0];
       seg.a(1) = traj_msg.lambda[i].ca[1];
       seg.a(2) = traj_msg.lambda[i].ca[2];
@@ -165,8 +167,9 @@ Trajectory2D toTrajectory2D(const planning_ros_msgs::Trajectory &traj_msg) {
   return traj;
 }
 
-Trajectory3D toTrajectory3D(const planning_ros_msgs::Trajectory &traj_msg) {
-  Trajectory3D traj;
+MPL::Trajectory3D toTrajectory3D(
+    const planning_ros_msgs::Trajectory &traj_msg) {
+  MPL::Trajectory3D traj;
   traj.taus.push_back(0);
   for (const auto &it : traj_msg.primitives) {
     traj.segs.push_back(toPrimitive3D(it));
@@ -174,9 +177,9 @@ Trajectory3D toTrajectory3D(const planning_ros_msgs::Trajectory &traj_msg) {
   }
 
   if (!traj_msg.lambda.empty()) {
-    Lambda l;
+    MPL::Lambda l;
     for (int i = 0; i < (int)traj_msg.lambda.size(); i++) {
-      LambdaSeg seg;
+      MPL::LambdaSeg seg;
       seg.a(0) = traj_msg.lambda[i].ca[0];
       seg.a(1) = traj_msg.lambda[i].ca[1];
       seg.a(2) = traj_msg.lambda[i].ca[2];

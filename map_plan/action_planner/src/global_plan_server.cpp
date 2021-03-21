@@ -106,7 +106,8 @@ class GlobalPlanServer {
   /**
    * @brief Global planner warpper
    */
-  bool global_plan_process(const Waypoint3D &start, const Waypoint3D &goal,
+  bool global_plan_process(const MPL::Waypoint3D &start,
+                           const MPL::Waypoint3D &goal,
                            const planning_ros_msgs::VoxelMap &global_map);
 
   /**
@@ -205,7 +206,7 @@ void GlobalPlanServer::process_goal() {
   }
 
   // set start and goal, assume goal is not null
-  Waypoint3D start, goal;
+  MPL::Waypoint3D start, goal;
 
   // first, check if odom is received
   if (!odom_set_) {
@@ -231,7 +232,7 @@ void GlobalPlanServer::goalCB() {
 }
 
 bool GlobalPlanServer::global_plan_process(
-    const Waypoint3D &start, const Waypoint3D &goal,
+    const MPL::Waypoint3D &start, const MPL::Waypoint3D &goal,
     const planning_ros_msgs::VoxelMap &global_map) {
   std::string map_frame;
   map_frame = global_map.header.frame_id;

@@ -48,7 +48,7 @@ class LocalPlanServer {
   std::shared_ptr<MPL::VoxelMapUtil> mp_map_util_;
 
   // motion primitive trajectory
-  Trajectory3D traj_;
+  MPL::Trajectory3D traj_;
 
   // current local map
   planning_ros_msgs::VoxelMap local_map_;
@@ -82,7 +82,7 @@ class LocalPlanServer {
   /**
    * @brief Record result (trajectory, status, etc)
    */
-  void process_result(const Trajectory3D &traj, bool solved);
+  void process_result(const MPL::Trajectory3D &traj, bool solved);
 
   /**
    * @brief map callback, update local_map_
@@ -92,7 +92,8 @@ class LocalPlanServer {
   /**
    * @brief Local planner warpper
    */
-  bool local_plan_process(const Waypoint3D &start, const Waypoint3D &goal,
+  bool local_plan_process(const MPL::Waypoint3D &start,
+                          const MPL::Waypoint3D &goal,
                           const planning_ros_msgs::VoxelMap &map);
 };
 
@@ -199,7 +200,8 @@ void LocalPlanServer::process_all() {
   printf("Total time for TPP traj gen: %f\n", dt);
 }
 
-void LocalPlanServer::process_result(const Trajectory3D &traj, bool solved) {
+void LocalPlanServer::process_result(const MPL::Trajectory3D &traj,
+                                     bool solved) {
   result_ = boost::make_shared<action_planner::PlanTwoPointResult>();
   result_->success = solved;  // set success status
   result_->policy_status = solved ? 1 : -1;
@@ -233,7 +235,7 @@ void LocalPlanServer::process_result(const Trajectory3D &traj, bool solved) {
       geometry_msgs::Pose p_fin;
       geometry_msgs::Twist v_fin, a_fin, j_fin;
 
-      Waypoint3D pt_f = traj.evaluate(endt * double(i + 1));
+      MPL::Waypoint3D pt_f = traj.evaluate(endt * double(i + 1));
       // check if evaluation is successful, if not, set result->success to be
       // false! (if failure case, a null Waypoint is returned)
       if ((pt_f.pos(0) == 0) && (pt_f.pos(1) == 0) && (pt_f.pos(2) == 0) &&
@@ -263,7 +265,7 @@ void LocalPlanServer::process_result(const Trajectory3D &traj, bool solved) {
         goal_->execution_time;  // execution_time (set in replanner)
                                 // equals 1.0/replan_rate
     result_->epoch = goal_->epoch;
-    Waypoint3D pt = traj.evaluate(traj.getTotalTime());
+    MPL::Waypoint3D pt = traj.evaluate(traj.getTotalTime());
     result_->traj_end.position.x = pt.pos(0);
     result_->traj_end.position.y = pt.pos(1);
     result_->traj_end.position.z = pt.pos(2);
@@ -298,7 +300,7 @@ void LocalPlanServer::process_goal() {
   }
 
   // set start and goal, assume goal is not null
-  Waypoint3D start, goal;
+  MPL::Waypoint3D start, goal;
   // instead of using current odometry as start, we use the given start position
   // for consistency between old and new trajectories in replan process
   start.pos = pose_to_eigen(goal_->p_init);
@@ -335,12 +337,12 @@ void LocalPlanServer::process_goal() {
   }
 
   // get the trajectory from local planner, and process result
-  Trajectory3D traj = traj_;
+  MPL::Trajectory3D traj = traj_;
   process_result(traj, local_planner_succeeded);
 }
 
 bool LocalPlanServer::local_plan_process(
-    const Waypoint3D &start, const Waypoint3D &goal,
+    const MPL::Waypoint3D &start, const MPL::Waypoint3D &goal,
     const planning_ros_msgs::VoxelMap &map) {
   // for visualization: publish a path connecting local start and local goal
   vec_Vec3f sg;

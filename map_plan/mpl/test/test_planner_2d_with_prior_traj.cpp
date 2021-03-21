@@ -72,8 +72,8 @@ int main(int argc, char **argv) {
   Trajectory2D prior_traj = planner->getTraj();
   printf("Total time T: %f\n", prior_traj.getTotalTime());
   printf("Total J:  J(VEL) = %f, J(ACC) = %f, J(JRK) = %f, J(SNP) = %f\n",
-         prior_traj.J(Control::VEL), prior_traj.J(Control::ACC),
-         prior_traj.J(Control::JRK), prior_traj.J(Control::SNP));
+         prior_traj.J(MPL::VEL), prior_traj.J(MPL::ACC),
+         prior_traj.J(MPL::JRK), prior_traj.J(MPL::SNP));
 
   // Using acc control
   start.use_pos = true;

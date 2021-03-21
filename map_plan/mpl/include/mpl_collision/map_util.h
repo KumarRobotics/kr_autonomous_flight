@@ -10,6 +10,7 @@
 #include <iostream>
 
 namespace MPL {
+
 /// The type of map data Tmap is defined as a 1D array
 using Tmap = std::vector<signed char>;
 /**

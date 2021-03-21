@@ -14,19 +14,19 @@ VoxelMapper::VoxelMapper(const Eigen::Vector3d &origin,
   allocate(dim, origin);
 }
 
-// void VoxelMapper::setMapUnknown() {
-//  val_default = val_unknown;
-//  std::fill(map_.data(), map_.data() + map_.num_elements(), val_unknown);
-//  std::fill(inflated_map_.data(),
-//            inflated_map_.data() + inflated_map_.num_elements(), val_unknown);
-//}
+void VoxelMapper::setMapUnknown() {
+  val_default = val_unknown;
+  std::fill(map_.data(), map_.data() + map_.num_elements(), val_unknown);
+  std::fill(inflated_map_.data(),
+            inflated_map_.data() + inflated_map_.num_elements(), val_unknown);
+}
 
-// void VoxelMapper::setMapFree() {
-//  val_default = val_free;
-//  std::fill(map_.data(), map_.data() + map_.num_elements(), val_free);
-//  std::fill(inflated_map_.data(),
-//            inflated_map_.data() + inflated_map_.num_elements(), val_free);
-//}
+void VoxelMapper::setMapFree() {
+  val_default = val_free;
+  std::fill(map_.data(), map_.data() + map_.num_elements(), val_free);
+  std::fill(inflated_map_.data(),
+            inflated_map_.data() + inflated_map_.num_elements(), val_free);
+}
 
 void VoxelMapper::freeVoxels(const Eigen::Vector3d &pt, const vec_Vec3i &ns) {
   const Eigen::Vector3i pn = floatToInt(pt);

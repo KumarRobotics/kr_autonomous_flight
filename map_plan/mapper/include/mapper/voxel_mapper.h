@@ -26,9 +26,9 @@ class VoxelMapper {
               double res, int8_t val = 0);
 
   /// Set all voxels as unknown
-  //  void setMapUnknown();
+  void setMapUnknown();
   /// Set all voxels as free
-  //  void setMapFree();
+  void setMapFree();
 
   /// Get the occupied voxels
   vec_Vec3d getCloud();

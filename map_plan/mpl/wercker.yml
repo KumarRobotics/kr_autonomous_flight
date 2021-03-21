@@ -1,0 +1,24 @@
+box: ubuntu
+
+build:
+  steps:
+    - script:
+      name: install dependencies
+      code: |
+        export DEBIAN_FRONTEND=noninteractive
+        sudo apt-get update
+        sudo apt install -y libeigen3-dev libyaml-cpp-dev libproj-dev libopencv-dev cmake
+    - script:
+      name: build
+      code: |
+        mkdir build
+        cd build
+        cmake ..
+        make -j4
+    - script:
+      name: test
+      code: |
+        cd build
+        make test
+
+

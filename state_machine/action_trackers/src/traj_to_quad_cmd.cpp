@@ -1,4 +1,4 @@
-#include "traj_opt_ros/traj_to_quad_cmd.h"
+#include "traj_to_quad_cmd.h"
 
 #include <angles/angles.h>
 

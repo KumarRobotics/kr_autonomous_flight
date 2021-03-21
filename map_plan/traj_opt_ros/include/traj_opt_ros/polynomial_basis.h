@@ -61,9 +61,9 @@ class BasisBundle {  // bundles the basis with its derrivatives
 
   //  ~BasisBundle();
   double getVal(double x, double dt, uint coeff,
-                   int derr) const;  // returns value of basis at value x, with
-                                     // time dt, basis function coeff, and
-                                     // derrivative derr
+                int derr) const;  // returns value of basis at value x, with
+                                  // time dt, basis function coeff, and
+                                  // derrivative derr
   boost::shared_ptr<Basis> getBasis(int i);
 
   std::vector<boost::shared_ptr<Basis>> derrivatives;

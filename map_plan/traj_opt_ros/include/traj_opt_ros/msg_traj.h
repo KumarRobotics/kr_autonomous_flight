@@ -29,4 +29,5 @@ class MsgTrajectory : public Trajectory {
   uint deg_;
   //  int seg;
 };
+
 }  // namespace traj_opt

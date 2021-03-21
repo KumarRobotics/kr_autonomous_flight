@@ -43,7 +43,7 @@ catkin_package(
   planning_ros_msgs
   motion_primitive_library)
 
-add_library(${PROJECT_NAME} src/data_ros_utils.cpp)
+add_library(${PROJECT_NAME} src/data_ros_utils.cpp src/primitive_ros_utils.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${catkin_INCLUDE_DIRS}
                                                   include)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES} Eigen3::Eigen)

@@ -16,7 +16,8 @@
 #include <std_msgs/Empty.h>
 #include <traj_opt_ros/msg_traj.h>
 #include <traj_opt_ros/ros_bridge.h>
-#include <traj_opt_ros/traj_to_quad_cmd.h>
+
+#include "traj_to_quad_cmd.h"
 
 // action stuff
 #include <action_trackers/RunTrajectoryAction.h>

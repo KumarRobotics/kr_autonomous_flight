@@ -12,7 +12,6 @@
 
   <depend>roscpp</depend>
   <depend>planning_ros_msgs</depend>
-  <depend>kr_mav_msgs</depend>
 
   <export>
     <!-- <rviz plugin="${prefix}/plugin_description.xml"/> -->

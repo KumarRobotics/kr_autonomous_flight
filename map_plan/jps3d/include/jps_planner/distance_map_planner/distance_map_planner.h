@@ -5,16 +5,18 @@
 #ifndef DMP_LANNER_H
 #define DMP_LANNER_H
 
-#include "graph_search.h"
-#include <jps_collision/map_util.h>
 #include <jps_basis/data_type.h>
+#include <jps_collision/map_util.h>
+
+#include "graph_search.h"
 
 class GraphSearch;
 /**
  * @brief Abstract base for planning
  */
-template <int Dim> class DMPlanner {
-public:
+template <int Dim>
+class DMPlanner {
+ public:
   /**
    * @brief Simple constructor
    * @param verbose enable debug mode
@@ -31,15 +33,15 @@ public:
    * it returns the inflated region
    */
 
-  std::vector<bool> setPath(const vec_Vecf<Dim> &path, const Vecf<Dim>& radius,
+  std::vector<bool> setPath(const vec_Vecf<Dim> &path, const Vecf<Dim> &radius,
                             bool dense);
 
   /// Set search radius around a prior path
-  void setSearchRadius(const Vecf<Dim>& r);
+  void setSearchRadius(const Vecf<Dim> &r);
   /// Set potential radius
-  void setPotentialRadius(const Vecf<Dim>& r);
+  void setPotentialRadius(const Vecf<Dim> &r);
   /// Set the range of potential map, 0 means the whole map
-  void setPotentialMapRange(const Vecf<Dim>& r);
+  void setPotentialMapRange(const Vecf<Dim> &r);
   /// Set heuristic weight
   void setEps(double eps);
   /// Set collision cost weight
@@ -83,16 +85,18 @@ public:
    * the internal map.
    */
   void setMap(const std::shared_ptr<JPS::MapUtil<Dim>> &map_util,
-              const Vecf<Dim>& pos);
+              const Vecf<Dim> &pos);
 
   /// Compute the optimal path
-  bool computePath(const Vecf<Dim>& start, const Vecf<Dim>& goal, const vec_Vecf<Dim>& path);
-protected:
+  bool computePath(const Vecf<Dim> &start, const Vecf<Dim> &goal,
+                   const vec_Vecf<Dim> &path);
+
+ protected:
   /// Create the mask for potential distance field
   vec_E<std::pair<Veci<Dim>, int8_t>> createMask(int pow);
   /// Need to be specified in Child class, main planning function
-  bool plan(const Vecf<Dim> &start, const Vecf<Dim> &goal,
-            decimal_t eps = 1, decimal_t cweight = 0.1);
+  bool plan(const Vecf<Dim> &start, const Vecf<Dim> &goal, decimal_t eps = 1,
+            decimal_t cweight = 0.1);
   /// remove redundant points on the same line
   vec_Vecf<Dim> removeLinePts(const vec_Vecf<Dim> &path);
   /// Remove some corner waypoints
@@ -135,7 +139,6 @@ protected:
   Vecf<Dim> potential_map_range_{Vecf<Dim>::Zero()};
   /// power index for creating mask
   int pow_{1};
-
 };
 
 /// Planner for 2D OccMap
@@ -144,8 +147,8 @@ typedef DMPlanner<2> DMPlanner2D;
 /// Planner for 3D VoxelMap
 typedef DMPlanner<3> DMPlanner3D;
 
-
-template <int Dim> class IterativeDMPlanner : public DMPlanner<Dim> {
+template <int Dim>
+class IterativeDMPlanner : public DMPlanner<Dim> {
  public:
   IterativeDMPlanner(bool verbose = false);
 
@@ -159,7 +162,5 @@ typedef IterativeDMPlanner<2> IterativeDMPlanner2D;
 
 /// Iterative Planner for 3D VoxelMap
 typedef IterativeDMPlanner<3> IterativeDMPlanner3D;
-
-
 
 #endif

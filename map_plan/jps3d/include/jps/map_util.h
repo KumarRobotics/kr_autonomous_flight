@@ -2,14 +2,14 @@
  * @file map_util.h
  * @brief MapUtil classes
  */
-#ifndef JPS_MAP_UTIL_H
-#define JPS_MAP_UTIL_H
-
-#include <jps_basis/data_type.h>
+#pragma once
 
 #include <iostream>
 
+#include "jps/data_type.h"
+
 namespace JPS {
+
 /// The type of map data Tmap is defined as a 1D array
 using Tmap = std::vector<signed char>;
 /**
@@ -284,5 +284,3 @@ typedef MapUtil<2> OccMapUtil;
 typedef MapUtil<3> VoxelMapUtil;
 
 }  // namespace JPS
-
-#endif

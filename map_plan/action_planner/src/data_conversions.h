@@ -1,6 +1,6 @@
 #pragma once
 
-#include <jps_collision/map_util.h>
+#include <jps/map_util.h>
 #include <mpl_collision/map_util.h>
 #include <planning_ros_msgs/VoxelMap.h>
 

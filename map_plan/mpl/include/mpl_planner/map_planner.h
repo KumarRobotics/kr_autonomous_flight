@@ -6,8 +6,8 @@
 #ifndef MPL_MAP_PLANNER_H
 #define MPL_MAP_PLANNER_H
 
-#include <mpl_planner/common/planner_base.h>
-#include <mpl_planner/env/env_map.h>
+#include <mpl_planner/planner_base.h>
+#include <mpl_planner/env_map.h>
 
 namespace MPL {
 

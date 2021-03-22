@@ -6,7 +6,7 @@
 #ifndef MPL_ENV_MAP_H
 #define MPL_ENV_MAP_H
 #include <mpl_collision/map_util.h>
-#include <mpl_planner/common/env_base.h>
+#include <mpl_planner/env_base.h>
 
 #include <memory>
 #include <unordered_map>

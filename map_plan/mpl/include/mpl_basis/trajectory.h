@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <mpl_basis/lambda.h>
-#include <mpl_basis/primitive.h>
+#include "mpl_basis/lambda.h"
+#include "mpl_basis/primitive.h"
 
 namespace MPL {
 

@@ -5,7 +5,7 @@
 #ifndef MPL_STATE_SPACE_H
 #define MPL_STATE_SPACE_H
 
-#include <mpl_planner/common/env_base.h>
+#include <mpl_planner/env_base.h>
 
 #include <boost/heap/d_ary_heap.hpp>  // boost::heap::d_ary_heap
 #include <boost/unordered_map.hpp>    // std::unordered_map

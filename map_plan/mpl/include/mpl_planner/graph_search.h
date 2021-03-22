@@ -7,7 +7,7 @@
 #define MPL_GRAPH_SEARCH_H
 
 #include <mpl_basis/trajectory.h>
-#include <mpl_planner/common/state_space.h>
+#include <mpl_planner/state_space.h>
 
 namespace MPL {
 

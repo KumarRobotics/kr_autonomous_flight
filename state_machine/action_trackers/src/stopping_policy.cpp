@@ -4,9 +4,9 @@
 #include <kr_trackers_manager/Tracker.h>
 #include <ros/ros.h>
 #include <tf/transform_datatypes.h>
-#include <traj_opt_basic/types.h>
-#include <traj_opt_pro/nonlinear_trajectory.h>
-#include <traj_opt_ros/ros_bridge.h>
+
+#include <Eigen/Geometry>
+#include <Eigen/StdVector>
 
 using kr_mav_msgs::PositionCommand;
 using kr_tracker_msgs::TrackerStatus;
@@ -29,12 +29,11 @@ class StoppingPolicy : public kr_trackers_manager::Tracker {
   double prev_duration_;
   bool active_;
   double kx_[3], kv_[3];
-  traj_opt::Vec4 cmd_pos_, cmd_vel_, cmd_acc_,
+  Eigen::Matrix<double, 4, 1> cmd_pos_, cmd_vel_, cmd_acc_,
       cmd_jrk_;  // record the lastest cmd calculated in stopping policy
-  traj_opt::VecD p0_, v0_, a0_, j0_, v0_dir_xyz_, a0_dir_xyz_;
+  Eigen::Matrix<double, Eigen::Dynamic, 1> p0_, v0_, a0_, j0_, a0_dir_xyz_;
   double v0_dir_yaw_;
   ros::Time t0_;
-  boost::shared_ptr<traj_opt::NonlinearTrajectory> solver_;
 };
 
 StoppingPolicy::StoppingPolicy(void) : active_(false) {}
@@ -50,18 +49,15 @@ void StoppingPolicy::Initialize(const ros::NodeHandle &nh) {
 bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
   if (cmd != NULL) {
     prev_duration_ = 0;
-    p0_ = traj_opt::VecD::Zero(4, 1);
-    v0_ = traj_opt::VecD::Zero(4, 1);
-    v0_dir_xyz_ = traj_opt::VecD::Zero(3, 1);
-    a0_dir_xyz_ = traj_opt::VecD::Zero(3, 1);
-    a0_ = traj_opt::VecD::Zero(4, 1);
-    j0_ = traj_opt::VecD::Zero(4, 1);
+    p0_ = Eigen::Matrix<double, Eigen::Dynamic, 1>::Zero(4, 1);
+    v0_ = Eigen::Matrix<double, Eigen::Dynamic, 1>::Zero(4, 1);
+    a0_dir_xyz_ = Eigen::Matrix<double, Eigen::Dynamic, 1>::Zero(3, 1);
+    a0_ = Eigen::Matrix<double, Eigen::Dynamic, 1>::Zero(4, 1);
+    j0_ = Eigen::Matrix<double, Eigen::Dynamic, 1>::Zero(4, 1);
     p0_ << cmd->position.x, cmd->position.y, cmd->position.z, cmd->yaw;
     cmd_pos_ = p0_;  // initialization of cmd_pos_
     v0_ << cmd->velocity.x, cmd->velocity.y, cmd->velocity.z, cmd->yaw_dot;
     cmd_vel_ = v0_;
-    v0_dir_xyz_ << cmd->velocity.x, cmd->velocity.y, cmd->velocity.z;
-    v0_dir_xyz_.normalize();
     if (cmd->yaw_dot == 0) {
       v0_dir_yaw_ = 0.0;
     } else if (std::signbit(cmd->yaw_dot)) {
@@ -97,68 +93,87 @@ PositionCommand::ConstPtr StoppingPolicy::update(
 
   if (!active_) return PositionCommand::Ptr();
 
-  double a0_norm = traj_opt::Vec3{a0_(0), a0_(1), a0_(2)}.norm();
-  double deacc_time = 0.0;
-  if (a0_norm > 0.1) {
+  double a0_norm = Eigen::Matrix<double, 3, 1>{a0_(0), a0_(1), a0_(2)}.norm();
+  double deacc_time;
+
+  // check if there's initial acceleration
+  if (a0_norm > 0.01) {
     deacc_time = a0_norm / j_des_;
+  } else {
+    deacc_time = 0.0;
   }
 
-  double v0_norm = traj_opt::Vec3{v0_(0), v0_(1), v0_(2)}.norm();
-  // double t_xyz = traj_opt::Vec3{v0_(0), v0_(1), v0_(2)}.norm() / a_des_;
-  // time for acceleration to build up to a_des_
-  double t_jerk = a_des_ / j_des_;
+  double dur_remain;
+  if (deacc_time != 0.0) {
+    // phase 0: bring acceleration to 0 before decelerate
+    // (not optimal, but negligible suboptimality)
+    if (duration < deacc_time) {
+      // evaluate xyz and their derivatives
+      // correct update order: from pos to jerk (intead of jerk to pos)
+      cmd_pos_ = cmd_pos_ + cmd_vel_ * dt;
+      cmd_vel_ = cmd_vel_ + cmd_acc_ * dt;
+      cmd_acc_ = cmd_acc_ + cmd_jrk_ * dt;
+      Eigen::Matrix<double, 4, 1> jrk_dir = Eigen::Matrix<double, 4, 1>{
+          -a0_dir_xyz_(0), -a0_dir_xyz_(1), -a0_dir_xyz_(2), 0.0};
+      cmd_jrk_ = jrk_dir * j_des_;
+    }
+    // update velocity direction, so that deceleration direction is correct
+    v0_ = cmd_vel_;
 
-  // check if acceleration will reach a_des_ based on j_des_ and v0
+    dur_remain = duration - deacc_time;
+  } else {
+    dur_remain = duration;
+  }
+
+  Eigen::Matrix<double, 3, 1> v0_dir_xyz =
+      Eigen::Matrix<double, 3, 1>{v0_(0), v0_(1), v0_(2)};
+  v0_dir_xyz.normalize();
+  double v0_norm = Eigen::Matrix<double, 3, 1>{v0_(0), v0_(1), v0_(2)}.norm();
+  // time needed to reach a_des_ using constant jerk
+  double t_jerk = a_des_ / j_des_;
+  // phase 1-3: increase |acceleration| -> const acc -> decrease |acc|
   double t_acc_change, t_acc_const;
+  // calculate time duration for each phase
+  // first check if acc will reach a_des_ i.e. (a_des_/2) * t_jerk <= v0_norm/2
   if (t_jerk * a_des_ <= v0_norm) {
-    // start and end period where acceleration increases and decreases
+    // case 1: will reach a_des_
+    // phase 1 = phase 3 (increase and decrease |acceleration|)
     t_acc_change = t_jerk;
-    // middle period with constant acceleration a_des_
+    // phase 2 (const acceleration)
     t_acc_const = (v0_norm - (t_jerk * a_des_)) / a_des_;
   } else {
-    // 0.5 * j * (t^2) = 0.5 * v ==> t = sqrt(v / j)
+    // case 2: will not reach a_des_
+    // phase 1 = phase 3 = t, 0.5 * j * (t^2) = 0.5 * v => t = sqrt(v / j)
     t_acc_change = sqrt(v0_norm / j_des_);
-    // middle period is 0
+    // phase 2 is 0
     t_acc_const = 0;
   }
 
-  if (deacc_time != 0) {
-    if (duration < deacc_time) {
-      for (int i = 0; i < 3; i++) {
-        // evaluate xyz and their derivatives
-        cmd_pos_(i) = cmd_pos_(i) + cmd_vel_(i) * dt;
-        cmd_vel_(i) = cmd_vel_(i) + cmd_acc_(i) * dt;
-        cmd_acc_(i) =
-            cmd_acc_(i) + cmd_jrk_(i) * dt;  // build up from 0 inital acc
-      }
-      // duration < deacc_time, first bring existing acc to zero
-      cmd_jrk_ = -a0_dir_xyz_ * j_des_;
-    }
-    v0_dir_xyz_ = cmd_vel_;
-  }
-
-  double dur_remain = duration - deacc_time;
-
   if ((0 <= dur_remain) && (dur_remain < t_acc_change * 2 + t_acc_const)) {
-    for (int i = 0; i < 3; i++) {
-      // evaluate xyz and their derivatives
-      cmd_pos_(i) = cmd_pos_(i) + cmd_vel_(i) * dt;
-      cmd_vel_(i) = cmd_vel_(i) + cmd_acc_(i) * dt;
-      cmd_acc_(i) =
-          cmd_acc_(i) + cmd_jrk_(i) * dt;  // build up from 0 inital acc
-    }
+    // evaluate xyz and their derivatives
+    // correct update order: from pos to jrk (intead of jrk to pos)
+    cmd_pos_ = cmd_pos_ + cmd_vel_ * dt;
+    cmd_vel_ = cmd_vel_ + cmd_acc_ * dt;
+    cmd_acc_ = cmd_acc_ + cmd_jrk_ * dt;
 
-    // only when dur_remain >= 0
-    if (0 <= dur_remain && dur_remain < t_acc_change) {
-      cmd_jrk_ = -v0_dir_xyz_ * j_des_;
+    // update jerk according to which phase it is now
+    if (dur_remain < t_acc_change) {
+      // phase 1: increase |acceleration|
+      Eigen::Matrix<double, 4, 1> jrk_dir = Eigen::Matrix<double, 4, 1>{
+          -v0_dir_xyz(0), -v0_dir_xyz(1), -v0_dir_xyz(2), 0.0};
+      cmd_jrk_ = jrk_dir * j_des_;
     } else if (t_acc_change <= dur_remain &&
                dur_remain < t_acc_change + t_acc_const) {
-      cmd_jrk_ = traj_opt::VecD::Zero(4, 1);
+      // phase 2: const acceleration
+      cmd_jrk_ = Eigen::Matrix<double, Eigen::Dynamic, 1>::Zero(4, 1);
     } else if (dur_remain >= t_acc_change + t_acc_const) {
-      cmd_jrk_ = v0_dir_xyz_ * j_des_;
+      // phase 3: decrease |acceleration|
+      Eigen::Matrix<double, 4, 1> jrk_dir = Eigen::Matrix<double, 4, 1>{
+          v0_dir_xyz(0), v0_dir_xyz(1), v0_dir_xyz(2), 0.0};
+      cmd_jrk_ = jrk_dir * j_des_;
     }
   } else if (dur_remain >= t_acc_change * 2 + t_acc_const) {
-    // stage 4: stopping policy finished, cmd_pos_(i) will remain the same
+    // stopping policy for XYZ finished, cmd_pos_(i) will remain the same
     for (int i = 0; i < 3; i++) {
       cmd_jrk_(i) = 0;
       cmd_acc_(i) = 0;
@@ -166,16 +181,19 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     }
   }
 
-  double t_yaw = v0_(3) / a_des_;  // use consant acc for yaw
+  double t_yaw = v0_(3) / a_yaw_des_;  // use consant acc for yaw
   // check whether already stopped (yaw)
   if (duration < t_yaw) {
     // evaluate yaw and yaw_dot
     cmd_vel_(3) = v0_(3) - v0_dir_yaw_ * a_yaw_des_;
     cmd_pos_(3) = p0_(3) + ((v0_(3) + cmd_vel_(3)) / 2.0) * duration;
   } else {
+    // stopping policy for yaw finished, cmd_pos_(i) will remain the same
     cmd_vel_(3) = 0.0;
-    // cmd_pos_(3) remain the same
   }
+
+  if ((dur_remain >= t_acc_change * 2 + t_acc_const) && (duration >= t_yaw))
+    ROS_INFO_THROTTLE(1.0, "Stopping policy done!");
 
   PositionCommand::Ptr cmd(new PositionCommand);
   cmd->header.stamp = stamp;

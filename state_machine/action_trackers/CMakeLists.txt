@@ -41,8 +41,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES} Eigen3::Eigen)
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
 
-# add_library(stopping_policy src/stopping_policy.cpp)
-# target_link_libraries(stopping_policy PRIVATE ${PROJECT_NAME})
+add_library(stopping_policy src/stopping_policy.cpp)
+target_link_libraries(stopping_policy PRIVATE ${PROJECT_NAME})
 
 add_library(action_path_tracker src/path_tracker.cpp)
 target_link_libraries(action_path_tracker PRIVATE ${PROJECT_NAME})

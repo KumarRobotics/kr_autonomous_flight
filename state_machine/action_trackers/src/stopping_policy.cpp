@@ -109,17 +109,31 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     // (not optimal, but negligible suboptimality)
     if (duration < deacc_time) {
       // evaluate xyz and their derivatives
-      // correct update order: from pos to jerk (intead of jerk to pos)
-      cmd_pos_ = cmd_pos_ + cmd_vel_ * dt;
-      cmd_vel_ = cmd_vel_ + cmd_acc_ * dt;
-      cmd_acc_ = cmd_acc_ + cmd_jrk_ * dt;
       Eigen::Matrix<double, 4, 1> jrk_dir = Eigen::Matrix<double, 4, 1>{
           -a0_dir_xyz_(0), -a0_dir_xyz_(1), -a0_dir_xyz_(2), 0.0};
-      cmd_jrk_ = jrk_dir * j_des_;
-    }
-    // update velocity direction, so that deceleration direction is correct
-    v0_ = cmd_vel_;
+      Eigen::Matrix<double, 4, 1> new_cmd_jrk = jrk_dir * j_des_;
 
+      // midpoint integration
+      // get cmd at end of dt (note: dt happened right BEFORE current timestamp)
+      Eigen::Matrix<double, 4, 1> new_cmd_acc = cmd_acc_ + cmd_jrk_ * dt;
+      Eigen::Matrix<double, 4, 1> new_cmd_vel = cmd_vel_ + cmd_acc_ * dt;
+      Eigen::Matrix<double, 4, 1> new_cmd_pos = cmd_pos_ + cmd_vel_ * dt;
+      // use mean of the derivatives at beginning and end to do integration
+      cmd_pos_ = cmd_pos_ + 0.5 * (new_cmd_vel + cmd_vel_) * dt;
+      cmd_vel_ = cmd_vel_ + 0.5 * (new_cmd_acc + cmd_acc_) * dt;
+      cmd_acc_ = cmd_acc_ + 0.5 * (new_cmd_jrk + cmd_jrk_) * dt;
+      cmd_jrk_ = new_cmd_jrk;
+
+      // update velocity direction, so that deceleration direction is
+      // correct
+      v0_ = cmd_vel_;
+
+      ROS_WARN_STREAM(
+          "Nonzero initial acc, reduce to zero first, current acc x: "
+          << cmd_acc_(0) << ", acc y:" << cmd_acc_(1)
+          << ", acc z:" << cmd_acc_(2) << ", acc yaw:" << cmd_acc_(3)
+          << "jrk norm:" << cmd_jrk_.norm() << " a0_norm:" << a0_norm);
+    }
     dur_remain = duration - deacc_time;
   } else {
     dur_remain = duration;
@@ -151,27 +165,34 @@ PositionCommand::ConstPtr StoppingPolicy::update(
 
   if ((0 <= dur_remain) && (dur_remain < t_acc_change * 2 + t_acc_const)) {
     // evaluate xyz and their derivatives
-    // correct update order: from pos to jrk (intead of jrk to pos)
-    cmd_pos_ = cmd_pos_ + cmd_vel_ * dt;
-    cmd_vel_ = cmd_vel_ + cmd_acc_ * dt;
-    cmd_acc_ = cmd_acc_ + cmd_jrk_ * dt;
-
+    Eigen::Matrix<double, 4, 1> new_cmd_jrk;
     // update jerk according to which phase it is now
     if (dur_remain < t_acc_change) {
       // phase 1: increase |acceleration|
       Eigen::Matrix<double, 4, 1> jrk_dir = Eigen::Matrix<double, 4, 1>{
           -v0_dir_xyz(0), -v0_dir_xyz(1), -v0_dir_xyz(2), 0.0};
-      cmd_jrk_ = jrk_dir * j_des_;
+      new_cmd_jrk = jrk_dir * j_des_;
     } else if (t_acc_change <= dur_remain &&
                dur_remain < t_acc_change + t_acc_const) {
       // phase 2: const acceleration
-      cmd_jrk_ = Eigen::Matrix<double, Eigen::Dynamic, 1>::Zero(4, 1);
+      new_cmd_jrk = Eigen::Matrix<double, Eigen::Dynamic, 1>::Zero(4, 1);
     } else if (dur_remain >= t_acc_change + t_acc_const) {
       // phase 3: decrease |acceleration|
       Eigen::Matrix<double, 4, 1> jrk_dir = Eigen::Matrix<double, 4, 1>{
           v0_dir_xyz(0), v0_dir_xyz(1), v0_dir_xyz(2), 0.0};
-      cmd_jrk_ = jrk_dir * j_des_;
+      new_cmd_jrk = jrk_dir * j_des_;
     }
+    // midpoint integration
+    // get cmd at end of dt (note: dt happened right BEFORE current timestamp)
+    Eigen::Matrix<double, 4, 1> new_cmd_acc = cmd_acc_ + cmd_jrk_ * dt;
+    Eigen::Matrix<double, 4, 1> new_cmd_vel = cmd_vel_ + cmd_acc_ * dt;
+    Eigen::Matrix<double, 4, 1> new_cmd_pos = cmd_pos_ + cmd_vel_ * dt;
+    // use mean of the derivatives at beginning and end to do integration
+    cmd_pos_ = cmd_pos_ + 0.5 * (new_cmd_vel + cmd_vel_) * dt;
+    cmd_vel_ = cmd_vel_ + 0.5 * (new_cmd_acc + cmd_acc_) * dt;
+    cmd_acc_ = cmd_acc_ + 0.5 * (new_cmd_jrk + cmd_jrk_) * dt;
+    cmd_jrk_ = new_cmd_jrk;
+
   } else if (dur_remain >= t_acc_change * 2 + t_acc_const) {
     // stopping policy for XYZ finished, cmd_pos_(i) will remain the same
     for (int i = 0; i < 3; i++) {

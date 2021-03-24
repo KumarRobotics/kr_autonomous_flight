@@ -127,12 +127,6 @@ PositionCommand::ConstPtr StoppingPolicy::update(
       // update velocity direction, so that deceleration direction is
       // correct
       v0_ = cmd_vel_;
-
-      ROS_WARN_STREAM(
-          "Nonzero initial acc, reduce to zero first, current acc x: "
-          << cmd_acc_(0) << ", acc y:" << cmd_acc_(1)
-          << ", acc z:" << cmd_acc_(2) << ", acc yaw:" << cmd_acc_(3)
-          << "jrk norm:" << cmd_jrk_.norm() << " a0_norm:" << a0_norm);
     }
     dur_remain = duration - deacc_time;
   } else {

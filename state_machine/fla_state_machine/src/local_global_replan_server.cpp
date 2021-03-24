@@ -87,7 +87,7 @@ class RePlanner {
   double termination_distance_;
   bool avoid_obstacle_{true};
 
-  double times_ = 0.0;  // TODO(xu) remove!
+  // double times_ = 0.0;  // TODO(xu) remove!
 
   /**
    * @brief Epoch callback function, triggered by epoch msg published by
@@ -458,15 +458,15 @@ bool RePlanner::plan_trajectory(int horizon) {
   }
 
   // TODO(xu:temp test, remove!!)###########################################
-  times_ += 1;
-  if (times_ > 20.0) {
-    ROS_ERROR("Abort!");
-    active_ = false;
-    if (replan_server_->isActive()) {
-      replan_server_->setSucceeded(local_critical);
-    }
-    return false;
-  }
+  // times_ += 1;
+  // if (times_ > 20.0) {
+  //   ROS_ERROR("Abort!");
+  //   active_ = false;
+  //   if (replan_server_->isActive()) {
+  //     replan_server_->setSucceeded(local_critical);
+  //   }
+  //   return false;
+  // }
   //#######################################################################
 
   auto local_result = local_plan_client_->getResult();

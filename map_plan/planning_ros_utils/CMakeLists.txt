@@ -60,5 +60,6 @@ add_library(planning_rviz_plugins ${SOURCE_FILES})
 target_include_directories(planning_rviz_plugins PUBLIC include
                                                         ${catkin_INCLUDE_DIRS})
 target_link_libraries(
-  planning_rviz_plugins PUBLIC ${QT_LIBRARIES} ${catkin_LIBRARIES}
-                               ${rviz_DEFAULT_PLUGIN_LIBRARIES})
+  planning_rviz_plugins
+  PUBLIC ${PROJECT_NAME} ${QT_LIBRARIES} ${catkin_LIBRARIES}
+         ${rviz_DEFAULT_PLUGIN_LIBRARIES})

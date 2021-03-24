@@ -6,14 +6,12 @@
 #include <tf/transform_datatypes.h>
 
 #include <Eigen/Geometry>
-#include <Eigen/StdVector>
 
 using kr_mav_msgs::PositionCommand;
 using kr_tracker_msgs::TrackerStatus;
 
 class StoppingPolicy : public kr_trackers_manager::Tracker {
  public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   StoppingPolicy();
 
   void Initialize(const ros::NodeHandle &nh) override;
@@ -25,18 +23,16 @@ class StoppingPolicy : public kr_trackers_manager::Tracker {
   uint8_t status() const override;
 
  private:
+  bool active_{false};
   double j_des_, a_des_, a_yaw_des_;
   double prev_duration_;
-  bool active_;
   double kx_[3], kv_[3];
-  Eigen::Matrix<double, 4, 1> cmd_pos_, cmd_vel_, cmd_acc_,
-      cmd_jrk_;  // record the lastest cmd calculated in stopping policy
-  Eigen::Matrix<double, Eigen::Dynamic, 1> p0_, v0_, a0_, j0_, a0_dir_xyz_;
+  // record the lastest cmd calculated in stopping policy
+  Eigen::Vector4d cmd_pos_, cmd_vel_, cmd_acc_, cmd_jrk_;
+  Eigen::VectorXd p0_, v0_, a0_, j0_, a0_dir_xyz_;
   double v0_dir_yaw_;
   ros::Time t0_;
 };
-
-StoppingPolicy::StoppingPolicy(void) : active_(false) {}
 
 void StoppingPolicy::Initialize(const ros::NodeHandle &nh) {
   ros::NodeHandle priv_nh(nh, "stopping_policy");
@@ -76,13 +72,14 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
     t0_ = cmd->header.stamp;
     active_ = true;
     return true;
-  } else
+  } else {
     ROS_ERROR("Need starting command to stop");
+  }
 
   return false;
 }
 
-void StoppingPolicy::Deactivate(void) { active_ = false; }
+void StoppingPolicy::Deactivate() { active_ = false; }
 
 PositionCommand::ConstPtr StoppingPolicy::update(
     const nav_msgs::Odometry::ConstPtr &msg) {
@@ -93,7 +90,7 @@ PositionCommand::ConstPtr StoppingPolicy::update(
 
   if (!active_) return PositionCommand::Ptr();
 
-  double a0_norm = Eigen::Matrix<double, 3, 1>{a0_(0), a0_(1), a0_(2)}.norm();
+  double a0_norm = Eigen::Vector3d{a0_(0), a0_(1), a0_(2)}.norm();
   double deacc_time;
 
   // check if there's initial acceleration
@@ -109,15 +106,15 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     // (not optimal, but negligible suboptimality)
     if (duration < deacc_time) {
       // evaluate xyz and their derivatives
-      Eigen::Matrix<double, 4, 1> jrk_dir = Eigen::Matrix<double, 4, 1>{
+      Eigen::Vector4d jrk_dir = Eigen::Vector4d{
           -a0_dir_xyz_(0), -a0_dir_xyz_(1), -a0_dir_xyz_(2), 0.0};
-      Eigen::Matrix<double, 4, 1> new_cmd_jrk = jrk_dir * j_des_;
+      Eigen::Vector4d new_cmd_jrk = jrk_dir * j_des_;
 
       // midpoint integration
       // get cmd at end of dt (note: dt happened right BEFORE current timestamp)
-      Eigen::Matrix<double, 4, 1> new_cmd_acc = cmd_acc_ + cmd_jrk_ * dt;
-      Eigen::Matrix<double, 4, 1> new_cmd_vel = cmd_vel_ + cmd_acc_ * dt;
-      Eigen::Matrix<double, 4, 1> new_cmd_pos = cmd_pos_ + cmd_vel_ * dt;
+      Eigen::Vector4d new_cmd_acc = cmd_acc_ + cmd_jrk_ * dt;
+      Eigen::Vector4d new_cmd_vel = cmd_vel_ + cmd_acc_ * dt;
+      Eigen::Vector4d new_cmd_pos = cmd_pos_ + cmd_vel_ * dt;
       // use mean of the derivatives at beginning and end to do integration
       cmd_pos_ = cmd_pos_ + 0.5 * (new_cmd_vel + cmd_vel_) * dt;
       cmd_vel_ = cmd_vel_ + 0.5 * (new_cmd_acc + cmd_acc_) * dt;
@@ -133,10 +130,9 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     dur_remain = duration;
   }
 
-  Eigen::Matrix<double, 3, 1> v0_dir_xyz =
-      Eigen::Matrix<double, 3, 1>{v0_(0), v0_(1), v0_(2)};
+  Eigen::Vector3d v0_dir_xyz = Eigen::Vector3d{v0_(0), v0_(1), v0_(2)};
   v0_dir_xyz.normalize();
-  double v0_norm = Eigen::Matrix<double, 3, 1>{v0_(0), v0_(1), v0_(2)}.norm();
+  double v0_norm = Eigen::Vector3d{v0_(0), v0_(1), v0_(2)}.norm();
   // time needed to reach a_des_ using constant jerk
   double t_jerk = a_des_ / j_des_;
   // phase 1-3: increase |acceleration| -> const acc -> decrease |acc|
@@ -159,12 +155,12 @@ PositionCommand::ConstPtr StoppingPolicy::update(
 
   if ((0 <= dur_remain) && (dur_remain < t_acc_change * 2 + t_acc_const)) {
     // evaluate xyz and their derivatives
-    Eigen::Matrix<double, 4, 1> new_cmd_jrk;
+    Eigen::Vector4d new_cmd_jrk;
     // update jerk according to which phase it is now
     if (dur_remain < t_acc_change) {
       // phase 1: increase |acceleration|
-      Eigen::Matrix<double, 4, 1> jrk_dir = Eigen::Matrix<double, 4, 1>{
-          -v0_dir_xyz(0), -v0_dir_xyz(1), -v0_dir_xyz(2), 0.0};
+      Eigen::Vector4d jrk_dir =
+          Eigen::Vector4d{-v0_dir_xyz(0), -v0_dir_xyz(1), -v0_dir_xyz(2), 0.0};
       new_cmd_jrk = jrk_dir * j_des_;
     } else if (t_acc_change <= dur_remain &&
                dur_remain < t_acc_change + t_acc_const) {
@@ -172,15 +168,15 @@ PositionCommand::ConstPtr StoppingPolicy::update(
       new_cmd_jrk = Eigen::Matrix<double, Eigen::Dynamic, 1>::Zero(4, 1);
     } else if (dur_remain >= t_acc_change + t_acc_const) {
       // phase 3: decrease |acceleration|
-      Eigen::Matrix<double, 4, 1> jrk_dir = Eigen::Matrix<double, 4, 1>{
-          v0_dir_xyz(0), v0_dir_xyz(1), v0_dir_xyz(2), 0.0};
+      Eigen::Vector4d jrk_dir =
+          Eigen::Vector4d{v0_dir_xyz(0), v0_dir_xyz(1), v0_dir_xyz(2), 0.0};
       new_cmd_jrk = jrk_dir * j_des_;
     }
     // midpoint integration
     // get cmd at end of dt (note: dt happened right BEFORE current timestamp)
-    Eigen::Matrix<double, 4, 1> new_cmd_acc = cmd_acc_ + cmd_jrk_ * dt;
-    Eigen::Matrix<double, 4, 1> new_cmd_vel = cmd_vel_ + cmd_acc_ * dt;
-    Eigen::Matrix<double, 4, 1> new_cmd_pos = cmd_pos_ + cmd_vel_ * dt;
+    Eigen::Vector4d new_cmd_acc = cmd_acc_ + cmd_jrk_ * dt;
+    Eigen::Vector4d new_cmd_vel = cmd_vel_ + cmd_acc_ * dt;
+    Eigen::Vector4d new_cmd_pos = cmd_pos_ + cmd_vel_ * dt;
     // use mean of the derivatives at beginning and end to do integration
     cmd_pos_ = cmd_pos_ + 0.5 * (new_cmd_vel + cmd_vel_) * dt;
     cmd_vel_ = cmd_vel_ + 0.5 * (new_cmd_acc + cmd_acc_) * dt;

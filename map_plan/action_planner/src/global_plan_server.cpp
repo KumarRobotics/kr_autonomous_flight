@@ -47,8 +47,9 @@ class GlobalPlanServer {
   ros::Subscriber global_map_sub_;
   ros::Subscriber odom_sub_;
 
-  // use 2-d or 3-d
-  bool use_3d_{false};
+  // use 2-d or 3-d for global planner
+  // TODO(xu): read this from yaml param file
+  bool use_3d_{true};
 
   // pub
   ros::Publisher path_pub_;

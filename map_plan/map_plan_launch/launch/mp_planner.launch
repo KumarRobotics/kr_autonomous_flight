@@ -11,6 +11,7 @@
       name="global_plan_server"
       output="screen"
       launch-prefix="$(arg prefix)">
+      <rosparam file="$(find control_launch)/config/tracker_params_mp.yaml"/>
       <remap from="~odom" to="$(arg odom)"/>
       <remap from="~global_voxel_map" to="mapper/global_voxel_map"/>
     </node>

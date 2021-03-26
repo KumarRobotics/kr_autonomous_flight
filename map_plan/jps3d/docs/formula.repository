@@ -1,3 +1,0 @@
-\form#0:$x + xDim * y$
-\form#1:$x + xDim * y + xDim * yDim * z$
-\form#2:$H_{MAX}(1 - d/d_{max})^{pow}$

@@ -7,10 +7,9 @@
     if n >= 5, using Eigen Polynomials solver which is slower but correct.
  */
 #pragma once
-#include <mpl_basis/data_type.h>
-
-#include <iostream>
 #include <unsupported/Eigen/Polynomials>
+
+#include "mpl_basis/data_type.h"
 
 namespace MPL {
 
@@ -44,40 +43,9 @@ std::vector<decimal_t> solve(decimal_t a, decimal_t b, decimal_t c, decimal_t d,
                              decimal_t e, decimal_t f, decimal_t g);
 
 /// Return \f$n!\f$
-int factorial(int n);
+// int factorial(int n);
 
 /// Return \f$t^n\f$
 decimal_t power(decimal_t t, int n);
-
-template <typename Derived>
-typename Derived::PlainObject pseudoInverse(
-    Eigen::MatrixBase<Derived> const &m) {
-  // JacobiSVD: thin U and V are only available when your matrix has a dynamic
-  // number of columns.
-  constexpr auto flags = (Derived::ColsAtCompileTime == Eigen::Dynamic)
-                             ? (Eigen::ComputeThinU | Eigen::ComputeThinV)
-                             : (Eigen::ComputeFullU | Eigen::ComputeFullV);
-  Eigen::JacobiSVD<typename Derived::PlainObject> m_svd(m, flags);
-  // std::cout << "singular values: " << m_svd.singularValues().transpose()
-  //           << "\n";
-  return m_svd.solve(Derived::PlainObject::Identity(m.rows(), m.rows()));
-}
-
-template <typename Derived>
-typename Derived::PlainObject matrixSquareRoot(
-    Eigen::MatrixBase<Derived> const &mat, bool semidefinite_mat = false) {
-  if (!semidefinite_mat) {
-    Eigen::LLT<typename Derived::PlainObject> cov_chol{mat};
-    if (cov_chol.info() == Eigen::Success) return cov_chol.matrixL();
-  }
-  Eigen::LDLT<typename Derived::PlainObject> cov_chol{mat};
-  if (cov_chol.info() == Eigen::Success) {
-    typename Derived::PlainObject const L = cov_chol.matrixL();
-    auto const P = cov_chol.transpositionsP();
-    auto const D_sqrt = cov_chol.vectorD().array().sqrt().matrix().asDiagonal();
-    return P.transpose() * L * D_sqrt;
-  }
-  return Derived::PlainObject::Zero(mat.rows(), mat.cols());
-}
 
 }  // namespace MPL

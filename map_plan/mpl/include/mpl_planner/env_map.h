@@ -1,15 +1,9 @@
-/**
- * @file env_map.h
- * @biref environment for planning in voxel map
- */
-
-#ifndef MPL_ENV_MAP_H
-#define MPL_ENV_MAP_H
-#include <mpl_collision/map_util.h>
-#include <mpl_planner/env_base.h>
-
+#pragma once
 #include <memory>
 #include <unordered_map>
+
+#include "mpl_collision/map_util.h"
+#include "mpl_planner/env_base.h"
 
 namespace MPL {
 /**
@@ -295,6 +289,5 @@ class env_map : public env_base<Dim> {
   /// Weight of gradient value
   decimal_t gradient_weight_{0.0};
 };
-}  // namespace MPL
 
-#endif
+}  // namespace MPL

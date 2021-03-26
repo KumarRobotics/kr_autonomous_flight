@@ -1,12 +1,5 @@
-/**
- * @file env_base.h
- * @brief environment base class
- */
-
-#ifndef MPL_ENV_BASE_H
-#define MPL_ENV_BASE_H
-
-#include <mpl_basis/trajectory.h>
+#pragma once
+#include "mpl_basis/trajectory.h"
 
 namespace MPL {
 
@@ -404,5 +397,3 @@ class env_base {
   mutable vec_E<Primitive<Dim>> expanded_edges_;
 };
 }  // namespace MPL
-
-#endif

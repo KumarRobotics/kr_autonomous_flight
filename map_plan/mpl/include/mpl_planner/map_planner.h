@@ -3,11 +3,9 @@
  * @brief motion planning using voxel map for collision checking
  */
 
-#ifndef MPL_MAP_PLANNER_H
-#define MPL_MAP_PLANNER_H
-
-#include <mpl_planner/planner_base.h>
-#include <mpl_planner/env_map.h>
+#pragma once
+#include "mpl_planner/env_map.h"
+#include "mpl_planner/planner_base.h"
 
 namespace MPL {
 
@@ -124,5 +122,3 @@ typedef MapPlanner<2> OccMapPlanner;
 /// Planner for 3D VoxelMap
 typedef MapPlanner<3> VoxelMapPlanner;
 }  // namespace MPL
-
-#endif

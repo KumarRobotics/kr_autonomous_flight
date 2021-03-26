@@ -3,11 +3,9 @@
  * @brief backend of graph search, implemetation of A* and Lifelong Planning A*
  */
 
-#ifndef MPL_GRAPH_SEARCH_H
-#define MPL_GRAPH_SEARCH_H
-
-#include <mpl_basis/trajectory.h>
-#include <mpl_planner/state_space.h>
+#pragma once
+#include "mpl_basis/trajectory.h"
+#include "mpl_planner/state_space.h"
 
 namespace MPL {
 
@@ -457,4 +455,3 @@ class GraphSearch {
   bool verbose_ = false;
 };
 }  // namespace MPL
-#endif

@@ -1,13 +1,8 @@
-/**
- * @file map_util.h
- * @brief MapUtil classes
- */
-#ifndef MPL_MAP_UTIL_H
-#define MPL_MAP_UTIL_H
-
-#include <mpl_basis/data_type.h>
+#pragma once
 
 #include <iostream>
+
+#include "mpl_basis/data_type.h"
 
 namespace MPL {
 
@@ -319,5 +314,3 @@ typedef MapUtil<2> OccMapUtil;
 typedef MapUtil<3> VoxelMapUtil;
 
 }  // namespace MPL
-
-#endif

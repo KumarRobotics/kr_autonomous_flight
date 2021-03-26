@@ -4,12 +4,10 @@
  *
  * Base classes for planning
  */
+#pragma once
 
-#ifndef MPL_PLANNER_BASE_H
-#define MPL_PLANNER_BASE_H
-
-#include <mpl_planner/env_base.h>
-#include <mpl_planner/graph_search.h>
+#include "mpl_planner/env_base.h"
+#include "mpl_planner/graph_search.h"
 
 namespace MPL {
 /**
@@ -344,5 +342,3 @@ class PlannerBase {
 };
 
 }  // namespace MPL
-
-#endif

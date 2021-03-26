@@ -2,13 +2,11 @@
  * @file state_space.h
  * @brief state space class for graph search
  */
-#ifndef MPL_STATE_SPACE_H
-#define MPL_STATE_SPACE_H
-
-#include <mpl_planner/env_base.h>
-
+#pragma once
 #include <boost/heap/d_ary_heap.hpp>  // boost::heap::d_ary_heap
 #include <boost/unordered_map.hpp>    // std::unordered_map
+
+#include "mpl_planner/env_base.h"
 
 namespace MPL {
 /// Heap element comparison
@@ -348,5 +346,3 @@ struct StateSpace {
 };
 
 }  // namespace MPL
-
-#endif

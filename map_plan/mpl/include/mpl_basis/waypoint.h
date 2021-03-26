@@ -5,12 +5,11 @@
 
 #pragma once
 
-#include <bitset>
 #include <boost/functional/hash.hpp>
 #include <iostream>
 
-#include "control.h"
-#include "data_type.h"
+#include "mpl_basis/control.h"
+#include "mpl_basis/data_type.h"
 
 namespace MPL {
 

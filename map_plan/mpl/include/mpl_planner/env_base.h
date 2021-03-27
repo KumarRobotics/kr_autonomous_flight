@@ -1,4 +1,6 @@
 #pragma once
+
+#include "mpl_basis/math.h"
 #include "mpl_basis/trajectory.h"
 
 namespace MPL {

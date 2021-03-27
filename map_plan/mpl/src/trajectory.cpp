@@ -1,5 +1,7 @@
 #include "mpl_basis/trajectory.h"
 
+#include "mpl_basis/math.h"
+
 namespace MPL {
 
 template <int Dim>

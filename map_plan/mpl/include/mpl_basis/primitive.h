@@ -6,7 +6,6 @@
 #pragma once
 
 #include "mpl_basis/data_type.h"
-#include "mpl_basis/math.h"
 #include "mpl_basis/waypoint.h"
 
 namespace MPL {

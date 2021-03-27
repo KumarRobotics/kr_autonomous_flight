@@ -1,5 +1,7 @@
 #include "mpl_basis/primitive.h"
 
+#include "mpl_basis/math.h"
+
 namespace MPL {
 
 Primitive1D::Primitive1D(decimal_t p1, decimal_t v1, decimal_t p2, decimal_t v2,

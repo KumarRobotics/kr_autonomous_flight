@@ -430,7 +430,6 @@ bool MapPlanner<Dim>::iterativePlan(const Waypoint<Dim> &start,
 }
 
 template class MapPlanner<2>;
-
 template class MapPlanner<3>;
 
 }  // namespace MPL

@@ -12,85 +12,19 @@ namespace MPL {
 template <int Dim>
 using linkedHashMap =
     std::unordered_map<int, std::vector<std::pair<Waypoint<Dim>, int>>>;
+
 /**
  * @brief Motion primitive planner in voxel map
  */
 template <int Dim>
-class MapPlanner : public PlannerBase<Dim> {
+class MapPlanner final : public PlannerBase<Dim> {
  public:
-  /**
-   * @brief Simple constructor
-   * @param verbose enable debug messages
-   */
   MapPlanner(bool verbose);
+
   /// Set map util
-  virtual void setMapUtil(const std::shared_ptr<MapUtil<Dim>>& map_util);
-  /**
-   * @brief Set search region
-   * @param path a sequence of waypoints from a path or trajectory
-   * @param dense if true, do ray cast between two consecutive points in path
-   */
-  void setSearchRegion(const vec_Vecf<Dim>& path, bool dense = false);
-  /// Set search radius (tunnel radius)
-  void setSearchRadius(const Vecf<Dim>& radius);
-
-  /// Set potential radius
-  void setPotentialRadius(const Vecf<Dim>& radius);
-  /// Set potential map size
-  void setPotentialMapRange(const Vecf<Dim>& range);
-  /// Set gradient weight
-  void setGradientWeight(decimal_t w);
-  /// Set potential weight
-  void setPotentialWeight(decimal_t w);
-
-  /// Get the potential cloud, works for 2D and 3D
-  vec_Vec3f getPotentialCloud(decimal_t h_max = 1.0);
-  /// Get the gradient cloud, works for 2D
-  vec_Vec3f getGradientCloud(decimal_t h_max = 1.0, int i = 0);
-
-  /// Get search region
-  vec_Vecf<Dim> getSearchRegion() const;
-  /// Get linked voxels
-  vec_Vecf<Dim> getLinkedNodes() const;
-  /**
-   * @brief Update edge costs according to the new blocked nodes
-   * @param pns the new occupied voxels
-   *
-   * The function returns affected primitives for debug purpose
-   */
-  void updateBlockedNodes(const vec_Veci<Dim>& pns);
-  /**
-   * @brief Update edge costs according to the new cleared nodes
-   * @param pns the new cleared voxels
-   *
-   * The function returns affected primitives for debug purpose
-   */
-  void updateClearedNodes(const vec_Veci<Dim>& pns);
-
-  /**
-   * @brief Generate potential map
-   * @param pos center of the potential map range is zero, do global generation
-   * @param pow power of potential field
-   */
-  void updatePotentialMap(const Vecf<Dim>& pos);
-
-  /**
-   * @brief Iterative trajectory planning with APFs
-   * @param start start waypoint
-   * @param goal goal waypoint
-   * @param raw_traj the trajectory to be perturbed
-   * @param max_iter_num number of max iterations, default value is 3
-   */
-  bool iterativePlan(const Waypoint<Dim>& start, const Waypoint<Dim>& goal,
-                     const Trajectory<Dim>& raw_traj, int max_iter_num = 3);
+  void setMapUtil(const std::shared_ptr<MapUtil<Dim>>& map_util);
 
  protected:
-  /// Create mask for potential
-  void createMask();
-
-  /// Calculate local gradient map
-  vec_E<Vecf<Dim>> calculateGradient(const Veci<Dim>& coord1,
-                                     const Veci<Dim>& coord2);
   /// Map util
   std::shared_ptr<MapUtil<Dim>> map_util_;
 

@@ -55,17 +55,11 @@ decimal_t GraphSearch<Dim>::Astar(const Coord &start_coord,
         succNode_ptr = std::make_shared<State<Coord>>(succ_coord[s]);
         succNode_ptr->h =
             ss_ptr->eps_ == 0 ? 0 : env->get_heur(succNode_ptr->coord);
-        /*
-   * Comment this block if build multiple connected graph
-   succNode_ptr->pred_coord.push_back(currNode_ptr->coord);
-   succNode_ptr->pred_action_id.push_back(succ_act_id[s]);
-   succNode_ptr->pred_action_cost.push_back(succ_cost[s]);
-   */
       }
 
       /**
        * Comment following if build single connected graph
-       * */
+       */
       succNode_ptr->pred_coord.push_back(currNode_ptr->coord);
       succNode_ptr->pred_action_cost.push_back(succ_cost[s]);
       succNode_ptr->pred_action_id.push_back(succ_act_id[s]);
@@ -97,13 +91,10 @@ decimal_t GraphSearch<Dim>::Astar(const Coord &start_coord,
             }
           }
 
-          (*succNode_ptr->heapkey).first = fval;  // update heap element
-          // ss_ptr->pq.update(succNode_ptr->heapkey);
+          (*succNode_ptr->heapkey).first = fval;        // update heap element
           ss_ptr->pq_.increase(succNode_ptr->heapkey);  // update heap
-          // printf(ANSI_COLOR_RED "ASTAR ERROR!\n" ANSI_COLOR_RESET);
-        } else  // new node, add to heap
-        {
-          // std::cout << "ADD fval = " << fval << std::endl;
+        } else {
+          // new node, add to heap
           succNode_ptr->heapkey =
               ss_ptr->pq_.push(std::make_pair(fval, succNode_ptr));
           succNode_ptr->iterationopened = true;
@@ -152,11 +143,11 @@ decimal_t GraphSearch<Dim>::Astar(const Coord &start_coord,
 
 template <int Dim>
 decimal_t GraphSearch<Dim>::LPAstar(const Coord &start_coord,
-                                    const std::shared_ptr<EnvBaseD> &ENV,
+                                    const std::shared_ptr<EnvBaseD> &env,
                                     std::shared_ptr<StateSpaceD> &ss_ptr,
                                     TrajectoryD &traj, int max_expand) {
   // Check if done
-  if (ENV->is_goal(start_coord)) {
+  if (env->is_goal(start_coord)) {
     if (verbose_)
       printf(ANSI_COLOR_GREEN
              "Start is inside goal region!\n" ANSI_COLOR_RESET);
@@ -171,7 +162,7 @@ decimal_t GraphSearch<Dim>::LPAstar(const Coord &start_coord,
     currNode_ptr = std::make_shared<State<Coord>>(start_coord);
     currNode_ptr->g = std::numeric_limits<decimal_t>::infinity();
     currNode_ptr->rhs = 0;
-    currNode_ptr->h = ss_ptr->eps_ == 0 ? 0 : ENV->get_heur(start_coord);
+    currNode_ptr->h = ss_ptr->eps_ == 0 ? 0 : env->get_heur(start_coord);
     currNode_ptr->heapkey = ss_ptr->pq_.push(
         std::make_pair(ss_ptr->calculateKey(currNode_ptr), currNode_ptr));
     currNode_ptr->iterationopened = true;
@@ -182,7 +173,7 @@ decimal_t GraphSearch<Dim>::LPAstar(const Coord &start_coord,
   // Initialize goal node
   StatePtr<Coord> goalNode_ptr = std::make_shared<State<Coord>>(Coord());
   if (!ss_ptr->best_child_.empty() &&
-      ENV->is_goal(ss_ptr->best_child_.back()->coord)) {
+      env->is_goal(ss_ptr->best_child_.back()->coord)) {
     goalNode_ptr = ss_ptr->best_child_.back();
     if (verbose_) {
       printf(ANSI_COLOR_GREEN "Use existing goal!\n" ANSI_COLOR_RESET);
@@ -222,7 +213,7 @@ decimal_t GraphSearch<Dim>::LPAstar(const Coord &start_coord,
 
     bool explored = !currNode_ptr->succ_coord.empty();
     if (!explored) {
-      ENV->get_succ(currNode_ptr->coord, succ_coord, succ_cost, succ_act_id);
+      env->get_succ(currNode_ptr->coord, succ_coord, succ_cost, succ_act_id);
       currNode_ptr->succ_coord.resize(succ_coord.size());
       currNode_ptr->succ_action_id.resize(succ_coord.size());
       currNode_ptr->succ_action_cost.resize(succ_coord.size());
@@ -235,7 +226,7 @@ decimal_t GraphSearch<Dim>::LPAstar(const Coord &start_coord,
       if (!succNode_ptr) {
         succNode_ptr = std::make_shared<State<Coord>>(succ_coord[s]);
         succNode_ptr->h =
-            ss_ptr->eps_ == 0 ? 0 : ENV->get_heur(succNode_ptr->coord);
+            ss_ptr->eps_ == 0 ? 0 : env->get_heur(succNode_ptr->coord);
       }
 
       // Store the hashkey
@@ -260,7 +251,7 @@ decimal_t GraphSearch<Dim>::LPAstar(const Coord &start_coord,
     }
 
     // If goal reached, terminate!
-    if (ENV->is_goal(currNode_ptr->coord)) goalNode_ptr = currNode_ptr;
+    if (env->is_goal(currNode_ptr->coord)) goalNode_ptr = currNode_ptr;
 
     // If maximum expansion reached, abort!
     if (max_expand > 0 && expand_iteration >= max_expand) {
@@ -286,17 +277,13 @@ decimal_t GraphSearch<Dim>::LPAstar(const Coord &start_coord,
            "goalNode fval: %f, g: %f, rhs: %f!\n" ANSI_COLOR_RESET,
            ss_ptr->calculateKey(goalNode_ptr), goalNode_ptr->g,
            goalNode_ptr->rhs);
-    // printf(ANSI_COLOR_GREEN "currNode fval: %f, g: %f, rhs: %f!\n"
-    // ANSI_COLOR_RESET,
-    //     ss_ptr->calculateKey(currNode_ptr), currNode_ptr->g,
-    //     currNode_ptr->rhs);
     printf(ANSI_COLOR_GREEN "Expand [%d] nodes!\n" ANSI_COLOR_RESET,
            expand_iteration);
   }
 
   //****** Check if the goal is reached, if reached, set the flag to be True
   if (verbose_) {
-    if (ENV->is_goal(goalNode_ptr->coord))
+    if (env->is_goal(goalNode_ptr->coord))
       printf(ANSI_COLOR_GREEN "Reached Goal !!!!!!\n\n" ANSI_COLOR_RESET);
     else
       printf(ANSI_COLOR_RED
@@ -304,9 +291,8 @@ decimal_t GraphSearch<Dim>::LPAstar(const Coord &start_coord,
   }
 
   ss_ptr->expand_iteration_ = expand_iteration;
-  // auto start = std::chrono::high_resolution_clock::now();
   //****** Recover trajectory
-  if (recoverTraj(goalNode_ptr, ss_ptr, ENV, start_coord, traj))
+  if (recoverTraj(goalNode_ptr, ss_ptr, env, start_coord, traj))
     return goalNode_ptr->g - ss_ptr->start_g_;
   else
     return std::numeric_limits<decimal_t>::infinity();
@@ -315,7 +301,7 @@ decimal_t GraphSearch<Dim>::LPAstar(const Coord &start_coord,
 template <int Dim>
 bool GraphSearch<Dim>::recoverTraj(StatePtr<Coord> currNode_ptr,
                                    std::shared_ptr<StateSpaceD> ss_ptr,
-                                   const std::shared_ptr<EnvBaseD> &ENV,
+                                   const std::shared_ptr<EnvBaseD> &env,
                                    const Coord &start_key, TrajectoryD &traj) {
   // Recover trajectory
   ss_ptr->best_child_.clear();
@@ -355,7 +341,7 @@ bool GraphSearch<Dim>::recoverTraj(StatePtr<Coord> currNode_ptr,
       int action_idx = currNode_ptr->pred_action_id[min_id];
       currNode_ptr = ss_ptr->hm_[key];
       Primitive<Dim> pr;
-      ENV->forward_action(currNode_ptr->coord, action_idx, pr);
+      env->forward_action(currNode_ptr->coord, action_idx, pr);
       prs.push_back(pr);
     } else {
       if (verbose_) {

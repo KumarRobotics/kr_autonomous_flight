@@ -56,7 +56,7 @@ class GraphSearch {
    * means there is no limitation
    */
   decimal_t LPAstar(const Coord &start_coord,
-                    const std::shared_ptr<EnvBaseD> &ENV,
+                    const std::shared_ptr<EnvBaseD> &env,
                     std::shared_ptr<StateSpaceD> &ss_ptr, TrajectoryD &traj,
                     int max_expand = -1);
 
@@ -64,7 +64,7 @@ class GraphSearch {
   /// Recover trajectory
   bool recoverTraj(StatePtr<Coord> currNode_ptr,
                    std::shared_ptr<StateSpaceD> ss_ptr,
-                   const std::shared_ptr<EnvBaseD> &ENV, const Coord &start_key,
+                   const std::shared_ptr<EnvBaseD> &env, const Coord &start_key,
                    TrajectoryD &traj);
 
   /// Verbose flag

@@ -14,8 +14,9 @@ template <int Dim>
 class MapUtil {
  public:
   /// Simple constructor
-  MapUtil() {}
+  MapUtil() = default;
   /// Get map data
+  /// TODO: this returns a copy, maybe change it to const&?
   Tmap getMap() { return map_; }
   /// Get resolution
   decimal_t getRes() { return res_; }
@@ -73,15 +74,6 @@ class MapUtil {
 
   /// Get unknown voxels for 3D
   vec_Vecf<Dim> getUnknownCloud();
-
-  /// Dilate occupied cells
-  void dilate(const vec_Veci<Dim> &dilate_neighbor);
-
-  /// Free unknown voxels
-  void freeUnknown();
-
-  /// Free all voxels
-  void freeAll();
 
  protected:
   /// Map resolution

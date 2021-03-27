@@ -203,12 +203,6 @@ void PlannerBase<Dim>::setU(const vec_E<VecDf> &U) {
 }
 
 template <int Dim>
-void PlannerBase<Dim>::setPriorTrajectory(const TrajectoryD &traj) {
-  env_->set_prior_trajectory(traj);
-  if (planner_verbose_) printf("[PlannerBase] set prior trajectory\n");
-}
-
-template <int Dim>
 void PlannerBase<Dim>::setTol(decimal_t tol_pos, decimal_t tol_vel,
                               decimal_t tol_acc) {
   env_->set_tol_pos(tol_pos);
@@ -227,7 +221,6 @@ bool PlannerBase<Dim>::plan(const PlannerBase::Coord &start,
   if (planner_verbose_) {
     start.print("Start:");
     goal.print("Goal:");
-
     env_->info();
   }
 

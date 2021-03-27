@@ -1,4 +1,5 @@
 #pragma once
+
 #include <memory>
 #include <unordered_map>
 
@@ -6,11 +7,12 @@
 #include "mpl_planner/env_base.h"
 
 namespace MPL {
+
 /**
  * @brief Voxel map environment
  */
 template <int Dim>
-class EnvMap : public EnvBase<Dim> {
+class EnvMap final : public EnvBase<Dim> {
  public:
   using MapUtilD = MapUtil<Dim>;
   using WaypointD = Waypoint<Dim>;
@@ -21,10 +23,10 @@ class EnvMap : public EnvBase<Dim> {
   EnvMap(std::shared_ptr<MapUtilD> map_util) : map_util_(map_util) {}
 
   /// Check if state hit the goal region, use L-1 norm
-  bool is_goal(const WaypointD &state) const;
+  bool is_goal(const WaypointD &state) const override;
 
   /// Check if a point is in free space
-  bool is_free(const Vecf<Dim> &pt) const;
+  bool is_free(const Vecf<Dim> &pt) const override;
 
   /**
    * @brief Check if the primitive is in free space
@@ -64,30 +66,10 @@ class EnvMap : public EnvBase<Dim> {
    */
   void get_succ(const WaypointD &curr, vec_E<WaypointD> &succ,
                 std::vector<decimal_t> &succ_cost,
-                std::vector<int> &action_idx) const;
-
-  /// Set gradient map
-  void set_gradient_map(const vec_E<Vecf<Dim>> &map) { gradient_map_ = map; }
-
-  /// Set gradient weight
-  void set_gradient_weight(decimal_t w) { gradient_weight_ = w; }
-
-  /// Set potential map
-  void set_potential_map(const std::vector<int8_t> &map) {
-    potential_map_ = map;
-  }
-
-  /// Set potential weight
-  void set_potential_weight(decimal_t w) { potential_weight_ = w; }
-
-  /// Set prior trajectory
-  void set_prior_trajectory(const TrajectoryD &traj);
-
-  /// traverse trajectory
-  decimal_t traverse_trajectory(const TrajectoryD &traj) const;
+                std::vector<int> &action_idx) const override;
 
   /// Print out params
-  void info();
+  void info() override;
 
  protected:
   /// Collision checking util

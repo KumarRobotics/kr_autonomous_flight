@@ -41,8 +41,7 @@ decimal_t EnvBase<Dim>::cal_heur(const WaypointD &state,
     } else
       return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>();
   }
-  // return 0;
-  // return w_*(state.pos - goal.pos).norm();
+
   if (state.control == MPL::JRK && goal.control == MPL::JRK) {
     const Vecf<Dim> dp = goal.pos - state.pos;
     const Vecf<Dim> v0 = state.vel;
@@ -220,6 +219,12 @@ void EnvBase<Dim>::set_prior_trajectory(const TrajectoryD &traj) {
 }
 
 template <int Dim>
+bool EnvBase<Dim>::set_goal(const WaypointD &state) {
+  if (prior_traj_.empty()) goal_node_ = state;
+  return prior_traj_.empty();
+}
+
+template <int Dim>
 void EnvBase<Dim>::info() {
   printf(ANSI_COLOR_YELLOW "\n");
   printf("++++++++++++++++++++ env_base ++++++++++++++++++\n");
@@ -240,6 +245,11 @@ void EnvBase<Dim>::info() {
          heur_ignore_dynamics_);
   printf("++++++++++++++++++++ env_base ++++++++++++++++++\n");
   printf(ANSI_COLOR_RESET "\n");
+}
+
+template <int Dim>
+decimal_t EnvBase<Dim>::calculate_intrinsic_cost(const PrimitiveD &pr) const {
+  return pr.J(pr.control()) + w_ * dt_;
 }
 
 template class EnvBase<2>;

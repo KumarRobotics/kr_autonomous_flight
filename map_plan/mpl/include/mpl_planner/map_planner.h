@@ -52,7 +52,7 @@ class MapPlanner final : public PlannerBase<Dim> {
 
 /// Planner for 2D OccMap
 typedef MapPlanner<2> OccMapPlanner;
-
 /// Planner for 3D VoxelMap
 typedef MapPlanner<3> VoxelMapPlanner;
+
 }  // namespace MPL

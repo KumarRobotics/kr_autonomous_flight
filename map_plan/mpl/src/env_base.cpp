@@ -195,12 +195,12 @@ Veci<Dim> EnvBase<Dim>::round(const Vecf<Dim> &vec, decimal_t res) const {
   return vecI;
 }
 
-template <int Dim>
-std::string EnvBase<Dim>::to_string(const Veci<Dim> &vec) const {
-  std::string str;
-  for (int i = 0; i < Dim; i++) str += std::to_string(vec(i)) + "-";
-  return str;
-}
+//template <int Dim>
+//std::string EnvBase<Dim>::to_string(const Veci<Dim> &vec) const {
+//  std::string str;
+//  for (int i = 0; i < Dim; i++) str += std::to_string(vec(i)) + "-";
+//  return str;
+//}
 
 template <int Dim>
 void EnvBase<Dim>::forward_action(const WaypointD &curr, int action_id,

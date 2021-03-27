@@ -38,7 +38,7 @@ class EnvBase {
   Veci<Dim> round(const Vecf<Dim>& vec, decimal_t res) const;
 
   /// Convert a vec to a string
-  std::string to_string(const Veci<Dim>& vec) const;
+  //  std::string to_string(const Veci<Dim>& vec) const;
 
   /// Recover trajectory
   void forward_action(const WaypointD& curr, int action_id,

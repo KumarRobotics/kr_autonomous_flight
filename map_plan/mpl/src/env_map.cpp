@@ -56,7 +56,9 @@ template <int Dim>
 decimal_t EnvMap<Dim>::traverse_primitive(const PrimitiveD &pr) const {
   decimal_t max_v = 0;
   for (int i = 0; i < Dim; i++) {
-    if (pr.max_vel(i) > max_v) max_v = pr.max_vel(i);
+    if (pr.max_vel(i) > max_v) {
+      max_v = pr.max_vel(i);
+    }
   }
   int n = std::max(5, (int)std::ceil(max_v * pr.t() / map_util_->getRes()));
   decimal_t c = 0;
@@ -68,14 +70,10 @@ decimal_t EnvMap<Dim>::traverse_primitive(const PrimitiveD &pr) const {
     const int idx = map_util_->getIndex(pn);
 
     if (map_util_->isOutside(pn) ||
-        (!this->search_region_.empty() && !this->search_region_[idx]))
+        (!this->search_region_.empty() && !this->search_region_[idx])) {
       return std::numeric_limits<decimal_t>::infinity();
-    /*
-    decimal_t v_value = gradient_map_[idx].dot(pt.vel);
-    if(v_value > 0)
-      v_value = 0;
-    v_value = -v_value;
-    */
+    }
+
     if (!potential_map_.empty()) {
       if (potential_map_[idx] < 100 && potential_map_[idx] > 0) {
         c += dt * (potential_weight_ * potential_map_[idx] +

@@ -48,7 +48,6 @@ class EnvMap final : public EnvBase<Dim> {
    * otherwise, the accumulated value will be zero for collision-free primitive
    * and infinity for others.
    */
-
   decimal_t traverse_primitive(const PrimitiveD &pr) const;
 
   /**

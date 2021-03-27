@@ -25,18 +25,10 @@ class PlannerBase {
 
   /// Get optimal trajectory
   TrajectoryD getTraj() const { return traj_; }
-  /// Get expanded collision free primitives
-  vec_E<PrimitiveD> getValidPrimitives() const;
-  /// Get expanded primitives
-  vec_E<PrimitiveD> getAllPrimitives() const;
   /// Get points in open set
   vec_Vecf<Dim> getOpenSet() const;
   /// Get points in close set
   vec_Vecf<Dim> getCloseSet() const;
-  /// Get points neither in open nor close set
-  vec_Vecf<Dim> getNullSet() const;
-  /// Get points at certain state
-  vec_Vecf<Dim> getStates(const Coord &state) const;
   /// Get expanded nodes, for A* it should be the same as the close set
   vec_Vecf<Dim> getExpandedNodes() const { return env_->expanded_nodes_; }
   /// Get expanded edges, for A* it should be the same as the close set

@@ -5,52 +5,6 @@
 namespace MPL {
 
 template <int Dim>
-auto PlannerBase<Dim>::getValidPrimitives() const -> vec_E<PrimitiveD> {
-  vec_E<PrimitiveD> prs;
-  for (const auto &it : ss_ptr_->hm_) {
-    if (it.second && !it.second->pred_coord.empty()) {
-      for (unsigned int i = 0; i < it.second->pred_coord.size(); i++) {
-        Coord key = it.second->pred_coord[i];
-        // if(!ss_ptr_->hm_[key] ||
-        // std::isinf(it.second->pred_action_cost[i]))
-        if (std::isinf(it.second->pred_action_cost[i])) continue;
-        Primitive<Dim> pr;
-        env_->forward_action(ss_ptr_->hm_[key]->coord,
-                             it.second->pred_action_id[i], pr);
-        prs.push_back(pr);
-      }
-    }
-  }
-
-  if (planner_verbose_)
-    printf("number of states in hm: %zu, number of valid prs: %zu\n",
-           ss_ptr_->hm_.size(), prs.size());
-
-  return prs;
-}
-
-template <int Dim>
-auto PlannerBase<Dim>::getAllPrimitives() const -> vec_E<PrimitiveD> {
-  vec_E<PrimitiveD> prs;
-  for (const auto &it : ss_ptr_->hm_) {
-    if (it.second && !it.second->pred_coord.empty()) {
-      for (unsigned int i = 0; i < it.second->pred_coord.size(); i++) {
-        Coord key = it.second->pred_coord[i];
-        PrimitiveD pr;
-        env_->forward_action(key, it.second->pred_action_id[i], pr);
-        prs.push_back(pr);
-      }
-    }
-  }
-
-  if (planner_verbose_)
-    printf("getAllPrimitives number of states in hm: %zu, number of prs: %zu\n",
-           ss_ptr_->hm_.size(), prs.size());
-
-  return prs;
-}
-
-template <int Dim>
 vec_Vecf<Dim> PlannerBase<Dim>::getOpenSet() const {
   vec_Vecf<Dim> ps;
   for (const auto &it : ss_ptr_->pq_) {
@@ -70,52 +24,6 @@ vec_Vecf<Dim> PlannerBase<Dim>::getCloseSet() const {
 }
 
 template <int Dim>
-vec_Vecf<Dim> PlannerBase<Dim>::getNullSet() const {
-  vec_Vecf<Dim> ps;
-  for (const auto &it : ss_ptr_->hm_) {
-    if (it.second && !it.second->iterationopened)
-      ps.push_back(it.second->coord.pos);
-  }
-  return ps;
-}
-
-template <int Dim>
-vec_Vecf<Dim> PlannerBase<Dim>::getStates(const Coord &state) const {
-  vec_Vecf<Dim> ps;
-  vec_Vecf<Dim> vels;
-  vec_Vecf<Dim> accs;
-  for (const auto &it : ss_ptr_->hm_) {
-    if (it.second) {
-      auto coord = it.second->coord;
-      bool add = true;
-      if (state.use_vel && (state.vel - coord.vel).norm() > 1e-3) add = false;
-      if (state.use_acc && (state.acc - coord.acc).norm() > 1e-3) add = false;
-      if (state.use_jrk && (state.jrk - coord.jrk).norm() > 1e-3) add = false;
-      if (add) {
-        // std::cout << "add pos: " << coord.pos.transpose() <<
-        //  " vel: " << coord.vel.transpose() <<
-        //  " acc: " << coord.acc.transpose() << std::endl;
-        ps.push_back(coord.pos);
-        bool new_vel = true;
-        for (const auto &it : vels) {
-          if ((it - coord.vel).norm() < 1e-3) {
-            new_vel = false;
-            break;
-          }
-        }
-
-        if (new_vel) vels.push_back(coord.vel);
-      }
-    }
-  }
-
-  for (const auto &it : vels)
-    std::cout << "vel: " << it.transpose() << std::endl;
-  std::cout << "=========================" << std::endl;
-  return ps;
-}
-
-template <int Dim>
 void PlannerBase<Dim>::reset() {
   ss_ptr_ = nullptr;
   traj_ = TrajectoryD();
@@ -124,22 +32,27 @@ void PlannerBase<Dim>::reset() {
 template <int Dim>
 void PlannerBase<Dim>::setLPAstar(bool use_lpastar) {
   use_lpastar_ = use_lpastar;
-  if (use_lpastar_)
+  if (use_lpastar_) {
     printf("[PlannerBase] use Lifelong Planning A*\n");
-  else
+  } else {
     printf("[PlannerBase] use normal A*\n");
+  }
 }
 
 template <int Dim>
 void PlannerBase<Dim>::setVmax(decimal_t v) {
   env_->set_v_max(v);
-  if (planner_verbose_) printf("[PlannerBase] set v_max: %f\n", v);
+  if (planner_verbose_) {
+    printf("[PlannerBase] set v_max: %f\n", v);
+  }
 }
 
 template <int Dim>
 void PlannerBase<Dim>::setAmax(decimal_t a) {
   env_->set_a_max(a);
-  if (planner_verbose_) printf("[PlannerBase] set a_max: %f\n", a);
+  if (planner_verbose_) {
+    printf("[PlannerBase] set a_max: %f\n", a);
+  }
 }
 
 template <int Dim>

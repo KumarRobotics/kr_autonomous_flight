@@ -8,7 +8,14 @@ find_package(Eigen3 REQUIRED)
 
 catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} DEPENDS EIGEN3)
 
-add_library(${PROJECT_NAME} src/math.cpp src/lambda.cpp src/primitive.cpp
-                            src/map_planner.cpp)
+add_library(
+  ${PROJECT_NAME}
+  src/math.cpp
+  src/lambda.cpp
+  src/primitive.cpp
+  src/map_planner.cpp
+  src/trajectory.cpp
+  src/waypoint.cpp
+  src/map_util.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)

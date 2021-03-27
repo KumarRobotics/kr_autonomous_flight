@@ -1,5 +1,7 @@
 #include "mpl_basis/lambda.h"
 
+#include "mpl_basis/math.h"
+
 namespace MPL {
 
 LambdaSeg::LambdaSeg(const VirtualPoint &v1, const VirtualPoint &v2) {

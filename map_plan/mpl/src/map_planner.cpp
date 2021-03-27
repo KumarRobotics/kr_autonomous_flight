@@ -13,7 +13,7 @@ MapPlanner<Dim>::MapPlanner(bool verbose) {
 template <int Dim>
 void MapPlanner<Dim>::setMapUtil(
     const std::shared_ptr<MapUtil<Dim>> &map_util) {
-  this->ENV_.reset(new MPL::env_map<Dim>(map_util));
+  this->env_.reset(new MPL::EnvMap<Dim>(map_util));
   map_util_ = map_util;
 }
 
@@ -29,12 +29,12 @@ void MapPlanner<Dim>::setPotentialMapRange(const Vecf<Dim> &range) {
 
 template <int Dim>
 void MapPlanner<Dim>::setPotentialWeight(decimal_t w) {
-  this->ENV_->set_potential_weight(w);
+  this->env_->set_potential_weight(w);
 }
 
 template <int Dim>
 void MapPlanner<Dim>::setGradientWeight(decimal_t w) {
-  this->ENV_->set_gradient_weight(w);
+  this->env_->set_gradient_weight(w);
 }
 
 template <int Dim>
@@ -53,7 +53,9 @@ void MapPlanner<Dim>::setSearchRegion(const vec_Vecf<Dim> &path, bool dense) {
       ps.push_back(map_util_->floatToInt(path[i]));
     }
   } else {
-    for (const auto &pt : path) ps.push_back(map_util_->floatToInt(pt));
+    for (const auto &pt : path) {
+      ps.push_back(map_util_->floatToInt(pt));
+    }
   }
 
   // create mask
@@ -62,7 +64,7 @@ void MapPlanner<Dim>::setSearchRegion(const vec_Vecf<Dim> &path, bool dense) {
     rn(i) = std::ceil(search_radius_(i) / map_util_->getRes());
   vec_Veci<Dim> ns;
   Veci<Dim> n;
-  if (Dim == 2) {
+  if constexpr (Dim == 2) {
     for (n(0) = -rn(0); n(0) <= rn(0); n(0)++)
       for (n(1) = -rn(1); n(1) <= rn(1); n(1)++) ns.push_back(n);
   } else {
@@ -90,17 +92,17 @@ void MapPlanner<Dim>::setSearchRegion(const vec_Vecf<Dim> &path, bool dense) {
     }
   }
 
-  this->ENV_->set_search_region(in_region);
+  this->env_->set_search_region(in_region);
   if (this->planner_verbose_) printf("[MapPlanner] set search region\n");
 }
 
 template <int Dim>
 vec_Vecf<Dim> MapPlanner<Dim>::getSearchRegion() const {
-  const auto in_region = this->ENV_->get_search_region();
+  const auto in_region = this->env_->get_search_region();
   vec_Vecf<Dim> pts;
   const auto dim = map_util_->getDim();
   Veci<Dim> n;
-  if (Dim == 2) {
+  if constexpr (Dim == 2) {
     for (n(0) = 0; n(0) < dim(0); n(0)++) {
       for (n(1) = 0; n(1) < dim(1); n(1)++) {
         if (in_region[map_util_->getIndex(n)])
@@ -131,7 +133,7 @@ vec_Vecf<Dim> MapPlanner<Dim>::getLinkedNodes() const {
     for (unsigned int i = 0; i < it.second->pred_coord.size(); i++) {
       auto key = it.second->pred_coord[i];
       Primitive<Dim> pr;
-      this->ENV_->forward_action(this->ss_ptr_->hm_[key]->coord,
+      this->env_->forward_action(this->ss_ptr_->hm_[key]->coord,
                                  it.second->pred_action_id[i], pr);
       decimal_t max_v = 0;
       if (Dim == 2)
@@ -181,7 +183,7 @@ void MapPlanner<Dim>::updateClearedNodes(const vec_Veci<Dim> &cleared_pns) {
     }
   }
 
-  this->ss_ptr_->decreaseCost(cleared_nodes, this->ENV_);
+  this->ss_ptr_->decreaseCost(cleared_nodes, this->env_);
 }
 
 template <int Dim>
@@ -192,7 +194,7 @@ vec_Vec3f MapPlanner<Dim>::getPotentialCloud(decimal_t h_max) {
   vec_Vec3f ps;
 
   Veci<Dim> n;
-  if (Dim == 2) {
+  if constexpr (Dim == 2) {
     for (n(0) = 0; n(0) < dim(0); n(0)++) {
       for (n(1) = 0; n(1) < dim(1); n(1)++) {
         int idx = map_util_->getIndex(n);
@@ -292,7 +294,7 @@ void MapPlanner<Dim>::createMask() {
   // printf("rn: %d\n", rn);
   // printf("hn: %d\n", hn);
   Veci<Dim> n;
-  if (Dim == 2) {
+  if constexpr (Dim == 2) {
     for (n(0) = -rn; n(0) <= rn; n(0)++) {
       for (n(1) = -rn; n(1) <= rn; n(1)++) {
         if (std::hypot(n(0), n(1)) > rn) continue;
@@ -346,7 +348,7 @@ void MapPlanner<Dim>::updatePotentialMap(const Vecf<Dim> &pos) {
   auto dmap = map;
 
   Veci<Dim> n;
-  if (Dim == 2) {
+  if constexpr (Dim == 2) {
     for (n(0) = coord1(0); n(0) < coord2(0); n(0)++) {
       for (n(1) = coord1(1); n(1) < coord2(1); n(1)++) {
         int idx = map_util_->getIndex(n);
@@ -385,7 +387,7 @@ void MapPlanner<Dim>::updatePotentialMap(const Vecf<Dim> &pos) {
   }
 
   map_util_->setMap(map_util_->getOrigin(), dim, dmap, map_util_->getRes());
-  this->ENV_->set_potential_map(map_util_->getMap());
+  this->env_->set_potential_map(map_util_->getMap());
   // gradient_map_ = calculateGradient(coord1, coord2);
   // this->ENV_->set_gradient_map(gradient_map_);
 }
@@ -430,7 +432,6 @@ bool MapPlanner<Dim>::iterativePlan(const Waypoint<Dim> &start,
 }
 
 template class MapPlanner<2>;
-
 template class MapPlanner<3>;
 
 }  // namespace MPL

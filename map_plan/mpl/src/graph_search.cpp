@@ -1,5 +1,7 @@
 #include "mpl_planner/graph_search.h"
 
+#include <iostream>
+
 namespace MPL {
 
 template <int Dim>

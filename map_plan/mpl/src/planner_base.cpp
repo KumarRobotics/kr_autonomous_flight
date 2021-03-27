@@ -1,5 +1,7 @@
 #include "mpl_planner/planner_base.h"
 
+#include <iostream>
+
 namespace MPL {
 
 template <int Dim>

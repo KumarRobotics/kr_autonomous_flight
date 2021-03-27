@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <iostream>
-
 #include "mpl_basis/trajectory.h"
 #include "mpl_planner/state_space.h"
 

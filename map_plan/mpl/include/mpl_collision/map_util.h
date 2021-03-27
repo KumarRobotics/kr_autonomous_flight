@@ -1,7 +1,5 @@
 #pragma once
 
-#include <iostream>
-
 #include "mpl_basis/data_type.h"
 
 namespace MPL {

@@ -1,5 +1,7 @@
 #include "mpl_collision/map_util.h"
 
+#include <iostream>
+
 namespace MPL {
 
 template <int Dim>

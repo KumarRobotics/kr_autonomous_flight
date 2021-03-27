@@ -15,9 +15,10 @@ namespace MPL {
  *
  * Implement A* and Lifelong Planning A*
  */
-template <int Dim, typename Coord>
+template <int Dim>
 class GraphSearch {
  public:
+  using Coord = Waypoint<Dim>;
   /**
    * @brief Simple empty constructor
    *
@@ -37,7 +38,7 @@ class GraphSearch {
    */
   decimal_t Astar(const Coord &start_coord,
                   const std::shared_ptr<EnvBase<Dim>> &env,
-                  std::shared_ptr<StateSpace<Dim, Coord>> &ss_ptr,
+                  std::shared_ptr<StateSpace<Dim>> &ss_ptr,
                   Trajectory<Dim> &traj, int max_expand = -1) {
     // Check if done
     if (env->is_goal(start_coord)) return 0;
@@ -192,7 +193,7 @@ class GraphSearch {
    */
   decimal_t LPAstar(const Coord &start_coord,
                     const std::shared_ptr<EnvBase<Dim>> &ENV,
-                    std::shared_ptr<StateSpace<Dim, Coord>> &ss_ptr,
+                    std::shared_ptr<StateSpace<Dim>> &ss_ptr,
                     Trajectory<Dim> &traj, int max_expand = -1) {
     // Check if done
     if (ENV->is_goal(start_coord)) {
@@ -366,7 +367,7 @@ class GraphSearch {
  private:
   /// Recover trajectory
   bool recoverTraj(StatePtr<Coord> currNode_ptr,
-                   std::shared_ptr<StateSpace<Dim, Coord>> ss_ptr,
+                   std::shared_ptr<StateSpace<Dim>> ss_ptr,
                    const std::shared_ptr<EnvBase<Dim>> &ENV,
                    const Coord &start_key, Trajectory<Dim> &traj) {
     // Recover trajectory

@@ -13,9 +13,11 @@ namespace MPL {
 /**
  * @brief Motion planning base util class
  */
-template <int Dim, typename Coord>
+template <int Dim>
 class PlannerBase {
  public:
+  using Coord = Waypoint<Dim>;
+
   /// Simple constructor
   PlannerBase(bool verbose = false) : planner_verbose_(verbose) {}
 
@@ -284,12 +286,12 @@ class PlannerBase {
       return false;
     }
 
-    std::unique_ptr<MPL::GraphSearch<Dim, Coord>> planner_ptr(
-        new MPL::GraphSearch<Dim, Coord>(planner_verbose_));
+    std::unique_ptr<MPL::GraphSearch<Dim>> planner_ptr(
+        new MPL::GraphSearch<Dim>(planner_verbose_));
 
     // If use A*, reset the state space
     if (!use_lpastar_)
-      ss_ptr_.reset(new MPL::StateSpace<Dim, Coord>(epsilon_));
+      ss_ptr_.reset(new MPL::StateSpace<Dim>(epsilon_));
     else {
       // If use LPA*, reset the state space only at the initial planning
       if (!initialized()) {
@@ -297,7 +299,7 @@ class PlannerBase {
           printf(ANSI_COLOR_CYAN
                  "[PlannerBase] reset planner state space!" ANSI_COLOR_RESET
                  "\n");
-        ss_ptr_.reset(new MPL::StateSpace<Dim, Coord>(epsilon_));
+        ss_ptr_.reset(new MPL::StateSpace<Dim>(epsilon_));
       }
     }
 
@@ -326,7 +328,7 @@ class PlannerBase {
   /// Environment class
   std::shared_ptr<MPL::EnvBase<Dim>> env_;
   /// Planner workspace
-  std::shared_ptr<MPL::StateSpace<Dim, Coord>> ss_ptr_;
+  std::shared_ptr<MPL::StateSpace<Dim>> ss_ptr_;
   /// Optimal trajectory
   Trajectory<Dim> traj_;
   /// Total cost of final trajectory

@@ -53,7 +53,9 @@ void MapPlanner<Dim>::setSearchRegion(const vec_Vecf<Dim> &path, bool dense) {
       ps.push_back(map_util_->floatToInt(path[i]));
     }
   } else {
-    for (const auto &pt : path) ps.push_back(map_util_->floatToInt(pt));
+    for (const auto &pt : path) {
+      ps.push_back(map_util_->floatToInt(pt));
+    }
   }
 
   // create mask
@@ -62,7 +64,7 @@ void MapPlanner<Dim>::setSearchRegion(const vec_Vecf<Dim> &path, bool dense) {
     rn(i) = std::ceil(search_radius_(i) / map_util_->getRes());
   vec_Veci<Dim> ns;
   Veci<Dim> n;
-  if (Dim == 2) {
+  if constexpr (Dim == 2) {
     for (n(0) = -rn(0); n(0) <= rn(0); n(0)++)
       for (n(1) = -rn(1); n(1) <= rn(1); n(1)++) ns.push_back(n);
   } else {
@@ -100,7 +102,7 @@ vec_Vecf<Dim> MapPlanner<Dim>::getSearchRegion() const {
   vec_Vecf<Dim> pts;
   const auto dim = map_util_->getDim();
   Veci<Dim> n;
-  if (Dim == 2) {
+  if constexpr (Dim == 2) {
     for (n(0) = 0; n(0) < dim(0); n(0)++) {
       for (n(1) = 0; n(1) < dim(1); n(1)++) {
         if (in_region[map_util_->getIndex(n)])
@@ -192,7 +194,7 @@ vec_Vec3f MapPlanner<Dim>::getPotentialCloud(decimal_t h_max) {
   vec_Vec3f ps;
 
   Veci<Dim> n;
-  if (Dim == 2) {
+  if constexpr (Dim == 2) {
     for (n(0) = 0; n(0) < dim(0); n(0)++) {
       for (n(1) = 0; n(1) < dim(1); n(1)++) {
         int idx = map_util_->getIndex(n);
@@ -292,7 +294,7 @@ void MapPlanner<Dim>::createMask() {
   // printf("rn: %d\n", rn);
   // printf("hn: %d\n", hn);
   Veci<Dim> n;
-  if (Dim == 2) {
+  if constexpr (Dim == 2) {
     for (n(0) = -rn; n(0) <= rn; n(0)++) {
       for (n(1) = -rn; n(1) <= rn; n(1)++) {
         if (std::hypot(n(0), n(1)) > rn) continue;
@@ -346,7 +348,7 @@ void MapPlanner<Dim>::updatePotentialMap(const Vecf<Dim> &pos) {
   auto dmap = map;
 
   Veci<Dim> n;
-  if (Dim == 2) {
+  if constexpr (Dim == 2) {
     for (n(0) = coord1(0); n(0) < coord2(0); n(0)++) {
       for (n(1) = coord1(1); n(1) < coord2(1); n(1)++) {
         int idx = map_util_->getIndex(n);

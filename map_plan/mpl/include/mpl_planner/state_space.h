@@ -5,6 +5,7 @@
 #pragma once
 #include <boost/heap/d_ary_heap.hpp>  // boost::heap::d_ary_heap
 #include <boost/unordered_map.hpp>    // std::unordered_map
+#include <iostream>
 
 #include "mpl_planner/env_base.h"
 
@@ -31,6 +32,7 @@ using priorityQueue =
     boost::heap::d_ary_heap<std::pair<decimal_t, std::shared_ptr<state>>,
                             boost::heap::mutable_<true>, boost::heap::arity<2>,
                             boost::heap::compare<ComparePair<state>>>;
+
 /// Lattice of the graph in graph search
 template <typename Coord>
 struct State {
@@ -78,8 +80,10 @@ using hashMap =
     boost::unordered_map<Coord, StatePtr<Coord>, boost::hash<Coord>>;
 
 /// State space
-template <int Dim, typename Coord>
+template <int Dim>
 struct StateSpace {
+  using Coord = Waypoint<Dim>;
+
   /// Priority queue, open set
   priorityQueue<State<Coord>> pq_;
   /// Hashmap, stores all the nodes
@@ -103,11 +107,13 @@ struct StateSpace {
   StateSpace(decimal_t eps = 1) : eps_(eps) {}
 
   decimal_t getInitTime() const {
-    if (best_child_.empty())
+    if (best_child_.empty()) {
       return 0;
-    else
+    } else {
       return best_child_.front()->coord.t;
+    }
   }
+
   /**
    * @brief Get the subtree
    * @param time_step indicates the root of the subtree (best_child_[time_step])
@@ -190,16 +196,10 @@ struct StateSpace {
     pq_.clear();
     for (auto &it : new_hm) {
       if (it.second->iterationopened && !it.second->iterationclosed) {
-        // state->succ_coord.clear();
-        // state->succ_action_cost.clear();
-        // state->succ_action_id.clear();
         it.second->heapkey =
             pq_.push(std::make_pair(calculateKey(it.second), it.second));
       }
     }
-
-    // printf("getSubstatespace new_hm: %zu, hm_: %zu\n", new_hm.size(),
-    // hm_.size());
   }
 
   /// Increase the cost of actions

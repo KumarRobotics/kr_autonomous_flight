@@ -12,7 +12,7 @@ using kr_tracker_msgs::TrackerStatus;
 
 class StoppingPolicy : public kr_trackers_manager::Tracker {
  public:
-  StoppingPolicy();
+  StoppingPolicy() = default;
 
   void Initialize(const ros::NodeHandle &nh) override;
   bool Activate(const PositionCommand::ConstPtr &cmd) override;

@@ -68,126 +68,16 @@ class MapUtil {
   vec_Veci<Dim> rayTrace(const Vecf<Dim> &pt1, const Vecf<Dim> &pt2);
 
   /// Get occupied voxels for 3D
-  template <int U = Dim>
-  typename std::enable_if<U == 3, vec_Vec3f>::type getCloud() {
-    vec_Vecf<Dim> cloud;
-    Veci<Dim> n;
-    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
-      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
-        for (n(2) = 0; n(2) < dim_(2); n(2)++) {
-          if (isOccupied(getIndex(n))) cloud.push_back(intToFloat(n));
-        }
-      }
-    }
-    return cloud;
-  }
-  /// Get occupied voxels for 2D
-  template <int U = Dim>
-  typename std::enable_if<U == 2, vec_Vec2f>::type getCloud() {
-    vec_Vecf<Dim> cloud;
-    Veci<Dim> n;
-
-    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
-      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
-        if (isOccupied(getIndex(n))) cloud.push_back(intToFloat(n));
-      }
-    }
-    return cloud;
-  }
+  vec_Vecf<Dim> getCloud();
 
   /// Get free voxels for 3D
-  template <int U = Dim>
-  typename std::enable_if<U == 3, vec_Vec3f>::type getFreeCloud() {
-    vec_Vecf<Dim> cloud;
-    Veci<Dim> n;
-    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
-      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
-        for (n(2) = 0; n(2) < dim_(2); n(2)++) {
-          if (isFree(getIndex(n))) cloud.push_back(intToFloat(n));
-        }
-      }
-    }
-    return cloud;
-  }
-
-  /// Get free voxels for 2D
-  template <int U = Dim>
-  typename std::enable_if<U == 2, vec_Vec2f>::type getFreeCloud() {
-    vec_Vecf<Dim> cloud;
-    Veci<Dim> n;
-    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
-      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
-        if (isFree(getIndex(n))) cloud.push_back(intToFloat(n));
-      }
-    }
-    return cloud;
-  }
+  vec_Vecf<Dim> getFreeCloud();
 
   /// Get unknown voxels for 3D
-  template <int U = Dim>
-  typename std::enable_if<U == 3, vec_Vec3f>::type getUnknownCloud() {
-    vec_Vecf<Dim> cloud;
-    Veci<Dim> n;
-    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
-      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
-        for (n(2) = 0; n(2) < dim_(2); n(2)++) {
-          if (isUnknown(getIndex(n))) cloud.push_back(intToFloat(n));
-        }
-      }
-    }
-    return cloud;
-  }
-
-  /// Get unknown voxels for 2D
-  template <int U = Dim>
-  typename std::enable_if<U == 2, vec_Vec2f>::type getUnknownCloud() {
-    vec_Vecf<Dim> cloud;
-    Veci<Dim> n;
-    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
-      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
-        if (isUnknown(getIndex(n))) cloud.push_back(intToFloat(n));
-      }
-    }
-    return cloud;
-  }
+  vec_Vecf<Dim> getUnknownCloud();
 
   /// Dilate occupied cells
-  template <int U = Dim>
-  typename std::enable_if<U == 3>::type dilate(
-      const vec_Veci<Dim> &dilate_neighbor) {
-    Tmap map = map_;
-    Veci<Dim> n = Veci<Dim>::Zero();
-    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
-      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
-        for (n(2) = 0; n(2) < dim_(2); n(2)++) {
-          if (isOccupied(getIndex(n))) {
-            for (const auto &it : dilate_neighbor) {
-              if (!isOutside(n + it)) map[getIndex(n + it)] = val_occ;
-            }
-          }
-        }
-      }
-    }
-    map_ = map;
-  }
-
-  template <int U = Dim>
-  typename std::enable_if<U == 2>::type dilate(
-      const vec_Veci<Dim> &dilate_neighbor) {
-    Tmap map = map_;
-    Veci<Dim> n = Veci<Dim>::Zero();
-    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
-      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
-        if (isOccupied(getIndex(n))) {
-          for (const auto &it : dilate_neighbor) {
-            if (!isOutside(n + it)) map[getIndex(n + it)] = val_occ;
-          }
-        }
-      }
-    }
-
-    map_ = map;
-  }
+  void dilate(const vec_Veci<Dim> &dilate_neighbor);
 
   /// Free unknown voxels
   void freeUnknown();

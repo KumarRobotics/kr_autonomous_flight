@@ -96,6 +96,105 @@ vec_Veci<Dim> MapUtil<Dim>::rayTrace(const Vecf<Dim> &pt1,
 }
 
 template <int Dim>
+vec_Vecf<Dim> MapUtil<Dim>::getCloud() {
+  vec_Vecf<Dim> cloud;
+  Veci<Dim> n;
+  if constexpr (Dim == 3) {
+    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
+      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+        for (n(2) = 0; n(2) < dim_(2); n(2)++) {
+          if (isOccupied(getIndex(n))) cloud.push_back(intToFloat(n));
+        }
+      }
+    }
+  } else {
+    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
+      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+        if (isOccupied(getIndex(n))) cloud.push_back(intToFloat(n));
+      }
+    }
+  }
+  return cloud;
+}
+
+template <int Dim>
+vec_Vecf<Dim> MapUtil<Dim>::getFreeCloud() {
+  vec_Vecf<Dim> cloud;
+  Veci<Dim> n;
+
+  if constexpr (Dim == 3) {
+    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
+      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+        for (n(2) = 0; n(2) < dim_(2); n(2)++) {
+          if (isFree(getIndex(n))) cloud.push_back(intToFloat(n));
+        }
+      }
+    }
+  } else {
+    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
+      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+        if (isFree(getIndex(n))) cloud.push_back(intToFloat(n));
+      }
+    }
+  }
+  return cloud;
+}
+
+template <int Dim>
+vec_Vecf<Dim> MapUtil<Dim>::getUnknownCloud() {
+  vec_Vecf<Dim> cloud;
+  Veci<Dim> n;
+
+  if constexpr (Dim == 3) {
+    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
+      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+        for (n(2) = 0; n(2) < dim_(2); n(2)++) {
+          if (isUnknown(getIndex(n))) cloud.push_back(intToFloat(n));
+        }
+      }
+    }
+  } else {
+    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
+      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+        if (isUnknown(getIndex(n))) cloud.push_back(intToFloat(n));
+      }
+    }
+  }
+  return cloud;
+}
+
+template <int Dim>
+void MapUtil<Dim>::dilate(const vec_Veci<Dim> &dilate_neighbor) {
+  Tmap map = map_;
+  Veci<Dim> n = Veci<Dim>::Zero();
+
+  if constexpr (Dim == 3) {
+    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
+      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+        for (n(2) = 0; n(2) < dim_(2); n(2)++) {
+          if (isOccupied(getIndex(n))) {
+            for (const auto &it : dilate_neighbor) {
+              if (!isOutside(n + it)) map[getIndex(n + it)] = val_occ;
+            }
+          }
+        }
+      }
+    }
+  } else {
+    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
+      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+        if (isOccupied(getIndex(n))) {
+          for (const auto &it : dilate_neighbor) {
+            if (!isOutside(n + it)) map[getIndex(n + it)] = val_occ;
+          }
+        }
+      }
+    }
+  }
+  map_ = map;
+}
+
+template <int Dim>
 void MapUtil<Dim>::freeUnknown() {
   Veci<Dim> n;
   if constexpr (Dim == 3) {

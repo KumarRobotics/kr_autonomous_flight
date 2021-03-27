@@ -4,6 +4,7 @@
  */
 
 #pragma once
+
 #include "mpl_basis/trajectory.h"
 #include "mpl_planner/state_space.h"
 
@@ -35,11 +36,11 @@ class GraphSearch {
    * means there is no limitation
    */
   decimal_t Astar(const Coord &start_coord,
-                  const std::shared_ptr<env_base<Dim>> &ENV,
+                  const std::shared_ptr<EnvBase<Dim>> &env,
                   std::shared_ptr<StateSpace<Dim, Coord>> &ss_ptr,
                   Trajectory<Dim> &traj, int max_expand = -1) {
     // Check if done
-    if (ENV->is_goal(start_coord)) return 0;
+    if (env->is_goal(start_coord)) return 0;
 
     // Initialize start node
     StatePtr<Coord> currNode_ptr = ss_ptr->hm_[start_coord];
@@ -48,7 +49,7 @@ class GraphSearch {
         printf(ANSI_COLOR_GREEN "Start from new node!\n" ANSI_COLOR_RESET);
       currNode_ptr = std::make_shared<State<Coord>>(start_coord);
       currNode_ptr->g = 0;
-      currNode_ptr->h = ss_ptr->eps_ == 0 ? 0 : ENV->get_heur(start_coord);
+      currNode_ptr->h = ss_ptr->eps_ == 0 ? 0 : env->get_heur(start_coord);
       decimal_t fval = currNode_ptr->g + ss_ptr->eps_ * currNode_ptr->h;
       currNode_ptr->heapkey =
           ss_ptr->pq_.push(std::make_pair(fval, currNode_ptr));
@@ -70,7 +71,7 @@ class GraphSearch {
       std::vector<decimal_t> succ_cost;
       std::vector<int> succ_act_id;
 
-      ENV->get_succ(currNode_ptr->coord, succ_coord, succ_cost, succ_act_id);
+      env->get_succ(currNode_ptr->coord, succ_coord, succ_cost, succ_act_id);
 
       // Process successors (satisfy dynamic constraints but might hit
       // obstacles)
@@ -83,7 +84,7 @@ class GraphSearch {
         if (!succNode_ptr) {
           succNode_ptr = std::make_shared<State<Coord>>(succ_coord[s]);
           succNode_ptr->h =
-              ss_ptr->eps_ == 0 ? 0 : ENV->get_heur(succNode_ptr->coord);
+              ss_ptr->eps_ == 0 ? 0 : env->get_heur(succNode_ptr->coord);
           /*
            * Comment this block if build multiple connected graph
            succNode_ptr->pred_coord.push_back(currNode_ptr->coord);
@@ -141,7 +142,7 @@ class GraphSearch {
       }
 
       // If goal reached, abort!
-      if (ENV->is_goal(currNode_ptr->coord)) break;
+      if (env->is_goal(currNode_ptr->coord)) break;
 
       // If maximum expansion reached, abort!
       if (max_expand > 0 && expand_iteration >= max_expand) {
@@ -167,13 +168,13 @@ class GraphSearch {
              expand_iteration);
     }
 
-    if (ENV->is_goal(currNode_ptr->coord)) {
+    if (env->is_goal(currNode_ptr->coord)) {
       if (verbose_)
         printf(ANSI_COLOR_GREEN "Reached Goal !!!!!!\n\n" ANSI_COLOR_RESET);
     }
 
     ss_ptr->expand_iteration_ = expand_iteration;
-    if (recoverTraj(currNode_ptr, ss_ptr, ENV, start_coord, traj))
+    if (recoverTraj(currNode_ptr, ss_ptr, env, start_coord, traj))
       return currNode_ptr->g;
     else
       return std::numeric_limits<decimal_t>::infinity();
@@ -190,7 +191,7 @@ class GraphSearch {
    * means there is no limitation
    */
   decimal_t LPAstar(const Coord &start_coord,
-                    const std::shared_ptr<env_base<Dim>> &ENV,
+                    const std::shared_ptr<EnvBase<Dim>> &ENV,
                     std::shared_ptr<StateSpace<Dim, Coord>> &ss_ptr,
                     Trajectory<Dim> &traj, int max_expand = -1) {
     // Check if done
@@ -366,7 +367,7 @@ class GraphSearch {
   /// Recover trajectory
   bool recoverTraj(StatePtr<Coord> currNode_ptr,
                    std::shared_ptr<StateSpace<Dim, Coord>> ss_ptr,
-                   const std::shared_ptr<env_base<Dim>> &ENV,
+                   const std::shared_ptr<EnvBase<Dim>> &ENV,
                    const Coord &start_key, Trajectory<Dim> &traj) {
     // Recover trajectory
     ss_ptr->best_child_.clear();

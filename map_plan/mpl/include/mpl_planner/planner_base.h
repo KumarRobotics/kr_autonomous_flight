@@ -35,7 +35,7 @@ class PlannerBase {
           // std::isinf(it.second->pred_action_cost[i]))
           if (std::isinf(it.second->pred_action_cost[i])) continue;
           Primitive<Dim> pr;
-          ENV_->forward_action(ss_ptr_->hm_[key]->coord,
+          env_->forward_action(ss_ptr_->hm_[key]->coord,
                                it.second->pred_action_id[i], pr);
           prs.push_back(pr);
         }
@@ -57,7 +57,7 @@ class PlannerBase {
         for (unsigned int i = 0; i < it.second->pred_coord.size(); i++) {
           Coord key = it.second->pred_coord[i];
           Primitive<Dim> pr;
-          ENV_->forward_action(key, it.second->pred_action_id[i], pr);
+          env_->forward_action(key, it.second->pred_action_id[i], pr);
           prs.push_back(pr);
         }
       }
@@ -135,11 +135,11 @@ class PlannerBase {
   }
 
   /// Get expanded nodes, for A* it should be the same as the close set
-  vec_Vecf<Dim> getExpandedNodes() const { return ENV_->expanded_nodes_; }
+  vec_Vecf<Dim> getExpandedNodes() const { return env_->expanded_nodes_; }
 
   /// Get expanded edges, for A* it should be the same as the close set
   vec_E<Primitive<Dim>> getExpandedEdges() const {
-    return ENV_->expanded_edges_;
+    return env_->expanded_edges_;
   }
 
   /// Get number of expanded nodes
@@ -175,49 +175,49 @@ class PlannerBase {
 
   /// Set max vel in each axis
   void setVmax(decimal_t v) {
-    ENV_->set_v_max(v);
+    env_->set_v_max(v);
     if (planner_verbose_) printf("[PlannerBase] set v_max: %f\n", v);
   }
 
   /// Set max acc in each axis
   void setAmax(decimal_t a) {
-    ENV_->set_a_max(a);
+    env_->set_a_max(a);
     if (planner_verbose_) printf("[PlannerBase] set a_max: %f\n", a);
   }
 
   /// Set max jerk in each axis
   void setJmax(decimal_t j) {
-    ENV_->set_j_max(j);
+    env_->set_j_max(j);
     if (planner_verbose_) printf("[PlannerBase] set j_max: %f\n", j);
   }
 
   /// Set max jerk in each axis
   void setYawmax(decimal_t yaw) {
-    ENV_->set_yaw_max(yaw);
+    env_->set_yaw_max(yaw);
     if (planner_verbose_) printf("[PlannerBase] set yaw_max: %f\n", yaw);
   }
 
   /// Set max time step to explore
   void setTmax(decimal_t t) {
-    ENV_->set_t_max(t);
+    env_->set_t_max(t);
     if (planner_verbose_) printf("[PlannerBase] set max time: %f\n", t);
   }
 
   /// Set dt for each primitive
   void setDt(decimal_t dt) {
-    ENV_->set_dt(dt);
+    env_->set_dt(dt);
     if (planner_verbose_) printf("[PlannerBase] set dt: %f\n", dt);
   }
 
   /// Set weight for cost in time
   void setW(decimal_t w) {
-    ENV_->set_w(w);
+    env_->set_w(w);
     if (planner_verbose_) printf("[PlannerBase] set w: %f\n", w);
   }
 
   /// Set weight for cost in time
   void setWyaw(decimal_t w) {
-    ENV_->set_wyaw(w);
+    env_->set_wyaw(w);
     if (planner_verbose_) printf("[PlannerBase] set wyaw: %f\n", w);
   }
 
@@ -229,7 +229,7 @@ class PlannerBase {
 
   /// Calculate heuristic using dynamics
   void setHeurIgnoreDynamics(bool ignore) {
-    ENV_->set_heur_ignore_dynamics(ignore);
+    env_->set_heur_ignore_dynamics(ignore);
     if (planner_verbose_)
       printf("[PlannerBase] set heur_ignore_dynamics: %d\n", ignore);
   }
@@ -241,20 +241,20 @@ class PlannerBase {
   }
 
   /// Set U
-  void setU(const vec_E<VecDf> &U) { ENV_->set_u(U); }
+  void setU(const vec_E<VecDf> &U) { env_->set_u(U); }
 
   /// Set prior trajectory
   void setPriorTrajectory(const Trajectory<Dim> &traj) {
-    ENV_->set_prior_trajectory(traj);
+    env_->set_prior_trajectory(traj);
     if (planner_verbose_) printf("[PlannerBase] set prior trajectory\n");
   }
 
   /// Set tolerance in geometric and dynamic spaces
   void setTol(decimal_t tol_pos, decimal_t tol_vel = -1,
               decimal_t tol_acc = -1) {
-    ENV_->set_tol_pos(tol_pos);
-    ENV_->set_tol_vel(tol_vel);
-    ENV_->set_tol_acc(tol_acc);
+    env_->set_tol_pos(tol_pos);
+    env_->set_tol_vel(tol_vel);
+    env_->set_tol_acc(tol_acc);
     if (planner_verbose_) {
       printf("[PlannerBase] set tol_pos: %f\n", tol_pos);
       printf("[PlannerBase] set tol_vel: %f\n", tol_vel);
@@ -275,10 +275,10 @@ class PlannerBase {
       start.print("Start:");
       goal.print("Goal:");
 
-      ENV_->info();
+      env_->info();
     }
 
-    if (!ENV_->is_free(start.pos)) {
+    if (!env_->is_free(start.pos)) {
       printf(ANSI_COLOR_RED "[PlannerBase] start is not free!" ANSI_COLOR_RESET
                             "\n");
       return false;
@@ -301,16 +301,16 @@ class PlannerBase {
       }
     }
 
-    ENV_->set_goal(goal);
+    env_->set_goal(goal);
 
-    ENV_->expanded_nodes_.clear();
-    ENV_->expanded_edges_.clear();
+    env_->expanded_nodes_.clear();
+    env_->expanded_edges_.clear();
 
-    ss_ptr_->dt_ = ENV_->get_dt();
+    ss_ptr_->dt_ = env_->get_dt();
     if (use_lpastar_)
-      traj_cost_ = planner_ptr->LPAstar(start, ENV_, ss_ptr_, traj_, max_num_);
+      traj_cost_ = planner_ptr->LPAstar(start, env_, ss_ptr_, traj_, max_num_);
     else
-      traj_cost_ = planner_ptr->Astar(start, ENV_, ss_ptr_, traj_, max_num_);
+      traj_cost_ = planner_ptr->Astar(start, env_, ss_ptr_, traj_, max_num_);
 
     if (std::isinf(traj_cost_)) {
       if (planner_verbose_)
@@ -324,7 +324,7 @@ class PlannerBase {
 
  protected:
   /// Environment class
-  std::shared_ptr<MPL::env_base<Dim>> ENV_;
+  std::shared_ptr<MPL::EnvBase<Dim>> env_;
   /// Planner workspace
   std::shared_ptr<MPL::StateSpace<Dim, Coord>> ss_ptr_;
   /// Optimal trajectory

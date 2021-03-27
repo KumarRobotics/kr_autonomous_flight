@@ -44,8 +44,8 @@ template <int Dim>
 class Trajectory {
  public:
   using CommandD = Command<Dim>;
+  using WaypointD = Waypoint<Dim>;
   using PrimitiveD = Primitive<Dim>;
-  using WaypointD = typename PrimitiveD::WaypointD;
 
   Trajectory() = default;
 

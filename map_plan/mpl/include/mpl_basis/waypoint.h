@@ -6,7 +6,6 @@
 #pragma once
 
 #include <boost/functional/hash.hpp>
-#include <iostream>
 
 #include "mpl_basis/control.h"
 #include "mpl_basis/data_type.h"

@@ -16,6 +16,7 @@ add_library(
   src/map_planner.cpp
   src/trajectory.cpp
   src/waypoint.cpp
-  src/map_util.cpp)
+  src/map_util.cpp
+  src/env_base.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)

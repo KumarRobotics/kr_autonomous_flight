@@ -1,5 +1,7 @@
 #include "mpl_basis/waypoint.h"
 
+#include <iostream>
+
 namespace MPL {
 
 template <int Dim>

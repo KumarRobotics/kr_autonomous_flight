@@ -13,7 +13,7 @@ MapPlanner<Dim>::MapPlanner(bool verbose) {
 template <int Dim>
 void MapPlanner<Dim>::setMapUtil(
     const std::shared_ptr<MapUtil<Dim>> &map_util) {
-  this->ENV_.reset(new MPL::env_map<Dim>(map_util));
+  this->env_.reset(new MPL::EnvMap<Dim>(map_util));
   map_util_ = map_util;
 }
 
@@ -29,12 +29,12 @@ void MapPlanner<Dim>::setPotentialMapRange(const Vecf<Dim> &range) {
 
 template <int Dim>
 void MapPlanner<Dim>::setPotentialWeight(decimal_t w) {
-  this->ENV_->set_potential_weight(w);
+  this->env_->set_potential_weight(w);
 }
 
 template <int Dim>
 void MapPlanner<Dim>::setGradientWeight(decimal_t w) {
-  this->ENV_->set_gradient_weight(w);
+  this->env_->set_gradient_weight(w);
 }
 
 template <int Dim>
@@ -90,13 +90,13 @@ void MapPlanner<Dim>::setSearchRegion(const vec_Vecf<Dim> &path, bool dense) {
     }
   }
 
-  this->ENV_->set_search_region(in_region);
+  this->env_->set_search_region(in_region);
   if (this->planner_verbose_) printf("[MapPlanner] set search region\n");
 }
 
 template <int Dim>
 vec_Vecf<Dim> MapPlanner<Dim>::getSearchRegion() const {
-  const auto in_region = this->ENV_->get_search_region();
+  const auto in_region = this->env_->get_search_region();
   vec_Vecf<Dim> pts;
   const auto dim = map_util_->getDim();
   Veci<Dim> n;
@@ -131,7 +131,7 @@ vec_Vecf<Dim> MapPlanner<Dim>::getLinkedNodes() const {
     for (unsigned int i = 0; i < it.second->pred_coord.size(); i++) {
       auto key = it.second->pred_coord[i];
       Primitive<Dim> pr;
-      this->ENV_->forward_action(this->ss_ptr_->hm_[key]->coord,
+      this->env_->forward_action(this->ss_ptr_->hm_[key]->coord,
                                  it.second->pred_action_id[i], pr);
       decimal_t max_v = 0;
       if (Dim == 2)
@@ -181,7 +181,7 @@ void MapPlanner<Dim>::updateClearedNodes(const vec_Veci<Dim> &cleared_pns) {
     }
   }
 
-  this->ss_ptr_->decreaseCost(cleared_nodes, this->ENV_);
+  this->ss_ptr_->decreaseCost(cleared_nodes, this->env_);
 }
 
 template <int Dim>
@@ -385,7 +385,7 @@ void MapPlanner<Dim>::updatePotentialMap(const Vecf<Dim> &pos) {
   }
 
   map_util_->setMap(map_util_->getOrigin(), dim, dmap, map_util_->getRes());
-  this->ENV_->set_potential_map(map_util_->getMap());
+  this->env_->set_potential_map(map_util_->getMap());
   // gradient_map_ = calculateGradient(coord1, coord2);
   // this->ENV_->set_gradient_map(gradient_map_);
 }

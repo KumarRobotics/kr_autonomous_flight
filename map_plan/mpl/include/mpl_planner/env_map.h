@@ -10,10 +10,10 @@ namespace MPL {
  * @brief Voxel map environment
  */
 template <int Dim>
-class env_map : public env_base<Dim> {
+class EnvMap : public EnvBase<Dim> {
  public:
   /// Constructor with map util as input
-  env_map(std::shared_ptr<MapUtil<Dim>> map_util) : map_util_(map_util) {}
+  EnvMap(std::shared_ptr<MapUtil<Dim>> map_util) : map_util_(map_util) {}
 
   /// Check if state hit the goal region, use L-1 norm
   bool is_goal(const Waypoint<Dim> &state) const {

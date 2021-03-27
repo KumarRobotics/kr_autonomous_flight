@@ -9,9 +9,10 @@
 #include "mpl_planner/env_base.h"
 
 namespace MPL {
+
 /// Heap element comparison
 template <typename state>
-struct compare_pair {
+struct ComparePair {
   bool operator()(
       const std::pair<decimal_t, std::shared_ptr<state>> &p1,
       const std::pair<decimal_t, std::shared_ptr<state>> &p2) const {
@@ -29,7 +30,7 @@ template <typename state>
 using priorityQueue =
     boost::heap::d_ary_heap<std::pair<decimal_t, std::shared_ptr<state>>,
                             boost::heap::mutable_<true>, boost::heap::arity<2>,
-                            boost::heap::compare<compare_pair<state>>>;
+                            boost::heap::compare<ComparePair<state>>>;
 /// Lattice of the graph in graph search
 template <typename Coord>
 struct State {
@@ -226,7 +227,7 @@ struct StateSpace {
   }
   /// Decrease the cost of actions
   void decreaseCost(std::vector<std::pair<Coord, int>> states,
-                    const std::shared_ptr<env_base<Dim>> &ENV) {
+                    const std::shared_ptr<EnvBase<Dim>> &ENV) {
     for (const auto &affected_node : states) {
       StatePtr<Coord> &succNode_ptr = hm_[affected_node.first];
       const int i = affected_node.second;

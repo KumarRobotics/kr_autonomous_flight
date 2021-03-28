@@ -20,8 +20,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${catkin_INCLUDE_DIRS}
                                                   include)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES})
 
-add_executable(cloud_to_map src/cloud_to_map.cpp)
-target_link_libraries(cloud_to_map PUBLIC ${PROJECT_NAME})
+# add_executable(cloud_to_map src/cloud_to_map.cpp)
+# target_link_libraries(cloud_to_map PUBLIC ${PROJECT_NAME})
 
 add_executable(local_global_mapper src/local_global_mapper.cpp)
 target_link_libraries(local_global_mapper PUBLIC ${PROJECT_NAME})

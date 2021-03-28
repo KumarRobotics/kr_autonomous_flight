@@ -9,13 +9,15 @@
     <!-- <arg name="prefix" value="nice -n 1"/> -->
     <arg name="prefix" value=""/>
 
+    <arg name="debug" default="true"/>
+    <env if="$(arg debug)" name="ROSCONSOLE_CONFIG_FILE" value="$(find mapper)/launch/debug.conf"/>
 
     <!-- use nice to set low priority for mapper -->
     <node pkg="mapper" name="mapper" type="local_global_mapper" output="screen" launch-prefix="$(arg prefix)">
         <remap from="~cloud" to="$(arg cloud)"/>
         <remap from="~voxel_map" to="voxel_map"/>
-        <remap from="~local_cloud" to="local_cloud"/> 
-        
+        <remap from="~local_cloud" to="local_cloud"/>
+
         <param name="real_robot" value="$(arg real_robot)"/>
         <param name="debug" value="false"/>
         <param name="map_frame" value="$(arg map_frame)"/>

@@ -5,6 +5,9 @@
   <arg name="odom" default="odom"/>
   <arg name="use_lauras" default="false"/>
 
+  <arg name="debug" default="true"/>
+  <env if="$(arg debug)" name="ROSCONSOLE_CONFIG_FILE" value="$(find action_planner)/launch/debug.conf"/>
+
   <node pkg="action_planner" type="global_plan_server" name="global_plan_server" output="screen" launch-prefix="$(arg prefix)">
     <remap from="~odom" to="$(arg odom)"/>
     <remap from="~global_voxel_map" to="mapper/global_voxel_map"/>

@@ -227,9 +227,8 @@ planning_ros_msgs::VoxelMap VoxelMapper::getInflatedLocalMap(
   voxel_map.origin.y = ori_d(1);
   voxel_map.origin.z = ori_d(2);
 
-  Eigen::Vector3i dim(
-      dim_d(0) / res_, dim_d(1) / res_,
-      dim_d(2) / res_);  // calculated dimesion of local voxel map in voxels
+  // calculated dimesion of local voxel map in voxels
+  Eigen::Vector3i dim(dim_d(0) / res_, dim_d(1) / res_, dim_d(2) / res_);
   voxel_map.dim.x = dim(0);
   voxel_map.dim.y = dim(1);
   voxel_map.dim.z = dim(2);
@@ -237,11 +236,12 @@ planning_ros_msgs::VoxelMap VoxelMapper::getInflatedLocalMap(
   voxel_map.data.resize(dim(0) * dim(1) * dim(2), val_default);
   Eigen::Vector3i n;
 
-  Eigen::Vector3i offset_n = floatToInt(
-      ori_d);  // offset between the local map and the storage map (in voxels)
-  Eigen::Vector3i ori_map_idx;  // index of voxel in storage map (corresponding
-                                // to voxel with index n in local map)
+  // offset between the local map and the storage map (in voxels)
+  Eigen::Vector3i offset_n = floatToInt(ori_d);
+  // index of voxel in storage map (corresponding
+  // to voxel with index n in local map)
 
+  Eigen::Vector3i ori_map_idx;
   for (n(0) = 0; n(0) < dim(0); n(0)++) {
     for (n(1) = 0; n(1) < dim(1); n(1)++) {
       for (n(2) = 0; n(2) < dim(2); n(2)++) {
@@ -262,8 +262,9 @@ planning_ros_msgs::VoxelMap VoxelMapper::getInflatedLocalMap(
           }
         } else {
           int idx = n(0) + dim(0) * n(1) + dim(0) * dim(1) * n(2);
-          voxel_map.data[idx] = val_occ;  // outside storage map portion will be
-                                          // regarded as occupied for safety
+          // outside storage map portion will be
+          // regarded as occupied for safety
+          voxel_map.data[idx] = val_occ;
         }
       }
     }

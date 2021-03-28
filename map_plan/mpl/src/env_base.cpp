@@ -41,8 +41,7 @@ decimal_t EnvBase<Dim>::cal_heur(const WaypointD &state,
     } else
       return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>();
   }
-  // return 0;
-  // return w_*(state.pos - goal.pos).norm();
+
   if (state.control == MPL::JRK && goal.control == MPL::JRK) {
     const Vecf<Dim> dp = goal.pos - state.pos;
     const Vecf<Dim> v0 = state.vel;
@@ -196,12 +195,12 @@ Veci<Dim> EnvBase<Dim>::round(const Vecf<Dim> &vec, decimal_t res) const {
   return vecI;
 }
 
-template <int Dim>
-std::string EnvBase<Dim>::to_string(const Veci<Dim> &vec) const {
-  std::string str;
-  for (int i = 0; i < Dim; i++) str += std::to_string(vec(i)) + "-";
-  return str;
-}
+//template <int Dim>
+//std::string EnvBase<Dim>::to_string(const Veci<Dim> &vec) const {
+//  std::string str;
+//  for (int i = 0; i < Dim; i++) str += std::to_string(vec(i)) + "-";
+//  return str;
+//}
 
 template <int Dim>
 void EnvBase<Dim>::forward_action(const WaypointD &curr, int action_id,
@@ -217,6 +216,12 @@ void EnvBase<Dim>::set_prior_trajectory(const TrajectoryD &traj) {
     prior_traj_.push_back(
         std::make_pair(traj.evaluate(t), w_ * (total_time - t)));
   }
+}
+
+template <int Dim>
+bool EnvBase<Dim>::set_goal(const WaypointD &state) {
+  if (prior_traj_.empty()) goal_node_ = state;
+  return prior_traj_.empty();
 }
 
 template <int Dim>
@@ -240,6 +245,11 @@ void EnvBase<Dim>::info() {
          heur_ignore_dynamics_);
   printf("++++++++++++++++++++ env_base ++++++++++++++++++\n");
   printf(ANSI_COLOR_RESET "\n");
+}
+
+template <int Dim>
+decimal_t EnvBase<Dim>::calculate_intrinsic_cost(const PrimitiveD &pr) const {
+  return pr.J(pr.control()) + w_ * dt_;
 }
 
 template class EnvBase<2>;

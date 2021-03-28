@@ -109,18 +109,6 @@ struct StateSpace {
 
   decimal_t getInitTime() const;
 
-  /**
-   * @brief Get the subtree
-   * @param time_step indicates the root of the subtree (best_child_[time_step])
-   */
-  void getSubStateSpace(int time_step);
-
-  /// Increase the cost of actions
-  void increaseCost(std::vector<std::pair<Coord, int>> states);
-  /// Decrease the cost of actions
-  void decreaseCost(std::vector<std::pair<Coord, int>> states,
-                    const std::shared_ptr<EnvBaseD> &ENV);
-
   /// Update the node in the graph
   void updateNode(StatePtr<Coord> &currNode_ptr);
 

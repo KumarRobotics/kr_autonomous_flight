@@ -18,6 +18,7 @@ class EnvBase {
 
   /// Simple constructor
   EnvBase() = default;
+  virtual ~EnvBase() = default;
 
   /// Check if state hit the goal region, use L-1 norm
   virtual bool is_goal(const WaypointD& state) const;
@@ -37,7 +38,7 @@ class EnvBase {
   Veci<Dim> round(const Vecf<Dim>& vec, decimal_t res) const;
 
   /// Convert a vec to a string
-  std::string to_string(const Veci<Dim>& vec) const;
+  //  std::string to_string(const Veci<Dim>& vec) const;
 
   /// Recover trajectory
   void forward_action(const WaypointD& curr, int action_id,
@@ -82,31 +83,11 @@ class EnvBase {
   /// set weight for cost in yaw, usually no need to change
   void set_wyaw(decimal_t wyaw) { wyaw_ = wyaw; }
 
-  /// set weight for cost in time, usually no need to change
-  virtual void set_potential_weight(decimal_t w) {}
-
-  /// set weight for cost in time, usually no need to change
-  virtual void set_gradient_weight(decimal_t w) {}
-
-  /// set weight for cost in time, usually no need to change
-  virtual void set_potential_map(const std::vector<int8_t>& map) {}
-
-  /// set weight for cost in time, usually no need to change
-  virtual void set_gradient_map(const vec_E<Vecf<Dim>>& map) {}
-
   /// Set max time
   void set_t_max(int t) { t_max_ = t; }
 
   /// Set goal state
-  bool set_goal(const WaypointD& state) {
-    if (prior_traj_.empty()) goal_node_ = state;
-    return prior_traj_.empty();
-  }
-
-  /// Set valid search region (tunnel constraint)
-  void set_search_region(const std::vector<bool>& search_region) {
-    search_region_ = search_region;
-  }
+  bool set_goal(const WaypointD& state);
 
   /// Set heur_ignore_dynamics
   void set_heur_ignore_dynamics(bool ignore) { heur_ignore_dynamics_ = ignore; }
@@ -115,20 +96,12 @@ class EnvBase {
   virtual void info();
 
   /// Check if a point is in free space
-  virtual bool is_free(const Vecf<Dim>& pt) const {
-    printf("Used Null is_free() for pt\n");
-    return true;
-  }
+  virtual bool is_free(const Vecf<Dim>& pt) const = 0;
 
   /// Check if a primitive is in free space
-  virtual bool is_free(const Primitive<Dim>& pr) const {
-    printf("Used Null is_free() for pr\n");
-    return true;
-  }
+  virtual bool is_free(const Primitive<Dim>& pr) const = 0;
 
-  virtual decimal_t calculate_intrinsic_cost(const PrimitiveD& pr) const {
-    return pr.J(pr.control()) + w_ * dt_;
-  }
+  virtual decimal_t calculate_intrinsic_cost(const PrimitiveD& pr) const;
 
   /// Retrieve dt
   decimal_t get_dt() const { return dt_; }
@@ -143,12 +116,7 @@ class EnvBase {
    */
   virtual void get_succ(const WaypointD& curr, vec_E<WaypointD>& succ,
                         std::vector<decimal_t>& succ_cost,
-                        std::vector<int>& action_idx) const {
-    printf("Used Null get_succ()\n");
-  }
-
-  /// Get the valid region
-  std::vector<bool> get_search_region() const { return search_region_; }
+                        std::vector<int>& action_idx) const = 0;
 
   /// if enabled, ignore dynamics when calculate heuristic
   bool heur_ignore_dynamics_{true};

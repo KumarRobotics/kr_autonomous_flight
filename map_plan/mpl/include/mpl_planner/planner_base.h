@@ -1,9 +1,3 @@
-/**
- * @file planner_base.h
- * @brief base class for motion planning
- *
- * Base classes for planning
- */
 #pragma once
 
 #include "mpl_planner/env_base.h"
@@ -24,39 +18,23 @@ class PlannerBase {
 
   /// Simple constructor
   PlannerBase(bool verbose = false) : planner_verbose_(verbose) {}
+  virtual ~PlannerBase() = default;
 
   /// Check if the planner has been initialized
-  bool initialized() { return !(ss_ptr_ == nullptr); }
+  bool initialized() { return ss_ptr_ != nullptr; }
 
   /// Get optimal trajectory
   TrajectoryD getTraj() const { return traj_; }
-  /// Get expanded collision free primitives
-  vec_E<PrimitiveD> getValidPrimitives() const;
-  /// Get expanded primitives
-  vec_E<PrimitiveD> getAllPrimitives() const;
   /// Get points in open set
   vec_Vecf<Dim> getOpenSet() const;
   /// Get points in close set
   vec_Vecf<Dim> getCloseSet() const;
-  /// Get points neither in open nor close set
-  vec_Vecf<Dim> getNullSet() const;
-  /// Get points at certain state
-  vec_Vecf<Dim> getStates(const Coord &state) const;
   /// Get expanded nodes, for A* it should be the same as the close set
   vec_Vecf<Dim> getExpandedNodes() const { return env_->expanded_nodes_; }
   /// Get expanded edges, for A* it should be the same as the close set
   vec_E<PrimitiveD> getExpandedEdges() const { return env_->expanded_edges_; }
   /// Get number of expanded nodes
   int getExpandedNum() const { return ss_ptr_->expand_iteration_; }
-  /**
-   * @brief Prune state space
-   * @param time_step set the root of state space to be the waypoint on the best
-   * trajectory at best_child_[time_step]
-   */
-  void getSubStateSpace(int time_step) { ss_ptr_->getSubStateSpace(time_step); }
-  /// Get trajectory total cost
-  decimal_t getTrajCost() const { return traj_cost_; }
-
   /// Check tree validation
   void checkValidation() { ss_ptr_->checkValidation(ss_ptr_->hm_); }
 
@@ -89,8 +67,6 @@ class PlannerBase {
   void setMaxNum(int num);
   /// Set U
   void setU(const vec_E<VecDf> &U);
-  /// Set prior trajectory
-  void setPriorTrajectory(const TrajectoryD &traj);
   /// Set tolerance in geometric and dynamic spaces
   void setTol(decimal_t tol_pos, decimal_t tol_vel = -1,
               decimal_t tol_acc = -1);

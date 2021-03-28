@@ -31,9 +31,9 @@ trajectory_planner:
   use_yaw: false # default false
   yaw_speed: 0.2 # default 0.2
   use_lambda: true # pose error checking
-  max_v: 2.0 # default 2.0
-  max_a: 1.0 # default 1.0
-  max_j: 1.0 # default 1.0
+  max_v: 3.0 # default 2.0
+  max_a: 3.0 # default 1.0
+  max_j: 3.0 # default 1.0
   max_u: 1.0 # default 1.0
   use_3d: true # use 3d local planner
   max_v_z: 1.0 # default 2.0
@@ -54,5 +54,5 @@ stopping_policy:
   acc_yaw_des: 0.1 # rad
 
 local_global_server:
-  crop_radius: 25 # crop length when cropping global path to get local goal, this should be less than local map's range
+  crop_radius: 15 # crop length when cropping global path to get local goal, this should be less than local map's range
   termination_distance: 5 # distance within which the final goal is regarded as reached 

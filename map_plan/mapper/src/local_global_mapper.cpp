@@ -59,7 +59,8 @@ void cropLocalMap(const Eigen::Vector3d &center_position) {
   const Eigen::Vector3d local_dim(local_map_info_.dim.x, local_map_info_.dim.y,
                                   local_map_info_.dim.z);
   Eigen::Vector3d local_origin = center_position + local_ori_offset_;
-  local_origin(2) = local_map_info_.origin.z;
+  // (Disabled)
+  // local_origin(2) = local_map_info_.origin.z;
 
   // core function: crop local map from the storage map
   planning_ros_msgs::VoxelMap local_voxel_map =
@@ -295,7 +296,7 @@ int main(int argc, char **argv) {
   nh.param("local/resolution", local_map_info_.resolution, 0.25f);
   nh.param("local/range_x", local_map_info_.dim.x, 20.);
   nh.param("local/range_y", local_map_info_.dim.y, 20.);
-  // nh.param("local/range_z", local_map_info_.dim.z, 10.0);
+  nh.param("local/range_z", local_map_info_.dim.z, 10.0);
   nh.param("local/max_raycast_range", local_max_raycast_, 20.0);
 
   storage_map_info_.resolution = local_map_info_.resolution;
@@ -305,9 +306,9 @@ int main(int argc, char **argv) {
   storage_map_info_.origin.y = storage_map_cy - storage_map_info_.dim.y / 2;
   storage_map_info_.origin.z = storage_map_cz - storage_map_info_.dim.z / 2;
 
-  // local map range z and center_z will be the same as storage map
-  local_map_info_.dim.z = storage_map_info_.dim.z;
-  local_map_info_.origin.z = storage_map_info_.origin.z;
+  //// (Disabled) local map range z and center_z will be the same as storage map
+  // local_map_info_.dim.z = storage_map_info_.dim.z;
+  // local_map_info_.origin.z = storage_map_info_.origin.z;
 
   const Eigen::Vector3d local_dim(local_map_info_.dim.x, local_map_info_.dim.y,
                                   local_map_info_.dim.z);

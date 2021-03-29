@@ -13,6 +13,7 @@
   <depend>image_geometry</depend>
   <depend>planning_ros_msgs</depend>
   <depend>planning_ros_utils</depend>
+  <depend>sensor_msgs</depend>
   <depend>depth_image_proc</depend>
   <depend>tf_conversions</depend>
   <depend>eigen_conversions</depend>

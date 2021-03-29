@@ -15,6 +15,7 @@
   <depend>actionlib</depend>
   <depend>actionlib_msgs</depend>
   <depend>kr_mav_msgs</depend>
+  <depend>sensor_msgs</depend>
   <depend>traj_opt_ros</depend>
   <depend>planning_ros_utils</depend>
   <depend>planning_ros_msgs</depend>

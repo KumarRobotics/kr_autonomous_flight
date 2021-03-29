@@ -10,6 +10,7 @@ find_package(
              planning_ros_msgs
              planning_ros_utils
              depth_image_proc
+             sensor_msgs
              eigen_conversions
              tf_conversions)
 find_package(Boost REQUIRED COMPONENTS timer)

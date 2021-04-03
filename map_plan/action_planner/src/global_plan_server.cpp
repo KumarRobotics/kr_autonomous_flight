@@ -51,7 +51,7 @@ class GlobalPlanServer {
   bool use_3d_;
 
   // global map z cost factor (cost_along_z = z_cost_factor * cost_along_x_or_y)
-  int z_cost_factor_ = 10;
+  int z_cost_factor_;
 
   // pub
   ros::Publisher path_pub_;
@@ -140,7 +140,7 @@ GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
 
   ros::NodeHandle traj_planner_nh(pnh_, "trajectory_planner");
   traj_planner_nh.param("use_3d", use_3d_, false);
-  traj_planner_nh.param("z_cost_factor", z_cost_factor_, false);
+  traj_planner_nh.param("z_cost_factor", z_cost_factor_, 1);
 
   global_as_ = std::make_unique<
       actionlib::SimpleActionServer<action_planner::PlanTwoPointAction>>(
@@ -316,9 +316,8 @@ planning_ros_msgs::VoxelMap GlobalPlanServer::SliceMap(
   voxel_map.dim.y = map.dim.y;
   voxel_map.dim.z = 1;
   voxel_map.resolution = map.resolution;
-  char val_free = 0;
-  char val_occ = 100;
-  voxel_map.data.resize(map.dim.x * map.dim.y, val_free);
+  char val_default = 0;
+  voxel_map.data.resize(map.dim.x * map.dim.y, val_default);
   int hi = hh / map.resolution;
   int h_min = (h - map.origin.z) / map.resolution - hi;
   h_min = h_min >= 0 ? h_min : 0;
@@ -352,16 +351,15 @@ planning_ros_msgs::VoxelMap GlobalPlanServer::ChangeZCost(
   voxel_map.dim.y = map.dim.y;
   voxel_map.dim.z = map.dim.z * z_cost_factor;
   voxel_map.resolution = map.resolution;
-  char val_free = 0;
-  char val_occ = 100;
+  char val_default = 0;
   voxel_map.data.resize(voxel_map.dim.x * voxel_map.dim.y * voxel_map.dim.z,
-                        val_free);
+                        val_default);
   Vec3i n;
   for (n(0) = 0; n(0) < map.dim.x; ++n(0)) {
     for (n(1) = 0; n(1) < map.dim.y; ++n(1)) {
-      for (n(2) = h_min; n(2) < h_max; n(2) += z_cost_factor) {
+      for (n(2) = 0; n(2) < map.dim.z; ++n(2)) {
         int map_idx = n(0) + map.dim.x * n(1) + map.dim.x * map.dim.y * n(2);
-        for (int z_add = 0; z_add < z_cost_factor; ++z) {
+        for (int z_add = 0; z_add < z_cost_factor; ++z_add) {
           int idx =
               n(0) + map.dim.x * n(1) + map.dim.x * map.dim.y * (n(2) + z_add);
           voxel_map.data[idx] = map.data[map_idx];

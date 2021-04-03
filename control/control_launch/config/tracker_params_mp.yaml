@@ -36,6 +36,7 @@ trajectory_planner:
   max_j: 3.0 # default 1.0
   max_u: 1.0 # default 1.0
   use_3d: true # use 3d local planner
+  z_cost_factor: 10 # global map z cost factor (cost_along_z = z_cost_factor * cost_along_x_or_y)
   max_v_z: 2.0 # default 2.0
   max_a_z: 2.0 # default 1.0
   max_j_z: 2.0 # default 1.0
@@ -55,5 +56,5 @@ stopping_policy:
 
 local_global_server:
   crop_radius: 20 # crop length when cropping global path to get local goal, this should be less than local map's range
-  crop_radius_z: 1.5 # crop length when cropping global path to get local goal, this should be less than local map's range
+  crop_radius_z: 1.5 # crop length along Z when cropping global path to get local goal, this should be less than local map's Z range
   termination_distance: 5 # distance within which the final goal is regarded as reached 

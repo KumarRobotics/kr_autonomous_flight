@@ -82,6 +82,8 @@ class RePlanner {
                           // position
   double executed_dist_{
       0.0};  // replanning records: accumulated executed distance along the path
+  double executed_dist_z_{
+      0.0};  // replanning records: accumulated executed distance along the path
   double crop_radius_;    // local path crop radius (local path length will be
                           // this value)
   double crop_radius_z_;  // local path crop radius along z axis
@@ -378,7 +380,9 @@ bool RePlanner::plan_trajectory(int horizon) {
   local_replan_counter_++;  // only do global replan once every
                             // global_replan_interval_ local replans
   if (local_replan_counter_ == global_replan_interval_) {
-    executed_dist_ = 0.0;       // reset the executed distance to be zero
+    // reset the executed distance to be zero
+    executed_dist_ = 0.0;
+    executed_dist_z_ = 0.0;
     local_replan_counter_ = 0;  // reset the counter
     // send goal to global plan action server
     global_plan_client_->sendGoal(global_tpgoal);
@@ -413,6 +417,9 @@ bool RePlanner::plan_trajectory(int horizon) {
     double deviation_factor = 0.8;
     executed_dist_ = executed_dist_ +
                      deviation_factor * (start_pos - prev_start_pos_).norm();
+    executed_dist_z_ =
+        executed_dist_z_ +
+        deviation_factor * abs(start_pos[2] - prev_start_pos_[2]);
 
     prev_start_pos_ = start_pos;  // keep updating prev_start_pos_
     if (executed_dist_ > 5.0) {
@@ -425,8 +432,10 @@ bool RePlanner::plan_trajectory(int horizon) {
   //  #################################################################################
   // total crop distance
   double crop_dist = executed_dist_ + crop_radius_;
+  double crop_dist_z = executed_dist_z_ + crop_radius_z_;
+
   // ROS_WARN_STREAM("++++ total_crop_dist = " << crop_dist);
-  vec_Vec3f path_cropped = path_crop(global_path_, crop_dist, crop_radius_z_);
+  vec_Vec3f path_cropped = path_crop(global_path_, crop_dist, crop_dist_z);
   bool close_to_final_goal = close_to_final(global_path_, path_cropped, 10.0);
 
   // Re-plan step 3: local plan

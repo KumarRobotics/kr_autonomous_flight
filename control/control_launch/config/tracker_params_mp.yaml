@@ -58,3 +58,5 @@ local_global_server:
   crop_radius: 20 # crop length when cropping global path to get local goal, this should be less than local map's range
   crop_radius_z: 1.5 # crop length along Z when cropping global path to get local goal, this should be less than local map's Z range
   termination_distance: 5 # distance within which the final goal is regarded as reached 
+  local_plan_timeout_duration: 2 # local planner timeout in seconds 
+  global_plan_timeout_duration: 4 # global planner timeout in seconds 

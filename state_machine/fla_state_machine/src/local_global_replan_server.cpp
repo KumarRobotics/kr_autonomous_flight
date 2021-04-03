@@ -76,8 +76,8 @@ class RePlanner {
   int local_replan_counter_{
       0};  // counter of local replan calls from the last global replan call
   vec_Vec3f global_path_;  // recorder of path planned by global action server
-  double global_timeout_duration_{2.0};  // global planner timeout duration
-  double local_timeout_duration_{2.0};   // local planner timeout duration
+  double global_timeout_duration_;  // global planner timeout duration
+  double local_timeout_duration_;   // local planner timeout duration
   Vec3f prev_start_pos_;  // replanning records: previous replanning start
                           // position
   double executed_dist_{
@@ -650,6 +650,8 @@ RePlanner::RePlanner() : nh_("~") {
   priv_nh.param("crop_radius", crop_radius_, 10.0);
   priv_nh.param("crop_radius_z", crop_radius_z_, 2.0);
   priv_nh.param("termination_distance", termination_distance_, 5.0);
+  priv_nh.param("local_plan_timeout_duration", local_timeout_duration_, 2.0);
+  priv_nh.param("global_plan_timeout_duration", global_timeout_duration_, 4.0);
 
   // replan action server
   replan_server_.reset(

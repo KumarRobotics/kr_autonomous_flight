@@ -48,8 +48,10 @@ class GlobalPlanServer {
   ros::Subscriber odom_sub_;
 
   // use 2-d or 3-d for global planner
-  // TODO(xu): read this from yaml param file
-  bool use_3d_{true};
+  bool use_3d_;
+
+  // global map z cost factor (cost_along_z = z_cost_factor * cost_along_x_or_y)
+  int z_cost_factor_ = 10;
 
   // pub
   ros::Publisher path_pub_;
@@ -114,8 +116,16 @@ class GlobalPlanServer {
   /**
    * @brief Slice map util, only used if plan with a 2d jps planner
    */
-  planning_ros_msgs::VoxelMap sliceMap(double h, double hh,
+  planning_ros_msgs::VoxelMap SliceMap(double h, double hh,
                                        const planning_ros_msgs::VoxelMap &map);
+
+  /**
+   * @brief Increase the cost of z by dividing global map z resolution by a
+   * factor, so that we can still use uniform-cost map for JPS implementation
+   * while penlizing z-axis movement (only used if plan with a 3d jps planner)
+   */
+  planning_ros_msgs::VoxelMap ChangeZCost(
+      const planning_ros_msgs::VoxelMap &map, int z_cost_factor = 1);
 };
 
 void GlobalPlanServer::globalMapCB(
@@ -127,6 +137,10 @@ GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   path_pub_ = pnh_.advertise<planning_ros_msgs::Path>("path", 1, true);
   global_map_sub_ = pnh_.subscribe("global_voxel_map", 2,
                                    &GlobalPlanServer::globalMapCB, this);
+
+  ros::NodeHandle traj_planner_nh(pnh_, "trajectory_planner");
+  traj_planner_nh.param("use_3d", use_3d_, false);
+  traj_planner_nh.param("z_cost_factor", z_cost_factor_, false);
 
   global_as_ = std::make_unique<
       actionlib::SimpleActionServer<action_planner::PlanTwoPointAction>>(
@@ -238,13 +252,20 @@ bool GlobalPlanServer::global_plan_process(
   std::string map_frame;
   map_frame = global_map.header.frame_id;
   if (use_3d_) {
-    setMap(jps_3d_map_util_, global_map);
+    if (z_cost_factor_ > 1) {
+      // increase the cost of z in voxel map
+      planning_ros_msgs::VoxelMap non_uniform_cost_map =
+          ChangeZCost(global_map, z_cost_factor_);
+      setMap(jps_3d_map_util_, non_uniform_cost_map);
+    } else {
+      setMap(jps_3d_map_util_, global_map);
+    }
     jps_3d_util_->updateMap();
   } else {
     // slice the 3D map to get 2D map for path planning, at the height of
     // z-value of start point
     planning_ros_msgs::VoxelMap global_occ_map =
-        sliceMap(start.pos(2), global_map.resolution, global_map);
+        SliceMap(start.pos(2), global_map.resolution, global_map);
     setMap(jps_map_util_, global_occ_map);
     jps_util_->updateMap();
   }
@@ -284,7 +305,7 @@ bool GlobalPlanServer::global_plan_process(
   return true;
 }
 
-planning_ros_msgs::VoxelMap GlobalPlanServer::sliceMap(
+planning_ros_msgs::VoxelMap GlobalPlanServer::SliceMap(
     double h, double hh, const planning_ros_msgs::VoxelMap &map) {
   // slice a 3D voxel map
   planning_ros_msgs::VoxelMap voxel_map;
@@ -311,9 +332,39 @@ planning_ros_msgs::VoxelMap GlobalPlanServer::sliceMap(
     for (n(1) = 0; n(1) < map.dim.y; n(1)++) {
       for (n(2) = h_min; n(2) < h_max; n(2)++) {
         int map_idx = n(0) + map.dim.x * n(1) + map.dim.x * map.dim.y * n(2);
-        if (map.data[map_idx] > val_free) {
-          int idx = n(0) + map.dim.x * n(1);
-          voxel_map.data[idx] = val_occ;
+        // if (map.data[map_idx] > val_free) {
+        int idx = n(0) + map.dim.x * n(1);
+        voxel_map.data[idx] = map.data[map_idx];
+        // }
+      }
+    }
+  }
+  return voxel_map;
+}
+
+planning_ros_msgs::VoxelMap GlobalPlanServer::ChangeZCost(
+    const planning_ros_msgs::VoxelMap &map, int z_cost_factor) {
+  planning_ros_msgs::VoxelMap voxel_map;
+  voxel_map.origin.x = map.origin.x;
+  voxel_map.origin.y = map.origin.y;
+  voxel_map.origin.z = map.origin.z;
+  voxel_map.dim.x = map.dim.x;
+  voxel_map.dim.y = map.dim.y;
+  voxel_map.dim.z = map.dim.z * z_cost_factor;
+  voxel_map.resolution = map.resolution;
+  char val_free = 0;
+  char val_occ = 100;
+  voxel_map.data.resize(voxel_map.dim.x * voxel_map.dim.y * voxel_map.dim.z,
+                        val_free);
+  Vec3i n;
+  for (n(0) = 0; n(0) < map.dim.x; ++n(0)) {
+    for (n(1) = 0; n(1) < map.dim.y; ++n(1)) {
+      for (n(2) = h_min; n(2) < h_max; n(2) += z_cost_factor) {
+        int map_idx = n(0) + map.dim.x * n(1) + map.dim.x * map.dim.y * n(2);
+        for (int z_add = 0; z_add < z_cost_factor; ++z) {
+          int idx =
+              n(0) + map.dim.x * n(1) + map.dim.x * map.dim.y * (n(2) + z_add);
+          voxel_map.data[idx] = map.data[map_idx];
         }
       }
     }

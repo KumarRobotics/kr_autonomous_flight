@@ -36,12 +36,12 @@ trajectory_planner:
   max_j: 3.0 # default 1.0
   max_u: 1.0 # default 1.0
   use_3d: true # use 3d local planner
-  max_v_z: 1.0 # default 2.0
-  max_a_z: 1.0 # default 1.0
-  max_j_z: 1.0 # default 1.0
-  max_u_z: 1.0 # default 1.0
+  max_v_z: 2.0 # default 2.0
+  max_a_z: 2.0 # default 1.0
+  max_j_z: 2.0 # default 1.0
+  max_u_z: 4.0 # default 1.0
   tol_pos: 3.0 # distance tolerance for goal region, 0 means no tolerance, -1 means no limitation
-  global_goal_tol_vel: 2.0 # tolerance of acceleration for goal region
+  global_goal_tol_vel: 3.0 # tolerance of acceleration for goal region
   global_goal_tol_acc: -1 # tolerance of velocity for goal region
   dt: 1.0 # default 1
   ndt: 1.0 # default 1
@@ -49,10 +49,11 @@ trajectory_planner:
 
 stopping_policy:
   # TODO(xu) verify whether this is actually working!
-  acc_xyz_des: 10.0 # 
+  acc_xyz_des: 15.0 # 
   jerk_xyz_des: 5.0 #
   acc_yaw_des: 0.1 # rad
 
 local_global_server:
-  crop_radius: 15 # crop length when cropping global path to get local goal, this should be less than local map's range
+  crop_radius: 20 # crop length when cropping global path to get local goal, this should be less than local map's range
+  crop_radius_z: 1.5 # crop length when cropping global path to get local goal, this should be less than local map's range
   termination_distance: 5 # distance within which the final goal is regarded as reached 

@@ -71,7 +71,7 @@ class RePlanner {
   double local_replan_rate_;  // should be set in the goal sent from the
                               // state_machine
   int global_replan_interval_{
-      2};  // a global replan will be called once every x local replan calls,
+      3};  // a global replan will be called once every x local replan calls,
            // where x = global_replan_interval_.
   int local_replan_counter_{
       0};  // counter of local replan calls from the last global replan call
@@ -82,8 +82,9 @@ class RePlanner {
                           // position
   double executed_dist_{
       0.0};  // replanning records: accumulated executed distance along the path
-  double crop_radius_;  // local path crop radius (local path length will be
-                        // this value)
+  double crop_radius_;    // local path crop radius (local path length will be
+                          // this value)
+  double crop_radius_z_;  // local path crop radius along z axis
   double termination_distance_;
   bool avoid_obstacle_{true};
 
@@ -127,7 +128,8 @@ class RePlanner {
    * @param path original path to crop
    * @param d length of the cropped path
    */
-  vec_Vec3f path_crop(const vec_Vec3f &path, double d);
+  vec_Vec3f path_crop(const vec_Vec3f &path, double crop_dist_xyz,
+                      double crop_dist_z);
 
   /**
    * @brief Check if cropped path reaches the end of original path
@@ -253,7 +255,8 @@ void RePlanner::setup_replanner() {
 
   //  Initial plan step 2: Crop global path to get local goal
   //  #################################################################################
-  vec_Vec3f path_cropped = path_crop(global_path_, crop_radius_);
+  vec_Vec3f path_cropped =
+      path_crop(global_path_, crop_radius_, crop_radius_z_);
   bool close_to_final_goal = close_to_final(global_path_, path_cropped, 10.0);
 
   // Initial plan step 3: local plan
@@ -404,11 +407,14 @@ bool RePlanner::plan_trajectory(int horizon) {
     }
   } else {
     // incrementally record executed_dist_
-    executed_dist_ =
-        executed_dist_ + (start_pos - prev_start_pos_)
-                             .norm();  // straight line distance to approximate
-                                       // executed portion of path
-    prev_start_pos_ = start_pos;       // keep updating prev_start_pos_
+    // straight line distance * deviation_factor to approximate executed portion
+    // of path (motion primitive path is usually longer than jps path, thus
+    // factor < 1)
+    double deviation_factor = 0.8;
+    executed_dist_ = executed_dist_ +
+                     deviation_factor * (start_pos - prev_start_pos_).norm();
+
+    prev_start_pos_ = start_pos;  // keep updating prev_start_pos_
     if (executed_dist_ > 5.0) {
       ROS_WARN_STREAM(
           "++++ executed distance is larger than 5 meters: " << executed_dist_);
@@ -420,7 +426,7 @@ bool RePlanner::plan_trajectory(int horizon) {
   // total crop distance
   double crop_dist = executed_dist_ + crop_radius_;
   // ROS_WARN_STREAM("++++ total_crop_dist = " << crop_dist);
-  vec_Vec3f path_cropped = path_crop(global_path_, crop_dist);
+  vec_Vec3f path_cropped = path_crop(global_path_, crop_dist, crop_radius_z_);
   bool close_to_final_goal = close_to_final(global_path_, path_cropped, 10.0);
 
   // Re-plan step 3: local plan
@@ -555,10 +561,16 @@ void RePlanner::update_status() {
   }
 }
 
-vec_Vec3f RePlanner::path_crop(const vec_Vec3f &path, double d) {
+vec_Vec3f RePlanner::path_crop(const vec_Vec3f &path, double crop_dist_xyz,
+                               double crop_dist_z) {
   // return nonempth
   // precondition
-  if (path.size() < 2 || d < 0) return path;
+  if (path.size() < 2 || crop_dist_xyz < 0 || crop_dist_z < 0) {
+    return path;
+  }
+
+  double d = crop_dist_xyz;
+  double dz = crop_dist_z;
 
   vec_Vec3f cropped_path;
   // crop_end will be exactly at accumulated distance d from the robot
@@ -566,21 +578,33 @@ vec_Vec3f RePlanner::path_crop(const vec_Vec3f &path, double d) {
   Vec3f crop_end = path.back();
 
   double dist = 0;
+  double dist_z = 0;
 
   // add path segments until the accumulated length is farther than distance d
   // from the robot
   for (unsigned int i = 1; i < path.size(); i++) {
-    if (dist + (path[i] - path[i - 1]).norm() > d) {
+    ROS_ERROR_STREAM("+++++++++++++++++[replanner:] dist_z: "
+                     << dist_z << "+++++++++++++++++");
+    if (dist_z + abs(path[i][2] - path[i - 1][2]) > dz) {
+      auto seg_normalized = (path[i] - path[i - 1]).normalized();
+      double remaining_crop_dist = (dz - dist_z) / abs(seg_normalized[2]);
+      // make sure don't crop more than d
+      double min_crop_dist = std::min(d - dist, remaining_crop_dist);
+      ROS_ERROR_STREAM("+++++++++++++++++[replanner:] min_crop_dist: "
+                       << min_crop_dist << "+++++++++++++++++");
       crop_end =
-          path[i - 1] +
-          (d - dist) *
-              (path[i] - path[i - 1])
-                  .normalized();  // assign end to be exactly at
-                                  // accumulated distance d from the robot
+          path[i - 1] + min_crop_dist * (path[i] - path[i - 1]).normalized();
+      cropped_path.push_back(path[i - 1]);
+      break;
+    } else if (dist + (path[i] - path[i - 1]).norm() > d) {
+      // assign end to be exactly at accumulated distance d from the robot
+      crop_end =
+          path[i - 1] + (d - dist) * (path[i] - path[i - 1]).normalized();
       cropped_path.push_back(path[i - 1]);
       break;
     } else {
       dist += (path[i] - path[i - 1]).norm();
+      dist_z += abs(path[i][2] - path[i - 1][2]);
       cropped_path.push_back(path[i - 1]);
     }
   }
@@ -615,6 +639,7 @@ RePlanner::RePlanner() : nh_("~") {
   ros::NodeHandle priv_nh(nh_, "local_global_server");
   priv_nh.param("max_horizon", max_horizon_, 5);
   priv_nh.param("crop_radius", crop_radius_, 10.0);
+  priv_nh.param("crop_radius_z", crop_radius_z_, 2.0);
   priv_nh.param("termination_distance", termination_distance_, 5.0);
 
   // replan action server

@@ -5,7 +5,10 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /Status1
         - /Grid1
+        - /Grid1/Offset1
+        - /Env1
         - /Env1/Environment1
         - /Planner1
         - /Planner1/Path1
@@ -19,7 +22,7 @@ Panels:
         - /Estimation1/quad_odom1
         - /Estimation1/quad_odom1/Shape1
       Splitter Ratio: 0.5011135935783386
-    Tree Height: 759
+    Tree Height: 441
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -57,12 +60,12 @@ Visualization Manager:
       Name: Grid
       Normal Cell Count: 0
       Offset:
-        X: 0
-        Y: 0
+        X: 500
+        Y: 500
         Z: 0
       Plane: XY
-      Plane Cell Count: 10
-      Reference Frame: quadrotor/odom
+      Plane Cell Count: 200
+      Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/TF
       Enabled: false
@@ -105,10 +108,10 @@ Visualization Manager:
         - Class: planning_rviz_plugins/Path
           Enabled: true
           LineColor: 204; 51; 204
-          LineScale: 0.15000000596046448
+          LineScale: 0.30000001192092896
           Name: Path
           NodeColor: 85; 85; 255
-          NodeScale: 0.15000000596046448
+          NodeScale: 0.30000001192092896
           Queue Size: 10
           Topic: /quadrotor/global_plan_server/path
           Unreliable: false
@@ -313,7 +316,7 @@ Visualization Manager:
           Queue Size: 10
           Selectable: true
           Size (Pixels): 10
-          Size (m): 1.5
+          Size (m): 2
           State: Occupied
           Style: Boxes
           Topic: /quadrotor/mapper/global_voxel_map
@@ -410,12 +413,11 @@ Visualization Manager:
         Axes: true
         Camera: true
         Env:
-          Environment: true
+          "": true
           Value: true
         Estimation:
-          RobotModel: true
+          "": true
           Value: true
-          quad_odom: true
         Grid: true
         Image: true
         InteractiveMarkers: true
@@ -447,7 +449,7 @@ Visualization Manager:
         Axes: true
         Camera: true
         Env:
-          Environment: true
+          "": true
           Value: true
         Estimation:
           "": true
@@ -461,8 +463,11 @@ Visualization Manager:
           cloud: true
           potential: true
         Planner:
-          "": true
+          ExpandedCloud: true
+          Path: true
+          Trajectory: true
           Value: true
+          sg: true
         TF: true
         Value: true
       Zoom Factor: 1
@@ -528,14 +533,14 @@ Visualization Manager:
       Topic: /clicked_point
     - Class: kr_rviz_plugins/WaypointNav
       WaypointsTool:
-        default_height: 2
+        default_height: 13
         frame_id: map
         topic: ""
   Value: true
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 309.5201416015625
+      Distance: 104.86212158203125
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -543,17 +548,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 1000
-        Y: 1000
-        Z: -0.00015289000293705612
+        X: 954.8914184570312
+        Y: 945.0693359375
+        Z: 0.00019795939442701638
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.3647976517677307
+      Pitch: 0.29479700326919556
       Target Frame: fla/base_link
-      Yaw: 0.6295732259750366
+      Yaw: 1.414571762084961
     Saved: ~
 Window Geometry:
   Camera:

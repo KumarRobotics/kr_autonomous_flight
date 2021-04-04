@@ -43,7 +43,8 @@ vec_Vec3i global_infla_array_;  // inflation array
 vec_Vec3i local_infla_array_;   // inflation array
 
 double robot_r_, robot_h_;
-bool global_use_robot_dim_;
+bool global_use_robot_dim_xy_;
+bool global_use_robot_dim_z_;
 
 double local_max_raycast_, global_max_raycast_;  // maximum raycasting range
 double occ_map_height_;
@@ -192,16 +193,22 @@ void mapInit() {
   // Initialize the mapper
   global_voxel_mapper_.reset(
       new mapper::VoxelMapper(global_origin, global_dim, global_res));
+
+  // build the array for map inflation
   global_infla_array_.clear();
-  if (global_use_robot_dim_) {
+  if (global_use_robot_dim_xy_) {
     int global_rn = std::ceil(robot_r_ / global_res);
     int global_hn = std::ceil(robot_h_ / global_res);
     for (int nx = -global_rn; nx <= global_rn; ++nx) {
       for (int ny = -global_rn; ny <= global_rn; ++ny) {
-        for (int nz = -global_hn; nz <= global_hn; ++nz) {
-          if (nx == 0 && ny == 0) continue;
-          if (std::hypot(nx, ny) > global_rn) continue;
-          global_infla_array_.push_back(Eigen::Vector3i(nx, ny, nz));
+        if (nx == 0 && ny == 0) continue;
+        if (std::hypot(nx, ny) > global_rn) continue;
+        if (global_use_robot_dim_z_) {
+          for (int nz = -global_hn; nz <= global_hn; ++nz) {
+            global_infla_array_.push_back(Eigen::Vector3i(nx, ny, nz));
+          }
+        } else {
+          global_infla_array_.push_back(Eigen::Vector3i(nx, ny, 0));
         }
       }
     }
@@ -277,10 +284,11 @@ int main(int argc, char **argv) {
   // only update voxel once every update_interval_ point clouds
   nh.param("global/num_point_cloud_skip", update_interval_, 5);  // int
   nh.param("global/max_raycast_range", global_max_raycast_, 100.0);
-  nh.param("global/consider_robot_dim", global_use_robot_dim_, false);
+  nh.param("global/dilate_xy", global_use_robot_dim_xy_, false);
+  nh.param("global/dilate_z", global_use_robot_dim_z_, false);
 
-  // map origin is the left lower corner of the voxel map, therefore, adding an
-  // offset make the map centered around the given position
+  // map origin is the left lower corner of the voxel map, therefore, adding
+  // an offset make the map centered around the given position
   global_map_info_.origin.x = global_map_cx - global_map_info_.dim.x / 2;
   global_map_info_.origin.y = global_map_cy - global_map_info_.dim.y / 2;
   global_map_info_.origin.z = global_map_cz - global_map_info_.dim.z / 2;
@@ -306,16 +314,17 @@ int main(int argc, char **argv) {
   storage_map_info_.origin.y = storage_map_cy - storage_map_info_.dim.y / 2;
   storage_map_info_.origin.z = storage_map_cz - storage_map_info_.dim.z / 2;
 
-  //// (Disabled) local map range z and center_z will be the same as storage map
+  //// (Disabled) local map range z and center_z will be the same as storage
+  /// map
   // local_map_info_.dim.z = storage_map_info_.dim.z;
   // local_map_info_.origin.z = storage_map_info_.origin.z;
 
   const Eigen::Vector3d local_dim(local_map_info_.dim.x, local_map_info_.dim.y,
                                   local_map_info_.dim.z);
   local_ori_offset_ =
-      -local_dim /
-      2;  // origin is the left lower corner of the voxel map, therefore, adding
-          // this offset make the map centered around the given position
+      -local_dim / 2;  // origin is the left lower corner of the voxel map,
+                       // therefore, adding this offset make the map centered
+                       // around the given position
 
   // dimension (in voxels) of the region to free voxels
   for (int nx = -1; nx <= 1; nx++) {

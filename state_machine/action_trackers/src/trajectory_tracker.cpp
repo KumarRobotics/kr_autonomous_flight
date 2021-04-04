@@ -357,11 +357,18 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
     // and trajectory is larger than pos_err_max_
     if (!traj_opt::EvaluateTrajectoryPos(current_trajectory_, msg, pos_err_max_,
                                          duration, 0.01, cmd.get())) {
-      // started_ = started_ + ros::Duration(0.01); // this slowing down
-      // strategy is not working properly, commented out
+      // this slowing down strategy is not working properly, commented out,
+      // abort the mission instead
+      // started_ = started_ + ros::Duration(0.01);
+
       ROS_ERROR(
-          "[Traj Tracker:] Max position error threshold violated!! Slow "
-          "down the execution!!!");
+          "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+          "[Traj Tracker:] Max position error (between odom and trajectory) "
+          "threshold violated (you need to slow down your execution or tune "
+          "gains!)! Now aborting the mission!!!"
+          "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+          "+");
+      ROS_ERROR_STREAM("Max  error threshold is:" << pos_err_max_);
     }
   } else {
     // no pos or yaw check

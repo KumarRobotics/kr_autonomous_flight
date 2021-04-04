@@ -17,9 +17,9 @@ global:
   consider_robot_dim: true 
 
 local: # local map range z and center_z will be the same as storage map
-  range_x: 80.0
-  range_y: 80.0
-  range_z: 6.0
+  range_x: 60.0
+  range_y: 60.0
+  range_z: 7.0
   resolution: 0.25
   max_raycast_range: 30.0
 
@@ -29,5 +29,5 @@ storage: # storage map max_raycat_range will be the same as local map
   range_x: 2000.0
   range_y: 2000.0
   center_z: 15.0
-  range_z: 8.0
+  range_z: 18.0
 

@@ -327,9 +327,9 @@ void RePlanner::setup_replanner() {
 }
 
 void RePlanner::run_trajectory() {
-  // if(!replan_server_->isActive()) {
-  //   return;
-  // }
+  if (!replan_server_->isActive()) {
+    return;
+  }
 
   // set up run goal
   action_trackers::RunTrajectoryGoal rungoal;
@@ -341,8 +341,16 @@ void RePlanner::run_trajectory() {
   // call the trajectory tracker
   run_client_->sendGoal(rungoal);
   // ROS_INFO("Sent Trajectory!");
+  double tracker_timeout_dur = 0.5;
   bool tracker_finished_before_timeout =
-      run_client_->waitForResult(ros::Duration(0.01));
+      run_client_->waitForResult(ros::Duration(tracker_timeout_dur));
+  if (!tracker_finished_before_timeout) {
+    ROS_ERROR("Tracker aborted or timeout!");
+    fla_state_machine::ReplanResult abort;
+    abort.status = fla_state_machine::ReplanResult::ABORT_FULL_MISSION;
+    active_ = false;
+    replan_server_->setSucceeded(abort);
+  }
 }
 
 bool RePlanner::plan_trajectory(int horizon) {
@@ -592,15 +600,12 @@ vec_Vec3f RePlanner::path_crop(const vec_Vec3f &path, double crop_dist_xyz,
   // add path segments until the accumulated length is farther than distance d
   // from the robot
   for (unsigned int i = 1; i < path.size(); i++) {
-    ROS_ERROR_STREAM("+++++++++++++++++[replanner:] dist_z: "
-                     << dist_z << "+++++++++++++++++");
     if (dist_z + abs(path[i][2] - path[i - 1][2]) > dz) {
       auto seg_normalized = (path[i] - path[i - 1]).normalized();
       double remaining_crop_dist = (dz - dist_z) / abs(seg_normalized[2]);
       // make sure don't crop more than d
+
       double min_crop_dist = std::min(d - dist, remaining_crop_dist);
-      ROS_ERROR_STREAM("+++++++++++++++++[replanner:] min_crop_dist: "
-                       << min_crop_dist << "+++++++++++++++++");
       crop_end =
           path[i - 1] + min_crop_dist * (path[i] - path[i - 1]).normalized();
       cropped_path.push_back(path[i - 1]);

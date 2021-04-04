@@ -50,6 +50,9 @@ class GlobalPlanServer {
   // use 2-d or 3-d for global planner
   bool use_3d_;
 
+  // planner verbose
+  bool jps_verbose_;
+
   // global map z cost factor (cost_along_z = z_cost_factor * cost_along_x_or_y)
   int z_cost_factor_;
 
@@ -142,6 +145,9 @@ GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   traj_planner_nh.param("use_3d", use_3d_, false);
   traj_planner_nh.param("z_cost_factor", z_cost_factor_, 1);
 
+  ros::NodeHandle local_global_plan_nh(pnh_, "local_global_server");
+  local_global_plan_nh.param("global_planner_verbose", jps_verbose_, false);
+
   global_as_ = std::make_unique<
       actionlib::SimpleActionServer<action_planner::PlanTwoPointAction>>(
       pnh_, "plan_global_path", false);
@@ -157,11 +163,11 @@ GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   // Set map util for jps
   if (use_3d_) {
     jps_3d_map_util_ = std::make_shared<JPS::VoxelMapUtil>();
-    jps_3d_util_ = std::make_shared<JPS::JPSPlanner3D>(false);
+    jps_3d_util_ = std::make_shared<JPS::JPSPlanner3D>(jps_verbose_);
     jps_3d_util_->setMapUtil(jps_3d_map_util_);
   } else {
     jps_map_util_ = std::make_shared<JPS::OccMapUtil>();
-    jps_util_ = std::make_shared<JPS::JPSPlanner2D>(false);
+    jps_util_ = std::make_shared<JPS::JPSPlanner2D>(jps_verbose_);
     jps_util_->setMapUtil(jps_map_util_);
   }
 }
@@ -272,11 +278,23 @@ bool GlobalPlanServer::global_plan_process(
 
   // Path planning using JPS
   if (use_3d_) {
-    if (!jps_3d_util_->plan(start.pos, goal.pos, 1.0, true)) {
+    // scale up the z-axis value of goal and start to accommodate to the scaling
+    // of voxel resolution
+    auto goal_scaled = goal;
+    goal_scaled.pos[2] = goal.pos[2] * z_cost_factor_;
+    auto start_scaled = start;
+    start_scaled.pos[2] = start.pos[2] * z_cost_factor_;
+    if (!jps_3d_util_->plan(start_scaled.pos, goal_scaled.pos, 1.0, true)) {
       // jps_3d_util_->plan params: start, goal, eps, use_jps
       ROS_WARN("Fail to plan a 3d global path!");
     } else {
-      vec_Vec3f global_path = jps_3d_util_->getPath();
+      vec_Vec3f path_raw = jps_3d_util_->getPath();
+      vec_Vec3f global_path;
+      for (const auto &it : path_raw) {
+        // scale back the z-axis value of path
+        global_path.push_back(Vec3f(it(0), it(1), it(2) / z_cost_factor_));
+      }
+
       // publish
       global_path_msg_ = path_to_ros(global_path);
       global_path_msg_.header.frame_id = map_frame;
@@ -346,7 +364,7 @@ planning_ros_msgs::VoxelMap GlobalPlanServer::ChangeZCost(
   planning_ros_msgs::VoxelMap voxel_map;
   voxel_map.origin.x = map.origin.x;
   voxel_map.origin.y = map.origin.y;
-  voxel_map.origin.z = map.origin.z;
+  voxel_map.origin.z = map.origin.z * z_cost_factor;
   voxel_map.dim.x = map.dim.x;
   voxel_map.dim.y = map.dim.y;
   voxel_map.dim.z = map.dim.z * z_cost_factor;

@@ -78,12 +78,7 @@ class RePlanner {
   vec_Vec3f global_path_;  // recorder of path planned by global action server
   double global_timeout_duration_;  // global planner timeout duration
   double local_timeout_duration_;   // local planner timeout duration
-  Vec3f prev_start_pos_;  // replanning records: previous replanning start
-                          // position
-  double executed_dist_{
-      0.0};  // replanning records: accumulated executed distance along the path
-  double executed_dist_z_{
-      0.0};  // replanning records: accumulated executed distance along the path
+
   double crop_radius_;    // local path crop radius (local path length will be
                           // this value)
   double crop_radius_z_;  // local path crop radius along z axis
@@ -264,11 +259,6 @@ void RePlanner::setup_replanner() {
   action_planner::PlanTwoPointGoal local_tpgoal;
   fla_state_machine::VecToPose(
       cmd_pos_, &local_tpgoal.p_init);  // use current position command as the
-                                        // start position for local planner
-  // initialize prev_start_pos_ for replan purpose
-  prev_start_pos_(0) = cmd_pos_(0);
-  prev_start_pos_(1) = cmd_pos_(1);
-  prev_start_pos_(2) = cmd_pos_(2);
 
   // set vars
   local_tpgoal.epoch = 1;
@@ -403,9 +393,6 @@ bool RePlanner::plan_trajectory(int horizon) {
     }
     auto global_result = global_plan_client_->getResult();
     if (global_result->success) {
-      // reset the executed distance to be zero
-      executed_dist_ = 0.0;
-      executed_dist_z_ = 0.0;
       // reset the counter
       local_replan_counter_ = 0;
       global_path_.clear();
@@ -418,30 +405,16 @@ bool RePlanner::plan_trajectory(int horizon) {
     }
   }
 
-  if (!global_plan_updated) {
-    // incrementally record executed_dist_
-    // straight line distance * deviation_factor to approximate executed portion
-    // of path (motion primitive path is usually longer than jps path, thus
-    // factor < 1)
-    double deviation_factor = 0.8;
-    executed_dist_ = executed_dist_ +
-                     deviation_factor * (start_pos - prev_start_pos_).norm();
-    executed_dist_z_ =
-        executed_dist_z_ +
-        deviation_factor * abs(start_pos[2] - prev_start_pos_[2]);
-
-    prev_start_pos_ = start_pos;  // keep updating prev_start_pos_
-    if (executed_dist_ > 5.0) {
-      ROS_WARN_STREAM(
-          "++++ executed distance is larger than 5 meters: " << executed_dist_);
-    }
-  }
+  // if (!global_plan_updated) {
+  // incrementally record executed_dist_ removed this part on 4-08-2021
+  // because it will sometimes result in out-of-map-range goals
+  // }
 
   //  Re-plan step 2: Crop global path to get local goal
   //  #################################################################################
   // total crop distance
-  double crop_dist = executed_dist_ + crop_radius_;
-  double crop_dist_z = executed_dist_z_ + crop_radius_z_;
+  double crop_dist = crop_radius_;
+  double crop_dist_z = crop_radius_z_;
 
   // ROS_WARN_STREAM("++++ total_crop_dist = " << crop_dist);
   vec_Vec3f path_cropped = path_crop(global_path_, crop_dist, crop_dist_z);

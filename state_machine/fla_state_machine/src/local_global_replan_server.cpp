@@ -71,7 +71,7 @@ class RePlanner {
   double local_replan_rate_;  // should be set in the goal sent from the
                               // state_machine
   int global_replan_interval_{
-      3};  // a global replan will be called once every x local replan calls,
+      1};  // a global replan will be called once every x local replan calls,
            // where x = global_replan_interval_.
   int local_replan_counter_{
       0};  // counter of local replan calls from the last global replan call
@@ -165,9 +165,6 @@ void RePlanner::epoch_cb(const std_msgs::Int64 &msg) {
         // execute the replanned trajectory
         run_trajectory();
     }
-  } else {
-    ROS_WARN_STREAM("Epoch is the same as previous call, epoch = "
-                    << msg.data << ", skip re-planning");
   }
   update_status();
 }
@@ -387,11 +384,8 @@ bool RePlanner::plan_trajectory(int horizon) {
   // ########################################################################################################
   local_replan_counter_++;  // only do global replan once every
                             // global_replan_interval_ local replans
-  if (local_replan_counter_ == global_replan_interval_) {
-    // reset the executed distance to be zero
-    executed_dist_ = 0.0;
-    executed_dist_z_ = 0.0;
-    local_replan_counter_ = 0;  // reset the counter
+  bool global_plan_updated = false;
+  if (local_replan_counter_ >= global_replan_interval_) {
     // send goal to global plan action server
     global_plan_client_->sendGoal(global_tpgoal);
     bool global_finished_before_timeout = global_plan_client_->waitForResult(
@@ -407,17 +401,24 @@ bool RePlanner::plan_trajectory(int horizon) {
       }
       return false;
     }
-
     auto global_result = global_plan_client_->getResult();
     if (global_result->success) {
+      // reset the executed distance to be zero
+      executed_dist_ = 0.0;
+      executed_dist_z_ = 0.0;
+      // reset the counter
+      local_replan_counter_ = 0;
       global_path_.clear();
       global_path_ = ros_to_path(
           global_result->path);  // extract the global path information
+      global_plan_updated = true;
     } else {
-      ROS_WARN("Global plan failed, trying replan");
-      return false;
+      ROS_WARN("Global plan failed, using existing global path...");
+      // return false;
     }
-  } else {
+  }
+
+  if (!global_plan_updated) {
     // incrementally record executed_dist_
     // straight line distance * deviation_factor to approximate executed portion
     // of path (motion primitive path is usually longer than jps path, thus

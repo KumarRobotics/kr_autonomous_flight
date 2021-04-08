@@ -201,8 +201,9 @@ void mapInit() {
     int global_hn = std::ceil(robot_h_ / global_res);
     for (int nx = -global_rn; nx <= global_rn; ++nx) {
       for (int ny = -global_rn; ny <= global_rn; ++ny) {
-        if (nx == 0 && ny == 0) continue;
-        if (std::hypot(nx, ny) > global_rn) continue;
+        if ((nx == 0 && ny == 0) || (std::hypot(nx, ny) > global_rn)) {
+          continue;
+        }
         if (global_use_robot_dim_z_) {
           for (int nz = -global_hn; nz <= global_hn; ++nz) {
             global_infla_array_.push_back(Eigen::Vector3i(nx, ny, nz));
@@ -284,7 +285,7 @@ int main(int argc, char **argv) {
   // only update voxel once every update_interval_ point clouds
   nh.param("global/num_point_cloud_skip", update_interval_, 5);  // int
   nh.param("global/max_raycast_range", global_max_raycast_, 100.0);
-  nh.param("global/dilate_xy", global_use_robot_dim_xy_, false);
+  nh.param("global/dilate_xy", global_use_robot_dim_xy_, true);
   nh.param("global/dilate_z", global_use_robot_dim_z_, false);
 
   // map origin is the left lower corner of the voxel map, therefore, adding

@@ -20,7 +20,7 @@ Panels:
         - /Estimation1/quad_odom1/Shape1
         - /Estimation1/SE3_cmd1
       Splitter Ratio: 0.5011135935783386
-    Tree Height: 441
+    Tree Height: 759
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -39,7 +39,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: VoxelMap
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -287,7 +287,7 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
-        - Alpha: 0.30000001192092896
+        - Alpha: 0.10000000149011612
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
             Max Value: 11.75
@@ -314,7 +314,7 @@ Visualization Manager:
           Queue Size: 10
           Selectable: true
           Size (Pixels): 10
-          Size (m): 2
+          Size (m): 3
           State: Occupied
           Style: Boxes
           Topic: /quadrotor/mapper/global_voxel_map
@@ -382,7 +382,7 @@ Visualization Manager:
           Axes Radius: 0.10000000149011612
           Class: rviz/Pose
           Color: 255; 25; 0
-          Enabled: true
+          Enabled: false
           Head Length: 0.30000001192092896
           Head Radius: 0.10000000149011612
           Name: SE3_cmd
@@ -392,7 +392,7 @@ Visualization Manager:
           Shape: Axes
           Topic: /quadrotor/so3_control/cmd_viz
           Unreliable: false
-          Value: true
+          Value: false
       Enabled: true
       Name: Estimation
   Enabled: true
@@ -421,14 +421,14 @@ Visualization Manager:
       Topic: /clicked_point
     - Class: kr_rviz_plugins/WaypointNav
       WaypointsTool:
-        default_height: 18
+        default_height: 16
         frame_id: map
         topic: ""
   Value: true
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 66.4386978149414
+      Distance: 115.20599365234375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -436,17 +436,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 956.2200927734375
-        Y: 994.2008666992188
-        Z: 0.0002785212709568441
+        X: 1000.4000244140625
+        Y: 1000.2000122070312
+        Z: 1.9574999896576628e-05
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5197969675064087
+      Pitch: 0.17039801180362701
       Target Frame: fla/base_link
-      Yaw: 4.159556865692139
+      Yaw: 1.540393590927124
     Saved: ~
 Window Geometry:
   Displays:

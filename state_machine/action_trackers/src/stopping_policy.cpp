@@ -35,7 +35,7 @@ class StoppingPolicy : public kr_trackers_manager::Tracker {
 
 void StoppingPolicy::Initialize(const ros::NodeHandle &nh) {
   ros::NodeHandle priv_nh(nh, "stopping_policy");
-  priv_nh.param("acc_xyz_des", a_des_, 10.0);
+  priv_nh.param("acc_xyz_des", a_des_, 5.0);
   priv_nh.param("jerk_xyz_des", j_des_, 5.0);
   priv_nh.param("acc_yaw_des", a_yaw_des_, 0.1);
 }

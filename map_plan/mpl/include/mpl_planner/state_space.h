@@ -7,7 +7,7 @@
 #include <boost/heap/d_ary_heap.hpp>  // boost::heap::d_ary_heap
 #include <boost/unordered_map.hpp>    // std::unordered_map
 
-#include "mpl_planner/env_base.h"
+#include "mpl_basis/waypoint.h"
 
 namespace MPL {
 
@@ -83,7 +83,6 @@ using hashMap =
 template <int Dim>
 struct StateSpace {
   using Coord = Waypoint<Dim>;
-  using EnvBaseD = EnvBase<Dim>;
 
   /// Priority queue, open set
   priorityQueue<State<Coord>> pq_;

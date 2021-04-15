@@ -15,7 +15,7 @@ namespace JPS {
 
 /// Heap element comparison
 template <class T>
-struct compare_state {
+struct CompareState {
   bool operator()(T a1, T a2) const {
     double f1 = a1->g + a1->h;
     double f2 = a2->g + a2->h;
@@ -32,7 +32,7 @@ using StatePtr = std::shared_ptr<State>;
 using priorityQueue =
     boost::heap::d_ary_heap<StatePtr, boost::heap::mutable_<true>,
                             boost::heap::arity<2>,
-                            boost::heap::compare<compare_state<StatePtr>>>;
+                            boost::heap::compare<CompareState<StatePtr>>>;
 
 /// Node of the graph in graph search
 struct State {

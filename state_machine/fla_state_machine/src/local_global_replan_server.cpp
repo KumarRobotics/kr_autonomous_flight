@@ -8,11 +8,17 @@
 #include <kr_mav_msgs/PositionCommand.h>
 #include <planning_ros_utils/data_ros_utils.h>
 #include <ros/ros.h>
+#include <sensor_msgs/Temperature.h>
 #include <std_msgs/Int64.h>
 #include <traj_opt_ros/msg_traj.h>
 #include <traj_opt_ros/ros_bridge.h>
 
+#include <boost/timer/timer.hpp>
 #include <fla_state_machine/traj_opt_utils.hpp>
+
+// Timer stuff
+using boost::timer::cpu_timer;
+using boost::timer::cpu_times;
 
 class RePlanner {
  public:
@@ -48,6 +54,11 @@ class RePlanner {
       actionlib::SimpleActionClient<action_planner::PlanTwoPointAction>>
       global_plan_client_;  // global plan action server client
   boost::mutex mtx_;
+
+  // Timing stuff
+  ros::Publisher time_pub1;
+  ros::Publisher time_pub2;
+  cpu_timer timer;
 
   geometry_msgs::Pose pose_goal_;  // goal recorder
   bool finished_replanning_{
@@ -376,10 +387,21 @@ bool RePlanner::plan_trajectory(int horizon) {
                             // global_replan_interval_ local replans
   bool global_plan_updated = false;
   if (local_replan_counter_ >= global_replan_interval_) {
+    timer.start();
     // send goal to global plan action server
     global_plan_client_->sendGoal(global_tpgoal);
     bool global_finished_before_timeout = global_plan_client_->waitForResult(
         ros::Duration(global_timeout_duration_));
+
+    // timer stuff
+    sensor_msgs::Temperature tmsg1;
+    tmsg1.header.stamp = ros::Time::now();
+    tmsg1.header.frame_id = "world";
+    // millisecond
+    tmsg1.temperature = static_cast<double>(timer.elapsed().wall) / 1e6;
+    ROS_INFO("[global_planner_time]: %f", tmsg1.temperature);
+    time_pub1.publish(tmsg1);
+
     // check result of global plan
     if (!global_finished_before_timeout) {
       ROS_ERROR("Global planner timed out");
@@ -436,12 +458,23 @@ bool RePlanner::plan_trajectory(int horizon) {
   local_tpgoal.p_final.position.y = local_goal(1);
   local_tpgoal.p_final.position.z = local_goal(2);
 
+  timer.start();
   // send goal to local trajectory plan action server
   local_plan_client_->sendGoal(local_tpgoal);
 
   // wait for result
   bool local_finished_before_timeout =
       local_plan_client_->waitForResult(ros::Duration(local_timeout_duration_));
+
+  // timer stuff
+  sensor_msgs::Temperature tmsg2;
+  tmsg2.header.stamp = ros::Time::now();
+  tmsg2.header.frame_id = "world";
+  // millisecond
+  tmsg2.temperature = static_cast<double>(timer.elapsed().wall) / 1e6;
+  ROS_INFO("[local_planner_time]: %f", tmsg2.temperature);
+  time_pub2.publish(tmsg2);
+
   // check result of local plan
   fla_state_machine::ReplanResult local_critical;
   local_critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
@@ -625,6 +658,12 @@ bool RePlanner::close_to_final(const vec_Vec3f &original_path,
 
 RePlanner::RePlanner() : nh_("~") {
   ros::NodeHandle priv_nh(nh_, "local_global_server");
+
+  time_pub1 = priv_nh.advertise<sensor_msgs::Temperature>(
+      "/timing/replanner/global_replan", 1);
+  time_pub2 = priv_nh.advertise<sensor_msgs::Temperature>(
+      "/timing/replanner/local_replan", 1);
+
   priv_nh.param("max_horizon", max_horizon_, 5);
   priv_nh.param("crop_radius", crop_radius_, 10.0);
   priv_nh.param("crop_radius_z", crop_radius_z_, 2.0);

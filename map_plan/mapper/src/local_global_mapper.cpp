@@ -6,9 +6,15 @@
 #include <sensor_msgs/point_cloud_conversion.h>
 #include <std_msgs/Bool.h>
 
+#include <boost/timer/timer.hpp>
+
 #include "mapper/tf_listener.h"
 #include "mapper/voxel_mapper.h"
 
+// Timer stuff
+using boost::timer::cpu_timer;
+using boost::timer::cpu_times;
+cpu_timer timer;
 // This fils is modified based on mapper/cloud_to_map.cpp
 
 // Timing stuff
@@ -102,62 +108,66 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
     pose_map_cloud = *tf_map_cloud;
   }
   const Eigen::Affine3d T_m_c = toTF(pose_map_cloud);
-  const Eigen::Vector3d sensor_position(
-      T_m_c.translation().x(), T_m_c.translation().y(),
-      T_m_c.translation()
-          .z());  // This is the lidar position in the fixed frame
+  // This is the lidar position in the fixed frame
+  const Eigen::Vector3d sensor_position(T_m_c.translation().x(),
+                                        T_m_c.translation().y(),
+                                        T_m_c.translation().z());
 
-  ros::Time t0 = ros::Time::now();
+  ros::Time t0;
+  cpu_times tc;
+
   double min_range = 0.75;  // points within this distance will be discarded
   double min_range_squared;
   min_range_squared = min_range * min_range;
   const auto pts = cloud_to_vec_filter(cloud, min_range_squared);
 
-  t0 = ros::Time::now();
+  timer.start();
   storage_voxel_mapper_->addCloud(pts, T_m_c, local_infla_array_, false,
                                   local_max_raycast_);
-  double dt_storage_add = (ros::Time::now() - t0).toSec();
-  t0 = ros::Time::now();
-
-  // **NOTE: this getInflatedMap() step can be very expensive if storage_map is
-  // big. Therefore, disable this (it's not important anyways).
-  // planning_ros_msgs::VoxelMap storage_map =
-  // storage_voxel_mapper_->getInflatedMap();
-  // storage_map.header.frame_id = map_frame_;
-  // storage_map_pub.publish(storage_map);
-  double dt_storage_pub = (ros::Time::now() - t0).toSec();
-  t0 = ros::Time::now();
+  ROS_DEBUG("[storage map addCloud]: %f",
+            static_cast<double>(timer.elapsed().wall) / 1e6);
 
   // crop local voxel map
+  timer.start();
   cropLocalMap(sensor_position);
-  double dt_local_crop_pub = (ros::Time::now() - t0).toSec();
-  t0 = ros::Time::now();
+  ROS_DEBUG("[local map crop]: %f",
+            static_cast<double>(timer.elapsed().wall) / 1e6);
 
-  double total_t = dt_storage_add + dt_storage_pub + dt_local_crop_pub;
-  if (total_t > 0.5) {
-    ROS_WARN(
-        "[Mapper]: Time for processing storage and local map is too large!!!");
-    ROS_WARN(
-        "Time for updating storage map: %f, for publishing it: %f. Total "
-        "time for cropping and publishing local map: %f",
-        dt_storage_add, dt_storage_pub, dt_local_crop_pub);
-  }
+  //  const double total_t = dt_storage_add + dt_local_crop;
+  //  if (total_t > 0.5) {
+  //    ROS_WARN(
+  //        "[Mapper]: Time for processing storage and local map is too
+  //        large!!!");
+  //    ROS_WARN(
+  //        "Time for updating storage map: %f. Total "
+  //        "time for cropping and publishing local map: %f",
+  //        dt_storage_add, dt_local_crop);
+  //  }
 
-  sensor_msgs::Temperature tmsg;
-  tmsg.header.stamp = t0;
-  tmsg.temperature = total_t * 1000;
-  time_pub.publish(tmsg);
+  //  sensor_msgs::Temperature tmsg;
+  //  tmsg.header.stamp = t0;
+  //  tmsg.temperature = total_t * 1000;
+  //  time_pub.publish(tmsg);
 
   // only global voxel map once every update_interval_ point clouds
   if (counter_ % update_interval_ == 0) {
-    t0 = ros::Time::now();
+    timer.start();
     global_voxel_mapper_->addCloud(pts, T_m_c, global_infla_array_, false,
                                    global_max_raycast_);
+    ROS_DEBUG("[global map addCloud]: %f",
+              static_cast<double>(timer.elapsed().wall) / 1e6);
+
     // for global map, free voxels surrounding the robot to make sure the start
     // of the global planner is not occupied
+    timer.start();
     global_voxel_mapper_->freeVoxels(sensor_position, clear_ns_);
+    ROS_DEBUG("[global map freeVoxels]: %f",
+              static_cast<double>(timer.elapsed().wall) / 1e6);
 
-    double dt2 = (ros::Time::now() - t0).toSec();
+    timer.start();
+    auto global_map = global_voxel_mapper_->getInflatedMap();
+    ROS_DEBUG("[global map getInflatedMap]: %f",
+              static_cast<double>(timer.elapsed().wall) / 1e6);
 
     counter_ = 0;
     planning_ros_msgs::VoxelMap global_map =
@@ -167,10 +177,8 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
   }
   ++counter_;
 
-  if (debug_) {
-    ROS_INFO_THROTTLE(1, "[Mapper]: Got cloud, number of points: [%zu]",
-                      cloud.points.size());
-  }
+  ROS_DEBUG_THROTTLE(1, "[Mapper]: Got cloud, number of points: [%zu]",
+                     cloud.points.size());
 }
 
 void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr &msg) {
@@ -322,10 +330,9 @@ int main(int argc, char **argv) {
 
   const Eigen::Vector3d local_dim(local_map_info_.dim.x, local_map_info_.dim.y,
                                   local_map_info_.dim.z);
-  local_ori_offset_ =
-      -local_dim / 2;  // origin is the left lower corner of the voxel map,
-                       // therefore, adding this offset make the map centered
-                       // around the given position
+  // origin is the left lower corner of the voxel map, therefore, adding
+  // this offset make the map centered around the given position
+  local_ori_offset_ = -local_dim / 2;
 
   // dimension (in voxels) of the region to free voxels
   for (int nx = -1; nx <= 1; nx++) {
@@ -338,6 +345,7 @@ int main(int argc, char **argv) {
 
   // Initialize maps
   mapInit();
+  timer.stop();
 
   ros::spin();
 

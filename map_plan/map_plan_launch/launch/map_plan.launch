@@ -2,16 +2,14 @@
 <launch>
     <arg name="robot" default="$(optenv ROBOT_NAME quadrotor)"/>
     <arg name="real_robot" default="false"/>
-	  <arg name="use_mp" default="false"/>
-	  <arg name="use_lauras" default="false"/>
+    <arg name="use_mp" default="false"/>
+    <arg name="use_lauras" default="false"/>
     <arg name="odom" default="odom"/>
-    
+
     <!-- lidar_frame arg is only used when real_robot is true, otherwise the mapper will just use the same frame as the point cloud in simulator -->
     <arg name="lidar_frame" default=""/>
     <arg name="mapper_config" default="$(find map_plan_launch)/config/mapper.yaml"/>
     <arg name="cloud" default="lidar"/>
-
-
 
     <group ns="$(arg robot)">
         <include file="$(find map_plan_launch)/launch/mapper.launch">
@@ -22,16 +20,16 @@
             <arg name="cloud" value="$(arg cloud)"/>
         </include>
     </group>
-    
-    <group ns="$(arg robot)" unless="$(arg use_mp)">		
+
+    <group ns="$(arg robot)" unless="$(arg use_mp)">
         <include file="$(find map_plan_launch)/launch/planner.launch">
         </include>
     </group>
-    
-    <group ns="$(arg robot)" if="$(arg use_mp)">		
+
+    <group ns="$(arg robot)" if="$(arg use_mp)">
         <include file="$(find map_plan_launch)/launch/mp_planner.launch">
-          <arg name="odom" value="$(arg odom)" />
-          <arg name="use_lauras" value="$(arg use_lauras)" />
+            <arg name="odom" value="$(arg odom)" />
+            <arg name="use_lauras" value="$(arg use_lauras)" />
         </include>
     </group>
 </launch>

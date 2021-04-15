@@ -3,9 +3,9 @@
 #include <action_planner/PlanWaypointsAction.h>
 #include <actionlib/server/simple_action_server.h>
 #include <eigen_conversions/eigen_msg.h>
-#include <mpl_basis/trajectory.h>             // mpl related
-#include <mpl_collision/map_util.h>           // mpl related
-#include <mpl_planner/planner/map_planner.h>  // mpl related
+#include <mpl_basis/trajectory.h>
+#include <mpl_collision/map_util.h>
+#include <mpl_planner/map_planner.h>
 #include <planning_ros_utils/data_ros_utils.h>
 #include <planning_ros_utils/primitive_ros_utils.h>
 #include <ros/ros.h>

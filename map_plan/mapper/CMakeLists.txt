@@ -10,8 +10,10 @@ find_package(
              planning_ros_msgs
              planning_ros_utils
              depth_image_proc
+             sensor_msgs
              eigen_conversions
              tf_conversions)
+find_package(Boost REQUIRED COMPONENTS timer)
 
 catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME})
 
@@ -20,8 +22,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${catkin_INCLUDE_DIRS}
                                                   include)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES})
 
-add_executable(cloud_to_map src/cloud_to_map.cpp)
-target_link_libraries(cloud_to_map PUBLIC ${PROJECT_NAME})
+# add_executable(cloud_to_map src/cloud_to_map.cpp)
+# target_link_libraries(cloud_to_map PUBLIC ${PROJECT_NAME})
 
 add_executable(local_global_mapper src/local_global_mapper.cpp)
-target_link_libraries(local_global_mapper PUBLIC ${PROJECT_NAME})
+target_link_libraries(local_global_mapper PUBLIC ${PROJECT_NAME} Boost::timer)

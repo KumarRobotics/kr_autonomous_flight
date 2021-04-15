@@ -36,8 +36,7 @@ decimal_t EnvBase<Dim>::cal_heur(const WaypointD &state,
                                  const WaypointD &goal) const {
   if (heur_ignore_dynamics_) {
     if (v_max_ > 0) {
-      return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>() /
-             v_max_;
+      return w_ * (state.pos - goal.pos).template lpNorm<2>() / v_max_;
     } else
       return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>();
   }
@@ -195,8 +194,8 @@ Veci<Dim> EnvBase<Dim>::round(const Vecf<Dim> &vec, decimal_t res) const {
   return vecI;
 }
 
-//template <int Dim>
-//std::string EnvBase<Dim>::to_string(const Veci<Dim> &vec) const {
+// template <int Dim>
+// std::string EnvBase<Dim>::to_string(const Veci<Dim> &vec) const {
 //  std::string str;
 //  for (int i = 0; i < Dim; i++) str += std::to_string(vec(i)) + "-";
 //  return str;

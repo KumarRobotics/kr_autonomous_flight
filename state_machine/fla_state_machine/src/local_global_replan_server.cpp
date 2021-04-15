@@ -263,7 +263,8 @@ void RePlanner::setup_replanner() {
   //  #################################################################################
   vec_Vec3f path_cropped =
       path_crop(global_path_, crop_radius_, crop_radius_z_);
-  bool close_to_final_goal = close_to_final(global_path_, path_cropped, close_to_final_dist_);
+  bool close_to_final_goal =
+      close_to_final(global_path_, path_cropped, close_to_final_dist_);
 
   // Initial plan step 3: local plan
   // ##########################################################################################################
@@ -441,7 +442,8 @@ bool RePlanner::plan_trajectory(int horizon) {
 
   // ROS_WARN_STREAM("++++ total_crop_dist = " << crop_dist);
   vec_Vec3f path_cropped = path_crop(global_path_, crop_dist, crop_dist_z);
-  bool close_to_final_goal = close_to_final(global_path_, path_cropped, close_to_final_dist_);
+  bool close_to_final_goal =
+      close_to_final(global_path_, path_cropped, close_to_final_dist_);
 
   // Re-plan step 3: local plan
   // ##########################################################################################################

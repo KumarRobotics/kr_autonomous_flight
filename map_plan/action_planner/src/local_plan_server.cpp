@@ -156,9 +156,12 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   traj_planner_nh.param("tol_pos", tol_pos_, 0.5);
   traj_planner_nh.param("global_goal_tol_vel", goal_tol_vel_, 0.5);
   traj_planner_nh.param("global_goal_tol_acc", goal_tol_acc_, 0.5);
+  /// Execution time for each primitive
   traj_planner_nh.param("dt", dt, 1.0);
   traj_planner_nh.param("ndt", ndt, -1);
   traj_planner_nh.param("max_num", max_num, -1);
+  traj_planner_nh.param("heuristic_weight", W, 10.0);
+
 
   mp_planner_util_.reset(new MPL::VoxelMapPlanner(verbose_));  // verbose
   mp_planner_util_->setMapUtil(
@@ -173,6 +176,7 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   mp_planner_util_->setMaxNum(
       max_num);  // Set maximum allowed expansion, -1 means no limitation
   mp_planner_util_->setU(U);  // 2D discretization if false, 3D if true
+  mp_planner_util_->setW(W);  // 2D discretization if false, 3D if true 
   mp_planner_util_->setLPAstar(false);  // Use Astar
 
   // Register goal and preempt callbacks

@@ -40,7 +40,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: VoxelMap
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -413,32 +413,32 @@ Visualization Manager:
       Topic: /clicked_point
     - Class: kr_rviz_plugins/WaypointNav
       WaypointsTool:
-        default_height: 20
+        default_height: 19
         frame_id: map
         topic: ""
   Value: true
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 603.0530395507812
+      Distance: 84.9848861694336
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
+        X: -56.526641845703125
+        Y: 27.64911460876465
+        Z: -8.240407623816282e-6
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7303977012634277
+      Pitch: 0.5553969740867615
       Target Frame: fla/base_link
       Value: ThirdPersonFollower (rviz)
-      Yaw: 3.250394821166992
+      Yaw: 2.2653884887695312
     Saved: ~
 Window Geometry:
   Displays:

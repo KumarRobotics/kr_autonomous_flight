@@ -93,6 +93,7 @@ class RePlanner {
   double crop_radius_;    // local path crop radius (local path length will be
                           // this value)
   double crop_radius_z_;  // local path crop radius along z axis
+  double close_to_final_dist_;
   double termination_distance_;
   bool avoid_obstacle_{true};
 
@@ -144,7 +145,7 @@ class RePlanner {
    */
   bool close_to_final(const vec_Vec3f &original_path,
                       const vec_Vec3f &cropped_path,
-                      double dist_threshold = 0.1);
+                      double dist_threshold = 10.0);
 };
 
 void RePlanner::epoch_cb(const std_msgs::Int64 &msg) {
@@ -262,7 +263,7 @@ void RePlanner::setup_replanner() {
   //  #################################################################################
   vec_Vec3f path_cropped =
       path_crop(global_path_, crop_radius_, crop_radius_z_);
-  bool close_to_final_goal = close_to_final(global_path_, path_cropped, 10.0);
+  bool close_to_final_goal = close_to_final(global_path_, path_cropped, close_to_final_dist_);
 
   // Initial plan step 3: local plan
   // ##########################################################################################################
@@ -399,7 +400,7 @@ bool RePlanner::plan_trajectory(int horizon) {
     tmsg1.header.frame_id = "world";
     // millisecond
     tmsg1.temperature = static_cast<double>(timer.elapsed().wall) / 1e6;
-    ROS_INFO("[global_planner_time]: %f", tmsg1.temperature);
+    ROS_WARN("[global_planner_time]: %f", tmsg1.temperature);
     time_pub1.publish(tmsg1);
 
     // check result of global plan
@@ -440,7 +441,7 @@ bool RePlanner::plan_trajectory(int horizon) {
 
   // ROS_WARN_STREAM("++++ total_crop_dist = " << crop_dist);
   vec_Vec3f path_cropped = path_crop(global_path_, crop_dist, crop_dist_z);
-  bool close_to_final_goal = close_to_final(global_path_, path_cropped, 10.0);
+  bool close_to_final_goal = close_to_final(global_path_, path_cropped, close_to_final_dist_);
 
   // Re-plan step 3: local plan
   // ##########################################################################################################
@@ -472,7 +473,7 @@ bool RePlanner::plan_trajectory(int horizon) {
   tmsg2.header.frame_id = "world";
   // millisecond
   tmsg2.temperature = static_cast<double>(timer.elapsed().wall) / 1e6;
-  ROS_INFO("[local_planner_time]: %f", tmsg2.temperature);
+  ROS_WARN("[local_planner_time]: %f", tmsg2.temperature);
   time_pub2.publish(tmsg2);
 
   // check result of local plan
@@ -667,6 +668,7 @@ RePlanner::RePlanner() : nh_("~") {
   priv_nh.param("max_horizon", max_horizon_, 5);
   priv_nh.param("crop_radius", crop_radius_, 10.0);
   priv_nh.param("crop_radius_z", crop_radius_z_, 2.0);
+  priv_nh.param("close_to_final_dist", close_to_final_dist_, 10.0);
   priv_nh.param("termination_distance", termination_distance_, 5.0);
   priv_nh.param("local_plan_timeout_duration", local_timeout_duration_, 2.0);
   priv_nh.param("global_plan_timeout_duration", global_timeout_duration_, 4.0);

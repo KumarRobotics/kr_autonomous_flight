@@ -36,6 +36,8 @@ decimal_t EnvBase<Dim>::cal_heur(const WaypointD &state,
                                  const WaypointD &goal) const {
   if (heur_ignore_dynamics_) {
     if (v_max_ > 0) {
+      // return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>() /
+      //        v_max_;
       return w_ * (state.pos - goal.pos).template lpNorm<2>() / v_max_;
     } else
       return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>();

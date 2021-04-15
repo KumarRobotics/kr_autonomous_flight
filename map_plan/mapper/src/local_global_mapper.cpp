@@ -149,17 +149,18 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
   //  time_pub.publish(tmsg);
 
   // only global voxel map once every update_interval_ point clouds
+  ++counter_;
   if (counter_ % update_interval_ == 0) {
     timer.start();
     global_voxel_mapper_->addCloud(pts, T_m_c, global_infla_array_, false,
                                    global_max_raycast_);
     ROS_DEBUG("[global map addCloud]: %f",
               static_cast<double>(timer.elapsed().wall) / 1e6);
+    timer.start();
 
     // for global map, free voxels surrounding the robot to make sure the start
     // of the global planner is not occupied
-    timer.start();
-    global_voxel_mapper_->freeVoxels(sensor_position, clear_ns_);
+    // global_voxel_mapper_->freeVoxels(sensor_position, clear_ns_);
     ROS_DEBUG("[global map freeVoxels]: %f",
               static_cast<double>(timer.elapsed().wall) / 1e6);
 
@@ -173,7 +174,6 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
     global_map.header.frame_id = map_frame_;
     global_map_pub.publish(global_map);
   }
-  ++counter_;
 
   ROS_DEBUG_THROTTLE(1, "[Mapper]: Got cloud, number of points: [%zu]",
                      cloud.points.size());
@@ -331,14 +331,14 @@ int main(int argc, char **argv) {
   // this offset make the map centered around the given position
   local_ori_offset_ = -local_dim / 2;
 
-  // dimension (in voxels) of the region to free voxels
-  for (int nx = -1; nx <= 1; nx++) {
-    for (int ny = -1; ny <= 1; ny++) {
-      for (int nz = -1; nz <= 1; nz++) {
-        clear_ns_.push_back(Eigen::Vector3i(nx, ny, nz));
-      }
-    }
-  }
+  // // dimension (in voxels) of the region to free voxels
+  // for (int nx = -3; nx <= 3; nx++) {
+  //   for (int ny = -3; ny <= 3; ny++) {
+  //     for (int nz = -2; nz <= 2; nz++) {
+  //       clear_ns_.push_back(Eigen::Vector3i(nx, ny, nz));
+  //     }
+  //   }
+  // }
 
   // Initialize maps
   mapInit();

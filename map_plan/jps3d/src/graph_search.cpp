@@ -77,7 +77,7 @@ inline double GraphSearch::getHeur(int x, int y) const {
 inline double GraphSearch::getHeur(int x, int y, int z) const {
   return eps_ *
          std::sqrt((x - xGoal_) * (x - xGoal_) + (y - yGoal_) * (y - yGoal_) +
-                   (z - zGoal_) * (z - zGoal_));
+                   3.0 * (z - zGoal_) * (z - zGoal_));
 }
 
 bool GraphSearch::plan(int xStart, int yStart, int xGoal, int yGoal,
@@ -263,7 +263,8 @@ void GraphSearch::getSucc(const StatePtr& curr, std::vector<int>& succ_ids,
       }
 
       succ_ids.push_back(new_id);
-      succ_costs.push_back(std::sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]));
+      succ_costs.push_back(
+          std::sqrt(d[0] * d[0] + d[1] * d[1] + 3.0 * d[2] * d[2]));
     }
   }
 }

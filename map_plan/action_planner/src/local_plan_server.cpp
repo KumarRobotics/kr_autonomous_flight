@@ -152,6 +152,7 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   }
 
   double dt;
+  double W;
   int ndt, max_num;
   traj_planner_nh.param("tol_pos", tol_pos_, 0.5);
   traj_planner_nh.param("global_goal_tol_vel", goal_tol_vel_, 0.5);

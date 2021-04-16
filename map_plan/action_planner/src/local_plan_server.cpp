@@ -51,7 +51,7 @@ class LocalPlanServer {
   MPL::Trajectory3D traj_;
 
   // current local map
-  planning_ros_msgs::VoxelMap local_map_;
+  planning_ros_msgs::VoxelMapConstPtr local_map_;
 
   // actionlib
   boost::shared_ptr<const action_planner::PlanTwoPointGoal> goal_;
@@ -101,7 +101,7 @@ class LocalPlanServer {
 void LocalPlanServer::localMapCB(
     const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
   ROS_WARN_ONCE("Get the local voxel map!");
-  local_map_ = *msg;
+  local_map_ = msg;
 }
 
 LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
@@ -208,12 +208,12 @@ void LocalPlanServer::process_result(const MPL::Trajectory3D &traj,
   if (solved) {
     // covert traj to a ros message
     planning_ros_msgs::Trajectory traj_msg = toTrajectoryROSMsg(traj);
-    traj_msg.header.frame_id = local_map_.header.frame_id;
+    traj_msg.header.frame_id = local_map_->header.frame_id;
     traj_pub.publish(traj_msg);
 
     // record trajectory in result
     result_->traj = traj_opt::SplineTrajectoryFromTrajectory(traj_msg);
-    result_->traj.header.frame_id = local_map_.header.frame_id;
+    result_->traj.header.frame_id = local_map_->header.frame_id;
     traj_opt::TrajRosBridge::publish_msg(result_->traj);
 
     // execution_time (set in replanner)
@@ -322,7 +322,7 @@ void LocalPlanServer::process_goal() {
   goal.use_jrk = start.use_jrk;
 
   bool local_planner_succeeded;
-  local_planner_succeeded = local_plan_process(start, goal, local_map_);
+  local_planner_succeeded = local_plan_process(start, goal, *local_map_);
 
   if (!local_planner_succeeded) {
     // local plan fails
@@ -358,9 +358,9 @@ bool LocalPlanServer::local_plan_process(
   setMap(mp_map_util_, map);
   bool valid = false;
   mp_planner_util_->reset();
-  valid = mp_planner_util_->plan(
-      start, goal);  // start and new_goal contain full informaiton about
-                     // position/velocity/acceleration
+  // start and new_goal contain full informaiton about
+  // position/velocity/acceleration
+  valid = mp_planner_util_->plan(start, goal);
   if (valid) {
     traj_ = mp_planner_util_->getTraj();
   }

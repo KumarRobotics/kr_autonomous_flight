@@ -56,7 +56,7 @@ class GlobalPlanServer {
   // mutexes
   boost::mutex map_mtx;
   // current global map
-  planning_ros_msgs::VoxelMap global_map_;
+  planning_ros_msgs::VoxelMapConstPtr global_map_;
 
   bool global_planner_succeeded_{false};
   bool global_plan_exist_{false};
@@ -119,7 +119,7 @@ class GlobalPlanServer {
 
 void GlobalPlanServer::globalMapCB(
     const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
-  global_map_ = *msg;
+  global_map_ = msg;
 }
 
 GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
@@ -220,7 +220,7 @@ void GlobalPlanServer::process_goal() {
 
   // call the planner
 
-  global_planner_succeeded_ = global_plan_process(start, goal, global_map_);
+  global_planner_succeeded_ = global_plan_process(start, goal, *global_map_);
 
   process_result(global_planner_succeeded_);
 }

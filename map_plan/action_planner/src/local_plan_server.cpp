@@ -1,6 +1,5 @@
 #include <action_planner/ActionPlannerConfig.h>
-#include <action_planner/PlanTwoPointAction.h>
-#include <action_planner/PlanWaypointsAction.h>
+#include <planning_ros_msgs/PlanTwoPointAction.h>
 #include <actionlib/server/simple_action_server.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <mpl_basis/trajectory.h>
@@ -54,11 +53,11 @@ class LocalPlanServer {
   planning_ros_msgs::VoxelMap local_map_;
 
   // actionlib
-  boost::shared_ptr<const action_planner::PlanTwoPointGoal> goal_;
-  boost::shared_ptr<action_planner::PlanTwoPointResult> result_;
+  boost::shared_ptr<const planning_ros_msgs::PlanTwoPointGoal> goal_;
+  boost::shared_ptr<planning_ros_msgs::PlanTwoPointResult> result_;
   // action lib
   std::unique_ptr<
-      actionlib::SimpleActionServer<action_planner::PlanTwoPointAction>>
+      actionlib::SimpleActionServer<planning_ros_msgs::PlanTwoPointAction>>
       local_as_;
 
   bool debug_;
@@ -109,7 +108,7 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   local_map_sub_ =
       pnh_.subscribe("local_voxel_map", 2, &LocalPlanServer::localMapCB, this);
   local_as_ = std::make_unique<
-      actionlib::SimpleActionServer<action_planner::PlanTwoPointAction>>(
+      actionlib::SimpleActionServer<planning_ros_msgs::PlanTwoPointAction>>(
       pnh_, "plan_local_trajectory", false);
 
   // set up visualization publisher for mpl planner
@@ -202,7 +201,7 @@ void LocalPlanServer::process_all() {
 
 void LocalPlanServer::process_result(const MPL::Trajectory3D &traj,
                                      bool solved) {
-  result_ = boost::make_shared<action_planner::PlanTwoPointResult>();
+  result_ = boost::make_shared<planning_ros_msgs::PlanTwoPointResult>();
   result_->success = solved;  // set success status
   result_->policy_status = solved ? 1 : -1;
   if (solved) {
@@ -274,7 +273,7 @@ void LocalPlanServer::process_result(const MPL::Trajectory3D &traj,
   }
 
   // reset goal
-  goal_ = boost::shared_ptr<action_planner::PlanTwoPointGoal>();
+  goal_ = boost::shared_ptr<planning_ros_msgs::PlanTwoPointGoal>();
   // abort if trajectory generation failed
   if (!solved && local_as_->isActive()) {
     ROS_WARN("+++++++++++++++++++++++++");

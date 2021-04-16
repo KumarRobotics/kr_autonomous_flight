@@ -13,6 +13,7 @@
   <depend>nav_msgs</depend>
   <depend>message_generation</depend>
   <depend>message_runtime</depend>
+  <depend>actionlib_msgs</depend>
 
   <export>
   </export>

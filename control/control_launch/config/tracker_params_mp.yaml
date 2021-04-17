@@ -56,9 +56,9 @@ trajectory_planner:
   # acc_yaw_des: 0.1 # rad
 
 local_global_server:
-  crop_radius: 30 # default for 2-D 30, for 3-D 20. crop length when cropping global path to get local goal, this should be less than 0.5*(local map X (or Y) range)
-  crop_radius_z: 8 # crop length along Z when cropping global path to get local goal, this should be less than 0.5*(local map Z range)
-  termination_distance: 7 # distance threshold, final goal reached 
+  crop_radius: 25 # default for 2-D 30, for 3-D 20. crop length when cropping global path to get local goal, this should be less than 0.5*(local map X (or Y) range)
+  crop_radius_z: 6 # crop length along Z when cropping global path to get local goal, this should be less than 0.5*(local map Z range)
+  termination_distance: 4 # distance threshold, final goal reached 
   close_to_final_dist: 20 # distance threshold, final goal close enough to turn on velocity and acceleration checking
   local_plan_timeout_duration: 1.0 # local planner timeout in seconds 
   global_plan_timeout_duration: 2.0 # global planner timeout in seconds 

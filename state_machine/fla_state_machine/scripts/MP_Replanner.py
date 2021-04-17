@@ -10,7 +10,6 @@ import smach_ros
 from MainStates import *
 import geometry_msgs.msg as GM
 import kr_mav_msgs.msg as QM
-import action_planner.msg as AP
 import fla_state_machine.msg as SM
 
 from Utils import *

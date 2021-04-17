@@ -1,5 +1,4 @@
-#include <action_planner/PlanPathAction.h>
-#include <action_planner/PlanTwoPointAction.h>
+#include <planning_ros_msgs/PlanTwoPointAction.h>
 #include <action_trackers/RunTrajectoryAction.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/server/simple_action_server.h>
@@ -42,10 +41,10 @@ class RePlanner {
       actionlib::SimpleActionClient<action_trackers::RunTrajectoryAction>>
       run_client_;
   std::unique_ptr<
-      actionlib::SimpleActionClient<action_planner::PlanTwoPointAction>>
+      actionlib::SimpleActionClient<planning_ros_msgs::PlanTwoPointAction>>
       local_plan_client_;  // local plan action server client
   std::unique_ptr<
-      actionlib::SimpleActionClient<action_planner::PlanTwoPointAction>>
+      actionlib::SimpleActionClient<planning_ros_msgs::PlanTwoPointAction>>
       global_plan_client_;  // global plan action server client
   boost::mutex mtx_;
 
@@ -221,7 +220,7 @@ void RePlanner::setup_replanner() {
   // Initial plan step 1: global plan
   // ########################################################################################################
   // set goal
-  action_planner::PlanTwoPointGoal global_tpgoal;
+  planning_ros_msgs::PlanTwoPointGoal global_tpgoal;
   global_tpgoal.p_final = pose_goal_;
   global_tpgoal.avoid_obstacles = avoid_obstacle_;
   // send goal to global plan action server
@@ -259,7 +258,7 @@ void RePlanner::setup_replanner() {
   // Initial plan step 3: local plan
   // ##########################################################################################################
   // set goal
-  action_planner::PlanTwoPointGoal local_tpgoal;
+  planning_ros_msgs::PlanTwoPointGoal local_tpgoal;
   fla_state_machine::VecToPose(
       cmd_pos_, &local_tpgoal.p_init);  // use current position command as the
                                         // start position for local planner
@@ -352,12 +351,12 @@ bool RePlanner::plan_trajectory(int horizon) {
   }
 
   // set global goal
-  action_planner::PlanTwoPointGoal global_tpgoal;
+  planning_ros_msgs::PlanTwoPointGoal global_tpgoal;
   global_tpgoal.p_final = pose_goal_;
   global_tpgoal.avoid_obstacles = avoid_obstacle_;
 
   // set local goal
-  action_planner::PlanTwoPointGoal local_tpgoal;
+  planning_ros_msgs::PlanTwoPointGoal local_tpgoal;
   double eval_time =
       double(horizon) /
       local_replan_rate_;  // calculate evaluation time, i.e., beginning of
@@ -624,12 +623,12 @@ RePlanner::RePlanner() : nh_("~") {
 
   // plan global path action client, auto spin option set to true
   global_plan_client_.reset(
-      new actionlib::SimpleActionClient<action_planner::PlanTwoPointAction>(
+      new actionlib::SimpleActionClient<planning_ros_msgs::PlanTwoPointAction>(
           nh_, "plan_global_path", true));
 
   // plan local trajectory action client, auto spin option set to true
   local_plan_client_.reset(
-      new actionlib::SimpleActionClient<action_planner::PlanTwoPointAction>(
+      new actionlib::SimpleActionClient<planning_ros_msgs::PlanTwoPointAction>(
           nh_, "plan_local_trajectory", true));
 
   // run trajectory action client

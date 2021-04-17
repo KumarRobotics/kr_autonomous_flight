@@ -30,7 +30,3 @@ target_link_libraries(local_global_replan_server PUBLIC ${PROJECT_NAME})
 add_dependencies(local_global_replan_server ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
 
-add_executable(path_replanner src/path_replanner.cpp)
-target_link_libraries(path_replanner PUBLIC ${PROJECT_NAME})
-add_dependencies(path_replanner ${${PROJECT_NAME}_EXPORTED_TARGETS}
-                 ${catkin_EXPORTED_TARGETS})

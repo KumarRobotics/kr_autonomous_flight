@@ -207,7 +207,9 @@ void GlobalPlanServer::process_result(bool solved) {
 
   // reset goal
   goal_ = boost::shared_ptr<action_planner::PlanTwoPointGoal>();
-  if (global_as_->isActive()) global_as_->setSucceeded(*result_);
+  if (global_as_->isActive()) {
+    global_as_->setSucceeded(*result_);
+  }
 }
 
 void GlobalPlanServer::odom_callback(const nav_msgs::Odometry::ConstPtr &odom) {

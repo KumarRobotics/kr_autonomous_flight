@@ -18,6 +18,7 @@
       <remap from="~plan_local_trajectory" to="local_plan_server/plan_local_trajectory"/>
       <remap from="~plan_global_path" to="global_plan_server/plan_global_path"/>
       <remap from="~execute_trajectory" to="trackers_manager/execute_trajectory"/>
+      <remap from="~global_path" to="global_plan_server/path"/>
       <remap from="~epoch" to="trackers_manager/epoch"/>
       <remap from="~position_cmd" to="position_cmd"/>
     </node>

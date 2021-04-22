@@ -78,6 +78,9 @@ class RePlanner {
   int last_plan_epoch_;
   ros::Subscriber epoch_sub_;
 
+  // subscribe to global path
+  ros::Subscriber global_path_sub_;
+
   // local-global framework related params
   double local_replan_rate_;  // should be set in the goal sent from the
                               // state_machine
@@ -91,6 +94,9 @@ class RePlanner {
   double local_timeout_duration_;   // local planner timeout duration
   Vec3f prev_start_pos_;  // replanning records: previous replanning start
                           // position
+
+  bool global_plan_updated_ = false;
+
   double executed_dist_{
       0.0};  // replanning records: accumulated executed distance along the path
   double executed_dist_z_{
@@ -125,6 +131,11 @@ class RePlanner {
   void replan_goal_cb();
 
   /**
+   * @brief Goal done callback function
+   */
+  void GlobalPathCb(const planning_ros_msgs::Path &path);
+
+  /**
    * @brief Execute the planned trajectory, during which epoch will be published
    * by trajectory tracker and epoch_cb will be triggered, which will trigger
    * replanning process
@@ -141,7 +152,10 @@ class RePlanner {
    * @brief Crop global path for local planner
    * @param path original path to crop
    * @param d length of the cropped path
+   *
    */
+  // TODO: make this intersection of line & cube instead of fixed-distance crop!
+  // https://www.3dkingdoms.com/weekly/weekly.php?a=3
   vec_Vec3f path_crop(const vec_Vec3f &path, double crop_dist_xyz,
                       double crop_dist_z);
 
@@ -152,6 +166,42 @@ class RePlanner {
                       const vec_Vec3f &cropped_path,
                       double dist_threshold = 10.0);
 };
+
+/**
+ * @brief Goal done callback function
+ */
+
+void RePlanner::GlobalPathCb(const planning_ros_msgs::Path &path) {
+  // reset the executed distance to be zero
+  executed_dist_ = 0.0;
+  executed_dist_z_ = 0.0;
+  // reset the counter
+  local_replan_counter_ = 0;
+  global_path_.clear();
+  global_path_ = ros_to_path(path);  // extract the global path information
+  global_plan_updated_ = true;
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+
+  ROS_INFO("Global replan succeeded, updating global path!");
+
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+}
 
 void RePlanner::epoch_cb(const std_msgs::Int64 &msg) {
   boost::mutex::scoped_lock lock(mtx_);
@@ -393,75 +443,38 @@ bool RePlanner::plan_trajectory(int horizon) {
   Vec3f start_pos;
   start_pos = pose_to_eigen(local_tpgoal.p_init);
 
-  // Re-plan step 1: Global plan
+  // Replan step 1: Global plan
   // ########################################################################################################
   local_replan_counter_++;  // only do global replan once every
                             // global_replan_interval_ local replans
-  bool global_plan_updated = false;
   if (local_replan_counter_ >= global_replan_interval_) {
-    timer.start();
     // send goal to global plan action server
     global_plan_client_->sendGoal(global_tpgoal);
-    bool global_finished_before_timeout = global_plan_client_->waitForResult(
-        ros::Duration(global_timeout_duration_));
-
-    // timer stuff
-    sensor_msgs::Temperature tmsg1;
-    tmsg1.header.stamp = ros::Time::now();
-    tmsg1.header.frame_id = "world";
-    // millisecond
-    tmsg1.temperature = static_cast<double>(timer.elapsed().wall) / 1e6;
-    ROS_WARN("[global_planner_time]: %f", tmsg1.temperature);
-    time_pub1.publish(tmsg1);
-
-    // check result of global plan
-    if (!global_finished_before_timeout) {
-      ROS_ERROR("Global planner timed out");
-      fla_state_machine::ReplanResult critical;
-      critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
-      active_ = false;
-      if (replan_server_->isActive()) {
-        replan_server_->setSucceeded(critical);
-      }
-      return false;
-    }
-    auto global_result = global_plan_client_->getResult();
-    if (global_result->success) {
-      // reset the executed distance to be zero
-      executed_dist_ = 0.0;
-      executed_dist_z_ = 0.0;
-      // reset the counter
-      local_replan_counter_ = 0;
-      global_path_.clear();
-      global_path_ = ros_to_path(
-          global_result->path);  // extract the global path information
-      global_plan_updated = true;
-    } else {
-      ROS_WARN("Global plan failed, using existing global path...");
-      // return false;
-    }
   }
 
-  if (!global_plan_updated) {
+  if (!global_plan_updated_) {
     // incrementally record executed_dist_
-    // straight line distance * deviation_factor to approximate executed portion
-    // of path (motion primitive path is usually longer than jps path, thus
-    // factor < 1)
     double deviation_factor = 0.8;
+    // straight line distance * deviation_factor to approximate executed portion
+    // of path (motion primitive path >= jps path, thus factor <= 1)
     executed_dist_ = executed_dist_ +
                      deviation_factor * (start_pos - prev_start_pos_).norm();
     executed_dist_z_ =
         executed_dist_z_ +
         deviation_factor * abs(start_pos[2] - prev_start_pos_[2]);
-
-    prev_start_pos_ = start_pos;  // keep updating prev_start_pos_
-    if (executed_dist_ > 5.0) {
-      ROS_WARN_STREAM(
-          "++++ executed distance is larger than 5 meters: " << executed_dist_);
+    if (executed_dist_ > 10.0) {
+      ROS_WARN_STREAM("++++ Executed distance is larger than 10 meters: "
+                      << executed_dist_
+                      << "++++ Global plan update rate is too slow!");
     }
+  } else {
+    // global plan updated, executed distance recorders are reset to 0
+    global_plan_updated_ = false;
   }
 
-  //  Re-plan step 2: Crop global path to get local goal
+  prev_start_pos_ = start_pos;  // keep updating prev_start_pos_
+
+  //  Replan step 2: Crop global path to get local goal
   //  #################################################################################
   // total crop distance
   double crop_dist = executed_dist_ + crop_radius_;
@@ -472,7 +485,7 @@ bool RePlanner::plan_trajectory(int horizon) {
   bool close_to_final_goal =
       close_to_final(global_path_, path_cropped, close_to_final_dist_);
 
-  // Re-plan step 3: local plan
+  // Replan step 3: local plan
   // ##########################################################################################################
   // set vars
   local_tpgoal.avoid_obstacles = avoid_obstacle_;
@@ -617,6 +630,9 @@ void RePlanner::update_status() {
 
 vec_Vec3f RePlanner::path_crop(const vec_Vec3f &path, double crop_dist_xyz,
                                double crop_dist_z) {
+  // TODO: make this intersection of line & cube instead of fixed-distance crop!
+  // https://www.3dkingdoms.com/weekly/weekly.php?a=3
+
   // return nonempth
   // precondition
   if (path.size() < 2 || crop_dist_xyz < 0 || crop_dist_z < 0) {
@@ -729,6 +745,10 @@ RePlanner::RePlanner() : nh_("~") {
   // subscriber of epoch command, epoch is published by trajectory tracker
   // epoch callback: trigger replan, set horizon
   epoch_sub_ = nh_.subscribe("epoch", 1, &RePlanner::epoch_cb, this);
+
+  // subscriber of global path
+  global_path_sub_ =
+      nh_.subscribe("global_path", 1, &RePlanner::GlobalPathCb, this);
 
   // Goal callback
   replan_server_->registerGoalCallback(

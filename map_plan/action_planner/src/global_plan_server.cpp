@@ -202,7 +202,7 @@ void GlobalPlanServer::process_result(bool solved) {
     ROS_WARN("Danger!!!!!");
     ROS_WARN("Abort!!!!!!");
     ROS_WARN("+++++++++++++++++++++++++");
-    // global_as_->setAborted();
+    global_as_->setAborted();
   }
 
   // reset goal

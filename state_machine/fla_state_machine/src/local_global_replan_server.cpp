@@ -84,11 +84,6 @@ class RePlanner {
   // local-global framework related params
   double local_replan_rate_;  // should be set in the goal sent from the
                               // state_machine
-  int global_replan_interval_{
-      1};  // a global replan will be called once every x local replan calls,
-           // where x = global_replan_interval_.
-  int local_replan_counter_{
-      0};  // counter of local replan calls from the last global replan call
   vec_Vec3f global_path_;  // recorder of path planned by global action server
   double global_timeout_duration_;  // global planner timeout duration
   double local_timeout_duration_;   // local planner timeout duration
@@ -175,8 +170,6 @@ void RePlanner::GlobalPathCb(const planning_ros_msgs::Path &path) {
   // reset the executed distance to be zero
   executed_dist_ = 0.0;
   executed_dist_z_ = 0.0;
-  // reset the counter
-  local_replan_counter_ = 0;
   global_path_.clear();
   global_path_ = ros_to_path(path);  // extract the global path information
   global_plan_updated_ = true;
@@ -445,18 +438,17 @@ bool RePlanner::plan_trajectory(int horizon) {
 
   // Replan step 1: Global plan
   // ########################################################################################################
-  local_replan_counter_++;  // only do global replan once every
-                            // global_replan_interval_ local replans
-  if (local_replan_counter_ >= global_replan_interval_) {
-    // send goal to global plan action server
-    global_plan_client_->sendGoal(global_tpgoal);
-  }
+  // send goal to global plan server to replan (new goal will preempt old goals)
+  global_plan_client_->sendGoal(global_tpgoal);
 
-  if (!global_plan_updated_) {
+  if (global_plan_updated_) {
+    // global plan updated, executed distance recorders are reset to 0
+    global_plan_updated_ = false;
+  } else {
     // incrementally record executed_dist_
-    double deviation_factor = 0.8;
-    // straight line distance * deviation_factor to approximate executed portion
-    // of path (motion primitive path >= jps path, thus factor <= 1)
+    double deviation_factor = 0.9;
+    // straight line distance * deviation_factor to approximate executed
+    // portion of path (motion primitive path >= jps path, thus factor <= 1)
     executed_dist_ = executed_dist_ +
                      deviation_factor * (start_pos - prev_start_pos_).norm();
     executed_dist_z_ =
@@ -467,9 +459,6 @@ bool RePlanner::plan_trajectory(int horizon) {
                       << executed_dist_
                       << "++++ Global plan update rate is too slow!");
     }
-  } else {
-    // global plan updated, executed distance recorders are reset to 0
-    global_plan_updated_ = false;
   }
 
   prev_start_pos_ = start_pos;  // keep updating prev_start_pos_
@@ -494,8 +483,8 @@ bool RePlanner::plan_trajectory(int horizon) {
   // if close_to_final_goal, we need to check velocity tolerance as well
   local_tpgoal.check_vel = close_to_final_goal;
   // change p_final to be path_cropped.back(), which is exactly at accumulated
-  // distance d from the robot (unless path is shorter than d, crop_end will be
-  // default as the end of path)
+  // distance d from the robot (unless path is shorter than d, crop_end will
+  // be default as the end of path)
   Vec3f local_goal = path_cropped.back();
   local_tpgoal.p_final.position.x = local_goal(0);
   local_tpgoal.p_final.position.y = local_goal(1);
@@ -556,7 +545,13 @@ bool RePlanner::plan_trajectory(int horizon) {
       replan_server_->setSucceeded(local_critical);
     return false;
   } else {
-    ROS_WARN("Local plan failed, trying replan");
+    ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++");
+    ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++");
+    ROS_WARN(
+        "Local plan failed, current strategy is to try replan, need better "
+        "strategy to prevent collision!");
+    ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++");
+    ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++");
     return false;
   }
   return true;
@@ -630,8 +625,8 @@ void RePlanner::update_status() {
 
 vec_Vec3f RePlanner::path_crop(const vec_Vec3f &path, double crop_dist_xyz,
                                double crop_dist_z) {
-  // TODO: make this intersection of line & cube instead of fixed-distance crop!
-  // https://www.3dkingdoms.com/weekly/weekly.php?a=3
+  // TODO: make this intersection of line & cube instead of fixed-distance
+  // crop! https://www.3dkingdoms.com/weekly/weekly.php?a=3
 
   // return nonempth
   // precondition
@@ -644,7 +639,8 @@ vec_Vec3f RePlanner::path_crop(const vec_Vec3f &path, double crop_dist_xyz,
 
   vec_Vec3f cropped_path;
   // crop_end will be exactly at accumulated distance d from the robot
-  // (unless path is shorter than d crop_end will be default as the end of path)
+  // (unless path is shorter than d crop_end will be default as the end of
+  // path)
   Vec3f crop_end = path.back();
 
   double dist = 0;

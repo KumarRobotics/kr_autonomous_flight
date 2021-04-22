@@ -163,7 +163,6 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   traj_planner_nh.param("max_num", max_num, -1);
   traj_planner_nh.param("heuristic_weight", W, 10.0);
 
-
   mp_planner_util_.reset(new MPL::VoxelMapPlanner(verbose_));  // verbose
   mp_planner_util_->setMapUtil(
       mp_map_util_);                  // Set collision checking function
@@ -177,7 +176,7 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   mp_planner_util_->setMaxNum(
       max_num);  // Set maximum allowed expansion, -1 means no limitation
   mp_planner_util_->setU(U);  // 2D discretization if false, 3D if true
-  mp_planner_util_->setW(W);  // 2D discretization if false, 3D if true 
+  mp_planner_util_->setW(W);  // 2D discretization if false, 3D if true
   mp_planner_util_->setLPAstar(false);  // Use Astar
 
   // Register goal and preempt callbacks
@@ -189,20 +188,8 @@ void LocalPlanServer::process_all() {
   boost::mutex::scoped_lock lockm(map_mtx);
 
   if (goal_ == NULL) return;
-  ros::Time t0 = ros::Time::now();
   // record goal position, specify use jrk, acc or vel
   process_goal();
-  double dt = (ros::Time::now() - t0).toSec();
-
-  // check timeout
-  if (dt > 0.3 && local_as_->isActive()) {
-    ROS_WARN("[LocalPlanServer]+++++++++++++++++++++++++");
-    ROS_WARN("Time out!!!!!! dt =  %f is too large!!!!!", dt);
-    ROS_WARN("Abort!!!!!!");
-    ROS_WARN("+++++++++++++++++++++++++");
-    local_as_->setAborted();
-  }
-  printf("Total time for TPP traj gen: %f\n", dt);
 }
 
 void LocalPlanServer::process_result(const MPL::Trajectory3D &traj,
@@ -287,10 +274,12 @@ void LocalPlanServer::process_result(const MPL::Trajectory3D &traj,
     ROS_WARN("Danger!!!!!");
     ROS_WARN("Abort!!!!!!");
     ROS_WARN("+++++++++++++++++++++++++");
-    // local_as_->setAborted();
+    local_as_->setAborted();
   }
 
-  if (local_as_->isActive()) local_as_->setSucceeded(*result_);
+  if (local_as_->isActive()) {
+    local_as_->setSucceeded(*result_);
+  }
 }
 
 // record goal position, specify use jrk, acc or vel

@@ -85,10 +85,13 @@ class RePlanner {
   double local_replan_rate_;  // should be set in the goal sent from the
                               // state_machine
   vec_Vec3f global_path_;  // recorder of path planned by global action server
-  double global_timeout_duration_;  // global planner timeout duration
-  double local_timeout_duration_;   // local planner timeout duration
+  double local_timeout_duration_;  // local planner timeout duration
   Vec3f prev_start_pos_;  // replanning records: previous replanning start
                           // position
+
+  // maximum trials of local replan allowed
+  int max_local_trials_;
+  int failed_local_trials_ = 0;
 
   bool global_plan_updated_ = false;
 
@@ -173,27 +176,6 @@ void RePlanner::GlobalPathCb(const planning_ros_msgs::Path &path) {
   global_path_.clear();
   global_path_ = ros_to_path(path);  // extract the global path information
   global_plan_updated_ = true;
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-
-  ROS_INFO("Global replan succeeded, updating global path!");
-
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-  ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
 }
 
 void RePlanner::epoch_cb(const std_msgs::Int64 &msg) {
@@ -251,7 +233,7 @@ void RePlanner::replan_goal_cb() {
   if (cmd_pos_.norm() == 0) {
     ROS_ERROR("RePlanner has not received position cmd, failing");
     active_ = false;
-    replan_server_->setSucceeded(critical);
+    replan_server_->setAborted(critical);
     return;
   }
 
@@ -284,8 +266,9 @@ void RePlanner::setup_replanner() {
   global_plan_client_->sendGoal(
       global_tpgoal);  // only send goal, because global plan server is
                        // subscribing to odom and use that as start
-  bool global_finished_before_timeout = global_plan_client_->waitForResult(
-      ros::Duration(global_timeout_duration_));
+  // global initial plan timeout duration
+  bool global_finished_before_timeout =
+      global_plan_client_->waitForResult(ros::Duration(4.0));
   // check result of global plan
   if (!global_finished_before_timeout) {
     ROS_ERROR("initial global planner timed out");
@@ -293,7 +276,7 @@ void RePlanner::setup_replanner() {
     critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
     active_ = false;
     if (replan_server_->isActive()) {
-      replan_server_->setSucceeded(critical);
+      replan_server_->setAborted(critical);
     }
     return;
   }
@@ -343,9 +326,9 @@ void RePlanner::setup_replanner() {
   // send goal to local trajectory plan action server
   local_plan_client_->sendGoal(local_tpgoal);
 
-  // wait for result
+  // wait for result (initial timeout duration can be large)
   bool local_finished_before_timeout =
-      local_plan_client_->waitForResult(ros::Duration(local_timeout_duration_));
+      local_plan_client_->waitForResult(ros::Duration(2.0));
   // check result of local plan
   fla_state_machine::ReplanResult local_critical;
   local_critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
@@ -353,7 +336,7 @@ void RePlanner::setup_replanner() {
     ROS_ERROR("Initial local planner timed out");
     active_ = false;
     if (replan_server_->isActive()) {
-      replan_server_->setSucceeded(local_critical);
+      replan_server_->setAborted(local_critical);
     }
     return;
   }
@@ -361,7 +344,7 @@ void RePlanner::setup_replanner() {
   if (!local_result->success) {
     ROS_ERROR("Failed to find a local trajectory!");
     active_ = false;
-    replan_server_->setSucceeded(local_critical);
+    replan_server_->setAborted(local_critical);
     return;
   }
 
@@ -402,7 +385,7 @@ void RePlanner::run_trajectory() {
     fla_state_machine::ReplanResult abort;
     abort.status = fla_state_machine::ReplanResult::ABORT_FULL_MISSION;
     active_ = false;
-    replan_server_->setSucceeded(abort);
+    replan_server_->setAborted(abort);
   }
 }
 
@@ -413,7 +396,7 @@ bool RePlanner::plan_trajectory(int horizon) {
     fla_state_machine::ReplanResult abort;
     abort.status = fla_state_machine::ReplanResult::DYNAMICALLY_INFEASIBLE;
     active_ = false;
-    if (replan_server_->isActive()) replan_server_->setSucceeded(abort);
+    if (replan_server_->isActive()) replan_server_->setAborted(abort);
     return false;
   }
 
@@ -508,14 +491,9 @@ bool RePlanner::plan_trajectory(int horizon) {
   time_pub2.publish(tmsg2);
 
   // check result of local plan
-  fla_state_machine::ReplanResult local_critical;
-  local_critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
   if (!local_finished_before_timeout) {
-    ROS_ERROR("Local planner timed out");
-    active_ = false;
-    if (replan_server_->isActive()) {
-      replan_server_->setSucceeded(local_critical);
-    }
+    failed_local_trials_ += 1;
+    ROS_ERROR("Local planner timed out, trying to replan");
     return false;
   }
 
@@ -527,7 +505,6 @@ bool RePlanner::plan_trajectory(int horizon) {
   //   if (replan_server_->isActive()) {
   //     replan_server_->setSucceeded(local_critical);
   //   }
-  //   return false;
   // }
   //#######################################################################
 
@@ -538,22 +515,36 @@ bool RePlanner::plan_trajectory(int horizon) {
     last_plan_epoch_ = local_result->epoch;
     // ROS_INFO_STREAM("Got local plan with epoch " << last_plan_epoch_);
     return true;
-  } else if (local_result->policy_status < 0) {
-    ROS_ERROR_STREAM("Local policy_status " << local_result->policy_status);
-    active_ = false;
-    if (replan_server_->isActive())
-      replan_server_->setSucceeded(local_critical);
-    return false;
   } else {
-    ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++");
-    ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++");
-    ROS_WARN(
-        "Local plan failed, current strategy is to try replan, need better "
-        "strategy to prevent collision!");
-    ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++");
-    ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++");
+    failed_local_trials_ += 1;
     return false;
   }
+  // else if (local_result->policy_status < 0) {
+  //   ROS_ERROR_STREAM("Local policy_status " << local_result->policy_status);
+  //   active_ = false;
+  //   if (replan_server_->isActive())
+  //   replan_server_->setAborted(local_critical); return false;
+  // } else {
+  //   ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++");
+  //   ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++");
+  //   ROS_WARN(
+  //       "Local plan failed, current strategy is to try replan, need better "
+  //       "strategy to prevent collision!");
+  //   ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++");
+  //   ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++");
+  //   return false;
+  // }
+
+  if (failed_local_trials_ >= max_local_trials_) {
+    fla_state_machine::ReplanResult local_critical;
+    local_critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
+    active_ = false;
+    if (replan_server_->isActive()) {
+      replan_server_->setAborted(local_critical);
+    }
+    return false;
+  }
+
   return true;
 }
 
@@ -607,7 +598,7 @@ void RePlanner::update_status() {
       fla_state_machine::ReplanResult success;
       success.status = fla_state_machine::ReplanResult::SUCCESS;
       active_ = false;
-      if (replan_server_->isActive()) replan_server_->setSucceeded(success);
+      if (replan_server_->isActive()) replan_server_->setAborted(success);
       ROS_INFO("RePlanner success!!");
       last_traj_ = boost::shared_ptr<traj_opt::Trajectory>();
       return;
@@ -711,8 +702,8 @@ RePlanner::RePlanner() : nh_("~") {
   priv_nh.param("crop_radius_z", crop_radius_z_, 2.0);
   priv_nh.param("close_to_final_dist", close_to_final_dist_, 10.0);
   priv_nh.param("termination_distance", termination_distance_, 5.0);
-  priv_nh.param("local_plan_timeout_duration", local_timeout_duration_, 2.0);
-  priv_nh.param("global_plan_timeout_duration", global_timeout_duration_, 4.0);
+  priv_nh.param("local_plan_timeout_duration", local_timeout_duration_, 1.0);
+  priv_nh.param("max_local_plan_trials", max_local_trials_, 4);
 
   // replan action server
   replan_server_.reset(

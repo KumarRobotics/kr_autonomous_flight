@@ -9,8 +9,8 @@ global:
   center_y: 500.0
   range_x: 2000.0
   range_y: 2000.0
-  center_z: 18.0
-  range_z: 10.0
+  center_z: 20.0
+  range_z: 20.0
   resolution: 3.0 # 3
   num_point_cloud_skip: 1 # integer
   max_raycast_range: 150.0
@@ -28,6 +28,6 @@ storage: # storage map max_raycat_range will be the same as local map
   center_y: 500.0
   range_x: 2000.0
   range_y: 2000.0
-  center_z: 18.0
-  range_z: 10.0
+  center_z: 20.0
+  range_z: 20.0
 

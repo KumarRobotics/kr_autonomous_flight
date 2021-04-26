@@ -41,8 +41,10 @@ decimal_t EnvBase<Dim>::cal_heur(const WaypointD &state,
                                       std::abs(state.pos[1] - goal.pos[1])) /
                              v_max_);
       double heur_z = w_ * (std::abs(state.pos[2] - goal.pos[2]) / v_max_z);
-      // printf("XY heur: %f, Z heur: %f\n", heur_xy, heur_z);
+
       return heur_xy + heur_z;
+      // return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>() /
+      //        v_max_;
     } else
       return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>();
   }

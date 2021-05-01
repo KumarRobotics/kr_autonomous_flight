@@ -4,6 +4,7 @@
   <arg name="prefix" value="nice -n 1"/>
   <arg name="odom" default="odom"/>
   <arg name="use_lauras" default="false"/>
+  <arg name="planner_config" default="$(find control_launch)/config/tracker_params_mp.yaml"/>
   
     ##### planning server#####
     <node pkg="action_planner"
@@ -11,7 +12,7 @@
       name="global_plan_server"
       output="screen"
       launch-prefix="$(arg prefix)">
-      <rosparam file="$(find control_launch)/config/tracker_params_mp.yaml"/>
+      <rosparam file="$(arg planner_config)"/>
       <remap from="~odom" to="$(arg odom)"/>
       <remap from="~global_voxel_map" to="mapper/global_voxel_map"/>
     </node>
@@ -23,7 +24,7 @@
         name="local_plan_server"
         output="screen"
         launch-prefix="$(arg prefix)">
-        <rosparam file="$(find control_launch)/config/tracker_params_mp.yaml"/>
+        <rosparam file="$(arg planner_config)"/>
         <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
       </node>
     </group>  

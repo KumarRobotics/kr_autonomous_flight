@@ -9,6 +9,7 @@
     <!-- lidar_frame arg is only used when real_robot is true, otherwise the mapper will just use the same frame as the point cloud in simulator -->
     <arg name="lidar_frame" default=""/>
     <arg name="mapper_config" default="$(find map_plan_launch)/config/mapper.yaml"/>
+    <arg name="planner_config" default="$(find control_launch)/config/tracker_params_mp.yaml"/>
     <arg name="cloud" default="lidar"/>
 
     <group ns="$(arg robot)">
@@ -28,6 +29,7 @@
 
     <group ns="$(arg robot)" if="$(arg use_mp)">
         <include file="$(find map_plan_launch)/launch/mp_planner.launch">
+            <arg name="planner_config" value="$(arg planner_config)" />
             <arg name="odom" value="$(arg odom)" />
             <arg name="use_lauras" value="$(arg use_lauras)" />
         </include>

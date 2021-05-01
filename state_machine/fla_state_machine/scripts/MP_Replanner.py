@@ -17,7 +17,6 @@ from Utils import *
 import tf
 import threading
 import numpy as np
-from termcolor import colored
 
 
 # Yaw-related classes (CheckYaw AlignYaw YawSearch) removed (exist in autonomy_stack repo before 8/16/2020).
@@ -91,10 +90,7 @@ class RePlan(smach_ros.SimpleActionState):
         elif result.status == 5:
             self.quad_monitor.replan_status = "abort_full_mission"
 
-        green_color_text = colored('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', 'green')
-        print(green_color_text)
         print("Final result is:", self.quad_monitor.replan_status)
-        print(green_color_text)
 
 
     def __init__(self, action_topic, quad_monitor):

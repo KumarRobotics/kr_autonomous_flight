@@ -270,6 +270,29 @@ void RePlanner::setup_replanner() {
 
   // Initial plan step 1: global plan
   // ########################################################################################################
+  double x_diff = std::abs(pose_goal_.position.x - cmd_pos_(0));
+  double y_diff = std::abs(pose_goal_.position.y - cmd_pos_(1));
+  if (std::max(x_diff, y_diff) <= global_termination_distance_)
+  {
+      if (waypoint_idx_ >= (pose_goals_.size() - 1)) {
+        // exit replanning process if this is the final waypoint
+        ROS_WARN("Initial (and the only) waypoint is already close to the robot position, terminating the replanning process!");
+        fla_state_machine::ReplanResult success;
+        success.status = fla_state_machine::ReplanResult::SUCCESS;
+        active_ = false;
+        if (replan_server_->isActive()) {
+          replan_server_->setSucceeded(success);
+        }
+        last_traj_ = boost::shared_ptr<traj_opt::Trajectory>();
+        return;
+      } else {
+        // otherwise, take the next waypoint
+        ROS_WARN("Initial waypoint is already close to the robot position, continuing with the next waypoint!");
+        ++waypoint_idx_;
+        pose_goal_ = pose_goals_[waypoint_idx_];
+        }
+  };
+
   // set goal
   action_planner::PlanTwoPointGoal global_tpgoal;
   global_tpgoal.p_final = pose_goal_;
@@ -508,6 +531,7 @@ bool RePlanner::plan_trajectory(int horizon) {
   time_pub2.publish(tmsg2);
 
   // check result of local plan
+  bool local_succeeded = true;
   if (!local_finished_before_timeout) {
     failed_local_trials_ += 1;
     ROS_WARN_STREAM(
@@ -515,24 +539,24 @@ bool RePlanner::plan_trajectory(int horizon) {
         "failed "
         << failed_local_trials_
         << " times, total allowed trails: " << max_local_trials_ << ")");
-    return false;
-  }
-
-  auto local_result = local_plan_client_->getResult();
-  if (local_result->success) {
-    last_traj_ = boost::make_shared<traj_opt::MsgTrajectory>(
-        traj_opt::TrajDataFromSplineTrajectory(local_result->traj));
-    last_plan_epoch_ = local_result->epoch;
-    // ROS_INFO_STREAM("Got local plan with epoch " << last_plan_epoch_);
-    return true;
+    local_succeeded = false;
   } else {
-    failed_local_trials_ += 1;
-    ROS_WARN_STREAM(
-        "Local planner failed, trying to replan...  (local planner already "
-        "failed "
-        << failed_local_trials_
-        << " times, total allowed trails: " << max_local_trials_ << ")");
-    return false;
+    auto local_result = local_plan_client_->getResult();
+    if (local_result->success) {
+      last_traj_ = boost::make_shared<traj_opt::MsgTrajectory>(
+          traj_opt::TrajDataFromSplineTrajectory(local_result->traj));
+      last_plan_epoch_ = local_result->epoch;
+      // ROS_INFO_STREAM("Got local plan with epoch " << last_plan_epoch_);
+      return true;
+    } else {
+      failed_local_trials_ += 1;
+      ROS_WARN_STREAM(
+          "Local planner failed, trying to replan...  (local planner already "
+          "failed "
+          << failed_local_trials_
+          << " times, total allowed trails: " << max_local_trials_ << ")");
+    local_succeeded = false;
+    }
   }
 
   if (failed_local_trials_ >= max_local_trials_) {
@@ -558,8 +582,9 @@ bool RePlanner::plan_trajectory(int horizon) {
     }
     return false;
   }
-
-  return true;
+  
+  // return true if local planner does not time out AND local_result is success
+  return local_succeeded;
 }
 
 void RePlanner::update_status() {

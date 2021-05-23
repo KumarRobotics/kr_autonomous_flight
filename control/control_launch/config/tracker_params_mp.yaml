@@ -62,4 +62,4 @@ local_global_server:
   close_to_final_dist: 20 # distance-to-goal threshold, within which the velocity and acceleration checking will be turned on
   local_plan_timeout_duration: 1.0 # local planner timeout in seconds 
   max_local_plan_trials: 3
-  global_planner_verbose: true #
+  global_planner_verbose: false #

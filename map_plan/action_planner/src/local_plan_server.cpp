@@ -269,11 +269,7 @@ void LocalPlanServer::process_result(const MPL::Trajectory3D &traj,
   goal_ = boost::shared_ptr<action_planner::PlanTwoPointGoal>();
   // abort if trajectory generation failed
   if (!solved && local_as_->isActive()) {
-    ROS_WARN("+++++++++++++++++++++++++");
-    ROS_WARN("Local planner: trajectory generation failed!");
-    ROS_WARN("Danger!!!!!");
-    ROS_WARN("Abort!!!!!!");
-    ROS_WARN("+++++++++++++++++++++++++");
+    ROS_WARN("Current local plan trail: trajectory generation failed!");
     local_as_->setAborted();
   }
 
@@ -322,10 +318,7 @@ void LocalPlanServer::process_goal() {
     // local plan fails
     aborted_ = true;
     if (local_as_->isActive()) {
-      ROS_WARN("+++++++++++++++++++++++++");
-      ROS_WARN("Local Plan Fails!!!!!");
-      ROS_WARN("Abort!!!!!!");
-      ROS_WARN("+++++++++++++++++++++++++");
+      ROS_WARN("Current local plan trail failed!");
       local_as_->setAborted();
     }
   }

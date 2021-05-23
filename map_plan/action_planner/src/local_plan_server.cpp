@@ -1,6 +1,5 @@
 #include <action_planner/ActionPlannerConfig.h>
-#include <action_planner/PlanTwoPointAction.h>
-#include <action_planner/PlanWaypointsAction.h>
+#include <planning_ros_msgs/PlanTwoPointAction.h>
 #include <actionlib/server/simple_action_server.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <mpl_basis/trajectory.h>
@@ -51,14 +50,14 @@ class LocalPlanServer {
   MPL::Trajectory3D traj_;
 
   // current local map
-  planning_ros_msgs::VoxelMap local_map_;
+  planning_ros_msgs::VoxelMapConstPtr local_map_;
 
   // actionlib
-  boost::shared_ptr<const action_planner::PlanTwoPointGoal> goal_;
-  boost::shared_ptr<action_planner::PlanTwoPointResult> result_;
+  boost::shared_ptr<const planning_ros_msgs::PlanTwoPointGoal> goal_;
+  boost::shared_ptr<planning_ros_msgs::PlanTwoPointResult> result_;
   // action lib
   std::unique_ptr<
-      actionlib::SimpleActionServer<action_planner::PlanTwoPointAction>>
+      actionlib::SimpleActionServer<planning_ros_msgs::PlanTwoPointAction>>
       local_as_;
 
   bool debug_;
@@ -101,7 +100,7 @@ class LocalPlanServer {
 void LocalPlanServer::localMapCB(
     const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
   ROS_WARN_ONCE("Get the local voxel map!");
-  local_map_ = *msg;
+  local_map_ = msg;
 }
 
 LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
@@ -109,7 +108,7 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   local_map_sub_ =
       pnh_.subscribe("local_voxel_map", 2, &LocalPlanServer::localMapCB, this);
   local_as_ = std::make_unique<
-      actionlib::SimpleActionServer<action_planner::PlanTwoPointAction>>(
+      actionlib::SimpleActionServer<planning_ros_msgs::PlanTwoPointAction>>(
       pnh_, "plan_local_trajectory", false);
 
   // set up visualization publisher for mpl planner
@@ -194,18 +193,18 @@ void LocalPlanServer::process_all() {
 
 void LocalPlanServer::process_result(const MPL::Trajectory3D &traj,
                                      bool solved) {
-  result_ = boost::make_shared<action_planner::PlanTwoPointResult>();
+  result_ = boost::make_shared<planning_ros_msgs::PlanTwoPointResult>();
   result_->success = solved;  // set success status
   result_->policy_status = solved ? 1 : -1;
   if (solved) {
     // covert traj to a ros message
     planning_ros_msgs::Trajectory traj_msg = toTrajectoryROSMsg(traj);
-    traj_msg.header.frame_id = local_map_.header.frame_id;
+    traj_msg.header.frame_id = local_map_->header.frame_id;
     traj_pub.publish(traj_msg);
 
     // record trajectory in result
     result_->traj = traj_opt::SplineTrajectoryFromTrajectory(traj_msg);
-    result_->traj.header.frame_id = local_map_.header.frame_id;
+    result_->traj.header.frame_id = local_map_->header.frame_id;
     traj_opt::TrajRosBridge::publish_msg(result_->traj);
 
     // execution_time (set in replanner)
@@ -266,7 +265,7 @@ void LocalPlanServer::process_result(const MPL::Trajectory3D &traj,
   }
 
   // reset goal
-  goal_ = boost::shared_ptr<action_planner::PlanTwoPointGoal>();
+  goal_ = boost::shared_ptr<planning_ros_msgs::PlanTwoPointGoal>();
   // abort if trajectory generation failed
   if (!solved && local_as_->isActive()) {
     ROS_WARN("Current local plan trail: trajectory generation failed!");
@@ -312,7 +311,7 @@ void LocalPlanServer::process_goal() {
   goal.use_jrk = start.use_jrk;
 
   bool local_planner_succeeded;
-  local_planner_succeeded = local_plan_process(start, goal, local_map_);
+  local_planner_succeeded = local_plan_process(start, goal, *local_map_);
 
   if (!local_planner_succeeded) {
     // local plan fails
@@ -345,9 +344,9 @@ bool LocalPlanServer::local_plan_process(
   setMap(mp_map_util_, map);
   bool valid = false;
   mp_planner_util_->reset();
-  valid = mp_planner_util_->plan(
-      start, goal);  // start and new_goal contain full informaiton about
-                     // position/velocity/acceleration
+  // start and new_goal contain full informaiton about
+  // position/velocity/acceleration
+  valid = mp_planner_util_->plan(start, goal);
   if (valid) {
     traj_ = mp_planner_util_->getTraj();
   }

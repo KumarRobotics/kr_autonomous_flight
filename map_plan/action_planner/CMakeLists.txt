@@ -21,13 +21,9 @@ find_package(
              dynamic_reconfigure
              motion_primitive_library)
 
-add_action_files(DIRECTORY action FILES PlanPath.action PlanTwoPoint.action
-                 PlanWaypoints.action)
-generate_messages(DEPENDENCIES actionlib_msgs planning_ros_msgs)
 generate_dynamic_reconfigure_options(cfg/ActionPlanner.cfg)
 
-catkin_package(CATKIN_DEPENDS dynamic_reconfigure planning_ros_msgs
-               actionlib_msgs)
+catkin_package(CATKIN_DEPENDS dynamic_reconfigure planning_ros_msgs)
 
 add_library(${PROJECT_NAME} src/data_conversions.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC src ${catkin_INCLUDE_DIRS})

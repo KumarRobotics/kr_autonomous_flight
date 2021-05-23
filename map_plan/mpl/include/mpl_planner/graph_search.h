@@ -6,6 +6,7 @@
 #pragma once
 
 #include "mpl_basis/trajectory.h"
+#include "mpl_planner/env_base.h"
 #include "mpl_planner/state_space.h"
 
 namespace MPL {

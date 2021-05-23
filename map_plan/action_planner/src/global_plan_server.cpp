@@ -1,6 +1,5 @@
 #include <action_planner/ActionPlannerConfig.h>
-#include <action_planner/PlanTwoPointAction.h>
-#include <action_planner/PlanWaypointsAction.h>
+#include <planning_ros_msgs/PlanTwoPointAction.h>
 #include <actionlib/server/simple_action_server.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <jps/jps_planner.h>    // jps related
@@ -62,17 +61,17 @@ class GlobalPlanServer {
   // mutexes
   boost::mutex map_mtx;
   // current global map
-  planning_ros_msgs::VoxelMap global_map_;
+  planning_ros_msgs::VoxelMapConstPtr global_map_;
 
   bool global_planner_succeeded_{false};
   bool global_plan_exist_{false};
 
   // actionlib
-  boost::shared_ptr<const action_planner::PlanTwoPointGoal> goal_;
-  boost::shared_ptr<action_planner::PlanTwoPointResult> result_;
+  boost::shared_ptr<const planning_ros_msgs::PlanTwoPointGoal> goal_;
+  boost::shared_ptr<planning_ros_msgs::PlanTwoPointResult> result_;
   // action lib
   std::unique_ptr<
-      actionlib::SimpleActionServer<action_planner::PlanTwoPointAction>>
+      actionlib::SimpleActionServer<planning_ros_msgs::PlanTwoPointAction>>
       global_as_;
 
   // planner related
@@ -133,7 +132,7 @@ class GlobalPlanServer {
 
 void GlobalPlanServer::globalMapCB(
     const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
-  global_map_ = *msg;
+  global_map_ = msg;
 }
 
 GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
@@ -149,7 +148,7 @@ GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   local_global_plan_nh.param("global_planner_verbose", jps_verbose_, false);
 
   global_as_ = std::make_unique<
-      actionlib::SimpleActionServer<action_planner::PlanTwoPointAction>>(
+      actionlib::SimpleActionServer<planning_ros_msgs::PlanTwoPointAction>>(
       pnh_, "plan_global_path", false);
   // Register goal and preempt callbacks
   global_as_->registerGoalCallback(
@@ -192,7 +191,7 @@ void GlobalPlanServer::process_all() {
 }
 
 void GlobalPlanServer::process_result(bool solved) {
-  result_ = boost::make_shared<action_planner::PlanTwoPointResult>();
+  result_ = boost::make_shared<planning_ros_msgs::PlanTwoPointResult>();
   result_->success = solved;  // set success status
   result_->policy_status = solved ? 1 : -1;
   result_->path = global_path_msg_;
@@ -243,7 +242,7 @@ void GlobalPlanServer::process_goal() {
 
   // call the planner
 
-  global_planner_succeeded_ = global_plan_process(start, goal, global_map_);
+  global_planner_succeeded_ = global_plan_process(start, goal, *global_map_);
 
   process_result(global_planner_succeeded_);
 }

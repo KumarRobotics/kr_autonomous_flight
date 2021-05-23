@@ -181,15 +181,7 @@ def main():
             },
         )
 
-        smach.StateMachine.add(
-            "GetWaypoints",
-            GetWaypoints(quad_tracker),
-            transitions={
-                "succeeded": "GetPath",
-                "multi": "GetPath",
-                "failed": "Hover"
-            },
-        )
+        
 
         smach.StateMachine.add(
             "GetShort",
@@ -201,16 +193,7 @@ def main():
             },
         )
 
-        # the tpplanner is launched in map_plan_launch planner.launch
-        smach.StateMachine.add(
-            "GetPath",
-            PlanPath("tpplanner/plan_path", quad_tracker),
-            transitions={
-                "succeeded": "ShortRange",
-                "aborted": "Hover",
-                "preempted": "Hover"
-            },
-        )
+
 
         smach.StateMachine.add(
             "ShortRange",

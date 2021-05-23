@@ -135,10 +135,11 @@ decimal_t GraphSearch<Dim>::Astar(const Coord &start_coord,
   }
 
   ss_ptr->expand_iteration_ = expand_iteration;
-  if (recoverTraj(currNode_ptr, ss_ptr, env, start_coord, traj))
+  if (recoverTraj(currNode_ptr, ss_ptr, env, start_coord, traj)) {
     return currNode_ptr->g;
-  else
+  } else {
     return std::numeric_limits<decimal_t>::infinity();
+  }
 }
 
 template <int Dim>

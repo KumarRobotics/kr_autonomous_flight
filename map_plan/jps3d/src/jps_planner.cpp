@@ -1,5 +1,7 @@
 #include "jps/jps_planner.h"
 
+#include <iostream>
+
 namespace JPS {
 
 template <int Dim>

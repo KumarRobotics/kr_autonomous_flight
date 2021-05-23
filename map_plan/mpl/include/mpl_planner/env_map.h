@@ -20,7 +20,7 @@ class EnvMap final : public EnvBase<Dim> {
   using TrajectoryD = Trajectory<Dim>;
 
   /// Constructor with map util as input
-  EnvMap(std::shared_ptr<MapUtilD> map_util) : map_util_(map_util) {}
+  EnvMap(const std::shared_ptr<MapUtilD> &map_util) : map_util_(map_util) {}
 
   /// Check if state hit the goal region, use L-1 norm
   bool is_goal(const WaypointD &state) const override;
@@ -73,14 +73,6 @@ class EnvMap final : public EnvBase<Dim> {
  protected:
   /// Collision checking util
   std::shared_ptr<MapUtilD> map_util_;
-  /// Potential map, optional
-  std::vector<int8_t> potential_map_;
-  /// Gradient map, optional
-  vec_E<Vecf<Dim>> gradient_map_;
-  /// Weight of potential value
-  decimal_t potential_weight_{0.1};
-  /// Weight of gradient value
-  decimal_t gradient_weight_{0.0};
 };
 
 }  // namespace MPL

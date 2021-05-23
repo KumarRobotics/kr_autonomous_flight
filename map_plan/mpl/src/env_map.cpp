@@ -74,14 +74,10 @@ decimal_t EnvMap<Dim>::traverse_primitive(const PrimitiveD &pr) const {
       return std::numeric_limits<decimal_t>::infinity();
     }
 
-    if (!potential_map_.empty()) {
-      if (potential_map_[idx] < 100 && potential_map_[idx] > 0) {
-        c += dt * (potential_weight_ * potential_map_[idx] +
-                   gradient_weight_ * pt.vel.norm());
-      } else if (potential_map_[idx] >= 100)
-        return std::numeric_limits<decimal_t>::infinity();
-    } else if (map_util_->isOccupied(pn))
+    if (map_util_->isOccupied(pn)) {
       return std::numeric_limits<decimal_t>::infinity();
+    }
+
     if (this->wyaw_ > 0 && pt.use_yaw) {
       const auto v = pt.vel.template topRows<2>();
       if (v.norm() > 1e-5) {  // if v is not zero
@@ -141,11 +137,6 @@ void EnvMap<Dim>::info() {
   printf("+            tol_yaw: %.2f               +\n", this->tol_yaw_);
   printf("+heur_ignore_dynamics: %d                 +\n",
          this->heur_ignore_dynamics_);
-  if (!potential_map_.empty())
-    printf("+    potential_weight: %.2f                 +\n",
-           potential_weight_);
-  if (!gradient_map_.empty())
-    printf("+     gradient_weight: %.2f                 +\n", gradient_weight_);
   if (!this->prior_traj_.empty())
     printf("+     use_prior_traj: true                 +\n");
   printf("++++++++++++++++++++ env_map ++++++++++++++++++\n");

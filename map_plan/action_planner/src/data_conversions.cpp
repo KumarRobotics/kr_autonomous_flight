@@ -4,10 +4,7 @@ void setMap(std::shared_ptr<MPL::VoxelMapUtil>& map_util,
             const planning_ros_msgs::VoxelMap& msg) {
   Vec3f ori(msg.origin.x, msg.origin.y, msg.origin.z);
   Vec3i dim(msg.dim.x, msg.dim.y, msg.dim.z);
-  double res = msg.resolution;
-  std::vector<signed char> map = msg.data;
-
-  map_util->setMap(ori, dim, map, res);
+  map_util->setMap(ori, dim, msg.data, msg.resolution);
 }
 
 void getMap(std::shared_ptr<MPL::VoxelMapUtil>& map_util,
@@ -32,10 +29,7 @@ void setMap(std::shared_ptr<JPS::VoxelMapUtil>& map_util,
             const planning_ros_msgs::VoxelMap& msg) {
   Vec3f ori(msg.origin.x, msg.origin.y, msg.origin.z);
   Vec3i dim(msg.dim.x, msg.dim.y, msg.dim.z);
-  double res = msg.resolution;
-  std::vector<signed char> map = msg.data;
-
-  map_util->setMap(ori, dim, map, res);
+  map_util->setMap(ori, dim, msg.data, msg.resolution);
 }
 
 void getMap(std::shared_ptr<JPS::VoxelMapUtil>& map_util,
@@ -60,10 +54,7 @@ void setMap(std::shared_ptr<JPS::OccMapUtil>& map_util,
             const planning_ros_msgs::VoxelMap& msg) {
   Vec2f ori(msg.origin.x, msg.origin.y);
   Vec2i dim(msg.dim.x, msg.dim.y);
-  double res = msg.resolution;
-  std::vector<signed char> map = msg.data;
-
-  map_util->setMap(ori, dim, map, res);
+  map_util->setMap(ori, dim, msg.data, msg.resolution);
 }
 
 void getMap(std::shared_ptr<JPS::OccMapUtil>& map_util,

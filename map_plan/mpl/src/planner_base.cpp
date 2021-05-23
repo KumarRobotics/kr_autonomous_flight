@@ -143,13 +143,12 @@ bool PlannerBase<Dim>::plan(const PlannerBase::Coord &start,
     return false;
   }
 
-  std::unique_ptr<GraphSearch<Dim>> planner_ptr(
-      new GraphSearch<Dim>(planner_verbose_));
+  GraphSearch<Dim> planner{planner_verbose_};
 
   // If use A*, reset the state space
-  if (!use_lpastar_)
+  if (!use_lpastar_) {
     ss_ptr_.reset(new MPL::StateSpace<Dim>(epsilon_));
-  else {
+  } else {
     // If use LPA*, reset the state space only at the initial planning
     if (!initialized()) {
       if (planner_verbose_)
@@ -166,15 +165,17 @@ bool PlannerBase<Dim>::plan(const PlannerBase::Coord &start,
   env_->expanded_edges_.clear();
 
   ss_ptr_->dt_ = env_->get_dt();
-  if (use_lpastar_)
-    traj_cost_ = planner_ptr->LPAstar(start, env_, ss_ptr_, traj_, max_num_);
-  else
-    traj_cost_ = planner_ptr->Astar(start, env_, ss_ptr_, traj_, max_num_);
+  if (use_lpastar_) {
+    traj_cost_ = planner.LPAstar(start, env_, ss_ptr_, traj_, max_num_);
+  } else {
+    traj_cost_ = planner.Astar(start, env_, ss_ptr_, traj_, max_num_);
+  }
 
   if (std::isinf(traj_cost_)) {
-    if (planner_verbose_)
+    if (planner_verbose_) {
       printf(ANSI_COLOR_RED "[PlannerBase] Cannot find a traj!" ANSI_COLOR_RESET
                             "\n");
+    }
     return false;
   }
 

@@ -12,10 +12,10 @@
   <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_world" args="0 0 0.1 0 0 0 1 world map" />
 
   <node pkg="mapper" name="mapper" type="cloud_to_map" output="screen">
-    <remap from="~cloud" to="$(arg cloud)"/>
     <remap from="~voxel_map" to="$(arg robot)/voxel_map"/>
     <remap from="~local_cloud" to="local_cloud"/>
-
+    
+    <param name="cloud_msg" value="$(arg cloud)"/>
     <param name="robot_r" value="$(arg robot_r)"/>
     <param name="robot_h" value="$(arg robot_h)"/>
     <param name="world_frame" value="$(arg world_frame)"/>

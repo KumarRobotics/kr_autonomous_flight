@@ -13,8 +13,8 @@ import mavros_msgs.msg as MR
 import nav_msgs.msg as NM
 import mavros_msgs.srv as MR
 import mavros_msgs.msg as MRM
-import action_planner.msg as AP
 import geometry_msgs.msg as GM
+import planning_ros_msgs.msg as PM
 import copy
 import numpy as np
 

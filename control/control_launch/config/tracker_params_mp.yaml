@@ -31,10 +31,10 @@ trajectory_planner:
   use_yaw: false # default false
   yaw_speed: 0.2 # default 0.2
   use_lambda: true # pose error checking
-  max_v: 9 # default for 2-D 7, for 3-D 3
-  max_a: 7 # default for 2-D 7, for 3-D 2
+  max_v: 15 # default for 2-D 9, for 3-D 3
+  max_a: 10 # default for 2-D 7, for 3-D 2
   max_j: 5 # default for 2-D 5, for 3-D 2
-  max_u: 5 # default for 2-D 3, for 3-D 1
+  max_u: 5 # default for 2-D 5, for 3-D 1
   use_3d: false # use 3d planner
   z_cost_factor: 1 # global map z cost factor (cost_along_z = z_cost_factor * cost_along_x_or_y)
   max_v_z: 1.0 # default 2.0
@@ -59,7 +59,7 @@ local_global_server:
   crop_radius: 35 # default for 2-D 30, for 3-D 20. crop length when cropping global path to get local goal, this should be less than 0.5*(local map X (or Y) range)
   crop_radius_z: 10 # crop length along Z when cropping global path to get local goal, this should be less than 0.5*(local map Z range)
   termination_distance: 10 # distance threshold, final goal reached 
-  close_to_final_dist: 20 # distance threshold, final goal close enough to turn on velocity and acceleration checking
+  close_to_final_dist: 20 # distance-to-goal threshold, within which the velocity and acceleration checking will be turned on
   local_plan_timeout_duration: 1.0 # local planner timeout in seconds 
   max_local_plan_trials: 3
   global_planner_verbose: true #

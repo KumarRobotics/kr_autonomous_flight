@@ -23,7 +23,7 @@ using boost::timer::cpu_times;
 class RePlanner {
  public:
   RePlanner();
-  int max_horizon_{5};
+  int max_horizon_;
   bool active_{false};
 
   /**
@@ -61,6 +61,9 @@ class RePlanner {
   cpu_timer timer;
 
   geometry_msgs::Pose pose_goal_;  // goal recorder
+  int waypoint_idx_;  // index of current goal in the array of goals (waypoints)
+  std::vector<geometry_msgs::Pose> pose_goals_;  // an array of goals
+
   bool finished_replanning_{
       true};  // one of termination conditions (the other is that commanded
               // position and traj end position is less than 1e-3)
@@ -103,10 +106,8 @@ class RePlanner {
                           // this value)
   double crop_radius_z_;  // local path crop radius along z axis
   double close_to_final_dist_;
-  double termination_distance_;
+  double global_termination_distance_;
   bool avoid_obstacle_{true};
-
-  // double times_ = 0.0;  // TODO(xu) remove!
 
   /**
    * @brief Epoch callback function, triggered by epoch msg published by
@@ -222,9 +223,20 @@ void RePlanner::replan_goal_cb() {
   local_replan_rate_ =
       goal->replan_rate;  // set local planner replan_rate to be the same as
                           // specified in goal (assigned in state machine)
-  pose_goal_ = goal->p_final;
-  avoid_obstacle_ = goal->avoid_obstacles;  // obstacle avoidance mode (assigned
-                                            // in state machine)
+  pose_goals_ = goal->p_finals;
+  if (pose_goals_.empty()) {
+    ROS_WARN("RePlanner: Receive empty goals! Using single goal!");
+    pose_goals_.push_back(goal->p_final);
+  } else if (pose_goals_.size() > 1) {
+    ROS_INFO(
+        "RePlanner: received more than one waypoints! Number of waypoints: %zu",
+        pose_goals_.size());
+  }
+  waypoint_idx_ = 0;
+  pose_goal_ = pose_goals_[waypoint_idx_];
+
+  avoid_obstacle_ = goal->avoid_obstacles;  // obstacle avoidance mode
+                                            // (assigned in state machine)
   // create critical bug report
   fla_state_machine::ReplanResult critical;
   critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
@@ -271,7 +283,7 @@ void RePlanner::setup_replanner() {
       global_plan_client_->waitForResult(ros::Duration(4.0));
   // check result of global plan
   if (!global_finished_before_timeout) {
-    ROS_ERROR("initial global planner timed out");
+    ROS_ERROR("initial global planning timed out");
     fla_state_machine::ReplanResult critical;
     critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
     active_ = false;
@@ -326,14 +338,15 @@ void RePlanner::setup_replanner() {
   // send goal to local trajectory plan action server
   local_plan_client_->sendGoal(local_tpgoal);
 
-  // wait for result (initial timeout duration can be large)
+  // wait for result (initial timeout duration can be large because robot is not
+  // moving)
   bool local_finished_before_timeout =
-      local_plan_client_->waitForResult(ros::Duration(2.0));
+      local_plan_client_->waitForResult(ros::Duration(3.0));
   // check result of local plan
   fla_state_machine::ReplanResult local_critical;
   local_critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
   if (!local_finished_before_timeout) {
-    ROS_ERROR("Initial local planner timed out");
+    ROS_ERROR("Initial local planning timed out");
     active_ = false;
     if (replan_server_->isActive()) {
       replan_server_->setAborted(local_critical);
@@ -342,7 +355,7 @@ void RePlanner::setup_replanner() {
   }
   auto local_result = local_plan_client_->getResult();
   if (!local_result->success) {
-    ROS_ERROR("Failed to find a local trajectory!");
+    ROS_ERROR("Initial local planning failed to find a local trajectory!");
     active_ = false;
     replan_server_->setAborted(local_critical);
     return;
@@ -390,13 +403,17 @@ void RePlanner::run_trajectory() {
 }
 
 bool RePlanner::plan_trajectory(int horizon) {
-  // horizon = 1 + (current_plan_epoch - last_plan_epoch). Duration of one epoch
-  // is execution_time, which is 1.0/replan_rate
+  // horizon = 1 + (current_plan_epoch - last_plan_epoch),
+  // where duration of one epoch is execution_time, which is 1.0/replan_rate
   if (horizon > max_horizon_) {
+    ROS_ERROR(
+        "Planning horizon is larger than max_horizon_, aborting the mission!");
     fla_state_machine::ReplanResult abort;
     abort.status = fla_state_machine::ReplanResult::DYNAMICALLY_INFEASIBLE;
     active_ = false;
-    if (replan_server_->isActive()) replan_server_->setAborted(abort);
+    if (replan_server_->isActive()) {
+      replan_server_->setAborted(abort);
+    }
     return false;
   }
 
@@ -493,20 +510,13 @@ bool RePlanner::plan_trajectory(int horizon) {
   // check result of local plan
   if (!local_finished_before_timeout) {
     failed_local_trials_ += 1;
-    ROS_ERROR("Local planner timed out, trying to replan");
+    ROS_WARN_STREAM(
+        "Local planner timed out, trying to replan...  (local planner already "
+        "failed "
+        << failed_local_trials_
+        << " times, total allowed trails: " << max_local_trials_ << ")");
     return false;
   }
-
-  // TODO(xu:temp test, remove!!)###########################################
-  // times_ += 1;
-  // if (times_ > 20.0) {
-  //   ROS_ERROR("Abort!");
-  //   active_ = false;
-  //   if (replan_server_->isActive()) {
-  //     replan_server_->setSucceeded(local_critical);
-  //   }
-  // }
-  //#######################################################################
 
   auto local_result = local_plan_client_->getResult();
   if (local_result->success) {
@@ -517,30 +527,34 @@ bool RePlanner::plan_trajectory(int horizon) {
     return true;
   } else {
     failed_local_trials_ += 1;
+    ROS_WARN_STREAM(
+        "Local planner failed, trying to replan...  (local planner already "
+        "failed "
+        << failed_local_trials_
+        << " times, total allowed trails: " << max_local_trials_ << ")");
     return false;
   }
-  // else if (local_result->policy_status < 0) {
-  //   ROS_ERROR_STREAM("Local policy_status " << local_result->policy_status);
-  //   active_ = false;
-  //   if (replan_server_->isActive())
-  //   replan_server_->setAborted(local_critical); return false;
-  // } else {
-  //   ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++");
-  //   ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++");
-  //   ROS_WARN(
-  //       "Local plan failed, current strategy is to try replan, need better "
-  //       "strategy to prevent collision!");
-  //   ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++");
-  //   ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++");
-  //   return false;
-  // }
 
   if (failed_local_trials_ >= max_local_trials_) {
-    fla_state_machine::ReplanResult local_critical;
-    local_critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
-    active_ = false;
-    if (replan_server_->isActive()) {
-      replan_server_->setAborted(local_critical);
+    if (waypoint_idx_ >= (pose_goals_.size() - 1)) {
+      // if this is the final waypoint, abort full mission
+      fla_state_machine::ReplanResult local_critical;
+      local_critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
+      active_ = false;
+      if (replan_server_->isActive()) {
+        replan_server_->setAborted(local_critical);
+      }
+    } else {
+      // otherwise, allow one more try with the next waypoint
+      // TODO(xu): maybe abort full mission is a better choice if we want to
+      // visit every waypoint?
+      --failed_local_trials_;
+      ++waypoint_idx_;
+      ROS_INFO_STREAM(
+          "Current intermidiate waypoint leads to local planner timeout, "
+          "giving another try with the next waypoint, "
+          "whose index is: "
+          << waypoint_idx_);
     }
     return false;
   }
@@ -565,10 +579,21 @@ void RePlanner::update_status() {
     pos_final(2) = 0;
     pos_final(3) = 0;
 
-    // finished_replanning_ is set as true if goal position and traj evaluated
-    // position is less than a threshold
-    if ((pos_goal - pos_final).norm() <= termination_distance_) {
-      finished_replanning_ = true;
+    // check if goal and traj evaluated position is less than threshold
+    if ((pos_goal - pos_final).norm() <= global_termination_distance_) {
+      if (waypoint_idx_ >= (pose_goals_.size() - 1)) {
+        // finished_replanning_ is set as true if this is the final waypoint
+        finished_replanning_ = true;
+        ROS_INFO_STREAM("Final waypoint reached!");
+      } else {
+        // otherwise, take the next waypoint
+        ++waypoint_idx_;
+        ROS_INFO_STREAM(
+            "Intermidiate waypoint reached, continue to the next waypoint, "
+            "whose index is: "
+            << waypoint_idx_);
+        pose_goal_ = pose_goals_[waypoint_idx_];
+      }
     }
   }
 
@@ -598,15 +623,17 @@ void RePlanner::update_status() {
       fla_state_machine::ReplanResult success;
       success.status = fla_state_machine::ReplanResult::SUCCESS;
       active_ = false;
-      if (replan_server_->isActive()) replan_server_->setAborted(success);
+      if (replan_server_->isActive()) {
+        replan_server_->setSucceeded(success);
+      }
       ROS_INFO("RePlanner success!!");
       last_traj_ = boost::shared_ptr<traj_opt::Trajectory>();
       return;
     }
   }
 
-  fla_state_machine::ReplanResult in_progress;
-  in_progress.status = fla_state_machine::ReplanResult::IN_PROGRESS;
+  // fla_state_machine::ReplanResult in_progress;
+  // in_progress.status = fla_state_machine::ReplanResult::IN_PROGRESS;
 
   if (replan_server_->isActive()) {
     active_ = true;
@@ -701,7 +728,7 @@ RePlanner::RePlanner() : nh_("~") {
   priv_nh.param("crop_radius", crop_radius_, 10.0);
   priv_nh.param("crop_radius_z", crop_radius_z_, 2.0);
   priv_nh.param("close_to_final_dist", close_to_final_dist_, 10.0);
-  priv_nh.param("termination_distance", termination_distance_, 5.0);
+  priv_nh.param("termination_distance", global_termination_distance_, 5.0);
   priv_nh.param("local_plan_timeout_duration", local_timeout_duration_, 1.0);
   priv_nh.param("max_local_plan_trials", max_local_trials_, 4);
 

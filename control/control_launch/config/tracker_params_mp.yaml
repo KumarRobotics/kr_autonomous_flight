@@ -1,0 +1,65 @@
+# This should contain tracker parameters
+
+#line_tracker_distance:
+#  default_v_des: 2.5
+#  default_a_des: 1.5
+#  default_w_des: 2.5
+#  epsilon: 0.1
+
+#line_tracker_min_jerk:
+#  default_v_des: 2.5
+#  default_a_des: 1.5
+#  default_yaw_v_des: 1.0
+#  default_yaw_a_des: 0.5
+
+stopping_policy:
+  default_a_des: 5.0
+  default_j_des: 1.0
+
+take_off_tracker:
+  thrust_rate: 5.0
+  max_thrust: 3.0
+  min_thurst: -9.8
+  epsilon: 0.01
+
+trajectory_tracker:
+  max_pos_error: 2.0  # maximum tracker position error (in xy plane) allowed, default 1.0
+
+trajectory_planner:
+  debug: false # default false
+  verbose: false # default false
+  use_yaw: false # default false
+  yaw_speed: 0.2 # default 0.2
+  use_lambda: true # pose error checking
+  max_v: 15 # default for 2-D 9, for 3-D 3
+  max_a: 10 # default for 2-D 7, for 3-D 2
+  max_j: 5 # default for 2-D 5, for 3-D 2
+  max_u: 5 # default for 2-D 5, for 3-D 1
+  use_3d: false # use 3d planner
+  z_cost_factor: 1 # global map z cost factor (cost_along_z = z_cost_factor * cost_along_x_or_y)
+  max_v_z: 1.0 # default 2.0
+  max_a_z: 2.0 # default 1.0
+  max_j_z: 2.0 # default 1.0
+  max_u_z: 1.0 # default 1.0
+  tol_pos: 7.0 # distance tolerance for goal region, 0 means no tolerance, -1 means no limitation
+  global_goal_tol_vel: 5.0 # tolerance of acceleration for goal region
+  global_goal_tol_acc: -1 # tolerance of velocity for goal region
+  dt: 1.0 # execution time for each primitive
+  ndt: 1.0 # default 1
+  max_num: -1 # Maxmum number of expansion, -1 means no limitation
+  heuristic_weight: 100.0
+
+# stopping_policy:
+  # TODO(xu) verify whether this is actually working!
+  # acc_xyz_des: 15.0 #
+  # jerk_xyz_des: 5.0 #
+  # acc_yaw_des: 0.1 # rad
+
+local_global_server:
+  crop_radius: 35 # default for 2-D 30, for 3-D 20. crop length when cropping global path to get local goal, this should be less than 0.5*(local map X (or Y) range)
+  crop_radius_z: 10 # crop length along Z when cropping global path to get local goal, this should be less than 0.5*(local map Z range)
+  termination_distance: 10 # distance threshold, final goal reached 
+  close_to_final_dist: 20 # distance-to-goal threshold, within which the velocity and acceleration checking will be turned on
+  local_plan_timeout_duration: 1.0 # local planner timeout in seconds 
+  max_local_plan_trials: 3
+  global_planner_verbose: false #

@@ -1,3 +1,5 @@
 # Remove temp files
 ~
 *.pyc
+.idea/
+.vscode/

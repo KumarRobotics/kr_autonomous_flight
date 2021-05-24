@@ -60,7 +60,7 @@ class GetWaypoints(smach.State):
             rospy.logerr("Failed to get waypoints")
             return "failed"
 
-        self.quad_monitor.pose_goal = self.quad_monitor.waypoints.poses[-1].pose
+        self.quad_monitor.pose_goal = self.quad_monitor.waypoints.poses[-1].pose # record the last waypoint to check whether the robot has finished all waypoints when replanning
         self.quad_monitor.pose_goals = [it.pose for it in self.quad_monitor.waypoints.poses]
 
         ps = GM.PoseStamped()

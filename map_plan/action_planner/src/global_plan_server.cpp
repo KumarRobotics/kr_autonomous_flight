@@ -46,8 +46,14 @@ class GlobalPlanServer {
   ros::Subscriber global_map_sub_;
   ros::Subscriber odom_sub_;
 
-  // use 2-d or 3-d
-  bool use_3d_{false};
+  // use 2-d or 3-d for global planner
+  bool use_3d_;
+
+  // planner verbose
+  bool jps_verbose_;
+
+  // global map z cost factor (cost_along_z = z_cost_factor * cost_along_x_or_y)
+  int z_cost_factor_;
 
   // pub
   ros::Publisher path_pub_;
@@ -112,8 +118,16 @@ class GlobalPlanServer {
   /**
    * @brief Slice map util, only used if plan with a 2d jps planner
    */
-  planning_ros_msgs::VoxelMap sliceMap(double h, double hh,
+  planning_ros_msgs::VoxelMap SliceMap(double h, double hh,
                                        const planning_ros_msgs::VoxelMap &map);
+
+  /**
+   * @brief Increase the cost of z by dividing global map z resolution by a
+   * factor, so that we can still use uniform-cost map for JPS implementation
+   * while penlizing z-axis movement (only used if plan with a 3d jps planner)
+   */
+  planning_ros_msgs::VoxelMap ChangeZCost(
+      const planning_ros_msgs::VoxelMap &map, int z_cost_factor = 1);
 };
 
 void GlobalPlanServer::globalMapCB(
@@ -125,6 +139,13 @@ GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   path_pub_ = pnh_.advertise<planning_ros_msgs::Path>("path", 1, true);
   global_map_sub_ = pnh_.subscribe("global_voxel_map", 2,
                                    &GlobalPlanServer::globalMapCB, this);
+
+  ros::NodeHandle traj_planner_nh(pnh_, "trajectory_planner");
+  traj_planner_nh.param("use_3d", use_3d_, false);
+  traj_planner_nh.param("z_cost_factor", z_cost_factor_, 1);
+
+  ros::NodeHandle local_global_plan_nh(pnh_, "local_global_server");
+  local_global_plan_nh.param("global_planner_verbose", jps_verbose_, false);
 
   global_as_ = std::make_unique<
       actionlib::SimpleActionServer<planning_ros_msgs::PlanTwoPointAction>>(
@@ -141,11 +162,11 @@ GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   // Set map util for jps
   if (use_3d_) {
     jps_3d_map_util_ = std::make_shared<JPS::VoxelMapUtil>();
-    jps_3d_util_ = std::make_shared<JPS::JPSPlanner3D>(false);
+    jps_3d_util_ = std::make_shared<JPS::JPSPlanner3D>(jps_verbose_);
     jps_3d_util_->setMapUtil(jps_3d_map_util_);
   } else {
     jps_map_util_ = std::make_shared<JPS::OccMapUtil>();
-    jps_util_ = std::make_shared<JPS::JPSPlanner2D>(false);
+    jps_util_ = std::make_shared<JPS::JPSPlanner2D>(jps_verbose_);
     jps_util_->setMapUtil(jps_map_util_);
   }
 }
@@ -180,12 +201,14 @@ void GlobalPlanServer::process_result(bool solved) {
     ROS_WARN("Danger!!!!!");
     ROS_WARN("Abort!!!!!!");
     ROS_WARN("+++++++++++++++++++++++++");
-    // global_as_->setAborted();
+    global_as_->setAborted();
   }
 
   // reset goal
-  goal_ = boost::shared_ptr<planning_ros_msgs::PlanTwoPointGoal>();
-  if (global_as_->isActive()) global_as_->setSucceeded(*result_);
+  goal_ = boost::shared_ptr<action_planner::PlanTwoPointGoal>();
+  if (global_as_->isActive()) {
+    global_as_->setSucceeded(*result_);
+  }
 }
 
 void GlobalPlanServer::odom_callback(const nav_msgs::Odometry::ConstPtr &odom) {
@@ -236,24 +259,43 @@ bool GlobalPlanServer::global_plan_process(
   std::string map_frame;
   map_frame = global_map.header.frame_id;
   if (use_3d_) {
-    setMap(jps_3d_map_util_, global_map);
+    if (z_cost_factor_ > 1) {
+      // increase the cost of z in voxel map
+      planning_ros_msgs::VoxelMap non_uniform_cost_map =
+          ChangeZCost(global_map, z_cost_factor_);
+      setMap(jps_3d_map_util_, non_uniform_cost_map);
+    } else {
+      setMap(jps_3d_map_util_, global_map);
+    }
     jps_3d_util_->updateMap();
   } else {
     // slice the 3D map to get 2D map for path planning, at the height of
     // z-value of start point
     planning_ros_msgs::VoxelMap global_occ_map =
-        sliceMap(start.pos(2), global_map.resolution, global_map);
+        SliceMap(start.pos(2), global_map.resolution, global_map);
     setMap(jps_map_util_, global_occ_map);
     jps_util_->updateMap();
   }
 
   // Path planning using JPS
   if (use_3d_) {
-    if (!jps_3d_util_->plan(start.pos, goal.pos, 1.0, true)) {
+    // scale up the z-axis value of goal and start to accommodate to the scaling
+    // of voxel resolution
+    auto goal_scaled = goal;
+    goal_scaled.pos[2] = goal.pos[2] * z_cost_factor_;
+    auto start_scaled = start;
+    start_scaled.pos[2] = start.pos[2] * z_cost_factor_;
+    if (!jps_3d_util_->plan(start_scaled.pos, goal_scaled.pos, 1.0, true)) {
       // jps_3d_util_->plan params: start, goal, eps, use_jps
       ROS_WARN("Fail to plan a 3d global path!");
     } else {
-      vec_Vec3f global_path = jps_3d_util_->getPath();
+      vec_Vec3f path_raw = jps_3d_util_->getPath();
+      vec_Vec3f global_path;
+      for (const auto &it : path_raw) {
+        // scale back the z-axis value of path
+        global_path.push_back(Vec3f(it(0), it(1), it(2) / z_cost_factor_));
+      }
+
       // publish
       global_path_msg_ = path_to_ros(global_path);
       global_path_msg_.header.frame_id = map_frame;
@@ -282,7 +324,7 @@ bool GlobalPlanServer::global_plan_process(
   return true;
 }
 
-planning_ros_msgs::VoxelMap GlobalPlanServer::sliceMap(
+planning_ros_msgs::VoxelMap GlobalPlanServer::SliceMap(
     double h, double hh, const planning_ros_msgs::VoxelMap &map) {
   // slice a 3D voxel map
   planning_ros_msgs::VoxelMap voxel_map;
@@ -293,9 +335,8 @@ planning_ros_msgs::VoxelMap GlobalPlanServer::sliceMap(
   voxel_map.dim.y = map.dim.y;
   voxel_map.dim.z = 1;
   voxel_map.resolution = map.resolution;
-  char val_free = 0;
-  char val_occ = 100;
-  voxel_map.data.resize(map.dim.x * map.dim.y, val_free);
+  char val_default = 0;
+  voxel_map.data.resize(map.dim.x * map.dim.y, val_default);
   int hi = hh / map.resolution;
   int h_min = (h - map.origin.z) / map.resolution - hi;
   h_min = h_min >= 0 ? h_min : 0;
@@ -309,9 +350,38 @@ planning_ros_msgs::VoxelMap GlobalPlanServer::sliceMap(
     for (n(1) = 0; n(1) < map.dim.y; n(1)++) {
       for (n(2) = h_min; n(2) < h_max; n(2)++) {
         int map_idx = n(0) + map.dim.x * n(1) + map.dim.x * map.dim.y * n(2);
-        if (map.data[map_idx] > val_free) {
-          int idx = n(0) + map.dim.x * n(1);
-          voxel_map.data[idx] = val_occ;
+        // if (map.data[map_idx] > val_free) {
+        int idx = n(0) + map.dim.x * n(1);
+        voxel_map.data[idx] = map.data[map_idx];
+        // }
+      }
+    }
+  }
+  return voxel_map;
+}
+
+planning_ros_msgs::VoxelMap GlobalPlanServer::ChangeZCost(
+    const planning_ros_msgs::VoxelMap &map, int z_cost_factor) {
+  planning_ros_msgs::VoxelMap voxel_map;
+  voxel_map.origin.x = map.origin.x;
+  voxel_map.origin.y = map.origin.y;
+  voxel_map.origin.z = map.origin.z * z_cost_factor;
+  voxel_map.dim.x = map.dim.x;
+  voxel_map.dim.y = map.dim.y;
+  voxel_map.dim.z = map.dim.z * z_cost_factor;
+  voxel_map.resolution = map.resolution;
+  char val_default = 0;
+  voxel_map.data.resize(voxel_map.dim.x * voxel_map.dim.y * voxel_map.dim.z,
+                        val_default);
+  Vec3i n;
+  for (n(0) = 0; n(0) < map.dim.x; ++n(0)) {
+    for (n(1) = 0; n(1) < map.dim.y; ++n(1)) {
+      for (n(2) = 0; n(2) < map.dim.z; ++n(2)) {
+        int map_idx = n(0) + map.dim.x * n(1) + map.dim.x * map.dim.y * n(2);
+        for (int z_add = 0; z_add < z_cost_factor; ++z_add) {
+          int idx =
+              n(0) + map.dim.x * n(1) + map.dim.x * map.dim.y * (n(2) + z_add);
+          voxel_map.data[idx] = map.data[map_idx];
         }
       }
     }

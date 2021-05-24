@@ -121,7 +121,7 @@ class EnvBase {
   /// if enabled, ignore dynamics when calculate heuristic
   bool heur_ignore_dynamics_{true};
   /// weight of time cost
-  decimal_t w_{10.0};
+  decimal_t w_{50.0};
   /// weight of yaw
   decimal_t wyaw_{1.0};
   /// tolerance of position for goal region, 0.5 is the default

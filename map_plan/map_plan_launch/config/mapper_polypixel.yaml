@@ -1,33 +1,33 @@
 
 
 debug: true
-robot_r: 1.5 # map will be dilated in x and y with a radius of [ceil(robot_r/res)] cells
+robot_r: 2.0 # map will be dilated in x and y with a radius of [ceil(robot_r/res)] cells
 robot_h: 0.5 # map will be dilated in z direction for 2*[ceil(robot_h/res)] cells (if robot_r is set as 0, there will not be any dilation along z either).
 
 global:
-  center_x: 0.0
-  center_y: 0.0
+  center_x: 500.0
+  center_y: 500.0
   range_x: 1000.0
   range_y: 1000.0
-  center_z: 5 
-  range_z: 10.0
-  resolution: 2.0 # 3
+  center_z: 20
+  range_z: 20.0
+  resolution: 3.0 # 3
   num_point_cloud_skip: 1 # integer
-  max_raycast_range: 150.0
+  max_raycast_range: 100.0
   dilate_xy: true
   dilate_z: false
 
 local: # local map range z and center_z will be the same as storage map
-  range_x: 70.0 # 60
-  range_y: 70.0 # 60
-  resolution: 0.3
-  max_raycast_range: 50.0
+  range_x: 60.0 # 60
+  range_y: 60.0 # 60
+  resolution: 0.25
+  max_raycast_range: 30.0
 
 storage: # storage map max_raycat_range will be the same as local map
-  center_x: 0.0
-  center_y: 0.0
+  center_x: 500.0
+  center_y: 500.0
   range_x: 1000.0
   range_y: 1000.0
-  center_z: 5
-  range_z: 10.0
+  center_z: 20.0
+  range_z: 20.0
 

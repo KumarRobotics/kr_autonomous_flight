@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(action_planner)
 
-set(CMAKE_CXX_STANDARD 14)
-
+set(CMAKE_CXX_STANDARD 17)
+find_package(Boost REQUIRED COMPONENTS timer)
 find_package(
   catkin REQUIRED
   COMPONENTS roscpp
@@ -30,11 +30,11 @@ target_include_directories(${PROJECT_NAME} PUBLIC src ${catkin_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES})
 
 add_executable(global_plan_server src/global_plan_server.cpp)
-target_link_libraries(global_plan_server PUBLIC ${PROJECT_NAME})
+target_link_libraries(global_plan_server PUBLIC ${PROJECT_NAME} Boost::timer)
 add_dependencies(global_plan_server ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
 
 add_executable(local_plan_server src/local_plan_server.cpp)
-target_link_libraries(local_plan_server PUBLIC ${PROJECT_NAME})
+target_link_libraries(local_plan_server PUBLIC ${PROJECT_NAME} Boost::timer)
 add_dependencies(local_plan_server ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})

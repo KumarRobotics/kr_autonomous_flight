@@ -8,8 +8,7 @@ RUN apt update \
 RUN mkdir -p /root/estimation_ws/src
 WORKDIR /root/estimation_ws
 
-COPY estimation/external-repos.yaml src/
-COPY estimation/pkgs src/pkgs
+COPY estimation/ src/
 RUN catkin init && catkin config --extend /opt/ros/melodic
 RUN vcs import --input src/external-repos.yaml src/
 RUN catkin build -j2 --no-status -DCMAKE_BUILD_TYPE=Release

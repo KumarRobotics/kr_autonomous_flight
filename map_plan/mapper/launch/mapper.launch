@@ -1,0 +1,37 @@
+<launch>
+  <arg name="robot" default="$(env EMU_ROBOT_NAME)"/>
+  <arg name="world_frame" default="world"/>
+  <arg name="robot_frame" default="base_link"/>
+  <arg name="robot_r" default="0.5"/>
+  <arg name="robot_h" default="0.5"/>
+  <arg name="cloud" default="/os1_cloud_node/points"/>
+
+  <arg name="debug" default="true"/>
+  <env if="$(arg debug)" name="ROSCONSOLE_CONFIG_FILE" value="$(find mapper)/launch/debug.conf"/>
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_world" args="0 0 0.1 0 0 0 1 world map" />
+
+  <node pkg="mapper" name="mapper" type="cloud_to_map" output="screen">
+    <remap from="~voxel_map" to="$(arg robot)/voxel_map"/>
+    <remap from="~local_cloud" to="local_cloud"/>
+    
+    <param name="cloud_msg" value="$(arg cloud)"/>
+    <param name="robot_r" value="$(arg robot_r)"/>
+    <param name="robot_h" value="$(arg robot_h)"/>
+    <param name="world_frame" value="$(arg world_frame)"/>
+    <param name="robot_frame" value="$(arg robot_frame)"/>
+
+    <param name="origin_x" value="-5"/>
+    <param name="origin_y" value="-5"/>
+    <param name="origin_z" value="0"/>
+    <param name="range_x" value="200"/>
+    <param name="range_y" value="10"/>
+    <param name="range_z" value="5"/>
+    <param name="resolution" value="0.25"/>
+
+    <param name="max_range" value="15.0"/>
+    <param name="debug" value="false"/>
+  </node>
+
+
+</launch>

@@ -2,7 +2,7 @@ FROM kumarrobotics/autonomy:map_plan
 
 RUN mkdir -p /root/state_machine_ws/src 
 WORKDIR /root/state_machine_ws
-COPY state_machine/ src/
+COPY state_machine/pkgs src/pkgs
 RUN catkin init && catkin config --extend /root/map_plan_ws/devel
 RUN catkin build -j2 --no-status -DCMAKE_BUILD_TYPE=RelWithDebInfo
 

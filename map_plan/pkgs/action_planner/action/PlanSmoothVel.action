@@ -1,0 +1,11 @@
+# Action goal
+geometry_msgs/Pose p_init
+geometry_msgs/Pose p_final
+bool return_to_start # for doing hobbit
+---
+# Action result
+bool success
+planning_ros_msgs/SplineTrajectory traj
+duration execution_time # time to execute trajectory
+---
+# Action feedback

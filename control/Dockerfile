@@ -8,7 +8,8 @@ RUN apt update \
 
 RUN mkdir -p /root/control_ws/src
 WORKDIR /root/control_ws
-COPY control/ src/
+COPY control/pkgs src/pkgs
+COPY control/external-repos.yaml src/
 RUN catkin init && catkin config --extend /opt/ros/melodic
 RUN vcs import --input src/external-repos.yaml src/
 RUN catkin build -j2 --no-status -DCMAKE_BUILD_TYPE=Release

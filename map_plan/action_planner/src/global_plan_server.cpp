@@ -205,7 +205,7 @@ void GlobalPlanServer::process_result(bool solved) {
   }
 
   // reset goal
-  goal_ = boost::shared_ptr<action_planner::PlanTwoPointGoal>();
+  goal_ = boost::shared_ptr<planning_ros_msgs::PlanTwoPointGoal>();
   if (global_as_->isActive()) {
     global_as_->setSucceeded(*result_);
   }

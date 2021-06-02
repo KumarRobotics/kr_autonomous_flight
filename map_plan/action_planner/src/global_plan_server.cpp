@@ -242,6 +242,10 @@ void GlobalPlanServer::process_goal() {
 
   // call the planner
 
+  if (!global_map_){
+    ROS_ERROR("Voxel Map is not yet received");
+    return;
+  }
   global_planner_succeeded_ = global_plan_process(start, goal, *global_map_);
 
   process_result(global_planner_succeeded_);

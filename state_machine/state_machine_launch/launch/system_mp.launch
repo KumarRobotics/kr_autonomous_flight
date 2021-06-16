@@ -6,6 +6,8 @@
     <!-- Use RGBD instead of LDIAR -->
     <arg name="use_rgbd" default="false"/>
     <arg name="robot" default="quadrotor"/>
+	<arg name="lidar_frame" default=""/>
+
     <arg name="depth_cam" default="DepthCamera"/>
     <arg name="use_motion_primitive" default="true"/>
     <arg name="use_lauras" default="false"/>
@@ -49,6 +51,7 @@
                      <arg name="planner_config" value="$(arg planner_config)" />
 		     <arg name="use_mp" value="$(arg use_motion_primitive)"/>
 		     <arg name="robot" value="$(arg robot)"/>
+			 <arg name="lidar_frame" value="$(arg lidar_frame)"/>
 		</include>
 	</group>
 

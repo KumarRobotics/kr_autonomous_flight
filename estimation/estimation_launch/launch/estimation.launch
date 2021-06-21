@@ -58,7 +58,7 @@
     </node>
 
     <!-- stereo-inertial system imu frame to body frame transform -->
-    <node pkg="tf2_ros" type="static_transform_publisher" name="$(arg robot)_imu_body_tf" args="0 0 0 0 0 0 $(arg vio_imu_frame_id) $(arg robot_frame_id)" if="$(arg publish_body_camera_tf)"/>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="$(arg robot)_imu_body_tf" args="0 0 0 0 0 0 $(arg robot_frame_id) $(arg vio_imu_frame_id)" if="$(arg publish_body_camera_tf)"/>
     <!-- This is already handled by odom2tf -->
 	<!-- <node pkg="tf2_ros" type="static_transform_publisher" name="world_map_tf" args="0 0 0 0 0 0 world $(arg robot)/map" /> -->
     </group>

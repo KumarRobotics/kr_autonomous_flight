@@ -19,9 +19,8 @@
     <!-- S-MSCKF VIO -->
 	<group if="$(arg onboard_sensing)">
 		<include file="$(find estimation_launch)/launch/estimation.launch">
-			<!-- those args are for simulation only, if running on real robot, need to modify them -->
-			<arg name="publish_body_camera_tf" value="false"/>
-			<arg name="vio_imu_frame_id" value="$(arg robot)/imu"/>			
+			<arg name="publish_body_camera_tf" value="true"/>
+			<arg name="vio_imu_frame_id" value="$(arg robot)/stereo_rig_imu"/>			
 		</include>
 	</group>
 

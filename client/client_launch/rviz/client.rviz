@@ -82,27 +82,7 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        ground_truth/quadrotor/quadrotor:
-          Value: false
         quadrotor:
-          Value: false
-        quadrotor/DepthCamera1:
-          Value: false
-        quadrotor/DepthCamera2:
-          Value: false
-        quadrotor/DepthCamera3:
-          Value: false
-        quadrotor/DepthCamera4:
-          Value: false
-        quadrotor/IMU:
-          Value: false
-        quadrotor/cam_left:
-          Value: false
-        quadrotor/cam_right:
-          Value: false
-        quadrotor/imu:
-          Value: false
-        quadrotor/lidar:
           Value: false
         quadrotor/map:
           Value: true
@@ -110,8 +90,6 @@ Visualization Manager:
           Value: true
         quadrotor/stereo_rig_imu:
           Value: false
-        world:
-          Value: true
       Marker Alpha: 1
       Marker Scale: 5
       Name: TF
@@ -119,32 +97,9 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        world:
-          ground_truth/quadrotor/quadrotor:
+        quadrotor/map:
+          quadrotor/odom:
             {}
-          quadrotor/map:
-            quadrotor/odom:
-              quadrotor:
-                quadrotor/DepthCamera1:
-                  {}
-                quadrotor/DepthCamera2:
-                  {}
-                quadrotor/DepthCamera3:
-                  {}
-                quadrotor/DepthCamera4:
-                  {}
-                quadrotor/IMU:
-                  {}
-                quadrotor/cam_left:
-                  {}
-                quadrotor/cam_right:
-                  {}
-                quadrotor/imu:
-                  {}
-                quadrotor/lidar:
-                  {}
-                quadrotor/stereo_rig_imu:
-                  {}
       Update Interval: 0
       Value: true
     - Class: rviz/InteractiveMarkers
@@ -443,7 +398,7 @@ Visualization Manager:
           Shape:
             Alpha: 1
             Axes Length: 3
-            Axes Radius: 0.5
+            Axes Radius: 1
             Color: 255; 25; 0
             Head Length: 0.30000001192092896
             Head Radius: 0.10000000149011612
@@ -478,7 +433,7 @@ Visualization Manager:
           Shape:
             Alpha: 1
             Axes Length: 6
-            Axes Radius: 0.5
+            Axes Radius: 0.75
             Color: 255; 25; 0
             Head Length: 0.30000001192092896
             Head Radius: 0.10000000149011612

@@ -31,7 +31,7 @@
             <arg name="imu" value="$(arg imu)"/>
 		    <!-- fixed reference frame for vio -->
             <arg name="fixed_frame_id" value="$(arg vio_ref_frame_id)"/>
-            <arg name="child_frame_id" value="$(arg cam_frame_id)"/>
+            <arg name="child_frame_id" value="$(arg vio_imu_frame_id)"/>
         </include>
 
 		<!-- UKF Nodelet -->
@@ -44,7 +44,7 @@
 		  <!-- fixed reference frame for ukf -->
 		  <param name="world_frame_id" value="$(arg ukf_ref_frame_id)"/>
 		  <param name="robot_frame_id" value="$(arg robot_frame_id)"/>
-		  <param name="cam_frame_id" value="$(arg cam_frame_id)"/>
+		  <param name="cam_frame_id" value="$(arg vio_imu_frame_id)"/>
 		  <!-- fixed reference frame for vio -->
 		  <param name="vision_frame_id" value="$(arg vio_ref_frame_id)"/>
 		  <param name="enable_laser" value="false"/>

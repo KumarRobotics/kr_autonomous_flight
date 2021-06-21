@@ -6,10 +6,13 @@
     <arg name="image" default="image_raw"/>
     <arg name="imu" default="imu"/>
 	<arg name="robot_frame_id" default="$(arg robot)"/>
-	<arg name="cam_frame_id" default="$(arg robot)/vio_odom"/>
+  <!-- This frame_id should be the frame_id of the imu used for S-MSCKF	 -->
+	<arg name="vio_imu_frame_id" default="$(arg robot)/stereo_rig_imu"/>
 	<arg name="vio_ref_frame_id" default="$(arg robot)/odom"/>
 	<arg name="ukf_ref_frame_id" default="$(arg robot)/odom"/>
-
+  <!-- This is necessary if not in simulation -->
+	<arg name="publish_body_camera_tf" default="true"/>
+    
     <!-- Use msckf_calib_gen to generate this yaml file when using unity sim -->
     <arg name="calibration_file" default="$(find estimation_launch)/config/msckf_calib.yaml"/>
 
@@ -50,11 +53,12 @@
 		  <param name="enable_gps" value="false"/>
 		  <param name="enable_height" value="false"/>
 		  <param name="enable_mag" value="false"/>
-		  <param name="enable_vio_odom" value="true"/>1
+		  <param name="enable_vio_odom" value="true"/>
 		  <param name="enable_yaw" value="false"/>
-		</node>
-    <!-- vio to body transform -->
-    <node pkg="tf2_ros" type="static_transform_publisher" name="$(arg robot)body_camera_tf" args="0 0 0 0 0 0 $(arg cam_frame_id) $(arg robot_frame_id)"/>
+    </node>
+
+    <!-- stereo-inertial system imu frame to body frame transform -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="$(arg robot)_imu_body_tf" args="0 0 0 0 0 0 $(arg vio_imu_frame_id) $(arg robot_frame_id)" if="$(arg publish_body_camera_tf)"/>
     <!-- This is already handled by odom2tf -->
 	<!-- <node pkg="tf2_ros" type="static_transform_publisher" name="world_map_tf" args="0 0 0 0 0 0 world $(arg robot)/map" /> -->
     </group>

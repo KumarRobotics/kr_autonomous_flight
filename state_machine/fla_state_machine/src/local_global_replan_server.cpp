@@ -22,8 +22,8 @@ using boost::timer::cpu_times;
 class RePlanner {
  public:
   RePlanner();
-  int max_horizon_;
-  bool active_{false};
+  int max_horizon;
+  bool active{false};
 
   /**
    * @brief Set up replanner, get an initial plan and execute it
@@ -74,6 +74,8 @@ class RePlanner {
       last_traj_;  // record of latest trajectory
   ros::NodeHandle nh_;
   ros::Subscriber cmd_sub_;
+  ros::Subscriber local_map_sub_;
+
 
   // epoch is to record how many steps have been executed, the duration of one
   // epoch is the execution time, which is 1.0/replan_rate
@@ -122,6 +124,11 @@ class RePlanner {
    * position
    */
   void cmd_cb(const kr_mav_msgs::PositionCommand &cmd);
+
+  /**
+   * @brief map callback, update local_map_ptr_
+   */
+  void localMapCB(const planning_ros_msgs::VoxelMap::ConstPtr &msg);
 
   /**
    * @brief Goal callback function
@@ -214,6 +221,14 @@ void RePlanner::cmd_cb(const kr_mav_msgs::PositionCommand &cmd) {
   cmd_pos_(3) = cmd.yaw;
 }
 
+
+// map callback, update local_map_
+void LocalPlanServer::localMapCB(
+    const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
+  ROS_WARN_ONCE("[Replanner:] Got the local voxel map!");
+  local_map_ptr_ = msg;
+}
+
 void RePlanner::replan_goal_cb() {
   boost::mutex::scoped_lock lock(mtx_);
   // accept new goal (ref:
@@ -243,17 +258,17 @@ void RePlanner::replan_goal_cb() {
   // check cmd
   if (cmd_pos_.norm() == 0) {
     ROS_ERROR("RePlanner has not received position cmd, failing");
-    active_ = false;
+    active = false;
     replan_server_->setAborted(critical);
     return;
   }
 
-  if (!active_)        // if not active, do setup again
+  if (!active)        // if not active, do setup again
     do_setup_ = true;  // only run setup_replanner function after replan_goal_cb
 }
 
 void RePlanner::setup_replanner() {
-  if (!do_setup_ || active_) return;
+  if (!do_setup_ || active) return;
   do_setup_ = false;  // only run setup_replanner once
   boost::mutex::scoped_lock lock(mtx_);
 
@@ -278,7 +293,7 @@ void RePlanner::setup_replanner() {
         ROS_WARN("Initial (and the only) waypoint is already close to the robot position, terminating the replanning process!");
         fla_state_machine::ReplanResult success;
         success.status = fla_state_machine::ReplanResult::SUCCESS;
-        active_ = false;
+        active = false;
         if (replan_server_->isActive()) {
           replan_server_->setSucceeded(success);
         }
@@ -308,7 +323,7 @@ void RePlanner::setup_replanner() {
     ROS_ERROR("initial global planning timed out");
     fla_state_machine::ReplanResult critical;
     critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
-    active_ = false;
+    active = false;
     if (replan_server_->isActive()) {
       replan_server_->setAborted(critical);
     }
@@ -369,7 +384,7 @@ void RePlanner::setup_replanner() {
   local_critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
   if (!local_finished_before_timeout) {
     ROS_ERROR("Initial local planning timed out");
-    active_ = false;
+    active = false;
     if (replan_server_->isActive()) {
       replan_server_->setAborted(local_critical);
     }
@@ -378,7 +393,7 @@ void RePlanner::setup_replanner() {
   auto local_result = local_plan_client_->getResult();
   if (!local_result->success) {
     ROS_ERROR("Initial local planning failed to find a local trajectory!");
-    active_ = false;
+    active = false;
     replan_server_->setAborted(local_critical);
     return;
   }
@@ -419,7 +434,7 @@ void RePlanner::run_trajectory() {
     ROS_ERROR("Tracker aborted or timeout!");
     fla_state_machine::ReplanResult abort;
     abort.status = fla_state_machine::ReplanResult::ABORT_FULL_MISSION;
-    active_ = false;
+    active = false;
     replan_server_->setAborted(abort);
   }
 }
@@ -427,12 +442,12 @@ void RePlanner::run_trajectory() {
 bool RePlanner::plan_trajectory(int horizon) {
   // horizon = 1 + (current_plan_epoch - last_plan_epoch),
   // where duration of one epoch is execution_time, which is 1.0/replan_rate
-  if (horizon > max_horizon_) {
+  if (horizon > max_horizon) {
     ROS_ERROR(
-        "Planning horizon is larger than max_horizon_, aborting the mission!");
+        "Planning horizon is larger than max_horizon, aborting the mission!");
     fla_state_machine::ReplanResult abort;
     abort.status = fla_state_machine::ReplanResult::DYNAMICALLY_INFEASIBLE;
-    active_ = false;
+    active = false;
     if (replan_server_->isActive()) {
       replan_server_->setAborted(abort);
     }
@@ -563,7 +578,7 @@ bool RePlanner::plan_trajectory(int horizon) {
       // if this is the final waypoint, abort full mission
       fla_state_machine::ReplanResult local_critical;
       local_critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
-      active_ = false;
+      active = false;
       if (replan_server_->isActive()) {
         replan_server_->setAborted(local_critical);
       }
@@ -646,7 +661,7 @@ void RePlanner::update_status() {
     if ((pos_no_yaw - pos_final).norm() <= 1e-3) {
       fla_state_machine::ReplanResult success;
       success.status = fla_state_machine::ReplanResult::SUCCESS;
-      active_ = false;
+      active = false;
       if (replan_server_->isActive()) {
         replan_server_->setSucceeded(success);
       }
@@ -660,7 +675,7 @@ void RePlanner::update_status() {
   // in_progress.status = fla_state_machine::ReplanResult::IN_PROGRESS;
 
   if (replan_server_->isActive()) {
-    active_ = true;
+    active = true;
     // replan_server_->setSucceeded(in_progress);
   }
 }
@@ -748,7 +763,7 @@ RePlanner::RePlanner() : nh_("~") {
   time_pub2 = priv_nh.advertise<sensor_msgs::Temperature>(
       "/timing/replanner/local_replan", 1);
 
-  priv_nh.param("max_horizon", max_horizon_, 5);
+  priv_nh.param("max_horizon", max_horizon, 5);
   priv_nh.param("crop_radius", crop_radius_, 10.0);
   priv_nh.param("crop_radius_z", crop_radius_z_, 2.0);
   priv_nh.param("close_to_final_dist", close_to_final_dist_, 10.0);
@@ -779,6 +794,9 @@ RePlanner::RePlanner() : nh_("~") {
   // subscriber of position command
   // command callback: setting cmd_pos_ to be the commanded position
   cmd_sub_ = nh_.subscribe("position_cmd", 1, &RePlanner::cmd_cb, this);
+  local_map_sub_ =
+      nh_.subscribe("local_voxel_map", 2, &LocalPlanServer::localMapCB, this);
+  planning_ros_msgs::VoxelMapConstPtr local_map_ptr_;
 
   // subscriber of epoch command, epoch is published by trajectory tracker
   // epoch callback: trigger replan, set horizon

@@ -1,10 +1,10 @@
 #include <action_planner/ActionPlannerConfig.h>
-#include <planning_ros_msgs/PlanTwoPointAction.h>
 #include <actionlib/server/simple_action_server.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <mpl_basis/trajectory.h>
 #include <mpl_collision/map_util.h>
 #include <mpl_planner/map_planner.h>
+#include <planning_ros_msgs/PlanTwoPointAction.h>
 #include <planning_ros_utils/data_ros_utils.h>
 #include <planning_ros_utils/primitive_ros_utils.h>
 #include <ros/ros.h>
@@ -50,7 +50,7 @@ class LocalPlanServer {
   MPL::Trajectory3D traj_;
 
   // current local map
-  planning_ros_msgs::VoxelMapConstPtr local_map_ptr_;
+  planning_ros_msgs::VoxelMapConstPtr local_map_ptr_ = nullptr;
 
   // actionlib
   boost::shared_ptr<const planning_ros_msgs::PlanTwoPointGoal> goal_;
@@ -186,9 +186,17 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
 void LocalPlanServer::process_all() {
   boost::mutex::scoped_lock lockm(map_mtx);
 
-  if (goal_ == NULL) return;
-  // record goal position, specify use jrk, acc or vel
-  process_goal();
+  if (goal_ == NULL) {
+    ROS_WARN("+++++++++++++++++++++++++++++++++++");
+    ROS_WARN("[LocalPlanServer:] Goal is null!!!!!");
+    ROS_WARN("+++++++++++++++++++++++++++++++++++");
+  } else if (local_map_ptr_ == nullptr) {
+    ROS_WARN("+++++++++++++++++++++++++++++++++++");
+    ROS_WARN("[LocalPlanServer:] local map is not received!!!!!");
+    ROS_WARN("+++++++++++++++++++++++++++++++++++");
+  } else {
+    process_goal();
+  }
 }
 
 void LocalPlanServer::process_result(const MPL::Trajectory3D &traj,

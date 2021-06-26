@@ -41,7 +41,7 @@ trajectory_planner:
   max_a_z: 2.0 # default 1.0
   max_j_z: 2.0 # default 1.0
   max_u_z: 1.0 # default 1.0
-  tol_pos: 7.0 # distance tolerance for goal region, 0 means no tolerance, -1 means no limitation
+  tol_pos: 3.0 # distance tolerance for goal region, 0 means no tolerance, -1 means no limitation
   global_goal_tol_vel: 5.0 # tolerance of acceleration for goal region
   global_goal_tol_acc: -1 # tolerance of velocity for goal region
   dt: 1.0 # execution time for each primitive
@@ -56,9 +56,8 @@ trajectory_planner:
   # acc_yaw_des: 0.1 # rad
 
 local_global_server:
-  crop_radius: 20 # default for 2-D 30, for 3-D 20. crop length when cropping global path to get local goal, this should be less than 0.5*(local map X (or Y) range)
-  crop_radius_z: 10 # crop length along Z when cropping global path to get local goal, this should be less than 0.5*(local map Z range)
-  termination_distance: 10 # distance threshold, final goal reached 
+  # local planning horizon will be from robot to the local voxel map boundary
+  termination_distance: 5 # distance threshold, final goal reached 
   close_to_final_dist: 20 # distance-to-goal threshold, within which the velocity and acceleration checking will be turned on
   local_plan_timeout_duration: 1.0 # local planner timeout in seconds 
   max_local_plan_trials: 3

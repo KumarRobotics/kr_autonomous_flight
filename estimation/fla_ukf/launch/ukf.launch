@@ -6,6 +6,7 @@
   <arg name="robot_frame_id" default="base_link"/>
   <arg name="cam_frame_id" default="odom"/>
   <arg name="odom_out" default="odom"/>
+  <arg name="publish_tf" default="true"/>
 
   <group ns="$(arg robot)">
     <node pkg="nodelet" type="nodelet" name="fla_ukf" args="standalone fla_ukf/FLAUKFNodelet" clear_params="true" output="screen">
@@ -27,16 +28,17 @@
       <param name="enable_mag" value="false"/>
       <param name="enable_vio_odom" value="true"/>
       <param name="enable_yaw" value="false"/>
+      <param name="publish_tf" value="$(arg publish_tf)"/>      
     </node>
 
-
-    <node pkg="tf2_ros" type="static_transform_publisher" name="$(arg robot)_base_link_camera_tf" args="0 0 0 0 0 1.26 $(arg cam_frame_id) $(arg robot_frame_id)"/>
+    <!-- this is done in estimation.launch instead of here  -->
+    <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="$(arg robot)_base_link_camera_tf" args="0 0 0 0 0 1.26 $(arg cam_frame_id) $(arg robot_frame_id)"/> -->
 
     <!-- <node pkg="tf2_ros" type="static_transform_publisher" -->
     <!-- name="fla3_base_link_camera_tf" -->
     <!-- args="0 0 0 0 0 0 $(arg cam_frame_id) $(arg robot_frame_id)" /> -->
 
-    <node pkg="tf2_ros" type="static_transform_publisher" name="stereo_rig_link_broadcaster" args="0 0 0 0 0 0 world vision" />
+    <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="stereo_rig_link_broadcaster" args="0 0 0 0 0 0 world vision" /> -->
 
   </group>
 </launch>

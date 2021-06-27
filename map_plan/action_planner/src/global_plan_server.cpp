@@ -300,7 +300,7 @@ bool GlobalPlanServer::global_plan_process(
         global_path.push_back(Vec3f(it(0), it(1), it(2) / z_cost_factor_));
       }
 
-      // publish
+      // publishglobal_path_msg_
       global_path_msg_ = path_to_ros(global_path);
       global_path_msg_.header.frame_id = map_frame;
       path_pub_.publish(global_path_msg_);

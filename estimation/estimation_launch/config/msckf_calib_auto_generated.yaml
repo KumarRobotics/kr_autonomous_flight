@@ -1,8 +1,3 @@
-# The modifications of the output file from Kalibr:
-# 1. For each matrix (e.g. cam0/T_cam_imu), remove the brackets and minus sign for each line. Use one pair of brackets for each matrix.
-# 2. Add the T_imu_body at the end of the calibration file (usually set to identity).
-T_imu_body: [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
-  0.0, 1.0]
 cam0:
     T_cam_imu: [-4.768595178727963e-07, -1.00000047685949, -2.384186926773779e-07, 0.09999889606203283, 1.110223024625157e-16, -2.384408253064407e-07, -1.00000047685949, -7.476863905786502e-09, 1.000000476859518, 1.110223024625157e-16, -4.768595178727963e-07, -0.09999699056814393, 0, 0, 0, 1]
     camera_model: pinhole

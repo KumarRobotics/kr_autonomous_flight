@@ -6,6 +6,8 @@
     <!-- Use RGBD instead of LDIAR -->
     <arg name="use_rgbd" default="false"/>
     <arg name="robot" default="quadrotor"/>
+	<arg name="lidar_frame" default=""/>
+
     <arg name="depth_cam" default="DepthCamera"/>
     <arg name="use_motion_primitive" default="true"/>
     <arg name="use_lauras" default="false"/>
@@ -17,6 +19,10 @@
     <!-- S-MSCKF VIO -->
 	<group if="$(arg onboard_sensing)">
 		<include file="$(find estimation_launch)/launch/estimation.launch">
+			<!-- Those params are set for unity simulation, they may need to be modified if used for real robot experiments or other simulator -->
+			<arg name="publish_body_camera_tf" value="true"/>
+			<arg name="vio_imu_frame_id" value="$(arg robot)/stereo_rig_imu"/>			
+			<arg name="publish_odom_tf" value="false"/>
 		</include>
 	</group>
 
@@ -49,6 +55,7 @@
                      <arg name="planner_config" value="$(arg planner_config)" />
 		     <arg name="use_mp" value="$(arg use_motion_primitive)"/>
 		     <arg name="robot" value="$(arg robot)"/>
+			 <arg name="lidar_frame" value="$(arg lidar_frame)"/>
 		</include>
 	</group>
 

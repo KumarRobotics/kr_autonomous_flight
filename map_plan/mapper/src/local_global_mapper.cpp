@@ -63,14 +63,16 @@ int counter_clear_ = 0;
 vec_Vec3i clear_ns_;
 
 void cropLocalMap(const Eigen::Vector3d &center_position) {
-  const Eigen::Vector3d local_dim(local_map_info_.dim.x, local_map_info_.dim.y,
-                                  local_map_info_.dim.z);
+  const Eigen::Vector3d local_dim_d(
+      local_map_info_.dim.x * local_map_info_.resolution,
+      local_map_info_.dim.y * local_map_info_.resolution,
+      local_map_info_.dim.z * local_map_info_.resolution);
   Eigen::Vector3d local_origin = center_position + local_ori_offset_;
   local_origin(2) = storage_map_info_.origin.z;
 
   // core function: crop local map from the storage map
   planning_ros_msgs::VoxelMap local_voxel_map =
-      storage_voxel_mapper_->getInflatedLocalMap(local_origin, local_dim);
+      storage_voxel_mapper_->getInflatedLocalMap(local_origin, local_dim_d);
   local_voxel_map.header.frame_id = map_frame_;
   local_map_pub.publish(local_voxel_map);
 }
@@ -193,12 +195,14 @@ void mapInit() {
   const Eigen::Vector3d global_origin(global_map_info_.origin.x,
                                       global_map_info_.origin.y,
                                       global_map_info_.origin.z);
-  const Eigen::Vector3d global_dim(
-      global_map_info_.dim.x, global_map_info_.dim.y, global_map_info_.dim.z);
+  const Eigen::Vector3d global_dim_d(
+      global_map_info_.dim.x * global_map_info_.resolution,
+      global_map_info_.dim.y * global_map_info_.resolution,
+      global_map_info_.dim.z * global_map_info_.resolution);
   const double global_res = global_map_info_.resolution;
   // Initialize the mapper
   global_voxel_mapper_.reset(
-      new mapper::VoxelMapper(global_origin, global_dim, global_res));
+      new mapper::VoxelMapper(global_origin, global_dim_d, global_res));
 
   // build the array for map inflation
   global_infla_array_.clear();
@@ -222,14 +226,16 @@ void mapInit() {
   }
 
   // part2: local
-  const Eigen::Vector3d origin(storage_map_info_.origin.x,
+  const Eigen::Vector3d storage_origin(storage_map_info_.origin.x,
                                storage_map_info_.origin.y,
                                storage_map_info_.origin.z);
-  const Eigen::Vector3d dim(storage_map_info_.dim.x, storage_map_info_.dim.y,
-                            storage_map_info_.dim.z);
+  const Eigen::Vector3d storage_dim_d(
+      storage_map_info_.dim.x * storage_map_info_.resolution,
+      storage_map_info_.dim.y * storage_map_info_.resolution,
+      storage_map_info_.dim.z * storage_map_info_.resolution);
   const double res = storage_map_info_.resolution;
   // Initialize the mapper
-  storage_voxel_mapper_.reset(new mapper::VoxelMapper(origin, dim, res));
+  storage_voxel_mapper_.reset(new mapper::VoxelMapper(storage_origin, storage_dim_d, res));
   local_infla_array_.clear();
   int rn = std::ceil(robot_r_ / res);
   int hn = std::ceil(robot_h_ / res);
@@ -280,14 +286,15 @@ int main(int argc, char **argv) {
   nh.param("robot_r", robot_r_, 0.2);
   nh.param("robot_h", robot_h_, 0.0);
 
-  double global_map_cx, global_map_cy, global_map_cz;
+  double global_map_cx, global_map_cy, global_map_cz, global_map_dim_d_x,
+      global_map_dim_d_y, global_map_dim_d_z;
   nh.param("global/resolution", global_map_info_.resolution, 2.0f);
   nh.param("global/center_x", global_map_cx, 0.0);
   nh.param("global/center_y", global_map_cy, 0.0);
   nh.param("global/center_z", global_map_cz, 0.0);
-  nh.param("global/range_x", global_map_info_.dim.x, 500.);
-  nh.param("global/range_y", global_map_info_.dim.y, 500.);
-  nh.param("global/range_z", global_map_info_.dim.z, 2.0);
+  nh.param("global/range_x", global_map_dim_d_x, 500.0);
+  nh.param("global/range_y", global_map_dim_d_y, 500.0);
+  nh.param("global/range_z", global_map_dim_d_z, 2.0);
   // only update voxel once every update_interval_ point clouds
   nh.param("global/num_point_cloud_skip", update_interval_, 5);  // int
   nh.param("global/max_raycast_range", global_max_raycast_, 100.0);
@@ -296,40 +303,59 @@ int main(int argc, char **argv) {
 
   // map origin is the left lower corner of the voxel map, therefore, adding
   // an offset make the map centered around the given position
-  global_map_info_.origin.x = global_map_cx - global_map_info_.dim.x / 2;
-  global_map_info_.origin.y = global_map_cy - global_map_info_.dim.y / 2;
-  global_map_info_.origin.z = global_map_cz - global_map_info_.dim.z / 2;
+  global_map_info_.origin.x = global_map_cx - global_map_dim_d_x / 2;
+  global_map_info_.origin.y = global_map_cy - global_map_dim_d_y / 2;
+  global_map_info_.origin.z = global_map_cz - global_map_dim_d_z / 2;
+  global_map_info_.dim.x =
+      (int)ceil((global_map_dim_d_x) / global_map_info_.resolution);
+  global_map_info_.dim.y =
+      (int)ceil((global_map_dim_d_y) / global_map_info_.resolution);
+  global_map_info_.dim.z =
+      (int)ceil((global_map_dim_d_z) / global_map_info_.resolution);
 
-  double storage_map_cx, storage_map_cy, storage_map_cz;
-  nh.param("storage/center_x", storage_map_cx, 0.0);
+  double storage_map_cx, storage_map_cy, storage_map_cz, storage_map_dim_d_x,
+      storage_map_dim_d_y, storage_map_dim_d_z, local_map_dim_d_x,
+      local_map_dim_d_y;
   nh.param("storage/center_y", storage_map_cy, 0.0);
   nh.param("storage/center_z", storage_map_cz, 5.0);
-  nh.param("storage/range_x", storage_map_info_.dim.x, 500.);
-  nh.param("storage/range_y", storage_map_info_.dim.y, 500.);
-  nh.param("storage/range_z", storage_map_info_.dim.z, 500.);
+  nh.param("storage/range_x", storage_map_dim_d_x, 500.0);
+  nh.param("storage/range_y", storage_map_dim_d_y, 500.0);
+  nh.param("storage/range_z", storage_map_dim_d_z, 500.0);
 
   nh.param("local/resolution", local_map_info_.resolution, 0.25f);
-  nh.param("local/range_x", local_map_info_.dim.x, 20.);
-  nh.param("local/range_y", local_map_info_.dim.y, 20.);
-  // nh.param("local/range_z", local_map_info_.dim.z, 10.0);
+  nh.param("local/range_x", local_map_dim_d_x, 20.0);
+  nh.param("local/range_y", local_map_dim_d_y, 20.0);
+  // nh.param("local/range_z", local_map_dim_d_z, 10.0);
   nh.param("local/max_raycast_range", local_max_raycast_, 20.0);
 
   storage_map_info_.resolution = local_map_info_.resolution;
-  // storage_map_info_.dim.z = local_map_info_.dim.z;
 
-  storage_map_info_.origin.x = storage_map_cx - storage_map_info_.dim.x / 2;
-  storage_map_info_.origin.y = storage_map_cy - storage_map_info_.dim.y / 2;
-  storage_map_info_.origin.z = storage_map_cz - storage_map_info_.dim.z / 2;
+  storage_map_info_.origin.x = storage_map_cx - storage_map_dim_d_x / 2;
+  storage_map_info_.origin.y = storage_map_cy - storage_map_dim_d_y / 2;
+  storage_map_info_.origin.z = storage_map_cz - storage_map_dim_d_z / 2;
+  storage_map_info_.dim.x =
+      (int)ceil((storage_map_dim_d_x) / storage_map_info_.resolution);
+  storage_map_info_.dim.y =
+      (int)ceil((storage_map_dim_d_y) / storage_map_info_.resolution);
+  storage_map_info_.dim.z =
+      (int)ceil((storage_map_dim_d_z) / storage_map_info_.resolution);
+
+  local_map_info_.dim.x =
+      (int)ceil((local_map_dim_d_x) / local_map_info_.resolution);
+  local_map_info_.dim.y =
+      (int)ceil((local_map_dim_d_y) / local_map_info_.resolution);
 
   // local map range z and center_z will be the same as storage map
   local_map_info_.dim.z = storage_map_info_.dim.z;
   local_map_info_.origin.z = storage_map_info_.origin.z;
 
-  const Eigen::Vector3d local_dim(local_map_info_.dim.x, local_map_info_.dim.y,
-                                  local_map_info_.dim.z);
+  const Eigen::Vector3d local_dim_d(
+      local_map_info_.dim.x * local_map_info_.resolution,
+      local_map_info_.dim.y * local_map_info_.resolution,
+      local_map_info_.dim.z * local_map_info_.resolution);
   // origin is the left lower corner of the voxel map, therefore, adding
   // this offset make the map centered around the given position
-  local_ori_offset_ = -local_dim / 2;
+  local_ori_offset_ = -local_dim_d / 2;
 
   // // dimension (in voxels) of the region to free voxels
   // for (int nx = -3; nx <= 3; nx++) {

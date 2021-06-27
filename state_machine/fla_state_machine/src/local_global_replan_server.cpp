@@ -274,7 +274,10 @@ void RePlanner::replan_goal_cb() {
 }
 
 void RePlanner::setup_replanner() {
-  if (!do_setup_ || active_ || (local_map_ptr_ == nullptr)) return;
+  if (!do_setup_ || active_) {return;}
+  if (local_map_ptr_ == nullptr) {
+    ROS_WARN("[Replanner:] local_map_ptr_ is nullptr, local map not received yet!!!!!");
+return;}
   do_setup_ = false;  // only run setup_replanner once
   boost::mutex::scoped_lock lock(mtx_);
 
@@ -846,7 +849,10 @@ RePlanner::RePlanner() : nh_("~") {
       new actionlib::SimpleActionClient<planning_ros_msgs::PlanTwoPointAction>(
           nh_, "plan_local_trajectory", true));
 
-  // run trajectory actiCRITICAL_trajectory", true));
+  // run trajectory action client
+  run_client_.reset(
+      new actionlib::SimpleActionClient<action_trackers::RunTrajectoryAction>(
+          nh_, "execute_trajectory", true));
 
   // subscriber of position command
   // command callback: setting cmd_pos_ to be the commanded position

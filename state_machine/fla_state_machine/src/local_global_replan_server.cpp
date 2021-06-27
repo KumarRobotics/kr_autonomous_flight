@@ -1,3 +1,4 @@
+
 #include <action_trackers/RunTrajectoryAction.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/server/simple_action_server.h>
@@ -25,13 +26,13 @@ using boost::timer::cpu_times;
 class RePlanner {
  public:
   RePlanner();
-  int max_horizon;
-  bool active{false};
+  int max_horizon_;
+  bool active_{false};
 
   /**
    * @brief Set up replanner, get an initial plan and execute it
    * only run if the following three conditions are met:
-   * if the planner is not active
+   * if the planner is not active_
    * if replan_goal_cb is already called
    * if local map callback is already called (path_crop needs local map)
    */
@@ -263,17 +264,17 @@ void RePlanner::replan_goal_cb() {
   // check cmd
   if (cmd_pos_.norm() == 0) {
     ROS_ERROR("RePlanner has not received position cmd, failing");
-    active = false;
+    active_ = false;
     replan_server_->setAborted(critical_);
     return;
   }
 
-  if (!active)         // if not active, do setup again
+  if (!active_)         // if not active_, do setup again
     do_setup_ = true;  // only run setup_replanner function after replan_goal_cb
 }
 
 void RePlanner::setup_replanner() {
-  if (!do_setup_ || active || (local_map_ptr_ == nullptr)) return;
+  if (!do_setup_ || active_ || (local_map_ptr_ == nullptr)) return;
   do_setup_ = false;  // only run setup_replanner once
   boost::mutex::scoped_lock lock(mtx_);
 
@@ -296,7 +297,7 @@ void RePlanner::setup_replanner() {
           "position, terminating the replanning process!");
       fla_state_machine::ReplanResult success;
       success.status = fla_state_machine::ReplanResult::SUCCESS;
-      active = false;
+      active_ = false;
       if (replan_server_->isActive()) {
         replan_server_->setSucceeded(success);
       }
@@ -327,7 +328,7 @@ void RePlanner::setup_replanner() {
   if (!global_finished_before_timeout) {
     ROS_ERROR("initial global planning timed out");
 
-    active = false;
+    active_ = false;
     if (replan_server_->isActive()) {
       replan_server_->setAborted(critical_);
     }
@@ -348,7 +349,7 @@ void RePlanner::setup_replanner() {
   vec_Vec3f path_cropped = path_crop(global_path_);
   if (path_cropped.size() == 0) {
     ROS_ERROR("[Replanner:] Path crop failed!");
-    active = false;
+    active_ = false;
     if (replan_server_->isActive()) {
       replan_server_->setAborted(critical_);
     }
@@ -395,7 +396,7 @@ void RePlanner::setup_replanner() {
   if (!local_finished_before_timeout) {
     // check result of local plan
     ROS_ERROR("Initial local planning timed out");
-    active = false;
+    active_ = false;
     if (replan_server_->isActive()) {
       replan_server_->setAborted(critical_);
     }
@@ -404,7 +405,7 @@ void RePlanner::setup_replanner() {
   auto local_result = local_plan_client_->getResult();
   if (!local_result->success) {
     ROS_ERROR("Initial local planning failed to find a local trajectory!");
-    active = false;
+    active_ = false;
     replan_server_->setAborted(critical_);
     return;
   }
@@ -445,7 +446,7 @@ void RePlanner::run_trajectory() {
     ROS_ERROR("Tracker aborted or timeout!");
     fla_state_machine::ReplanResult abort;
     abort.status = fla_state_machine::ReplanResult::ABORT_FULL_MISSION;
-    active = false;
+    active_ = false;
     replan_server_->setAborted(abort);
   }
 }
@@ -453,12 +454,12 @@ void RePlanner::run_trajectory() {
 bool RePlanner::plan_trajectory(int horizon) {
   // horizon = 1 + (current_plan_epoch - last_plan_epoch),
   // where duration of one epoch is execution_time, which is 1.0/replan_rate
-  if (horizon > max_horizon) {
+  if (horizon > max_horizon_) {
     ROS_ERROR(
-        "Planning horizon is larger than max_horizon, aborting the mission!");
+        "Planning horizon is larger than max_horizon_, aborting the mission!");
     fla_state_machine::ReplanResult abort;
     abort.status = fla_state_machine::ReplanResult::DYNAMICALLY_INFEASIBLE;
-    active = false;
+    active_ = false;
     if (replan_server_->isActive()) {
       replan_server_->setAborted(abort);
     }
@@ -498,7 +499,7 @@ bool RePlanner::plan_trajectory(int horizon) {
   vec_Vec3f path_cropped = path_crop(global_path_);
   if (path_cropped.size() == 0) {
     ROS_ERROR("[Replanner:] Path crop failed!");
-    active = false;
+    active_ = false;
     if (replan_server_->isActive()) {
       replan_server_->setAborted(critical_);
     }
@@ -573,7 +574,7 @@ bool RePlanner::plan_trajectory(int horizon) {
   if (failed_local_trials_ >= max_local_trials_) {
     if (waypoint_idx_ >= (pose_goals_.size() - 1)) {
       // if this is the final waypoint, abort full mission
-      active = false;
+      active_ = false;
       if (replan_server_->isActive()) {
         replan_server_->setAborted(critical_);
       }
@@ -656,7 +657,7 @@ void RePlanner::update_status() {
     if ((pos_no_yaw - pos_final).norm() <= 1e-3) {
       fla_state_machine::ReplanResult success;
       success.status = fla_state_machine::ReplanResult::SUCCESS;
-      active = false;
+      active_ = false;
       if (replan_server_->isActive()) {
         replan_server_->setSucceeded(success);
       }
@@ -670,7 +671,7 @@ void RePlanner::update_status() {
   // in_progress.status = fla_state_machine::ReplanResult::IN_PROGRESS;
 
   if (replan_server_->isActive()) {
-    active = true;
+    active_ = true;
     // replan_server_->setSucceeded(in_progress);
   }
 }
@@ -822,7 +823,7 @@ RePlanner::RePlanner() : nh_("~") {
   cropped_path_pub_ =
       priv_nh.advertise<planning_ros_msgs::Path>("cropped_local_path", 1, true);
 
-  priv_nh.param("max_horizon", max_horizon, 5);
+  priv_nh.param("max_horizon", max_horizon_, 5);
   priv_nh.param("crop_radius", crop_radius_, 10.0);
   priv_nh.param("crop_radius_z", crop_radius_z_, 2.0);
   priv_nh.param("close_to_final_dist", close_to_final_dist_, 10.0);

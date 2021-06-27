@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-    <arg name="robot" default="$(optenv ROBOT_NAME quadrotor)"/>
+    <arg name="robot" default="quadrotor"/>
     <arg name="takeoff_height" default="5"/>
     <arg name="max_horizon" default="5"/>
 

@@ -23,7 +23,7 @@ class StoppingPolicy : public kr_trackers_manager::Tracker {
 
  private:
   bool active_{false};
-  double j_des_, a_des_, a_yaw_des_;
+  double j_xy_des_, a_xy_des_, j_z_des_, a_z_des_, a_yaw_des_;
   double prev_duration_;
   double kx_[3], kv_[3];
   // record the lastest cmd calculated in stopping policy
@@ -36,8 +36,10 @@ class StoppingPolicy : public kr_trackers_manager::Tracker {
 void StoppingPolicy::Initialize(const ros::NodeHandle &nh) {
   ros::NodeHandle priv_nh(nh, "stopping_policy");
 
-  priv_nh.param("acc_xyz_des", a_des_, 10.0);
-  priv_nh.param("jerk_xyz_des", j_des_, 10.0);
+  priv_nh.param("acc_xy_des", a_xy_des_, 10.0);
+  priv_nh.param("jerk_xy_des", j_xy_des_, 10.0);
+  priv_nh.param("acc_z_des", a_z_des_, 5.0);
+  priv_nh.param("jerk_z_des", j_z_des_, 5.0);
   priv_nh.param("acc_yaw_des", a_yaw_des_, 0.1);
 }
 
@@ -70,6 +72,9 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
     cmd_jrk_ = j0_;
     t0_ = cmd->header.stamp;
     active_ = true;
+    ROS_WARN("Stopping policy activated!");
+    ROS_WARN_STREAM("vx:" << cmd->velocity.x << "vy:" << cmd->velocity.y
+                          << "vz:" << cmd->velocity.z);
     return true;
   } else {
     ROS_ERROR("Need starting command to stop");
@@ -87,111 +92,151 @@ PositionCommand::ConstPtr StoppingPolicy::update(
   double dt = duration - prev_duration_;
   prev_duration_ = duration;
 
-  if (!active_) return PositionCommand::Ptr();
-
-  double a0_norm = Eigen::Vector3d{a0_(0), a0_(1), a0_(2)}.norm();
-  double deacc_time;
-
-  // check if there's initial acceleration
-  if (a0_norm > 0.01) {
-    deacc_time = a0_norm / j_des_;
-  } else {
-    deacc_time = 0.0;
+  if (!active_) {
+    // return empty command, otherwise it will conflict with existing position
+    // commands
+    return PositionCommand::Ptr();
   }
 
-  double dur_remain;
-  if (deacc_time != 0.0) {
-    // phase 0: bring acceleration to 0 before decelerate
-    // (not optimal, but negligible suboptimality)
-    if (duration < deacc_time) {
-      // evaluate xyz and their derivatives
-      Eigen::Vector4d jrk_dir = Eigen::Vector4d{
-          -a0_dir_xyz_(0), -a0_dir_xyz_(1), -a0_dir_xyz_(2), 0.0};
-      Eigen::Vector4d new_cmd_jrk = jrk_dir * j_des_;
+  // a_des_abs and j_des_abs are absolute values of acceleration and jerk
+  double a_des_abs, j_des_abs, deacc_time, a0, new_cmd_jrk_1d, new_cmd_acc_1d,
+      new_cmd_vel_1d, new_cmd_pos_1d, phase0_time, t_phase1, t_phase2, t_phase3,
+      v0_norm, avg_acc_phase1, avg_acc_phase3, total_deacc_abs, t_yaw, v0_dir;
+
+  for (int axis = 0; axis < 3; ++axis) {
+    if (axis == 0 || axis == 1) {
+      a_des_abs = a_xy_des_;
+      j_des_abs = j_xy_des_;
+    } else {
+      a_des_abs = a_z_des_;
+      j_des_abs = j_z_des_;
+    }
+
+    // check the initial velocity direction
+    v0_norm = abs(v0_(axis));
+    if (v0_(axis) > 0) {
+      v0_dir = 1.0;
+    } else {
+      v0_dir = -1.0;
+    }
+
+    a0 = a0_(axis);
+
+    // first, change the acceleration from a0 to -a_des_abs
+    if (abs(a0) > a_des_abs) {
+      ROS_WARN_STREAM(
+          "[StoppingPolicy:] initial acceleration is "
+          << a0 << ", which is larger than stopping policy max acceleration of "
+          << a_des_abs
+          << ". This is not normal. Either plan less aggressive trajectories "
+             "or increase stopping policy max acceleration!");
+      // clip a0 to lie within [-a_des_abs, a_des_abs]
+      if (a0 > a_des_abs) {
+        a0 = a_des_abs;
+      } else {
+        a0 = -a_des_abs;
+      }
+    }
+
+    // phase 1-3: increase |acceleration| -> const acc -> decrease |acc|
+    // calculate time duration for each phase
+    t_phase1 = abs(-v0_dir * a_des_abs - a0) /
+               j_des_abs;  // from a0 to -v0_dir * a_des_abs
+    t_phase3 = abs(0 - (-v0_dir * a_des_abs)) /
+               j_des_abs;  // from -v0_dir *a_des_abs to 0
+
+    // average acceleration for phase 1 and phase 3
+    avg_acc_phase1 = (-v0_dir * a_des_abs + a0) / 2.0;
+    avg_acc_phase3 = (-v0_dir * a_des_abs + 0) / 2.0;
+    // absolute change in velocity during phase 1 and phase 3
+    total_deacc_abs =
+        abs((t_phase1 * avg_acc_phase1) + (t_phase3 * avg_acc_phase3));
+
+    // 3 possible cases:
+    if ((-v0_dir * a0 > 0) && (pow(a0, 2) / (2 * j_des_abs) > v0_norm)) {
+      // Case 1: a0 is same direction of change of v0 (which is -v0_dir), and
+      // v0_norm is smaller than a0^2 / (2*j_des_abs), this means phase 3 will
+      // completely stop the robot with a jerk > j_des, ad phase 1 or phase 2
+      t_phase1 = 0;  //
+      t_phase2 = 0;  // no constant acceleration phase in this case
+      // update j_des so that the robot stops exactly when acc is is decreased
+      // from a0 to 0
+      ROS_WARN_STREAM(
+          "[Stopping policy:] Special case where phase 3 can completely stop the robot, original jerk is: " << j_des_abs);
+      j_des_abs = pow(a0, 2) / (2 * v0_norm);
+      ROS_WARN_STREAM(
+          "jerk is increased to: " << j_des_abs);
+      t_phase3 = abs(0 - a0) / j_des_abs;  // from a0 to 0
+    } else if (total_deacc_abs > v0_norm) {
+      // Case 2: a_des_abs will not be reached, using geometric method to solve
+      // this v_virtual is v0 + v_a0, where v_a0 is the change of v if
+      // acceleration changes from a=0 to a=a0 with j_des_abs
+      double v_a0_norm = pow(a0, 2) / (2 * j_des_abs);
+      double v_virtual = v0_norm + v_a0_norm;
+      // phase3: a_max_abs^2 / (2*j_des_abs)  = v_virtual / 2
+      // => a_max_abs = sqrt(v_virtual * j_des_abs)
+      // => a_max = -v0_dir * a_max_abs
+      double a_max = -v0_dir * sqrt(v_virtual * j_des_abs);
+      t_phase1 = abs(a_max - a0) / j_des_abs;  // from a0 to a_max
+      t_phase2 = 0;  // no constant acceleration phase in this case
+      t_phase3 = abs(0 - a_max) / j_des_abs;  // from a_max to 0
+    } else {
+      // Case 2: a_des_abs will be reached, t_phase1 and t_phase3 will be as
+      // calculated above, and t_phase2 will be duration of constant acc
+      t_phase2 = (v0_norm - total_deacc_abs) / a_des_abs;
+    }
+
+    // check: all durations should be non-negative
+    if (t_phase1 < 0 || t_phase2 < 0 || t_phase3 < 0) {
+      ROS_ERROR_STREAM(
+          "[StoppingPolicy:] time for one of the phases is negative, t_phase1: "
+          << t_phase1 << " t_phase2: " << t_phase2 << " t_phase3:" << t_phase3
+          << " this is not correct!");
+    }
+    if (duration < 0) {
+      ROS_ERROR_STREAM("[StoppingPolicy:] duration is negative:"
+                       << duration << ", this is not correct!");
+    }
+
+    if (duration >= 0 && duration < t_phase1 + t_phase2 + t_phase3) {
+      // For different phases we have different cmd_jrk
+      if (duration < t_phase1) {
+        // phase 1: increase |acceleration|, cmd_jrk should be -v0_dir
+        // *j_des_abs
+        new_cmd_jrk_1d = -v0_dir * j_des_abs;
+      } else if (duration < t_phase1 + t_phase2) {
+        // phase 2: const acceleration, cmd_jrk should be 0
+        new_cmd_jrk_1d = 0.0;
+      } else if (duration < t_phase1 + t_phase2 + t_phase3) {
+        // phase 3: decrease |acceleration|, cmd_jrk should be v0_dir *
+        // j_des_abs
+        new_cmd_jrk_1d = v0_dir * j_des_abs;
+      }
 
       // midpoint integration
-      // get cmd at end of dt (note: dt happened right BEFORE current timestamp)
-      Eigen::Vector4d new_cmd_acc = cmd_acc_ + cmd_jrk_ * dt;
-      Eigen::Vector4d new_cmd_vel = cmd_vel_ + cmd_acc_ * dt;
-      Eigen::Vector4d new_cmd_pos = cmd_pos_ + cmd_vel_ * dt;
+      // get cmd at end of dt
+      // (note: dt happened right BEFORE current timestamp)
+      new_cmd_acc_1d = cmd_acc_(axis) + cmd_jrk_(axis) * dt;
+      new_cmd_vel_1d = cmd_vel_(axis) + cmd_acc_(axis) * dt;
+      new_cmd_pos_1d = cmd_pos_(axis) + cmd_vel_(axis) * dt;
       // use mean of the derivatives at beginning and end to do integration
-      cmd_pos_ = cmd_pos_ + 0.5 * (new_cmd_vel + cmd_vel_) * dt;
-      cmd_vel_ = cmd_vel_ + 0.5 * (new_cmd_acc + cmd_acc_) * dt;
-      cmd_acc_ = cmd_acc_ + 0.5 * (new_cmd_jrk + cmd_jrk_) * dt;
-      cmd_jrk_ = new_cmd_jrk;
-
-      // update velocity direction, so that deceleration direction is
-      // correct
-      v0_ = cmd_vel_;
+      cmd_pos_(axis) =
+          cmd_pos_(axis) + 0.5 * (new_cmd_vel_1d + cmd_vel_(axis)) * dt;
+      cmd_vel_(axis) =
+          cmd_vel_(axis) + 0.5 * (new_cmd_acc_1d + cmd_acc_(axis)) * dt;
+      cmd_acc_(axis) =
+          cmd_acc_(axis) + 0.5 * (new_cmd_jrk_1d + cmd_jrk_(axis)) * dt;
+      cmd_jrk_(axis) = new_cmd_jrk_1d;
+    } else {
+      // stopping policy for current axis finished, cmd_pos_(axis) will remain
+      // the same
+      cmd_jrk_(axis) = 0;
+      cmd_acc_(axis) = 0;
+      cmd_vel_(axis) = 0;
     }
-    dur_remain = duration - deacc_time;
-  } else {
-    dur_remain = duration;
-  }
+  }  // loop over XYZ axes
 
-  Eigen::Vector3d v0_dir_xyz = Eigen::Vector3d{v0_(0), v0_(1), v0_(2)};
-  v0_dir_xyz.normalize();
-  double v0_norm = Eigen::Vector3d{v0_(0), v0_(1), v0_(2)}.norm();
-  // time needed to reach a_des_ using constant jerk
-  double t_jerk = a_des_ / j_des_;
-  // phase 1-3: increase |acceleration| -> const acc -> decrease |acc|
-  double t_acc_change, t_acc_const;
-  // calculate time duration for each phase
-  // first check if acc will reach a_des_ i.e. (a_des_/2) * t_jerk <= v0_norm/2
-  if (t_jerk * a_des_ <= v0_norm) {
-    // case 1: will reach a_des_
-    // phase 1 = phase 3 (increase and decrease |acceleration|)
-    t_acc_change = t_jerk;
-    // phase 2 (const acceleration)
-    t_acc_const = (v0_norm - (t_jerk * a_des_)) / a_des_;
-  } else {
-    // case 2: will not reach a_des_
-    // phase 1 = phase 3 = t, 0.5 * j * (t^2) = 0.5 * v => t = sqrt(v / j)
-    t_acc_change = sqrt(v0_norm / j_des_);
-    // phase 2 is 0
-    t_acc_const = 0;
-  }
-
-  if ((0 <= dur_remain) && (dur_remain < t_acc_change * 2 + t_acc_const)) {
-    // evaluate xyz and their derivatives
-    Eigen::Vector4d new_cmd_jrk;
-    // update jerk according to which phase it is now
-    if (dur_remain < t_acc_change) {
-      // phase 1: increase |acceleration|
-      Eigen::Vector4d jrk_dir =
-          Eigen::Vector4d{-v0_dir_xyz(0), -v0_dir_xyz(1), -v0_dir_xyz(2), 0.0};
-      new_cmd_jrk = jrk_dir * j_des_;
-    } else if (t_acc_change <= dur_remain &&
-               dur_remain < t_acc_change + t_acc_const) {
-      // phase 2: const acceleration
-      new_cmd_jrk = Eigen::Matrix<double, Eigen::Dynamic, 1>::Zero(4, 1);
-    } else if (dur_remain >= t_acc_change + t_acc_const) {
-      // phase 3: decrease |acceleration|
-      Eigen::Vector4d jrk_dir =
-          Eigen::Vector4d{v0_dir_xyz(0), v0_dir_xyz(1), v0_dir_xyz(2), 0.0};
-      new_cmd_jrk = jrk_dir * j_des_;
-    }
-    // midpoint integration
-    // get cmd at end of dt (note: dt happened right BEFORE current timestamp)
-    Eigen::Vector4d new_cmd_acc = cmd_acc_ + cmd_jrk_ * dt;
-    Eigen::Vector4d new_cmd_vel = cmd_vel_ + cmd_acc_ * dt;
-    Eigen::Vector4d new_cmd_pos = cmd_pos_ + cmd_vel_ * dt;
-    // use mean of the derivatives at beginning and end to do integration
-    cmd_pos_ = cmd_pos_ + 0.5 * (new_cmd_vel + cmd_vel_) * dt;
-    cmd_vel_ = cmd_vel_ + 0.5 * (new_cmd_acc + cmd_acc_) * dt;
-    cmd_acc_ = cmd_acc_ + 0.5 * (new_cmd_jrk + cmd_jrk_) * dt;
-    cmd_jrk_ = new_cmd_jrk;
-
-  } else if (dur_remain >= t_acc_change * 2 + t_acc_const) {
-    // stopping policy for XYZ finished, cmd_pos_(i) will remain the same
-    for (int i = 0; i < 3; i++) {
-      cmd_jrk_(i) = 0;
-      cmd_acc_(i) = 0;
-      cmd_vel_(i) = 0;
-    }
-  }
-
-  double t_yaw = v0_(3) / a_yaw_des_;  // use consant acc for yaw
+  t_yaw = v0_(3) / a_yaw_des_;  // use consant acc for yaw
   // check whether already stopped (yaw)
   if (duration < t_yaw) {
     // evaluate yaw and yaw_dot
@@ -202,8 +247,11 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     cmd_vel_(3) = 0.0;
   }
 
-  if ((dur_remain >= t_acc_change * 2 + t_acc_const) && (duration >= t_yaw))
-    ROS_INFO_THROTTLE(1.0, "Stopping policy done!");
+  if ((duration >= t_phase1 + t_phase2 + t_phase3) && (duration >= t_yaw)) {
+    ROS_INFO_THROTTLE(1.0,
+                      "Stopping policy done! Keep publishing position command "
+                      "to hover the quad...");
+  }
 
   PositionCommand::Ptr cmd(new PositionCommand);
   cmd->header.stamp = stamp;

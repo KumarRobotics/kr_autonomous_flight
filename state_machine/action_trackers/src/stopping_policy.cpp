@@ -25,7 +25,6 @@ class StoppingPolicy : public kr_trackers_manager::Tracker {
   bool active_{false};
   double j_xy_des_, a_xy_des_, j_z_des_, a_z_des_, a_yaw_des_;
   double prev_duration_;
-  double kx_[3], kv_[3];
   // record the lastest cmd calculated in stopping policy
   Eigen::Vector4d cmd_pos_, cmd_vel_, cmd_acc_, cmd_jrk_;
   Eigen::VectorXd p0_, v0_, a0_, j0_, a0_dir_xyz_;
@@ -256,8 +255,6 @@ PositionCommand::ConstPtr StoppingPolicy::update(
   PositionCommand::Ptr cmd(new PositionCommand);
   cmd->header.stamp = stamp;
   cmd->header.frame_id = msg->header.frame_id;
-  cmd->kx[0] = kx_[0], cmd->kx[1] = kx_[1], cmd->kx[2] = kx_[2];
-  cmd->kv[0] = kv_[0], cmd->kv[1] = kv_[1], cmd->kv[2] = kv_[2];
 
   cmd->position.x = cmd_pos_(0), cmd->position.y = cmd_pos_(1),
   cmd->position.z = cmd_pos_(2);

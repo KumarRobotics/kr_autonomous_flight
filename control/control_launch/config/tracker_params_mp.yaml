@@ -30,8 +30,8 @@ trajectory_planner:
   use_lambda: true # pose error checking
   max_v: 7 # suggested for 2-D 9, for 3-D 3
   max_a: 7 # suggested for 2-D 7, for 3-D 2
-  max_j: 5 # suggested for 2-D 5, for 3-D 2
-  max_u: 5 # suggested for 2-D 5, for 3-D 1
+  max_j: 3 # suggested for 2-D 3, for 3-D 2
+  max_u: 3 # suggested for 2-D 3, for 3-D 1
   use_3d: false # use 3d planner
   z_cost_factor: 1 # global map z cost factor (cost_along_z = z_cost_factor * cost_along_x_or_y)
   max_v_z: 1.0 # default 2.0
@@ -49,7 +49,7 @@ trajectory_planner:
 stopping_policy:
   #TODO(xu) verify whether this is actually working!
   acc_xy_des: 10.0 #
-  jerk_xy_des: 7.0 #
+  jerk_xy_des: 4.0 #
   acc_z_des: 5.0 #
   jerk_z_des: 3.0 #
   acc_yaw_des: 0.05 # rad

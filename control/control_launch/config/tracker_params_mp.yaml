@@ -28,8 +28,8 @@ trajectory_planner:
   use_yaw: false # default false
   yaw_speed: 0.2 # default 0.2
   use_lambda: true # pose error checking
-  max_v: 7 # suggested for 2-D 9, for 3-D 3
-  max_a: 7 # suggested for 2-D 7, for 3-D 2
+  max_v: 5 # suggested for 2-D 9, for 3-D 3
+  max_a: 5 # suggested for 2-D 7, for 3-D 2
   max_j: 3 # suggested for 2-D 3, for 3-D 2
   max_u: 3 # suggested for 2-D 3, for 3-D 1
   use_3d: false # use 3d planner

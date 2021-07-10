@@ -21,7 +21,7 @@ local: # local map range z and center_z will be the same as storage map
   # local planning horizon will be from robot to the local voxel map boundary
   range_x: 20.0
   range_y: 20.0
-  resolution: 0.5
+  resolution: 0.25
   max_raycast_range: 20.0
 
 storage: # storage map max_raycat_range will be the same as local map

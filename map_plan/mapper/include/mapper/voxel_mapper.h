@@ -164,7 +164,7 @@ class VoxelMapper {
   int8_t val_even = 50;
   /// Value decay (voxels will disappear if unobserved for (val_occ - val_even)
   /// / val_decay times)
-  int8_t val_decay = 0;
+  int8_t val_decay = 1;
   // be careful of overflow (should always be within -128 and 128 range)
   // Add val_add to the voxel whenever a point lies in it. Voxel will be
   // occupied after (val_occ - val_free) / val_add times of such addition.

@@ -6,13 +6,10 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /Grid1
-        - /Grid1/Offset1
         - /TF1
         - /TF1/Frames1
         - /Env1
         - /Env1/Environment1
-        - /Planner1
         - /Planner1/cropped_local_path1
         - /Planner1/global_path1
         - /Planner1/ExpandedCloud1
@@ -21,21 +18,21 @@ Panels:
         - /Maps1
         - /Maps1/VoxelMap1
         - /Maps1/VoxelMap2
+        - /Estimation1
         - /Estimation1/ground_truth_odom1
         - /Estimation1/ground_truth_odom1/Shape1
-        - /Estimation1/vio_odom1
         - /Estimation1/vio_odom1/Shape1
         - /Estimation1/vio_odom1/Covariance1
         - /Estimation1/vio_odom1/Covariance1/Position1
         - /Estimation1/vio_odom1/Covariance1/Orientation1
-        - /Estimation1/graphslam1
+        - /Estimation1/raw_drifted_vio1
+        - /Estimation1/raw_drifted_vio1/Shape1
         - /Estimation1/graphslam1/Shape1
         - /Estimation1/quad_odom1/Shape1
+        - /tree_semantic_cloud1
         - /MarkerArray1
-        - /MarkerArray2
-        - /so3-cmd1
       Splitter Ratio: 0.5905707478523254
-    Tree Height: 621
+    Tree Height: 757
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -54,7 +51,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: tree_semantic_cloud
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -89,22 +86,34 @@ Visualization Manager:
           Value: true
         quadrotor:
           Value: false
+        quadrotor/DepthCamera1:
+          Value: false
+        quadrotor/DepthCamera2:
+          Value: false
+        quadrotor/DepthCamera3:
+          Value: false
+        quadrotor/DepthCamera4:
+          Value: false
         quadrotor/IMU:
-          Value: true
+          Value: false
         quadrotor/cam_left:
-          Value: true
+          Value: false
         quadrotor/cam_right:
-          Value: true
+          Value: false
+        quadrotor/imu:
+          Value: false
         quadrotor/lidar:
-          Value: true
+          Value: false
         quadrotor/map:
           Value: true
         quadrotor/odom:
           Value: true
+        quadrotor/stereo_rig_imu:
+          Value: false
         world:
           Value: true
       Marker Alpha: 1
-      Marker Scale: 5
+      Marker Scale: 20
       Name: TF
       Show Arrows: true
       Show Axes: true
@@ -113,13 +122,25 @@ Visualization Manager:
         quadrotor/map:
           quadrotor/odom:
             quadrotor:
+              quadrotor/DepthCamera1:
+                {}
+              quadrotor/DepthCamera2:
+                {}
+              quadrotor/DepthCamera3:
+                {}
+              quadrotor/DepthCamera4:
+                {}
               quadrotor/IMU:
                 {}
               quadrotor/cam_left:
                 {}
               quadrotor/cam_right:
                 {}
+              quadrotor/imu:
+                {}
               quadrotor/lidar:
+                {}
+              quadrotor/stereo_rig_imu:
                 {}
         world:
           ground_truth/quadrotor/quadrotor:
@@ -303,7 +324,7 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: false
-        - Alpha: 0.10000000149011612
+        - Alpha: 0.5
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
             Max Value: 7.898764610290527
@@ -397,7 +418,7 @@ Visualization Manager:
           Queue Size: 10
           Shape:
             Alpha: 1
-            Axes Length: 5
+            Axes Length: 6
             Axes Radius: 0.5
             Color: 25; 255; 0
             Head Length: 0.30000001192092896
@@ -462,12 +483,47 @@ Visualization Manager:
             Value: true
           Enabled: true
           Keep: 1
+          Name: raw_drifted_vio
+          Position Tolerance: 0.10000000149011612
+          Queue Size: 10
+          Shape:
+            Alpha: 1
+            Axes Length: 1
+            Axes Radius: 0.10000000149011612
+            Color: 136; 138; 133
+            Head Length: 1
+            Head Radius: 3
+            Shaft Length: 1
+            Shaft Radius: 1.5
+            Value: Arrow
+          Topic: /graph_slam/raw_drifted_vio
+          Unreliable: false
+          Value: true
+        - Angle Tolerance: 0.10000000149011612
+          Class: rviz/Odometry
+          Covariance:
+            Orientation:
+              Alpha: 0.5
+              Color: 255; 255; 127
+              Color Style: Unique
+              Frame: Local
+              Offset: 1
+              Scale: 1
+              Value: true
+            Position:
+              Alpha: 0.30000001192092896
+              Color: 204; 51; 204
+              Scale: 1
+              Value: true
+            Value: true
+          Enabled: true
+          Keep: 1
           Name: graphslam
           Position Tolerance: 0.10000000149011612
           Queue Size: 1
           Shape:
             Alpha: 1
-            Axes Length: 4
+            Axes Length: 5
             Axes Radius: 0.75
             Color: 255; 25; 0
             Head Length: 0.30000001192092896
@@ -598,7 +654,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
@@ -613,7 +669,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -634,7 +690,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 10
+      Size (Pixels): 5
       Size (m): 0.5
       Style: Points
       Topic: /quadrotor/fake_lidar/trees_cloud
@@ -686,22 +742,6 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
-    - Alpha: 1
-      Axes Length: 20
-      Axes Radius: 0.20000000298023224
-      Class: rviz/Pose
-      Color: 204; 51; 204
-      Enabled: true
-      Head Length: 0.30000001192092896
-      Head Radius: 0.10000000149011612
-      Name: so3-cmd
-      Queue Size: 10
-      Shaft Length: 0.5
-      Shaft Radius: 1.5
-      Shape: Arrow
-      Topic: /quadrotor/so3_control/cmd_viz
-      Unreliable: false
-      Value: true
   Enabled: true
   Global Options:
     Background Color: 189; 234; 201
@@ -735,7 +775,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 12.233757972717285
+      Distance: 17.30551528930664
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -743,25 +783,25 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.08104658126831055
-        Y: -5.558883190155029
-        Z: 5.951555795036256e-05
-      Focal Shape Fixed Size: true
+        X: -1.6278138160705566
+        Y: 0.2139897346496582
+        Z: 1.0109165486937854e-05
+      Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5547977089881897
+      Pitch: 0.5654006600379944
       Target Frame: quadrotor
-      Yaw: 3.8301775455474854
+      Yaw: 4.195307731628418
     Saved: ~
 Window Geometry:
   Displays:
-    collapsed: false
-  Height: 878
-  Hide Left Dock: false
+    collapsed: true
+  Height: 1014
+  Hide Left Dock: true
   Hide Right Dock: true
-  QMainWindow State: 000000ff00000000fd0000000400000000000001a9000002aafc020000001efb0000001200530065006c0065006300740069006f006e000000003d000002a00000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed0000025d00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000000c00430061006d006500720061000000003d0000001c0000000000000000fb000000100044006900730070006c006100790073010000003d000002aa000000c900fffffffb0000000a0049006d006100670065020000024d000000d000000280000001e0fb0000000a0049006d0061006700650000000166000001420000000000000000fb0000000a0049006d00610067006500000001da000001970000000000000000fb0000000c00430061006d006500720061000000010d000001220000000000000000fb0000000a0049006d00610067006500000001c1000000ee0000000000000000fb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d00610067006500000001dc000000d30000000000000000fb0000000a0049006d00610067006502000001c20000010700000255000000ebfb0000000a0049006d00610067006502000001c0000000cf00000156000000b8fb0000000a0049006d00610067006502000001ce000000d0000001bc000000c5fb0000000a0049006d006100670065000000019f000000dd0000000000000000fb0000000a0049006d00610067006501000001ad000000ce0000000000000000fb0000000a0049006d0061006700650100000281000000f90000000000000000fb0000000a0049006d006100670065030000023a00000103000002db000001a9fb0000000c00430061006d00650072006100000002ac000000c50000000000000000fb0000000a0049006d00610067006500000002ac000000c50000000000000000fb0000000a0049006d00610067006500000002ac000000c50000000000000000fb0000000a0049006d00610067006503000005000000017400000156000000c5fb0000000a0049006d006100670065020000031d000001590000041b0000027ffb0000000c00430061006d006500720061000000023d000000f40000000000000000fb0000000c00430061006d00650072006100000002030000012e0000000000000000fb0000000a0049006d0061006700650100000163000001ce000000000000000000000001000001760000022cfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d0000022c000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b20000000000000000000000020000044a000000a9fc0100000002fb0000000a0049006d00610067006503000006ac00000309000000c5000000a9fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000056a00000064fc0100000003fb000000260057006100790070006f0069006e00740020004e0061007600690067006100740069006f006e01000000000000056a000003a600fffffffb0000000800540069006d00650000000000000005ff000004f300fffffffb0000000800540069006d00650100000000000004500000000000000000000003bb000002aa00000004000000040000000800000008fc00000002000000020000000000000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001a600000332fc020000001efb0000001200530065006c0065006300740069006f006e000000003d000002a00000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed0000025d00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000000c00430061006d006500720061000000003d0000001c0000000000000000fb000000100044006900730070006c006100790073000000003d00000332000000c900fffffffb0000000a0049006d006100670065020000024d000000d000000280000001e0fb0000000a0049006d0061006700650000000166000001420000000000000000fb0000000a0049006d00610067006500000001da000001970000000000000000fb0000000c00430061006d006500720061000000010d000001220000000000000000fb0000000a0049006d00610067006500000001c1000000ee0000000000000000fb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d00610067006500000001dc000000d30000000000000000fb0000000a0049006d00610067006502000001c20000010700000255000000ebfb0000000a0049006d00610067006502000001c0000000cf00000156000000b8fb0000000a0049006d00610067006502000001ce000000d0000001bc000000c5fb0000000a0049006d006100670065000000019f000000dd0000000000000000fb0000000a0049006d00610067006501000001ad000000ce0000000000000000fb0000000a0049006d0061006700650100000281000000f90000000000000000fb0000000a0049006d006100670065030000023a00000103000002db000001a9fb0000000c00430061006d00650072006100000002ac000000c50000000000000000fb0000000a0049006d00610067006500000002ac000000c50000000000000000fb0000000a0049006d00610067006500000002ac000000c50000000000000000fb0000000a0049006d00610067006503000005000000017400000156000000c5fb0000000a0049006d006100670065020000031d000001590000041b0000027ffb0000000c00430061006d006500720061000000023d000000f40000000000000000fb0000000c00430061006d00650072006100000002030000012e0000000000000000fb0000000a0049006d0061006700650100000163000001ce000000000000000000000001000001760000022cfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d0000022c000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b20000000000000000000000020000044a000000a9fc0100000002fb0000000a0049006d00610067006503000006ac00000309000000c5000000a9fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000046a00000064fc0100000003fb000000260057006100790070006f0069006e00740020004e0061007600690067006100740069006f006e01000000000000046a000003a600fffffffb0000000800540069006d00650000000000000005ff000004f300fffffffb0000000800540069006d006501000000000000045000000000000000000000046a0000033200000004000000040000000800000008fc00000002000000020000000000000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -772,6 +812,6 @@ Window Geometry:
     collapsed: true
   Waypoint Navigation:
     collapsed: false
-  Width: 1386
-  X: 778
-  Y: 126
+  Width: 1130
+  X: 790
+  Y: 27

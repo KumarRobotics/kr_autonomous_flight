@@ -15,7 +15,7 @@
 
 take_off_tracker:
   thrust_rate: 5.0
-  max_thrust: 3.0
+  max_thrust: 6.0
   min_thurst: -9.8
   epsilon: 0.01
 
@@ -47,7 +47,6 @@ trajectory_planner:
   heuristic_weight: 10.0
 
 stopping_policy:
-  #TODO(xu) verify whether this is actually working!
   acc_xy_des: 10.0 #
   jerk_xy_des: 4.0 #
   acc_z_des: 5.0 #

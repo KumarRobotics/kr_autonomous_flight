@@ -15,7 +15,7 @@
 
 take_off_tracker:
   thrust_rate: 5.0
-  max_thrust: 6.0
+  max_thrust: 4.0
   min_thurst: -9.8
   epsilon: 0.01
 

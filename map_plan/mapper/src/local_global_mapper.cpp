@@ -137,7 +137,7 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
     pose_odom_lidar = *tf_odom_lidar;
   }
   const Eigen::Affine3d T_map_lidar = toTF(pose_map_lidar);
-  const Eigen::Affine3d T_odom_lidar = toTF(pose_map_lidar);
+  const Eigen::Affine3d T_odom_lidar = toTF(pose_odom_lidar);
 
   // This is the lidar position in the odom frame, used for raytracing &
   // cropping local map

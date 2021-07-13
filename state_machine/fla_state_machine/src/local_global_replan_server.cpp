@@ -132,7 +132,7 @@ class RePlanner {
 
   /**
    * @brief Epoch callback function, triggered by epoch msg published by
-   trajectory_tracker, it will trigger the replan process (ONLY IF current epoch
+   trajectory_tracker_upgraded, it will trigger the replan process (ONLY IF current epoch
    is different than the previously recorded one) by calling plan_trajectory and
    RunTrajectory functions
 

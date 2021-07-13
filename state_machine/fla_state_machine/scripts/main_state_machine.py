@@ -238,7 +238,7 @@ def main():
         #                        transitions={'succeeded':'RunTrajectory',
         #                                     'aborted':'Hover',
         #                                     'preempted':'Hover'})
-        # # execute_trajectory defined in action_trackers/src/trajectory_tracker.cpp
+        # # execute_trajectory defined in action_trackers/src/trajectory_tracker_upgraded.cpp
         # smach.StateMachine.add('RunTrajectory', RunTrajectory("trackers_manager/execute_trajectory", quad_tracker),
         #                        transitions={'succeeded':'Hover',
         #                                     'preempted':'Hover',

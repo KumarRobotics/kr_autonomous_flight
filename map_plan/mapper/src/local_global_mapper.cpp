@@ -114,7 +114,7 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
       ROS_WARN(
           "Failed to get transform (either from %s to %s; or from %s to %s)",
           lidar_frame_.c_str(), map_frame_.c_str(), lidar_frame_.c_str(),
-          odom_frame_.c_str);
+          odom_frame_.c_str());
       return;
     }
     pose_map_lidar = *tf_map_lidar;
@@ -128,7 +128,7 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
       ROS_WARN(
           "Failed to get transform (either from %s to %s; or from %s to %s)",
           cloud.header.frame_id, map_frame_.c_str(), cloud.header.frame_id,
-          odom_frame_.c_str);
+          odom_frame_.c_str());
       return;
     }
     pose_map_lidar = *tf_map_lidar;

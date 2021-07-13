@@ -20,6 +20,7 @@
 #include <boost/timer/timer.hpp>
 #include <fla_state_machine/intersect_utils.hpp>
 #include <fla_state_machine/traj_opt_utils.hpp>
+#include <mapper/tf_listener.h>
 
 // Timer stuff
 using boost::timer::cpu_timer;
@@ -70,7 +71,7 @@ class RePlanner {
   cpu_timer timer;
 
   // tf_listener
-  fla_state_machine::TFListener tf_listener_;
+  mapper::TFListener tf_listener_;
 
 
   // reference frame names
@@ -206,7 +207,7 @@ class RePlanner {
   /**
    * @brief abort the replan process
    */
-  void AbortReplan();
+  void AbortReplan(void);
 };
 
 /**
@@ -560,7 +561,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
   // timer stuff
   sensor_msgs::Temperature tmsg2;
   tmsg2.header.stamp = ros::Time::now();
-  tmsg2.header.frame_id = "world";
+  tmsg2.header.frame_id = map_frame_;
   // millisecond
   tmsg2.temperature = static_cast<double>(timer.elapsed().wall) / 1e6;
   ROS_WARN("[local_planner_time]: %f", tmsg2.temperature);
@@ -757,7 +758,7 @@ vec_Vec3f RePlanner::PathCrop(const vec_Vec3f &path) {
 
   // // publish for visualization
   // planning_ros_msgs::Path local_path_msg_ = path_to_ros(cropped_path);
-  // local_path_msg_.header.frame_id = "world";
+  // local_path_msg_.header.frame_id = map_frame_;
   // cropped_path_pub_.publish(local_path_msg_);
 
   return cropped_path;
@@ -766,7 +767,7 @@ vec_Vec3f RePlanner::PathCrop(const vec_Vec3f &path) {
 vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f &path_wrt_map) {
   // get the latest tf from map to odom reference frames
   auto odom_to_map =
-      tf_listener_.LookupTransform(odom_frame_, map_frame_, ros::Time(0));
+      tf_listener_.LookupTransform("world", "map", ros::Time(0));
   if (!odom_to_map) {
     ROS_ERROR("[Replanner:] Failed to get tf from %s to %s",
               map_frame_.c_str(), odom_frame_.c_str());
@@ -776,18 +777,20 @@ vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f &path_wrt_map) {
   }
 
   // TF transform from the sensor frame to the map frame
-  Aff3f odom_to_map_tf = toTF(*odom_to_map);
+  auto odom_to_map_tf = toTF(*odom_to_map);
   Vec3f waypoint_wrt_odom;
 
   vec_Vec3f path_wrt_odom;
   for (unsigned int i = 1; i < path_wrt_map.size(); i++) {
     // apply TF on current waypoint 
     waypoint_wrt_odom = odom_to_map_tf * path_wrt_map[i];
-    path_wrt_odom.push_back(waypoint_transformed);
+    path_wrt_odom.push_back(waypoint_wrt_odom);
   }
 
   // publish transformed global path for visualization
-  global_path_wrt_odom_pub_.publish(path_wrt_odom);
+  planning_ros_msgs::Path path_wrt_odom_msg = path_to_ros(path_wrt_odom);
+  path_wrt_odom_msg.header.frame_id = map_frame_;
+  global_path_wrt_odom_pub_.publish(path_wrt_odom_msg);
   return path_wrt_odom;
 }
 
@@ -864,7 +867,7 @@ bool RePlanner::CloseToFinal(const vec_Vec3f &original_path,
   }
 }
 
-Replanner::AbortReplan() {
+void RePlanner::AbortReplan(void) {
   active_ = false;
   if (replan_server_->isActive()) {
     replan_server_->setAborted(critical_);

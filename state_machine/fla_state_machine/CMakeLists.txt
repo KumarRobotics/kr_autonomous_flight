@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(fla_state_machine)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 find_package(Boost REQUIRED COMPONENTS timer)
 find_package(
   catkin REQUIRED
@@ -13,6 +13,7 @@ find_package(
              sensor_msgs
              actionlib_msgs
              action_planner
+             mapper
              action_trackers
              geometry_msgs)
 
@@ -27,7 +28,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC include
 target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES})
 
 add_executable(local_global_replan_server src/local_global_replan_server.cpp)
-target_link_libraries(local_global_replan_server PUBLIC ${PROJECT_NAME} Boost::timer)
+target_include_directories(${PROJECT_NAME} PUBLIC include ${catkin_INCLUDE_DIRS})
+target_link_libraries(local_global_replan_server PUBLIC ${PROJECT_NAME} ${catkin_LIBRARIES} Boost::timer)
 add_dependencies(local_global_replan_server ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
 

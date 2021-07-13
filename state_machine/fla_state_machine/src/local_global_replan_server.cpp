@@ -1,3 +1,4 @@
+#include <geometry_msgs/Pose.h>
 
 #include <action_trackers/RunTrajectoryAction.h>
 #include <actionlib/client/simple_action_client.h>
@@ -12,6 +13,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Temperature.h>
 #include <std_msgs/Int64.h>
+#include <tf/transform_listener.h>
 #include <traj_opt_ros/msg_traj.h>
 #include <traj_opt_ros/ros_bridge.h>
 
@@ -33,7 +35,7 @@ class RePlanner {
    * @brief Set up replanner, get an initial plan and execute it
    * only run if the following three conditions are met:
    * if the planner is not active_
-   * if replan_goal_cb is already called
+   * if ReplanGoalCb is already called
    * if local map callback is already called (path_crop needs local map)
    */
   void setup_replanner();
@@ -67,8 +69,19 @@ class RePlanner {
   ros::Publisher time_pub2;
   cpu_timer timer;
 
-  // local cropped path pub for visualization
-  ros::Publisher cropped_path_pub_;
+  // tf_listener
+  fla_state_machine::TFListener tf_listener_;
+
+
+  // reference frame names
+  std::string map_frame_;   // map frame
+  std::string odom_frame_;  // odom frame
+
+  // // local cropped path pub for visualization
+  // ros::Publisher cropped_path_pub_;
+
+  // transformed global path pub for visualization
+  ros::Publisher global_path_wrt_odom_pub_;
 
   geometry_msgs::Pose pose_goal_;  // goal recorder
   int waypoint_idx_;  // index of current goal in the array of goals (waypoints)
@@ -121,26 +134,26 @@ class RePlanner {
    * @brief Epoch callback function, triggered by epoch msg published by
    trajectory_tracker, it will trigger the replan process (ONLY IF current epoch
    is different than the previously recorded one) by calling plan_trajectory and
-   run_trajectory functions
+   RunTrajectory functions
 
    */
-  void epoch_cb(const std_msgs::Int64 &msg);
+  void EpochCb(const std_msgs::Int64 &msg);
 
   /**
    * @brief Command callback function, setting cmd_pos_ to be the commanded
    * position
    */
-  void cmd_cb(const kr_mav_msgs::PositionCommand &cmd);
+  void CmdCb(const kr_mav_msgs::PositionCommand &cmd);
 
   /**
    * @brief map callback, update local_map_ptr_
    */
-  void localMapCB(const planning_ros_msgs::VoxelMap::ConstPtr &msg);
+  void LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr &msg);
 
   /**
    * @brief Goal callback function
    */
-  void replan_goal_cb();
+  void ReplanGoalCb();
 
   /**
    * @brief Goal done callback function
@@ -149,16 +162,16 @@ class RePlanner {
 
   /**
    * @brief Execute the planned trajectory, during which epoch will be published
-   * by trajectory tracker and epoch_cb will be triggered, which will trigger
+   * by trajectory tracker and EpochCb will be triggered, which will trigger
    * replanning process
    */
-  void run_trajectory();
+  void RunTrajectory();
 
   /**
    * @brief Plan trajectory: (1) call global planner, (2) crop global path to
    * get local goal, (3) call local planner
    */
-  bool plan_trajectory(int horizon);
+  bool PlanTrajectory(int horizon);
 
   /**
    * @brief Crop global path for local planner by intersecting it with local map
@@ -167,7 +180,7 @@ class RePlanner {
    * @param d length of the cropped path
    *
    */
-  vec_Vec3f path_crop(const vec_Vec3f &path);
+  vec_Vec3f PathCrop(const vec_Vec3f &path);
 
   /**
    * @brief Crop global path for local planner with a fixed distance
@@ -175,15 +188,25 @@ class RePlanner {
    * @param d length of the cropped path
    *
    */
-  vec_Vec3f path_crop(const vec_Vec3f &path, double crop_dist_xyz,
-                      double crop_dist_z);
+  vec_Vec3f PathCrop(const vec_Vec3f &path, double crop_dist_xyz,
+                     double crop_dist_z);
 
   /**
    * @brief Check if cropped path reaches the end of original path
    */
-  bool close_to_final(const vec_Vec3f &original_path,
-                      const vec_Vec3f &cropped_path,
-                      double dist_threshold = 10.0);
+  bool CloseToFinal(const vec_Vec3f &original_path,
+                    const vec_Vec3f &cropped_path,
+                    double dist_threshold = 10.0);
+
+  /**
+   * @brief transform global path from map frame to odom frame
+   */
+  vec_Vec3f TransformGlobalPath(const vec_Vec3f &path_wrt_map);
+
+  /**
+   * @brief abort the replan process
+   */
+  void AbortReplan();
 };
 
 /**
@@ -195,7 +218,7 @@ void RePlanner::GlobalPathCb(const planning_ros_msgs::Path &path) {
   global_path_ = ros_to_path(path);  // extract the global path information
 }
 
-void RePlanner::epoch_cb(const std_msgs::Int64 &msg) {
+void RePlanner::EpochCb(const std_msgs::Int64 &msg) {
   boost::mutex::scoped_lock lock(mtx_);
   static int epoch_old = -1;  // keep a record of last epoch
 
@@ -215,15 +238,15 @@ void RePlanner::epoch_cb(const std_msgs::Int64 &msg) {
 
     // trigger replan, set horizon
     if (!finished_replanning_) {
-      if (plan_trajectory(horizon))
+      if (PlanTrajectory(horizon))
         // execute the replanned trajectory
-        run_trajectory();
+        RunTrajectory();
     }
   }
   update_status();
 }
 
-void RePlanner::cmd_cb(const kr_mav_msgs::PositionCommand &cmd) {
+void RePlanner::CmdCb(const kr_mav_msgs::PositionCommand &cmd) {
   boost::mutex::scoped_lock lock(mtx_);
   cmd_pos_(0) = cmd.position.x;
   cmd_pos_(1) = cmd.position.y;
@@ -232,12 +255,12 @@ void RePlanner::cmd_cb(const kr_mav_msgs::PositionCommand &cmd) {
 }
 
 // map callback, update local_map_
-void RePlanner::localMapCB(const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
+void RePlanner::LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
   ROS_WARN_ONCE("[Replanner:] Got the local voxel map!");
   local_map_ptr_ = msg;
 }
 
-void RePlanner::replan_goal_cb() {
+void RePlanner::ReplanGoalCb() {
   boost::mutex::scoped_lock lock(mtx_);
   // accept new goal (ref:
   // http://docs.ros.org/en/jade/api/actionlib/html/classactionlib_1_1SimpleActionServer.html#a4964ef9e28f5620e87909c41f0458ecb)
@@ -269,15 +292,20 @@ void RePlanner::replan_goal_cb() {
     return;
   }
 
-  if (!active_)         // if not active_, do setup again
-    do_setup_ = true;  // only run setup_replanner function after replan_goal_cb
+  if (!active_)        // if not active_, do setup again
+    do_setup_ = true;  // only run setup_replanner function after ReplanGoalCb
 }
 
 void RePlanner::setup_replanner() {
-  if (!do_setup_ || active_) {return;}
+  if (!do_setup_ || active_) {
+    return;
+  }
   if (local_map_ptr_ == nullptr) {
-    ROS_WARN("[Replanner:] local_map_ptr_ is nullptr, local map not received yet!!!!!");
-return;}
+    ROS_WARN(
+        "[Replanner:] local_map_ptr_ is nullptr, local map not received "
+        "yet!!!!!");
+    return;
+  }
   do_setup_ = false;  // only run setup_replanner once
   boost::mutex::scoped_lock lock(mtx_);
 
@@ -320,6 +348,7 @@ return;}
   planning_ros_msgs::PlanTwoPointGoal global_tpgoal;
   global_tpgoal.p_final = pose_goal_;
   global_tpgoal.avoid_obstacles = avoid_obstacle_;
+
   // send goal to global plan action server
   global_plan_client_->sendGoal(
       global_tpgoal);  // only send goal, because global plan server is
@@ -330,11 +359,7 @@ return;}
   // check result of global plan
   if (!global_finished_before_timeout) {
     ROS_ERROR("initial global planning timed out");
-
-    active_ = false;
-    if (replan_server_->isActive()) {
-      replan_server_->setAborted(critical_);
-    }
+    AbortReplan();
     return;
   }
   auto global_result = global_plan_client_->getResult();
@@ -349,18 +374,18 @@ return;}
 
   //  Initial plan step 2: Crop global path to get local goal
   //  #################################################################################
-  vec_Vec3f path_cropped = path_crop(global_path_);
-  if (path_cropped.size() == 0) {
+  vec_Vec3f global_path_wrt_odom =
+      TransformGlobalPath(global_path_);
+  vec_Vec3f path_cropped_wrt_odom = PathCrop(global_path_wrt_odom);
+
+  if (path_cropped_wrt_odom.size() == 0) {
     ROS_ERROR("[Replanner:] Path crop failed!");
-    active_ = false;
-    if (replan_server_->isActive()) {
-      replan_server_->setAborted(critical_);
-    }
+    AbortReplan();
     return;
   }
 
-  bool close_to_final_goal =
-      close_to_final(global_path_, path_cropped, close_to_final_dist_);
+  bool close_to_final_goal = CloseToFinal(
+      global_path_wrt_odom, path_cropped_wrt_odom, close_to_final_dist_);
 
   // Initial plan step 3: local plan
   // ##########################################################################################################
@@ -380,10 +405,10 @@ return;}
   local_tpgoal.execution_time = ros::Duration(1.0 / local_replan_rate_);
   // if close_to_final_goal, we need to check velocity tolerance as well
   local_tpgoal.check_vel = close_to_final_goal;
-  // set p_final to be path_cropped.back(), which is exactly at accumulated
+  // set p_final to be path_cropped_wrt_odom.back(), which is exactly at accumulated
   // distance d from the robot (unless path is shorter than d, crop_end will
   // be default as the end of path)
-  Vec3f local_goal = path_cropped.back();
+  Vec3f local_goal = path_cropped_wrt_odom.back();
   local_tpgoal.p_final.position.x = local_goal(0);
   local_tpgoal.p_final.position.y = local_goal(1);
   local_tpgoal.p_final.position.z = local_goal(2);
@@ -399,10 +424,7 @@ return;}
   if (!local_finished_before_timeout) {
     // check result of local plan
     ROS_ERROR("Initial local planning timed out");
-    active_ = false;
-    if (replan_server_->isActive()) {
-      replan_server_->setAborted(critical_);
-    }
+    AbortReplan();
     return;
   }
   auto local_result = local_plan_client_->getResult();
@@ -424,10 +446,10 @@ return;}
   // Initial plan step 4: execute the planned trajectory, during which
   // replanning process will also be triggered
   ROS_INFO("Started replanning!");
-  run_trajectory();
+  RunTrajectory();
 }
 
-void RePlanner::run_trajectory() {
+void RePlanner::RunTrajectory() {
   if (!replan_server_->isActive()) {
     return;
   }
@@ -454,7 +476,7 @@ void RePlanner::run_trajectory() {
   }
 }
 
-bool RePlanner::plan_trajectory(int horizon) {
+bool RePlanner::PlanTrajectory(int horizon) {
   // horizon = 1 + (current_plan_epoch - last_plan_epoch),
   // where duration of one epoch is execution_time, which is 1.0/replan_rate
   if (horizon > max_horizon_) {
@@ -499,18 +521,17 @@ bool RePlanner::plan_trajectory(int horizon) {
   //  #################################################################################
 
   // ROS_WARN_STREAM("++++ total_crop_dist = " << crop_dist);
-  vec_Vec3f path_cropped = path_crop(global_path_);
-  if (path_cropped.size() == 0) {
+  vec_Vec3f global_path_wrt_odom =
+      TransformGlobalPath(global_path_);
+  vec_Vec3f path_cropped_wrt_odom = PathCrop(global_path_wrt_odom);
+  if (path_cropped_wrt_odom.size() == 0) {
     ROS_ERROR("[Replanner:] Path crop failed!");
-    active_ = false;
-    if (replan_server_->isActive()) {
-      replan_server_->setAborted(critical_);
-    }
+    AbortReplan();
     return false;
   }
 
   bool close_to_final_goal =
-      close_to_final(global_path_, path_cropped, close_to_final_dist_);
+      CloseToFinal(global_path_wrt_odom, path_cropped_wrt_odom, close_to_final_dist_);
 
   // Replan step 3: local plan
   // ##########################################################################################################
@@ -520,10 +541,10 @@ bool RePlanner::plan_trajectory(int horizon) {
   local_tpgoal.epoch = last_plan_epoch_ + horizon;
   // if close_to_final_goal, we need to check velocity tolerance as well
   local_tpgoal.check_vel = close_to_final_goal;
-  // change p_final to be path_cropped.back(), which is exactly at accumulated
+  // change p_final to be path_cropped_wrt_odom.back(), which is exactly at accumulated
   // distance d from the robot (unless path is shorter than d, crop_end will
   // be default as the end of path)
-  Vec3f local_goal = path_cropped.back();
+  Vec3f local_goal = path_cropped_wrt_odom.back();
   local_tpgoal.p_final.position.x = local_goal(0);
   local_tpgoal.p_final.position.y = local_goal(1);
   local_tpgoal.p_final.position.z = local_goal(2);
@@ -679,7 +700,7 @@ void RePlanner::update_status() {
   }
 }
 
-vec_Vec3f RePlanner::path_crop(const vec_Vec3f &path) {
+vec_Vec3f RePlanner::PathCrop(const vec_Vec3f &path) {
   if (path.size() < 2) {
     ROS_WARN("[Replanner:] global path has <= 1 waypoints. Check!");
     // return empty
@@ -742,8 +763,36 @@ vec_Vec3f RePlanner::path_crop(const vec_Vec3f &path) {
   return cropped_path;
 }
 
-vec_Vec3f RePlanner::path_crop(const vec_Vec3f &path, double crop_dist_xyz,
-                               double crop_dist_z) {
+vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f &path_wrt_map) {
+  // get the latest tf from map to odom reference frames
+  auto odom_to_map =
+      tf_listener_.LookupTransform(odom_frame_, map_frame_, ros::Time(0));
+  if (!odom_to_map) {
+    ROS_ERROR("[Replanner:] Failed to get tf from %s to %s",
+              map_frame_.c_str(), odom_frame_.c_str());
+    AbortReplan();
+    // return original path
+    return path_wrt_map;
+  }
+
+  // TF transform from the sensor frame to the map frame
+  Aff3f odom_to_map_tf = toTF(*odom_to_map);
+  Vec3f waypoint_wrt_odom;
+
+  vec_Vec3f path_wrt_odom;
+  for (unsigned int i = 1; i < path_wrt_map.size(); i++) {
+    // apply TF on current waypoint 
+    waypoint_wrt_odom = odom_to_map_tf * path_wrt_map[i];
+    path_wrt_odom.push_back(waypoint_transformed);
+  }
+
+  // publish transformed global path for visualization
+  global_path_wrt_odom_pub_.publish(path_wrt_odom);
+  return path_wrt_odom;
+}
+
+vec_Vec3f RePlanner::PathCrop(const vec_Vec3f &path, double crop_dist_xyz,
+                              double crop_dist_z) {
   // return nonempty
   // precondition
   if (path.size() < 2 || crop_dist_xyz < 0 || crop_dist_z < 0) {
@@ -797,9 +846,9 @@ vec_Vec3f RePlanner::path_crop(const vec_Vec3f &path, double crop_dist_xyz,
   return cropped_path;
 }
 
-bool RePlanner::close_to_final(const vec_Vec3f &original_path,
-                               const vec_Vec3f &cropped_path,
-                               double dist_threshold) {
+bool RePlanner::CloseToFinal(const vec_Vec3f &original_path,
+                             const vec_Vec3f &cropped_path,
+                             double dist_threshold) {
   // precondition: original_path and cropped_path are non-empty
   if (original_path.size() < 2 || cropped_path.size() < 2) {
     return true;
@@ -815,6 +864,14 @@ bool RePlanner::close_to_final(const vec_Vec3f &original_path,
   }
 }
 
+Replanner::AbortReplan() {
+  active_ = false;
+  if (replan_server_->isActive()) {
+    replan_server_->setAborted(critical_);
+  }
+  ROS_ERROR("[Replanner:] Replanning terminated!!");
+}
+
 RePlanner::RePlanner() : nh_("~") {
   ros::NodeHandle priv_nh(nh_, "local_global_server");
 
@@ -823,8 +880,11 @@ RePlanner::RePlanner() : nh_("~") {
   time_pub2 = priv_nh.advertise<sensor_msgs::Temperature>(
       "/timing/replanner/local_replan", 1);
 
-  cropped_path_pub_ =
-      priv_nh.advertise<planning_ros_msgs::Path>("cropped_local_path", 1, true);
+  // cropped_path_pub_ =
+  //     priv_nh.advertise<planning_ros_msgs::Path>("cropped_local_path", 1, true);
+
+  global_path_wrt_odom_pub_ =
+      priv_nh.advertise<planning_ros_msgs::Path>("global_path_wrt_odom", 1, true);
 
   priv_nh.param("max_horizon", max_horizon_, 5);
   priv_nh.param("crop_radius", crop_radius_, 10.0);
@@ -833,6 +893,8 @@ RePlanner::RePlanner() : nh_("~") {
   priv_nh.param("termination_distance", global_termination_distance_, 5.0);
   priv_nh.param("local_plan_timeout_duration", local_timeout_duration_, 1.0);
   priv_nh.param("max_local_plan_trials", max_local_trials_, 4);
+  priv_nh.param("odom_frame", odom_frame_, std::string("odom"));
+  priv_nh.param("map_frame", map_frame_, std::string("map"));
 
   // replan action server
   replan_server_.reset(
@@ -856,14 +918,14 @@ RePlanner::RePlanner() : nh_("~") {
 
   // subscriber of position command
   // command callback: setting cmd_pos_ to be the commanded position
-  cmd_sub_ = nh_.subscribe("position_cmd", 1, &RePlanner::cmd_cb, this);
+  cmd_sub_ = nh_.subscribe("position_cmd", 1, &RePlanner::CmdCb, this);
   local_map_sub_ =
-      nh_.subscribe("local_voxel_map", 2, &RePlanner::localMapCB, this);
+      nh_.subscribe("local_voxel_map", 2, &RePlanner::LocalMapCb, this);
   local_map_ptr_ = nullptr;
 
   // subscriber of epoch command, epoch is published by trajectory tracker
   // epoch callback: trigger replan, set horizon
-  epoch_sub_ = nh_.subscribe("epoch", 1, &RePlanner::epoch_cb, this);
+  epoch_sub_ = nh_.subscribe("epoch", 1, &RePlanner::EpochCb, this);
 
   // subscriber of global path
   global_path_sub_ =
@@ -874,7 +936,7 @@ RePlanner::RePlanner() : nh_("~") {
 
   // Goal callback
   replan_server_->registerGoalCallback(
-      boost::bind(&RePlanner::replan_goal_cb, this));
+      boost::bind(&RePlanner::ReplanGoalCb, this));
 
   replan_server_->start();
 }
@@ -887,7 +949,7 @@ int main(int argc, char **argv) {
   while (nh.ok()) {
     r.sleep();
     replanner.setup_replanner();  // this function will only run AFTER the
-                                  // replan_goal_cb, and will only run ONCE
+                                  // ReplanGoalCb, and will only run ONCE
     replanner.update_status();
     ros::spinOnce();
   }

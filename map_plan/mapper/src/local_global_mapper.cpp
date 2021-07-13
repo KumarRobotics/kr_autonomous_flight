@@ -37,8 +37,10 @@ ros::Publisher local_voxel_map_pub;
 // ros::Publisher local_cloud_pub;
 
 bool debug_;
-bool real_robot_;          // define it's real-robot experiment or not
-std::string map_frame_;    // map frame
+bool real_robot_;         // define it's real-robot experiment or not
+std::string map_frame_;   // map frame
+std::string odom_frame_;  // odom frame
+
 std::string lidar_frame_;  // lidar frame
 std::string cloud_name_;   // cloud msg name frame
 // std::string odom_name_;    // odom msg name frame
@@ -62,17 +64,30 @@ int counter_clear_ = 0;
 
 vec_Vec3i clear_ns_;
 
-void cropLocalMap(const Eigen::Vector3d &center_position) {
+void cropLocalMap(const Eigen::Vector3d &center_position_map,
+                  const Eigen::Vector3d &center_position_odom) {
   const Eigen::Vector3d local_dim_d(
       local_map_info_.dim.x * local_map_info_.resolution,
       local_map_info_.dim.y * local_map_info_.resolution,
       local_map_info_.dim.z * local_map_info_.resolution);
-  Eigen::Vector3d local_origin = center_position + local_ori_offset_;
-  local_origin(2) = storage_map_info_.origin.z;
+  Eigen::Vector3d local_origin_map = center_position_map + local_ori_offset_;
+  local_origin_map(2) = storage_map_info_.origin.z;
 
   // core function: crop local map from the storage map
   planning_ros_msgs::VoxelMap local_voxel_map =
-      storage_voxel_mapper_->getInflatedLocalMap(local_origin, local_dim_d);
+      storage_voxel_mapper_->getInflatedLocalMap(local_origin_map, local_dim_d);
+
+  // Transform local map by moving its origin. This is because we want the
+  // cropped map to be centered around lidar's position wrt odom frame
+  Eigen::Vector3d local_origin_odom = center_position_odom + local_ori_offset_;
+  local_origin_odom(2) = storage_map_info_.origin.z;
+  local_voxel_map.origin.x = local_origin_odom(0);
+  local_voxel_map.origin.y = local_origin_odom(1);
+  local_voxel_map.origin.z = local_origin_odom(2);
+
+  // The local map should still be published in map frame, not odom frame
+  // (since we already applied transform between odom and map frame already to
+  // compensate for the drift)
   local_voxel_map.header.frame_id = map_frame_;
   local_map_pub.publish(local_voxel_map);
 }
@@ -85,34 +100,54 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
 
   // get the transform from fixed frame to lidar frame
   static mapper::TFListener tf_listener;
-  geometry_msgs::Pose pose_map_cloud;
+  geometry_msgs::Pose pose_map_lidar;
+  geometry_msgs::Pose pose_odom_lidar;
   if (real_robot_) {
     // for real robot, the point cloud frame_id may not exist in the tf tree,
     // manually defining it here.
     // TODO(xu): make this automatic
-    auto tf_map_cloud = tf_listener.LookupTransform(map_frame_, lidar_frame_,
+    auto tf_map_lidar = tf_listener.LookupTransform(map_frame_, lidar_frame_,
                                                     cloud.header.stamp);
-    if (!tf_map_cloud) {
-      ROS_WARN("Failed to get transform from %s to %s", lidar_frame_.c_str(),
-               map_frame_.c_str());
+    auto tf_odom_lidar = tf_listener.LookupTransform(odom_frame_, lidar_frame_,
+                                                     cloud.header.stamp);
+    if ((!tf_map_lidar) || (!tf_odom_lidar)) {
+      ROS_WARN(
+          "Failed to get transform (either from %s to %s; or from %s to %s)",
+          lidar_frame_.c_str(), map_frame_.c_str(), lidar_frame_.c_str(),
+          odom_frame_.c_str);
       return;
     }
-    pose_map_cloud = *tf_map_cloud;
+    pose_map_lidar = *tf_map_lidar;
+    pose_odom_lidar = *tf_odom_lidar;
   } else {
-    auto tf_map_cloud = tf_listener.LookupTransform(
+    auto tf_map_lidar = tf_listener.LookupTransform(
         map_frame_, cloud.header.frame_id, cloud.header.stamp);
-    if (!tf_map_cloud) {
-      ROS_WARN("Failed to get transform from %s to %s",
-               cloud.header.frame_id.c_str(), map_frame_.c_str());
+    auto tf_odom_lidar = tf_listener.LookupTransform(
+        odom_frame_, cloud.header.frame_id, cloud.header.stamp);
+    if ((!tf_map_lidar) || (!tf_odom_lidar)) {
+      ROS_WARN(
+          "Failed to get transform (either from %s to %s; or from %s to %s)",
+          cloud.header.frame_id, map_frame_.c_str(), cloud.header.frame_id,
+          odom_frame_.c_str);
       return;
     }
-    pose_map_cloud = *tf_map_cloud;
+    pose_map_lidar = *tf_map_lidar;
+    pose_odom_lidar = *tf_odom_lidar;
   }
-  const Eigen::Affine3d T_m_c = toTF(pose_map_cloud);
-  // This is the lidar position in the fixed frame
-  const Eigen::Vector3d sensor_position(T_m_c.translation().x(),
-                                        T_m_c.translation().y(),
-                                        T_m_c.translation().z());
+  const Eigen::Affine3d T_map_lidar = toTF(pose_map_lidar);
+  const Eigen::Affine3d T_odom_lidar = toTF(pose_map_lidar);
+
+  // This is the lidar position in the odom frame, used for raytracing &
+  // cropping local map
+  const Eigen::Vector3d lidar_position_map(T_map_lidar.translation().x(),
+                                           T_map_lidar.translation().y(),
+                                           T_map_lidar.translation().z());
+  // This is the lidar position in the odom frame
+  // used for transforming local map to center around lidar's position in odom
+  // frame
+  const Eigen::Vector3d lidar_position_odom(T_odom_lidar.translation().x(),
+                                            T_odom_lidar.translation().y(),
+                                            T_odom_lidar.translation().z());
 
   ros::Time t0;
   cpu_times tc;
@@ -123,14 +158,16 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
   const auto pts = cloud_to_vec_filter(cloud, min_range_squared);
 
   timer.start();
-  storage_voxel_mapper_->addCloud(pts, T_m_c, local_infla_array_, false,
+  // local raytracing using lidar position in the map frame (not odom frame)
+  storage_voxel_mapper_->addCloud(pts, T_map_lidar, local_infla_array_, false,
                                   local_max_raycast_);
   ROS_DEBUG("[storage map addCloud]: %f",
             static_cast<double>(timer.elapsed().wall) / 1e6);
 
-  // crop local voxel map
   timer.start();
-  cropLocalMap(sensor_position);
+  // crop local voxel map
+  // the cropping step is using the lidar position in map frame
+  cropLocalMap(lidar_position_map, lidar_position_odom);
   ROS_DEBUG("[local map crop]: %f",
             static_cast<double>(timer.elapsed().wall) / 1e6);
 
@@ -154,7 +191,7 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
   ++counter_;
   if (counter_ % update_interval_ == 0) {
     timer.start();
-    global_voxel_mapper_->addCloud(pts, T_m_c, global_infla_array_, false,
+    global_voxel_mapper_->addCloud(pts, T_map_lidar, global_infla_array_, false,
                                    global_max_raycast_);
     ROS_DEBUG("[global map addCloud]: %f",
               static_cast<double>(timer.elapsed().wall) / 1e6);
@@ -162,7 +199,7 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
 
     // for global map, free voxels surrounding the robot to make sure the start
     // of the global planner is not occupied
-    // global_voxel_mapper_->freeVoxels(sensor_position, clear_ns_);
+    // global_voxel_mapper_->freeVoxels(lidar_position_map, clear_ns_);
     ROS_DEBUG("[global map freeVoxels]: %f",
               static_cast<double>(timer.elapsed().wall) / 1e6);
 
@@ -227,15 +264,16 @@ void mapInit() {
 
   // part2: local
   const Eigen::Vector3d storage_origin(storage_map_info_.origin.x,
-                               storage_map_info_.origin.y,
-                               storage_map_info_.origin.z);
+                                       storage_map_info_.origin.y,
+                                       storage_map_info_.origin.z);
   const Eigen::Vector3d storage_dim_d(
       storage_map_info_.dim.x * storage_map_info_.resolution,
       storage_map_info_.dim.y * storage_map_info_.resolution,
       storage_map_info_.dim.z * storage_map_info_.resolution);
   const double res = storage_map_info_.resolution;
   // Initialize the mapper
-  storage_voxel_mapper_.reset(new mapper::VoxelMapper(storage_origin, storage_dim_d, res));
+  storage_voxel_mapper_.reset(
+      new mapper::VoxelMapper(storage_origin, storage_dim_d, res));
   local_infla_array_.clear();
   int rn = std::ceil(robot_r_ / res);
   int hn = std::ceil(robot_h_ / res);
@@ -255,6 +293,7 @@ int main(int argc, char **argv) {
   ros::NodeHandle nh("~");
 
   nh.param("map_frame", map_frame_, std::string("map"));
+  nh.param("odom_frame", odom_frame_, std::string("odom"));
   nh.param("lidar_frame", lidar_frame_, std::string("lidar"));
   nh.param("real_robot", real_robot_, false);
   nh.param("debug", debug_, true);

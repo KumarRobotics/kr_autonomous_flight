@@ -1,3 +1,11 @@
+
+#include <ros/ros.h>
+#include <tf2_ros/transform_listener.h>
+#include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/Twist.h>
+#include <tf/transform_datatypes.h>
+
+
 #include <geometry_msgs/Pose.h>
 
 #include <action_trackers/RunTrajectoryAction.h>
@@ -13,14 +21,13 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Temperature.h>
 #include <std_msgs/Int64.h>
-#include <tf/transform_listener.h>
+// #include <tf/transform_listener.h>
 #include <traj_opt_ros/msg_traj.h>
 #include <traj_opt_ros/ros_bridge.h>
 
 #include <boost/timer/timer.hpp>
 #include <fla_state_machine/intersect_utils.hpp>
 #include <fla_state_machine/traj_opt_utils.hpp>
-#include <mapper/tf_listener.h>
 
 // Timer stuff
 using boost::timer::cpu_timer;
@@ -71,8 +78,8 @@ class RePlanner {
   cpu_timer timer;
 
   // tf_listener
-  mapper::TFListener tf_listener_;
-
+  tf2_ros::Buffer tfBuffer;
+  tf2_ros::TransformListener* tfListener;
 
   // reference frame names
   std::string map_frame_;   // map frame
@@ -766,9 +773,11 @@ vec_Vec3f RePlanner::PathCrop(const vec_Vec3f &path) {
 
 vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f &path_wrt_map) {
   // get the latest tf from map to odom reference frames
-  auto odom_to_map =
-      tf_listener_.LookupTransform("world", "map", ros::Time(0));
-  if (!odom_to_map) {
+  geometry_msgs::TransformStamped transformStamped;
+
+  try {
+    transformStamped = tfBuffer.lookupTransform(odom_frame_, map_frame_, ros::Time(0), ros::Duration(0.4));
+  } catch (tf2::TransformException &ex) {
     ROS_ERROR("[Replanner:] Failed to get tf from %s to %s",
               map_frame_.c_str(), odom_frame_.c_str());
     AbortReplan();
@@ -776,12 +785,21 @@ vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f &path_wrt_map) {
     return path_wrt_map;
   }
 
+  geometry_msgs::Pose odom_to_map;
+  odom_to_map.position.x = transformStamped.transform.translation.x;
+  odom_to_map.position.y = transformStamped.transform.translation.y;
+  odom_to_map.position.z = transformStamped.transform.translation.z;
+  odom_to_map.orientation.w = transformStamped.transform.rotation.w;
+  odom_to_map.orientation.x = transformStamped.transform.rotation.x;
+  odom_to_map.orientation.y = transformStamped.transform.rotation.y;
+  odom_to_map.orientation.z = transformStamped.transform.rotation.z;
+
   // TF transform from the sensor frame to the map frame
-  auto odom_to_map_tf = toTF(*odom_to_map);
+  auto odom_to_map_tf = toTF(odom_to_map);
   Vec3f waypoint_wrt_odom;
 
   vec_Vec3f path_wrt_odom;
-  for (unsigned int i = 1; i < path_wrt_map.size(); i++) {
+  for (unsigned int i = 0; i < path_wrt_map.size(); i++) {
     // apply TF on current waypoint 
     waypoint_wrt_odom = odom_to_map_tf * path_wrt_map[i];
     path_wrt_odom.push_back(waypoint_wrt_odom);
@@ -876,6 +894,8 @@ void RePlanner::AbortReplan(void) {
 }
 
 RePlanner::RePlanner() : nh_("~") {
+    tfListener = new tf2_ros::TransformListener(tfBuffer);
+
   ros::NodeHandle priv_nh(nh_, "local_global_server");
 
   time_pub1 = priv_nh.advertise<sensor_msgs::Temperature>(

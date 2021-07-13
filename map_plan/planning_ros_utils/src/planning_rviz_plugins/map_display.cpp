@@ -2,6 +2,8 @@
 
 #include <OgreSceneManager.h>
 #include <OgreSceneNode.h>
+#include <OgreSceneNode.h>
+
 
 namespace planning_rviz_plugins {
 
@@ -36,7 +38,8 @@ MapDisplay::MapDisplay()
       SLOT(updateMeshColorAndAlpha()));
 
   mesh_height_ = mesh_height_property_->getFloat();
-  update_nh_.setCallbackQueue(point_cloud_common_->getCallbackQueue());
+  // Update: changed this to work with ros noetic update in July 2021
+  // update_nh_.setCallbackQueue(point_cloud_common_->getCallbackQueue());
   map_util_.reset(new MPL::VoxelMapUtil());
 }
 
@@ -73,6 +76,10 @@ void MapDisplay::getMap(std::shared_ptr<MPL::VoxelMapUtil> &map_util,
 void MapDisplay::onInitialize() {
   MFDClass::onInitialize();
   point_cloud_common_->initialize(context_, scene_node_);
+  // Use the threaded queue for processing of incoming messages
+  // Use the threaded queue for processing of incoming messages 
+  update_nh_.setCallbackQueue(context_->getThreadedQueue());
+
 }
 
 vec_E<vec_Vec3f> MapDisplay::getBound() {

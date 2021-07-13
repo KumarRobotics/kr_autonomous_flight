@@ -2,14 +2,13 @@ cmake_minimum_required(VERSION 3.10)
 project(planning_ros_utils)
 
 # Set target C++ standard and required compiler features
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(
   catkin REQUIRED
   COMPONENTS rviz
              roscpp
-             rviz
              pcl_ros
              eigen_conversions
              planning_ros_msgs

@@ -60,5 +60,5 @@ local_global_server:
   local_plan_timeout_duration: 1.0 # local planner timeout in seconds 
   max_local_plan_trials: 3
   global_planner_verbose: false #
-  odom_frame: "odom"
-  map_frame: "map"
+  odom_frame: "quadrotor/odom"
+  map_frame: "quadrotor/map"

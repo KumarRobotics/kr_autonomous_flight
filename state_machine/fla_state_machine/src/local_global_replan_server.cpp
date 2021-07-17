@@ -1,18 +1,12 @@
 
-#include <ros/ros.h>
-#include <tf2_ros/transform_listener.h>
-#include <geometry_msgs/TransformStamped.h>
-#include <geometry_msgs/Twist.h>
-#include <tf/transform_datatypes.h>
-
-
-#include <geometry_msgs/Pose.h>
-
 #include <action_trackers/RunTrajectoryAction.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/server/simple_action_server.h>
 #include <fla_state_machine/ReplanAction.h>
+#include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/Twist.h>
 #include <kr_mav_msgs/PositionCommand.h>
 #include <planning_ros_msgs/Path.h>
 #include <planning_ros_msgs/PlanTwoPointAction.h>
@@ -21,6 +15,8 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Temperature.h>
 #include <std_msgs/Int64.h>
+#include <tf/transform_datatypes.h>
+#include <tf2_ros/transform_listener.h>
 // #include <tf/transform_listener.h>
 #include <traj_opt_ros/msg_traj.h>
 #include <traj_opt_ros/ros_bridge.h>
@@ -79,7 +75,7 @@ class RePlanner {
 
   // tf_listener
   tf2_ros::Buffer tfBuffer;
-  tf2_ros::TransformListener* tfListener;
+  tf2_ros::TransformListener *tfListener;
 
   // reference frame names
   std::string map_frame_;   // map frame
@@ -127,7 +123,7 @@ class RePlanner {
 
   // maximum trials of local replan allowed
   int max_local_trials_;
-  int failed_local_trials_ = 0;
+  double failed_local_trials_ = 0;
 
   double crop_radius_;    // local path crop radius (local path length will be
                           // this value)
@@ -140,9 +136,9 @@ class RePlanner {
 
   /**
    * @brief Epoch callback function, triggered by epoch msg published by
-   trajectory_tracker_upgraded, it will trigger the replan process (ONLY IF current epoch
-   is different than the previously recorded one) by calling plan_trajectory and
-   RunTrajectory functions
+   trajectory_tracker_upgraded, it will trigger the replan process (ONLY IF
+   current epoch is different than the previously recorded one) by calling
+   plan_trajectory and RunTrajectory functions
 
    */
   void EpochCb(const std_msgs::Int64 &msg);
@@ -382,8 +378,7 @@ void RePlanner::setup_replanner() {
 
   //  Initial plan step 2: Crop global path to get local goal
   //  #################################################################################
-  vec_Vec3f global_path_wrt_odom =
-      TransformGlobalPath(global_path_);
+  vec_Vec3f global_path_wrt_odom = TransformGlobalPath(global_path_);
   vec_Vec3f path_cropped_wrt_odom = PathCrop(global_path_wrt_odom);
 
   if (path_cropped_wrt_odom.size() == 0) {
@@ -413,9 +408,9 @@ void RePlanner::setup_replanner() {
   local_tpgoal.execution_time = ros::Duration(1.0 / local_replan_rate_);
   // if close_to_final_goal, we need to check velocity tolerance as well
   local_tpgoal.check_vel = close_to_final_goal;
-  // set p_final to be path_cropped_wrt_odom.back(), which is exactly at accumulated
-  // distance d from the robot (unless path is shorter than d, crop_end will
-  // be default as the end of path)
+  // set p_final to be path_cropped_wrt_odom.back(), which is exactly at
+  // accumulated distance d from the robot (unless path is shorter than d,
+  // crop_end will be default as the end of path)
   Vec3f local_goal = path_cropped_wrt_odom.back();
   local_tpgoal.p_final.position.x = local_goal(0);
   local_tpgoal.p_final.position.y = local_goal(1);
@@ -529,8 +524,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
   //  #################################################################################
 
   // ROS_WARN_STREAM("++++ total_crop_dist = " << crop_dist);
-  vec_Vec3f global_path_wrt_odom =
-      TransformGlobalPath(global_path_);
+  vec_Vec3f global_path_wrt_odom = TransformGlobalPath(global_path_);
   vec_Vec3f path_cropped_wrt_odom = PathCrop(global_path_wrt_odom);
   if (path_cropped_wrt_odom.size() == 0) {
     ROS_ERROR("[Replanner:] Path crop failed!");
@@ -538,8 +532,8 @@ bool RePlanner::PlanTrajectory(int horizon) {
     return false;
   }
 
-  bool close_to_final_goal =
-      CloseToFinal(global_path_wrt_odom, path_cropped_wrt_odom, close_to_final_dist_);
+  bool close_to_final_goal = CloseToFinal(
+      global_path_wrt_odom, path_cropped_wrt_odom, close_to_final_dist_);
 
   // Replan step 3: local plan
   // ##########################################################################################################
@@ -549,9 +543,9 @@ bool RePlanner::PlanTrajectory(int horizon) {
   local_tpgoal.epoch = last_plan_epoch_ + horizon;
   // if close_to_final_goal, we need to check velocity tolerance as well
   local_tpgoal.check_vel = close_to_final_goal;
-  // change p_final to be path_cropped_wrt_odom.back(), which is exactly at accumulated
-  // distance d from the robot (unless path is shorter than d, crop_end will
-  // be default as the end of path)
+  // change p_final to be path_cropped_wrt_odom.back(), which is exactly at
+  // accumulated distance d from the robot (unless path is shorter than d,
+  // crop_end will be default as the end of path)
   Vec3f local_goal = path_cropped_wrt_odom.back();
   local_tpgoal.p_final.position.x = local_goal(0);
   local_tpgoal.p_final.position.y = local_goal(1);
@@ -591,6 +585,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
           traj_opt::TrajDataFromSplineTrajectory(local_result->traj));
       last_plan_epoch_ = local_result->epoch;
       // ROS_INFO_STREAM("Got local plan with epoch " << last_plan_epoch_);
+      failed_local_trials_ = 0;  // reset this
       return true;
     } else {
       failed_local_trials_ += 1;
@@ -603,7 +598,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
     }
   }
 
-  if (failed_local_trials_ >= max_local_trials_) {
+  if (failed_local_trials_ >= max_local_trials_ - 1) {
     if (waypoint_idx_ >= (pose_goals_.size() - 1)) {
       // if this is the final waypoint, abort full mission
       active_ = false;
@@ -614,13 +609,18 @@ bool RePlanner::PlanTrajectory(int horizon) {
       // otherwise, allow one more try with the next waypoint
       // TODO(xu): maybe abort full mission is a better choice if we want to
       // visit every waypoint?
-      --failed_local_trials_;
+
       ++waypoint_idx_;
-      ROS_INFO_STREAM(
-          "Current intermidiate waypoint leads to local planner timeout, "
-          "giving another try with the next waypoint, "
-          "whose index is: "
+      ROS_WARN_STREAM(
+          "Current intermidiate waypoint leads to local planner timeout, for "
+          << max_local_trials_ - 1
+          << "times giving one last try with the next waypoint, "
+             "whose index is: "
           << waypoint_idx_);
+
+      failed_local_trials_ =
+          failed_local_trials_ - 0.5;  // - 0.5 so that if we timeout again, the
+                                       // replanner will be aborted
     }
     return false;
   }
@@ -776,10 +776,11 @@ vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f &path_wrt_map) {
   geometry_msgs::TransformStamped transformStamped;
 
   try {
-    transformStamped = tfBuffer.lookupTransform(odom_frame_, map_frame_, ros::Time(0), ros::Duration(0.4));
+    transformStamped = tfBuffer.lookupTransform(
+        odom_frame_, map_frame_, ros::Time(0), ros::Duration(0.4));
   } catch (tf2::TransformException &ex) {
-    ROS_ERROR("[Replanner:] Failed to get tf from %s to %s",
-              map_frame_.c_str(), odom_frame_.c_str());
+    ROS_ERROR("[Replanner:] Failed to get tf from %s to %s", map_frame_.c_str(),
+              odom_frame_.c_str());
     AbortReplan();
     // return original path
     return path_wrt_map;
@@ -800,7 +801,7 @@ vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f &path_wrt_map) {
 
   vec_Vec3f path_wrt_odom;
   for (unsigned int i = 0; i < path_wrt_map.size(); i++) {
-    // apply TF on current waypoint 
+    // apply TF on current waypoint
     waypoint_wrt_odom = odom_to_map_tf * path_wrt_map[i];
     path_wrt_odom.push_back(waypoint_wrt_odom);
   }
@@ -894,7 +895,7 @@ void RePlanner::AbortReplan(void) {
 }
 
 RePlanner::RePlanner() : nh_("~") {
-    tfListener = new tf2_ros::TransformListener(tfBuffer);
+  tfListener = new tf2_ros::TransformListener(tfBuffer);
 
   ros::NodeHandle priv_nh(nh_, "local_global_server");
 
@@ -904,10 +905,11 @@ RePlanner::RePlanner() : nh_("~") {
       "/timing/replanner/local_replan", 1);
 
   // cropped_path_pub_ =
-  //     priv_nh.advertise<planning_ros_msgs::Path>("cropped_local_path", 1, true);
+  //     priv_nh.advertise<planning_ros_msgs::Path>("cropped_local_path", 1,
+  //     true);
 
-  global_path_wrt_odom_pub_ =
-      priv_nh.advertise<planning_ros_msgs::Path>("global_path_wrt_odom", 1, true);
+  global_path_wrt_odom_pub_ = priv_nh.advertise<planning_ros_msgs::Path>(
+      "global_path_wrt_odom", 1, true);
 
   priv_nh.param("max_horizon", max_horizon_, 5);
   priv_nh.param("crop_radius", crop_radius_, 10.0);

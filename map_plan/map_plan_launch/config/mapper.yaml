@@ -7,11 +7,11 @@ robot_h: 0.5 # map will be dilated in z direction for 2*[ceil(robot_h/res)] cell
 global:
   center_x: 0.0
   center_y: 0.0
-  range_x: 1000.0
-  range_y: 1000.0
+  range_x: 500.0
+  range_y: 500.0
   center_z: 5 
   range_z: 10.0
-  resolution: 2.0 # 3
+  resolution: 1.0 # 3
   num_point_cloud_skip: 1 # integer
   max_raycast_range: 50.0
   dilate_xy: false

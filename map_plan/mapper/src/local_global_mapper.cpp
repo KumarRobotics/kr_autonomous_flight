@@ -50,6 +50,11 @@ std::string cloud_name_;   // cloud msg name frame
 vec_Vec3i global_infla_array_;  // inflation array
 vec_Vec3i local_infla_array_;   // inflation array
 
+// number of times of decay for an occupied voxel to be decayed into empty cell,
+// 0 means no decay
+int local_decay_times_to_empty_;   // for local and storage map
+int global_decay_times_to_empty_;  // for global map
+
 double robot_r_, robot_h_;
 bool global_use_robot_dim_xy_;
 bool global_use_robot_dim_z_;
@@ -239,9 +244,11 @@ void mapInit() {
       global_map_info_.dim.y * global_map_info_.resolution,
       global_map_info_.dim.z * global_map_info_.resolution);
   const double global_res = global_map_info_.resolution;
+  int8_t global_val_default = 0;
   // Initialize the mapper
-  global_voxel_mapper_.reset(
-      new mapper::VoxelMapper(global_origin, global_dim_d, global_res));
+  global_voxel_mapper_.reset(new mapper::VoxelMapper(
+      global_origin, global_dim_d, global_res, global_val_default,
+      global_decay_times_to_empty_));
 
   // build the array for map inflation
   global_infla_array_.clear();
@@ -273,9 +280,10 @@ void mapInit() {
       storage_map_info_.dim.y * storage_map_info_.resolution,
       storage_map_info_.dim.z * storage_map_info_.resolution);
   const double res = storage_map_info_.resolution;
+  int8_t storage_val_default = 0;
   // Initialize the mapper
   storage_voxel_mapper_.reset(
-      new mapper::VoxelMapper(storage_origin, storage_dim_d, res));
+      new mapper::VoxelMapper(storage_origin, storage_dim_d, res, storage_val_default, local_decay_times_to_empty_));
   local_infla_array_.clear();
   int rn = std::ceil(robot_r_ / res);
   int hn = std::ceil(robot_h_ / res);
@@ -336,6 +344,8 @@ int main(int argc, char **argv) {
   nh.param("global/range_x", global_map_dim_d_x, 500.0);
   nh.param("global/range_y", global_map_dim_d_y, 500.0);
   nh.param("global/range_z", global_map_dim_d_z, 2.0);
+  nh.param("global/decay_times_to_empty", global_decay_times_to_empty_, 0);
+  
   // only update voxel once every update_interval_ point clouds
   nh.param("global/num_point_cloud_skip", update_interval_, 5);  // int
   nh.param("global/max_raycast_range", global_max_raycast_, 100.0);
@@ -368,6 +378,7 @@ int main(int argc, char **argv) {
   nh.param("local/range_y", local_map_dim_d_y, 20.0);
   // nh.param("local/range_z", local_map_dim_d_z, 10.0);
   nh.param("local/max_raycast_range", local_max_raycast_, 20.0);
+  nh.param("local/decay_times_to_empty", local_decay_times_to_empty_, 0);
 
   storage_map_info_.resolution = local_map_info_.resolution;
 

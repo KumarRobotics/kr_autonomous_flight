@@ -3,7 +3,8 @@
 namespace mapper {
 
 VoxelMapper::VoxelMapper(const Eigen::Vector3d &origin,
-                         const Eigen::Vector3d &dim, double res, int8_t val) {
+                         const Eigen::Vector3d &dim, double res, int8_t val,
+                         int decay_times_to_empty) {
   origin_ = Eigen::Vector3i::Zero();
   origin_d_ = Eigen::Vector3d::Zero();
   dim_ = Eigen::Vector3i::Zero();
@@ -11,7 +12,13 @@ VoxelMapper::VoxelMapper(const Eigen::Vector3d &origin,
 
   res_ = res;
   val_default = val;
+  decay_times_to_empty = decay_times_to_empty;
   allocate(dim, origin);
+  if (decay_times_to_empty >= 1) {
+    val_decay = (val_occ - val_even) / decay_times_to_empty;
+  } else {
+    val_decay = 0;  // no decay
+  }
 }
 
 void VoxelMapper::setMapUnknown() {

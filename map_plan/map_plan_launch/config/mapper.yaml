@@ -16,7 +16,7 @@ global:
   max_raycast_range: 50.0
   dilate_xy: false
   dilate_z: false
-  decay_times_to_empty: 30
+  decay_times_to_empty: 0
 
 local: # local map range z and center_z will be the same as storage map
   # local planning horizon will be from robot to the local voxel map boundary

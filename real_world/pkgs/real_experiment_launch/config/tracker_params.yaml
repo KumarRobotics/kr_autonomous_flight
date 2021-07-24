@@ -1,0 +1,53 @@
+# This should contain tracker parameters
+
+#line_tracker_distance:
+#  default_v_des: 2.5
+#  default_a_des: 1.5
+#  default_w_des: 2.5
+#  epsilon: 0.1
+
+#line_tracker_min_jerk:
+#  default_v_des: 2.5
+#  default_a_des: 1.5
+#  default_yaw_v_des: 1.0
+#  default_yaw_a_des: 0.5
+
+stopping_policy:
+  default_a_des: 1.0
+  default_j_des: 2.0
+
+take_off_tracker:
+  thrust_rate: 5.0
+  max_thrust: 5.0
+  min_thurst: -9.8
+  epsilon: 0.01
+
+path_tracker:
+  v_max: 2.5
+  a_max: 0.2
+  v_min: 0.3
+  r_max: 0.8
+  r_min: 0.1
+  outer_r_max: 4.0
+  robot_r: 0.2 # robot radius
+  theta_thr: 1.57
+  yaw_thr: 0.3
+  yaw_speed: 0.35
+
+land_tracker:
+  vel: 0.5
+  acc: 0.5
+  epsilon: 0.5
+
+#trajectory_tracker:
+#  max_vel_des: 4.0
+#  max_acc_des: 5.0
+
+#velocity_tracker:
+#  timeout: 0.5
+
+#lissajous_tracker:
+#  frame_id: simulator
+
+#lissajous_adder:
+#  frame_id: simulator

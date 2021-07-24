@@ -1,0 +1,7 @@
+<launch>
+    <include file="$(find px4_interface_launch)/launch/px4_mavros.launch">
+    </include>
+
+    <include file="$(find px4_interface_launch)/launch/SO3_command_to_mavros.launch">
+    </include>
+</launch>

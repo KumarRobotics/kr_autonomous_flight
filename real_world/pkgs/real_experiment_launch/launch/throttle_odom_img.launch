@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+	<arg name="robot" default="quadrotor"/>
+	<arg name="odom_topic" default="odom"/>
+  
+  <arg name="throttled_topic_high" default="odom_throttled_high"/>
+	<arg name="throttled_hz_high" default="100"/>
+	<arg name="throttled_topic_low" default="odom_throttled_low"/>
+	<arg name="throttled_hz_low" default="0.2"/>
+
+  <arg name="image_topic" default="image_processor/debug_stereo_image"/>
+  <arg name="throttled_image_topic" default="image_processor/debug_stereo_image_throttled"/>
+	<arg name="throttled_image_hz" default="10"/>
+  
+  <group ns="$(arg robot)"> 
+	  	<node name="odom_throttler_high" type="throttle" pkg="topic_tools" args="messages $(arg odom_topic) $(arg throttled_hz_high) $(arg throttled_topic_high)" />
+	  	<node name="odom_throttler_low" type="throttle" pkg="topic_tools" args="messages $(arg odom_topic) $(arg throttled_hz_low) $(arg throttled_topic_low)" />
+	  	<node name="image_throttler" type="throttle" pkg="topic_tools" args="messages $(arg image_topic) $(arg throttled_image_hz) $(arg throttled_image_topic)" />
+	</group>
+</launch>

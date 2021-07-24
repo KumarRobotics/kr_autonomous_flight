@@ -1,0 +1,12 @@
+repositories:
+  ouster_decoder:
+    type: git
+    url: git@github.com:XuRobotics/ouster_decoder.git 
+    version: main
+  
+  ouster_example:
+    type: git
+    url: git@github.com:XuRobotics/ouster_example.git 
+    version: master
+
+

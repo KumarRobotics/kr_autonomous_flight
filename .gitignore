@@ -3,3 +3,5 @@
 *.pyc
 .idea/
 .vscode/
+ouster_example
+ouster_decoder

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+<arg name="robot" default="drone"/>
+  <node pkg="topic_tools" type="relay" name="ovc_relay" args="/ovc/left/image_raw $(arg robot)/cam_left/image_raw"/>
+  <node pkg="topic_tools" type="relay" name="ovc_relay2" args="/ovc/right/image_raw $(arg robot)/cam_right/image_raw"/>
+  <node pkg="topic_tools" type="relay" name="ovc_relay3" args="/ovc/vectornav $(arg robot)/imu"/>
+</launch>

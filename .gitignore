@@ -5,3 +5,4 @@
 .vscode/
 ouster_example
 ouster_decoder
+msckf_vio

@@ -1,7 +1,7 @@
 repositories:
   ouster_decoder:
     type: git
-    url: git@github.com:XuRobotics/ouster_decoder.git 
+    url: git@github.com:versatran01/ouster_decoder.git 
     version: main
   
   ouster_example:
@@ -9,4 +9,8 @@ repositories:
     url: git@github.com:XuRobotics/ouster_example.git 
     version: master
 
+  msckf_vio:
+    type: git
+    url: git@github.com:KumarRobotics/msckf_vio.git
+    version: master
 

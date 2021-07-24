@@ -14,7 +14,7 @@
 
 stopping_policy:
   default_a_des: 1.0
-  default_j_des: 3.0
+  default_j_des: 3.0t
 
 take_off_tracker:
   thrust_rate: 5.0

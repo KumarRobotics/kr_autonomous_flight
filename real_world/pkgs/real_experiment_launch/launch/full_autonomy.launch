@@ -2,12 +2,12 @@
 
 
 <launch>
-    <arg name="mapper_config" default="$(find map_plan_launch)/config/mapper.yaml"/>
-    <arg name="onboard_sensing" default="true"/>
+  <arg name="mapper_config" default="$(find map_plan_launch)/config/mapper.yaml"/>
+  <arg name="onboard_sensing" default="true"/>
 	<arg name="robot" default="quadrotor"/>
 	<arg name="vio_frame_id" default="vio/odom"/>
 
-  <arg name="mass" default="3.7"/>
+  <arg name="mass" default="4.2"/>
 	<arg name="odom_topic" default="odom"/>
 
 	<arg name="record_bag" default="true"/>
@@ -45,9 +45,11 @@
  
    <!-- S-MSCKF VIO (priority -10) -->
 	<group if="$(arg onboard_sensing)">
-    <include file="$(find estimation_launch)/launch/estimation_real_robot.launch"> 
+    <include file="$(find estimation_launch)/launch/estimation.launch"> 
       <arg name="calibration_file" value="$(find real_experiment_launch)/config/msckf_calib.yaml"/>
       <arg name="robot" value="$(arg robot)"/>
+      <arg name="sim" value="false"/>
+      <arg name="output_odom" value="odom"/>
       <arg name="cam0" value="/ovc/left"/>
       <arg name="cam1" value="/ovc/right"/>
       <arg name="robot_frame_id" value="$(arg robot)/base_link"/>
@@ -94,7 +96,3 @@
   </group>
  
  </launch>
-
-
-
-

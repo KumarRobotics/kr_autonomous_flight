@@ -47,10 +47,10 @@ trajectory_planner:
   heuristic_weight: 5.0
 
 stopping_policy:
-  acc_xy_des: 6.0 #
-  jerk_xy_des: 3.0 #
-  acc_z_des: 3.0 #
-  jerk_z_des: 1.5 #
+  acc_xy_des: 3.0 #
+  jerk_xy_des: 1.0 #
+  acc_z_des: 2.0 #
+  jerk_z_des: 1.0 #
   acc_yaw_des: 0.05 # rad
 
 local_global_server:

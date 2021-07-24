@@ -3,7 +3,7 @@ project(mavros_interface)
 
 set(CMAKE_CXX_STANDARD 11)
 find_package(catkin REQUIRED COMPONENTS roscpp nav_msgs geometry_msgs
-                                        mavros_msgs quadrotor_msgs nodelet)
+                                        mavros_msgs kr_mav_msgs nodelet)
 find_package(Eigen3 REQUIRED)
 
 catkin_package(
@@ -13,7 +13,7 @@ catkin_package(
   roscpp
   nav_msgs
   geometry_msgs
-  quadrotor_msgs
+  kr_mav_msgs
   mavros_msgs
   nodelet)
 

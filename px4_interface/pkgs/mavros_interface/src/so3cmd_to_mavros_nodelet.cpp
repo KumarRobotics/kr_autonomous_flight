@@ -2,7 +2,7 @@
 #include <mavros_msgs/AttitudeTarget.h>
 #include <nav_msgs/Odometry.h>
 #include <nodelet/nodelet.h>
-#include <quadrotor_msgs/SO3Command.h>
+#include <kr_mav_msgs/SO3Command.h>
 #include <ros/ros.h>
 #include <sensor_msgs/BatteryState.h>
 #include <sensor_msgs/Imu.h>
@@ -17,7 +17,7 @@ class SO3CmdToMavros : public nodelet::Nodelet {
   void onInit(void);
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
  private:
-  void so3_cmd_callback(const quadrotor_msgs::SO3Command::ConstPtr &msg);
+  void so3_cmd_callback(const kr_mav_msgs::SO3Command::ConstPtr &msg);
   void odom_callback(const nav_msgs::Odometry::ConstPtr &odom);
   void imu_callback(const sensor_msgs::Imu::ConstPtr &pose);
   void battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg);
@@ -45,7 +45,7 @@ class SO3CmdToMavros : public nodelet::Nodelet {
   double battery_voltage_;
   double so3_cmd_timeout_;
   ros::Time last_so3_cmd_time_;
-  quadrotor_msgs::SO3Command last_so3_cmd_;
+  kr_mav_msgs::SO3Command last_so3_cmd_;
 
   ThrustModels thrust_model_{TM_KARTIK};
 };
@@ -79,7 +79,7 @@ void SO3CmdToMavros::imu_callback(const sensor_msgs::Imu::ConstPtr &pose) {
     ROS_INFO("so3_cmd timeout. %f seconds since last command",
              (ros::Time::now() - last_so3_cmd_time_).toSec());
     const auto last_so3_cmd_ptr =
-        boost::make_shared<quadrotor_msgs::SO3Command>(last_so3_cmd_);
+        boost::make_shared<kr_mav_msgs::SO3Command>(last_so3_cmd_);
 
     so3_cmd_callback(last_so3_cmd_ptr);
   }
@@ -111,7 +111,7 @@ double SO3CmdToMavros::thrust_model_mike(double thrust) {
 }
 
 void SO3CmdToMavros::so3_cmd_callback(
-    const quadrotor_msgs::SO3Command::ConstPtr &msg) {
+    const kr_mav_msgs::SO3Command::ConstPtr &msg) {
   if (!so3_cmd_set_) so3_cmd_set_ = true;
 
   // grab desired forces and rotation from so3

@@ -14,3 +14,7 @@ repositories:
     url: git@github.com:KumarRobotics/msckf_vio.git
     version: master
 
+  kr_mav_control:
+    type: git
+    url: git@github.com:KumarRobotics/kr_mav_control.git
+    version: master

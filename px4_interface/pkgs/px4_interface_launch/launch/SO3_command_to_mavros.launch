@@ -11,10 +11,14 @@
   <!-- DJI E600 -->
   <!-- Thrust = a * RPM^2 + b * RPM + c -->
   <!-- Thrust is in Newton not grams-force -->
+  <!-- 15" 1575 props -->
+  <arg name="thrust_vs_rpm_coeff_a" default="8.401e-7"/>
+  <arg name="thrust_vs_rpm_coeff_b" default="-1.400e-3"/>
+  <arg name="thrust_vs_rpm_coeff_c" default="1.12"/>
   <!-- 13" 1355 props -->
-  <arg name="thrust_vs_rpm_coeff_a" default="4.424e-7"/>
-  <arg name="thrust_vs_rpm_coeff_b" default="-2.846e-4"/>
-  <arg name="thrust_vs_rpm_coeff_c" default="1.780e-1"/>
+  <!-- <arg name="thrust_vs_rpm_coeff_a" default="4.424e-7"/> -->
+  <!-- <arg name="thrust_vs_rpm_coeff_b" default="-2.846e-4"/> -->
+  <!-- <arg name="thrust_vs_rpm_coeff_c" default="1.780e-1"/> -->
   <!-- FLA props -->
   <!-- <arg name="thrust_vs_rpm_coeff_a" default="2.909306e-7"/> -->
   <!-- <arg name="thrust_vs_rpm_coeff_b" default="9.716351e-5"/> -->

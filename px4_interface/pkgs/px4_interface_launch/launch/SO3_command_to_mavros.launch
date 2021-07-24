@@ -10,6 +10,7 @@
   <!-- Kartik model -->
   <!-- DJI E600 -->
   <!-- Thrust = a * RPM^2 + b * RPM + c -->
+  <!-- Thrust is in Newton not grams-force -->
   <arg name="thrust_vs_rpm_coeff_a" default="4.424e-7"/>
   <arg name="thrust_vs_rpm_coeff_b" default="-2.846e-4"/>
   <arg name="thrust_vs_rpm_coeff_c" default="1.780e-1"/>
@@ -18,7 +19,7 @@
   <!-- <arg name="thrust_vs_rpm_coeff_c" default="-0.3474692246"/> -->
   <!-- RPM = a * throttle + b where throttle in [0,1] -->
   <!-- At 16.2 V -->
-  <arg name="rpm_vs_throttle_coeff_a" default="6000"/>
+  <arg name="rpm_vs_throttle_coeff_a" default="5867"/>
   <arg name="rpm_vs_throttle_coeff_b" default="0"/>
   <!-- <arg name="rpm_vs_throttle_coeff_a" default="6478.1337706"/> -->
   <!-- <arg name="rpm_vs_throttle_coeff_b" default="1807.3243354"/> -->

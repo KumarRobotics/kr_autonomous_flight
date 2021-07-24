@@ -2,8 +2,6 @@
 
 #include <OgreSceneManager.h>
 #include <OgreSceneNode.h>
-#include <OgreSceneNode.h>
-
 
 namespace planning_rviz_plugins {
 
@@ -77,9 +75,8 @@ void MapDisplay::onInitialize() {
   MFDClass::onInitialize();
   point_cloud_common_->initialize(context_, scene_node_);
   // Use the threaded queue for processing of incoming messages
-  // Use the threaded queue for processing of incoming messages 
+  // Use the threaded queue for processing of incoming messages
   update_nh_.setCallbackQueue(context_->getThreadedQueue());
-
 }
 
 vec_E<vec_Vec3f> MapDisplay::getBound() {

@@ -282,8 +282,9 @@ void mapInit() {
   const double res = storage_map_info_.resolution;
   int8_t storage_val_default = 0;
   // Initialize the mapper
-  storage_voxel_mapper_.reset(
-      new mapper::VoxelMapper(storage_origin, storage_dim_d, res, storage_val_default, local_decay_times_to_empty_));
+  storage_voxel_mapper_.reset(new mapper::VoxelMapper(
+      storage_origin, storage_dim_d, res, storage_val_default,
+      local_decay_times_to_empty_));
   local_infla_array_.clear();
   int rn = std::ceil(robot_r_ / res);
   int hn = std::ceil(robot_h_ / res);
@@ -345,7 +346,7 @@ int main(int argc, char **argv) {
   nh.param("global/range_y", global_map_dim_d_y, 500.0);
   nh.param("global/range_z", global_map_dim_d_z, 2.0);
   nh.param("global/decay_times_to_empty", global_decay_times_to_empty_, 0);
-  
+
   // only update voxel once every update_interval_ point clouds
   nh.param("global/num_point_cloud_skip", update_interval_, 5);  // int
   nh.param("global/max_raycast_range", global_max_raycast_, 100.0);

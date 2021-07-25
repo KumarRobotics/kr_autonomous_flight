@@ -3,7 +3,7 @@ cam0:
   camera_model: pinhole
   distortion_coeffs: [-0.39654918708083786, 0.1558790317565405, -0.0010594148000153032,
     0.00025709826301464087]
-  distortion_model: radtan
+  distortion_model: equidistant
   intrinsics: [1073.6761539395402, 1073.8330237715743, 639.8740708893763, 350.2857551988687]
   resolution: [1280, 800]
   rostopic: /ovc/left/image_raw
@@ -17,7 +17,7 @@ cam1:
   camera_model: pinhole
   distortion_coeffs: [-0.3966983368290133, 0.15458308333712786, -0.0009595676428343468,
     0.0005824619005361072]
-  distortion_model: radtan
+  distortion_model: equidistant
   intrinsics: [1070.4739652775727, 1070.8246115855497, 660.8552697003395, 357.0592968241504]
   resolution: [1280, 800]
   rostopic: /ovc/right/image_raw

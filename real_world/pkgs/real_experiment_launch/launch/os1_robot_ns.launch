@@ -1,42 +1,46 @@
+
 <launch>
 
-  <arg name="os1_hostname" default="192.168.100.12" doc="hostname or IP in dotted decimal form of the sensor"/>
-  <arg name="os1_udp_dest" default="192.168.100.80" doc="hostname or IP where the sensor will send data packets"/>
-  <arg name="os1_lidar_port" default="7502" doc="port to which the sensor should send lidar data"/>
-  <arg name="os1_imu_port" default="7503" doc="port to which the sensor should send imu data"/>
-  <arg name="replay" default="false" doc="do not connect to a sensor; expect /os1_node/{lidar,imu}_packets from replay"/>
-  <arg name="lidar_mode" default="1024x10" doc="resolution and rate: either 512x10, 512x20, 1024x10, 1024x20, or 2048x10"/>
-  <arg name="metadata" default="" doc="override default metadata file for replays"/>
-  <arg name="viz" default="false" doc="whether to run a simple visualizer"/>
-  <arg name="image" default="false" doc="publish range/intensity/noise image topic"/>
   <arg name="robot" default="drone"/>
+  <arg name="sensor_hostname" default="" doc="hostname or IP in dotted decimal form of the sensor"/>
+  <arg name="udp_dest" default="" doc="hostname or IP where the sensor will send data packets"/>
+  <arg name="lidar_port" default="0" doc="port to which the sensor should send lidar data"/>
+  <arg name="imu_port" default="0" doc="port to which the sensor should send imu data"/>
+  <arg name="replay" default="false" doc="do not connect to a sensor; expect /os_node/{lidar,imu}_packets from replay"/>
+  <arg name="lidar_mode" default="2048x10" doc="resolution and rate: either 512x10, 512x20, 1024x10, 1024x20, or 2048x10"/>
+  <arg name="timestamp_mode" default="" doc="method used to timestamp measurements: TIME_FROM_INTERNAL_OSC, TIME_FROM_SYNC_PULSE_IN, TIME_FROM_PTP_1588"/>
+  <arg name="metadata" default="" doc="override default metadata file for replays"/>
+  <arg name="viz" default="false" doc="whether to run a rviz"/>
+  <arg name="rviz_config" default="-d $(find ouster_ros)/viz.rviz" doc="optional rviz config file"/>
+  <arg name="tf_prefix" default="" doc="namespace for tf transforms"/>
 
-  <node pkg="ouster_ros" name="os1_node" type="os1_node" output="screen" required="true">
+  <node pkg="ouster_ros" name="os_node" type="os_node" output="screen" required="true">
     <param name="~/lidar_mode" type="string" value="$(arg lidar_mode)"/>
+    <param name="~/timestamp_mode" type="string" value="$(arg timestamp_mode)"/>
     <param name="~/replay" value="$(arg replay)"/>
-    <param name="~/os1_hostname" value="$(arg os1_hostname)"/>
-    <param name="~/os1_udp_dest" value="$(arg os1_udp_dest)"/>
-    <param name="~/os1_lidar_port" value="$(arg os1_lidar_port)"/>
-    <param name="~/os1_imu_port" value="$(arg os1_imu_port)"/>
+    <param name="~/sensor_hostname" value="$(arg sensor_hostname)"/>
+    <param name="~/udp_dest" value="$(arg udp_dest)"/>
+    <param name="~/lidar_port" value="$(arg lidar_port)"/>
+    <param name="~/imu_port" value="$(arg imu_port)"/>
     <param name="~/metadata" value="$(arg metadata)"/>
   </node>
 
 <group ns="$(arg robot)"> 
-  <node pkg="ouster_ros" type="os1_cloud_node" name="os1_cloud_node" output="screen" required="true">
-    <remap from="~/os1_config" to="/os1_node/os1_config"/>
-    <remap from="~/lidar_packets" to="/os1_node/lidar_packets"/>
-    <remap from="~/imu_packets" to="/os1_node/imu_packets"/>
+  <node pkg="ouster_ros" type="os_cloud_node" name="os_cloud_node" output="screen" required="true">
+    <remap from="~/os_config" to="/os_node/os_config"/>
+    <remap from="~/lidar_packets" to="/os_node/lidar_packets"/>
+    <remap from="~/imu_packets" to="/os_node/imu_packets"/>
+    <param name="~/tf_prefix" value="$(arg tf_prefix)"/>
   </node>
 
-  <node if="$(arg viz)" pkg="ouster_ros" name="viz_node" type="viz_node" output="screen" required="true">
-    <remap from="~/os1_config" to="/os1_node/os1_config"/>
-    <remap from="~/points" to="/os1_cloud_node/points"/>
+  <node if="$(arg viz)" pkg="rviz" name="rviz" type="rviz" args="$(arg rviz_config)" output="screen" required="true" />
+  <node if="$(arg viz)" pkg="ouster_ros" name="img_node" type="img_node" output="screen" required="true">
+    <remap from="~/os_config" to="/os_node/os_config"/>
+    <remap from="~/points" to="/os_cloud_node/points"/>
   </node>
 
-  <node if="$(arg image)" pkg="ouster_ros" name="img_node" type="img_node" output="screen" required="true">
-    <remap from="~/os1_config" to="/os1_node/os1_config"/>
-    <remap from="~/points" to="/os1_cloud_node/points"/>
-  </node>
+  <!-- for compatibility with < 1.13 rosbags -->
+  <node pkg="topic_tools" name="relay_lidar" type="relay" args="/os1_node/lidar_packets /os_node/lidar_packets" />
+  <node pkg="topic_tools" name="relay_imu" type="relay" args="/os1_node/imu_packets /os_node/imu_packets" />
 </group>
-
 </launch>

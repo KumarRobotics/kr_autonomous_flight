@@ -12,11 +12,16 @@
 
 	<arg name="record_bag" default="false"/>
 
-
-
   <!-- drivers  -->
 	<include file="$(find real_experiment_launch)/launch/os1_robot_ns.launch">
       <arg name="robot" value="$(arg robot)"/>
+      <arg name="sensor_hostname" value="192.168.100.12"/>
+      <arg name="udp_dest" value="192.168.100.1"/>
+      <arg name="lidar_port" value="7502"/>
+      <arg name="imu_port" value="7503"/>
+      <arg name="replay" value="false"/>
+      <arg name="lidar_mode" value="2048x10"/>
+      <arg name="metadata" value="$ROS_HOME"/>
 	</include> 
 
    
@@ -26,16 +31,6 @@
   </include>
 </group>
 
-
-	<!-- Mapper and Planner -->
-	<include file="$(find map_plan_launch)/launch/map_plan.launch">
-    		 <arg name="robot" value="$(arg robot)"/>
-    		 <arg name="real_robot" value="true"/>
-    		 <arg name="lidar_frame" value="lidar"/>
-         <arg name="cloud" value="os1_cloud_node/points"/>
-		 <arg name="mapper_config" value="$(arg mapper_config)"/>
-	</include>
-  
   <!-- publish_tf -->
     <include file="$(find real_experiment_launch)/launch/publish_tf.launch">
       <arg name="robot" value="$(arg robot)"/>
@@ -43,21 +38,29 @@
       <arg name="vio_imu_frame_id" value="$(arg robot)/ovc_camera_link"/>
    </include>
  
-   <!-- S-MSCKF VIO (priority -10) -->
-	<group if="$(arg onboard_sensing)">
-    <include file="$(find estimation_launch)/launch/estimation.launch"> 
+
+   <!-- system launch that includes mapper planner state_machine controller state_estimation-->
+  <include file="$(find state_machine_launch)/launch/system_mp.launch">
+    <arg name="onboard_sensing" value="$(arg onboard_sensing)" />
+    <arg name="takeoff_height" value="3" />
+    <arg name="use_lauras" value="false" />
       <arg name="calibration_file" value="$(find real_experiment_launch)/config/msckf_calib.yaml"/>
       <arg name="robot" value="$(arg robot)"/>
-      <arg name="sim" value="false"/>
       <arg name="output_odom" value="odom"/>
       <arg name="cam0" value="/ovc/left"/>
       <arg name="cam1" value="/ovc/right"/>
       <arg name="robot_frame_id" value="$(arg robot)/base_link"/>
       <arg name="vio_imu_frame_id" value="$(arg robot)/ovc_camera_link"/>
       <arg name="imu" value="/ovc/vectornav"/>
-	</include>
+      <arg name="publish_body_camera_tf" default="false"/>
+      <arg name="lidar_cloud_topic" value="os_cloud_node/points" />
+      <arg name="lidar_frame" value="$(arg robot)/lidar" />
+      <arg name="publish_odom_tf" default="true"/>
+      <arg name="real_robot" value="true"/>
+      <arg name="mapper_config" value="$(arg mapper_config)"/>
+      <arg name="use_motion_primitive" default="true"/>
+  </include>
 
-	</group>
 
 	 <!-- mavros pixhawk interface -->
 	<include file="$(find px4_interface_launch)/launch/SO3_command_to_mavros.launch">
@@ -65,25 +68,7 @@
 		<arg name="odom" value="$(arg odom_topic)"/>
 	</include>
 
-    <!-- Controller -->
-    <include file="$(find control_launch)/launch/control.launch">
-      	<arg name="mass" value="$(arg mass)"/>
-    	<arg name="robot" value="$(arg robot)"/>
-    	<arg name="simulation" value="false"/>
-    </include>
-
-
-
-	 <!-- State machine -->
-    <include file="$(find state_machine_launch)/launch/state_machine.launch">
-		<arg name="robot" value="$(arg robot)"/>
-		<arg name="takeoff_height" value="3"/>
-		<arg name="max_horizon" value="5"/>
-   </include>
-
-
 	 <!-- bag record  -->
-
 	<group if="$(arg record_bag)"> 
    <include file="$(find real_experiment_launch)/launch/record_bag.launch">
    </include>

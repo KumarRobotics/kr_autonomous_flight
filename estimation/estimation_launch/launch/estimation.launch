@@ -40,7 +40,7 @@
 		<!-- UKF Nodelet -->
 		<node pkg="nodelet" type="nodelet" name="fla_ukf" args="standalone fla_ukf/FLAUKFNodelet" clear_params="true" output="screen">
 		  <rosparam file="$(find estimation_launch)/config/ukf_params.yaml"/>
-		  <remap from="~imu" to="imu"/>
+		  <remap from="~imu" to="$(arg imu)"/>
 		  <remap from="~height" to="mavros/distance_sensor/lidarlite_pub"/>
 		  <remap from="~vio_odom" to="vio/odom"/>
 		  <remap from="~odom_out" to="$(arg output_odom)"/>

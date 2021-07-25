@@ -117,7 +117,7 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
                                                      cloud.header.stamp);
     if ((!tf_map_lidar) || (!tf_odom_lidar)) {
       ROS_WARN(
-          "Failed to get transform (either from %s to %s; or from %s to %s)",
+          "[Mapper real-robot:] Failed to get transform (either from %s to %s; or from %s to %s)",
           lidar_frame_.c_str(), map_frame_.c_str(), lidar_frame_.c_str(),
           odom_frame_.c_str());
       return;
@@ -130,11 +130,11 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
     auto tf_odom_lidar = tf_listener.LookupTransform(
         odom_frame_, cloud.header.frame_id, cloud.header.stamp);
     if (!tf_map_lidar) {
-      ROS_WARN("[Mapper:] Failed to get transform (from %s to %s)",
+      ROS_WARN("[Mapper simulation:] Failed to get transform map to lidar (from %s to %s)",
                cloud.header.frame_id.c_str(), map_frame_.c_str());
       return;
     } else if (!tf_odom_lidar) {
-      ROS_WARN("[Mapper:] Failed to get transform (from %s to %s)",
+      ROS_WARN("[Mapper simulation:] Failed to get transform odom to lidar (from %s to %s)",
                cloud.header.frame_id.c_str(), odom_frame_.c_str());
       return;
     }

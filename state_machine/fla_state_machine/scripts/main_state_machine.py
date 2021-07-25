@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from __future__ import absolute_import
 from __future__ import division
@@ -10,6 +10,7 @@ import smach_ros
 from std_srvs.srv import Empty
 from std_srvs.srv import EmptyResponse
 import planning_ros_msgs.msg as MHL
+import numpy
 
 # from Helpers import *
 from MainStates import *

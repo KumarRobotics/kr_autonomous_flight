@@ -122,16 +122,18 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
   double last_yaw_ = 0.0;
   double align_time_passed_ = 0.0;
   ros::Time prev_align_start_time_;    // current alignment start timestamp
-  double yaw_dot_magnitude_ = 0.5;  // rad per second
+  double yaw_dot_magnitude_ = 0.3;  // rad per second
   ros::Time last_yaw_align_time_;
   bool yaw_alignment_initialized_ = false;
+  bool alignment_ongoing_ = false;
   double yaw_align_dt_ =
       0.3;  // derive yaw alignment direction every yaw_align_dt_ seconds
   double last_yaw_align_x_ = 0.0;
   double last_yaw_align_y_ = 0.0;
   double yaw_des_ = 0.0;
+  double ultimate_yaw_des_ = 0.0;
   double yaw_threshold_ =
-      0.2;  // rad, if yaw error is larger than this, alignment will start
+      0.5;  // rad, if yaw error is larger than this, alignment will start
   double yaw_dot_des_ = 0.0;
   bool odom_yaw_recorded_ = false;
 
@@ -191,6 +193,7 @@ bool ActionTrajectoryTracker::Activate(
   started_ = ros::Time(0);
   odom_yaw_recorded_ = false;
   yaw_alignment_initialized_ = false;
+  alignment_ongoing_ = false;
 
   if (next_trajectory_.size() == 0) {
     if (msg == NULL)
@@ -221,6 +224,7 @@ void ActionTrajectoryTracker::Deactivate(void) {
   started_ = ros::Time(0);
   odom_yaw_recorded_ = false;
   yaw_alignment_initialized_ = false;
+  alignment_ongoing_ = false;
 }
 
 kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
@@ -482,29 +486,28 @@ void ActionTrajectoryTracker::AlignYaw(const nav_msgs::Odometry::ConstPtr &msg) 
     // derive yaw alignment direction again
     last_yaw_align_time_ = ros::Time::now();
     // desired yaw direction should be arctan(dy, dx)
-    yaw_des_ = atan2((msg->pose.pose.position.y - last_yaw_align_y_),
+    ultimate_yaw_des_ = atan2((msg->pose.pose.position.y - last_yaw_align_y_),
                      (msg->pose.pose.position.x - last_yaw_align_x_));
     // record x and y
     last_yaw_align_x_ = msg->pose.pose.position.x;
     last_yaw_align_y_ = msg->pose.pose.position.y;
   }
 
-  if (abs(yaw_des_ - last_yaw_) > yaw_threshold_) {
+  if (abs(ultimate_yaw_des_ - last_yaw_) > yaw_threshold_) {
     ROS_INFO_STREAM(
         "Aligning yaw by setting yaw_dot! yaw alignment is checked every "
         << yaw_align_dt_ << "seconds.");
 
     // set yaw dot to move robot to align with desired yaw
-    if (yaw_des_ > last_yaw_) {
+    if (ultimate_yaw_des_ > last_yaw_) {
       yaw_dot_des_ = yaw_dot_magnitude_ * 1.0;
     } else {
       yaw_dot_des_ = yaw_dot_magnitude_ * -1.0;
     }
     // check if it's current alignment is already ongoing
-    if (align_time_passed_ = 0.0) {
+    if (!alignment_ongoing_) {
       // no, start current alignment
-      align_time_passed_ =
-          0.01;  // use a minimal time interval to avoid re-initializing
+      align_time_passed_ = 0.0;
     } else {
       // yes, continue the alignment
       align_time_passed_ = (ros::Time::now() - prev_align_start_time_).toSec();
@@ -526,7 +529,7 @@ void ActionTrajectoryTracker::AlignYaw(const nav_msgs::Odometry::ConstPtr &msg) 
     // maintaining the last yaw
     yaw_des_ = last_yaw_;
     yaw_dot_des_ = 0.0;
-    align_time_passed_ = 0.0;  // reset the align_time_passed_
+    alignment_ongoing_ = false;  // reset the align_time_passed_
   }
 }
 

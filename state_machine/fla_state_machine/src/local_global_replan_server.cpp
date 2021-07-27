@@ -129,7 +129,8 @@ class RePlanner {
                           // this value)
   double crop_radius_z_;  // local path crop radius along z axis
   double close_to_final_dist_;
-  double global_termination_distance_;
+  float final_waypoint_threshold_;
+  float waypoint_threshold_;
   bool avoid_obstacle_{true};
 
   fla_state_machine::ReplanResult critical_;  // create critical bug report
@@ -320,15 +321,30 @@ void RePlanner::setup_replanner() {
     ROS_WARN("+++++++++++++++++++++++++++++++++++");
   }
 
+  if (waypoint_threshold_ < final_waypoint_threshold_) {
+    ROS_WARN(
+        "waypoint_reach_threshold is set as smaller than "
+        "final_waypoint_reach_threshold, this is not recommanded, now "
+        "changing the final_waypoint_threshold to be the same as "
+        "waypoint_threshold!");
+    final_waypoint_threshold_ = waypoint_threshold_;
+  }
+
   // Initial plan step 1: global plan
   // ########################################################################################################
-  double x_diff = std::abs(pose_goal_.position.x - cmd_pos_(0));
-  double y_diff = std::abs(pose_goal_.position.y - cmd_pos_(1));
-  if (std::max(x_diff, y_diff) <= global_termination_distance_) {
-    if (waypoint_idx_ >= (pose_goals_.size() - 1)) {
-      // exit replanning process if this is the final waypoint
+  // get the distance from cmd pos to goal (waypoint) pos
+  float x_diff = (float)std::abs(pose_goal_.position.x - cmd_pos_(0));
+  float y_diff = (float)std::abs(pose_goal_.position.y - cmd_pos_(1));
+  Vec2f xy_diff = Vec2f{pose_goal_.position.x - cmd_pos_(0),
+                        pose_goal_.position.y - cmd_pos_(1)};
+  float dist_cmd_to_goal = xy_diff.norm();
+  if (dist_cmd_to_goal <= waypoint_threshold_) {
+    if ((waypoint_idx_ >= (pose_goals_.size() - 1)) &&
+        (dist_cmd_to_goal <= final_waypoint_threshold_)) {
+      // exit replanning process if the final waypoint is reached
       ROS_WARN(
-          "Initial (and the only) waypoint is already close to the robot "
+          "[Replanner:] Initial (and the only) waypoint is already close to "
+          "the robot "
           "position, terminating the replanning process!");
       fla_state_machine::ReplanResult success;
       success.status = fla_state_machine::ReplanResult::SUCCESS;
@@ -338,10 +354,11 @@ void RePlanner::setup_replanner() {
       }
       last_traj_ = boost::shared_ptr<traj_opt::Trajectory>();
       return;
-    } else {
-      // otherwise, take the next waypoint
+    } else if (waypoint_idx_ < (pose_goals_.size() - 1)) {
+      // take the next waypoint if the intermidiate waypoint is reached
       ROS_WARN(
-          "Initial waypoint is already close to the robot position, continuing "
+          "[Replanner:] Initial waypoint is already close to the robot "
+          "position, continuing "
           "with the next waypoint!");
       ++waypoint_idx_;
       pose_goal_ = pose_goals_[waypoint_idx_];
@@ -387,9 +404,13 @@ void RePlanner::setup_replanner() {
     return;
   }
 
-  bool close_to_final_goal = CloseToFinal(
-      global_path_wrt_odom, path_cropped_wrt_odom, close_to_final_dist_);
-
+  bool close_to_final_goal;
+  if (close_to_final_dist_ > 0) {
+    close_to_final_goal = CloseToFinal(
+        global_path_wrt_odom, path_cropped_wrt_odom, close_to_final_dist_);
+  } else {
+    close_to_final_dist_ = false;
+  }
   // Initial plan step 3: local plan
   // ##########################################################################################################
   // set goal
@@ -532,8 +553,13 @@ bool RePlanner::PlanTrajectory(int horizon) {
     return false;
   }
 
-  bool close_to_final_goal = CloseToFinal(
-      global_path_wrt_odom, path_cropped_wrt_odom, close_to_final_dist_);
+  bool close_to_final_goal;
+  if (close_to_final_dist_ > 0) {
+    close_to_final_goal = CloseToFinal(
+        global_path_wrt_odom, path_cropped_wrt_odom, close_to_final_dist_);
+  } else {
+    close_to_final_dist_ = false;
+  }
 
   // Replan step 3: local plan
   // ##########################################################################################################
@@ -647,21 +673,27 @@ void RePlanner::update_status() {
     pos_final(3) = 0;
 
     // check if goal and traj evaluated position is less than threshold
-    if ((pos_goal - pos_final).norm() <= global_termination_distance_) {
-      if (waypoint_idx_ >= (pose_goals_.size() - 1)) {
+    // get the distance from current pos to goal (waypoint) pos
+    float dist_cmd_to_goal = (pos_goal - pos_final).norm();
+    if (dist_cmd_to_goal <= waypoint_threshold_) {
+      if ((waypoint_idx_ >= (pose_goals_.size() - 1)) &&
+          (dist_cmd_to_goal <= final_waypoint_threshold_)) {
         // finished_replanning_ is set as true if this is the final waypoint
         finished_replanning_ = true;
-        ROS_INFO_STREAM("Final waypoint reached!");
-      } else {
-        // otherwise, take the next waypoint
+        ROS_INFO_STREAM(
+            "Final waypoint reached! The distance threshold is set as: "
+            << final_waypoint_threshold_);
+      } else if (waypoint_idx_ < (pose_goals_.size() - 1)) {
+        // take the next waypoint if the intermidiate waypoint is reached
         ++waypoint_idx_;
         ROS_INFO_STREAM(
             "Intermidiate waypoint reached, continue to the next waypoint, "
             "whose index is: "
-            << waypoint_idx_);
+            << waypoint_idx_
+            << "The distance threshold is set as:" << waypoint_threshold_);
         pose_goal_ = pose_goals_[waypoint_idx_];
       }
-    }
+    };
   }
 
   // check for termination, evaluating trajectory and see if it's close to
@@ -915,9 +947,10 @@ RePlanner::RePlanner() : nh_("~") {
   priv_nh.param("crop_radius", crop_radius_, 10.0);
   priv_nh.param("crop_radius_z", crop_radius_z_, 2.0);
   priv_nh.param("close_to_final_dist", close_to_final_dist_, 10.0);
-  priv_nh.param("termination_distance", global_termination_distance_, 5.0);
+  priv_nh.param("final_goal_reach_threshold", final_waypoint_threshold_, 5.0f);
+  priv_nh.param("waypoint_reach_threshold", waypoint_threshold_, 10.0f);
   priv_nh.param("local_plan_timeout_duration", local_timeout_duration_, 1.0);
-  priv_nh.param("max_local_plan_trials", max_local_trials_, 4);
+  priv_nh.param("max_local_plan_trials", max_local_trials_, 3);
   priv_nh.param("odom_frame", odom_frame_, std::string("odom"));
   priv_nh.param("map_frame", map_frame_, std::string("map"));
 

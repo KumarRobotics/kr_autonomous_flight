@@ -106,8 +106,9 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
   double yaw_, start_yaw_;
   double yaw_thr_;
   boost::mutex mtx_;
-  bool use_yaw_, use_lambda_;
-  bool ignore_yaw_;  // should we check trajectory yaw
+  bool use_lambda_;
+  // bool use_yaw_;
+  // bool ignore_yaw_; 
   double yaw_speed_;
   ros::Publisher epoch_pub_, point_pub_, lambda_pub_;
 
@@ -130,11 +131,11 @@ void ActionTrajectoryTracker::Initialize(const ros::NodeHandle &nh) {
 
   ros::NodeHandle priv_nh(nh, "trajectory_tracker");
   priv_nh.param("max_pos_error", pos_err_max_, 1.0);
-  priv_nh.param("use_yaw", use_yaw_, false);
+  // priv_nh.param("use_yaw", use_yaw_, false); // yaw error checking, disabled 
   priv_nh.param("yaw_thr", yaw_thr_, 3.14159);
   priv_nh.param("use_lambda", use_lambda_, true);  // pose error checking
   priv_nh.param("yaw_speed", yaw_speed_, 0.2);
-  priv_nh.param("ignore_yaw", ignore_yaw_, false);
+  // priv_nh.param("ignore_yaw", ignore_yaw_, false);
 
   epoch_pub_ = nh_->advertise<std_msgs::Int64>("epoch", 10);
   point_pub_ = nh_->advertise<geometry_msgs::PointStamped>("roi", 10);
@@ -142,7 +143,7 @@ void ActionTrajectoryTracker::Initialize(const ros::NodeHandle &nh) {
 
   active_ = false;
   start_yaw_ = 0;
-  if (ignore_yaw_) use_yaw_ = true;
+  // if (ignore_yaw_) use_yaw_ = true;
 
   as_.reset(
       new actionlib::SimpleActionServer<action_trackers::RunTrajectoryAction>(
@@ -375,7 +376,12 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
     traj_opt::EvaluateTrajectory(current_trajectory_, duration, cmd.get(), 2);
   }
 
-  //  cmd->yaw = start_yaw_, cmd->yaw_dot = 0;
+  // position command yaw set to always use the yaw in the odometry
+  tf::Quaternion q(msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
+  tf::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+  cmd->yaw = yaw, cmd->yaw_dot = 0;
   init_cmd_ = cmd;
 
   // check if current trajectory is finished
@@ -437,10 +443,10 @@ void ActionTrajectoryTracker::trajCB() {
     return;
   }
 
-  // set ignore_yaw according to the dimension of goal->traj
-  if (msg.dimensions < 4) {
-    ignore_yaw_ = true;
-  }
+  // // set ignore_yaw according to the dimension of goal->traj
+  // if (msg.dimensions < 4) {
+  //   ignore_yaw_ = true;
+  // }
 
   // change mode to either replanning or normal
   if (goal->replan_rate > 0) {

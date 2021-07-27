@@ -25,7 +25,6 @@ trajectory_tracker:
 trajectory_planner:
   debug: false # default false
   verbose: false # default false
-  use_yaw: false # default false
   yaw_speed: 0.2 # default 0.2
   use_lambda: true # pose error checking
   max_v: 3 # suggested for 2-D 9, for 3-D 3

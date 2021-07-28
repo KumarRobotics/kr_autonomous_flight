@@ -28,9 +28,9 @@ trajectory_planner:
   yaw_speed: 0.2 # default 0.2
   use_lambda: true # pose error checking
   max_v: 5 # suggested for 2-D 9, for 3-D 3
-  max_a: 5 # suggested for 2-D 7, for 3-D 2
-  max_j: 3 # suggested for 2-D 3, for 3-D 2
-  max_u: 3 # suggested for 2-D 3, for 3-D 1
+  max_a: 4 # suggested for 2-D 7, for 3-D 2
+  max_j: 2 # suggested for 2-D 3, for 3-D 2
+  max_u: 2 # suggested for 2-D 3, for 3-D 1
   use_3d: false # use 3d planner
   z_cost_factor: 1 # global map z cost factor (cost_along_z = z_cost_factor * cost_along_x_or_y)
   max_v_z: 1.0 # default 2.0
@@ -54,7 +54,7 @@ stopping_policy:
 
 local_global_server:
   # local planning horizon will be from robot to the local voxel map boundary
-  waypoint_reach_threshold: 20.0 # distance threshold, within which intermidiate waypoint is regarded as reached 
+  waypoint_reach_threshold: 10.0 # distance threshold, within which intermidiate waypoint is regarded as reached 
   final_goal_reach_threshold: 5.0 # within which final waypoint is regarded as reached, this should be smaller than waypoint_reach_threshold
   close_to_final_dist: 5 # distance-to-goal threshold, within which the velocity and acceleration checking will be turned on, -1 means no velocity checking at all
   local_plan_timeout_duration: 1.0 # local planner timeout in seconds 

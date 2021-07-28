@@ -9,6 +9,9 @@
   /quadrotor/global_plan_server/path 
   /rosout
 	/rosout_agg
+  /ovc/left/image_raw
+  /ovc/right/image_raw
+  /ovc/vectornav
     "
     output="screen"/>
 </launch>

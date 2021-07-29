@@ -117,7 +117,7 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
   double yaw_speed_;
 
   // align yaw or not
-  bool align_yaw_ = true;
+  bool align_yaw_ = false;
   // align yaw with the direction of robot movement every yaw_align_dt seconds
   double last_yaw_ = 0.0;
   double align_time_passed_ = 0.0;

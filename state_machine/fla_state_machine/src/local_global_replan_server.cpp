@@ -274,8 +274,13 @@ void RePlanner::ReplanGoalCb() {
       goal->replan_rate;  // set local planner replan_rate to be the same as
                           // specified in goal (assigned in state machine)
   pose_goals_ = goal->p_finals;
+
+  ROS_WARN_STREAM("[Replanner:] waypoints received, number of waypoints is:" << pose_goals_.size());
+
   if (pose_goals_.empty()) {
-    ROS_WARN("[Replanner:] Receive empty goals! Using single goal!");
+    ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
+    ROS_WARN("[Replanner:] waypoints list is empty, now use single goal intead!");
+    ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
     pose_goals_.push_back(goal->p_final);
   } else if (pose_goals_.size() > 1) {
     ROS_INFO(

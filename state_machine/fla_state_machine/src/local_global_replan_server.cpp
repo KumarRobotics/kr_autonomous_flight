@@ -679,7 +679,7 @@ void RePlanner::update_status() {
 
     // check if goal and traj evaluated position is less than threshold
     // get the distance from current pos to goal (waypoint) pos
-    float dist_cmd_to_goal = (pos_goal - pos_final).norm();
+    double dist_cmd_to_goal = (pos_goal - pos_final).norm();
     if (dist_cmd_to_goal <= waypoint_threshold_) {
       if ((waypoint_idx_ >= (pose_goals_.size() - 1)) &&
           (dist_cmd_to_goal <= final_waypoint_threshold_)) {
@@ -687,7 +687,7 @@ void RePlanner::update_status() {
         finished_replanning_ = true;
         ROS_INFO_STREAM(
             "Final waypoint reached! The distance threshold is set as: "
-            << final_waypoint_threshold_);
+            << final_waypoint_threshold_ << " Total " << pose_goals_.size() << " waypoints received");
       } else if (waypoint_idx_ < (pose_goals_.size() - 1)) {
         // take the next waypoint if the intermidiate waypoint is reached
         ++waypoint_idx_;

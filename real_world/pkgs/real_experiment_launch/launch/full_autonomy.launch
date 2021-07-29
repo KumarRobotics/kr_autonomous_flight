@@ -10,7 +10,7 @@
   <arg name="mass" default="4.2"/>
 	<arg name="odom_topic" default="odom"/>
 
-	<arg name="record_bag" default="false"/>
+	<arg name="record_bag" default="true"/>
 
   <!-- drivers  -->
 	<include file="$(find real_experiment_launch)/launch/os1_robot_ns.launch">
@@ -42,7 +42,7 @@
    <!-- system launch that includes mapper planner state_machine controller state_estimation-->
   <include file="$(find state_machine_launch)/launch/system_mp.launch">
     <arg name="onboard_sensing" value="$(arg onboard_sensing)" />
-    <arg name="takeoff_height" value="2" />
+    <arg name="takeoff_height" value="7" />
     <arg name="mass" value="$(arg mass)" />
     <arg name="use_lauras" value="false" />
       <arg name="calibration_file" value="$(find real_experiment_launch)/config/msckf_calib.yaml"/>

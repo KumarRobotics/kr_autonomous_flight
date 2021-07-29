@@ -494,9 +494,11 @@ void ActionTrajectoryTracker::AlignYaw(const nav_msgs::Odometry::ConstPtr &msg) 
   }
 
   if (abs(ultimate_yaw_des_ - last_yaw_) > yaw_threshold_) {
+    /*
     ROS_INFO_STREAM(
         "Aligning yaw by setting yaw_dot! yaw alignment is checked every "
         << yaw_align_dt_ << "seconds.");
+        */
 
     // set yaw dot to move robot to align with desired yaw
     if (ultimate_yaw_des_ > last_yaw_) {

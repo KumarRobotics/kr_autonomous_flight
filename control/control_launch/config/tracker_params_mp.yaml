@@ -27,10 +27,10 @@ trajectory_planner:
   verbose: false # default false
   yaw_speed: 0.2 # default 0.2
   use_lambda: true # pose error checking
-  max_v: 5 # suggested for 2-D 9, for 3-D 3
-  max_a: 4 # suggested for 2-D 7, for 3-D 2
-  max_j: 2 # suggested for 2-D 3, for 3-D 2
-  max_u: 2 # suggested for 2-D 3, for 3-D 1
+  max_v: 2 # suggested for 2-D 9, for 3-D 3
+  max_a: 2 # suggested for 2-D 7, for 3-D 2
+  max_j: 1 # suggested for 2-D 3, for 3-D 2
+  max_u: 1 # suggested for 2-D 3, for 3-D 1
   use_3d: false # use 3d planner
   z_cost_factor: 1 # global map z cost factor (cost_along_z = z_cost_factor * cost_along_x_or_y)
   max_v_z: 1.0 # default 2.0
@@ -46,7 +46,7 @@ trajectory_planner:
   heuristic_weight: 5.0
 
 stopping_policy:
-  acc_xy_des: 5.0 #
+  acc_xy_des: 4.0 #
   jerk_xy_des: 2.0 #
   acc_z_des: 2.0 #
   jerk_z_des: 1.0 #

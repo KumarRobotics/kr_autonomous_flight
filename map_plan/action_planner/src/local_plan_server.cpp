@@ -40,6 +40,8 @@ class LocalPlanServer {
   ros::Publisher sg_pub;
   ros::Publisher expanded_cloud_pub;
 
+  ros::Publisher local_map_cleared_pub;
+
   boost::mutex map_mtx, traj_mtx;  // TODO(xu): do we need this?
 
   // motion primitive planner util and its map util
@@ -62,6 +64,7 @@ class LocalPlanServer {
 
   bool debug_;
   bool verbose_;
+  bool pub_cleared_map_ = false;
 
   // planner tolerance
   double tol_pos_, goal_tol_vel_, goal_tol_acc_;
@@ -94,6 +97,17 @@ class LocalPlanServer {
   bool local_plan_process(const MPL::Waypoint3D &start,
                           const MPL::Waypoint3D &goal,
                           const planning_ros_msgs::VoxelMap &map);
+
+
+  /**
+   * @brief Local planner clear footprint
+   */
+  void clear_footprint(planning_ros_msgs::VoxelMap &local_map, const Vec3f &start);
+
+  /**
+   * @brief Local planner check if outside map
+   */
+  bool is_outside_map(const Eigen::Vector3i &pn, const Eigen::Vector3i &dim);
 };
 
 // map callback, update local_map_ptr_
@@ -115,6 +129,9 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   sg_pub = pnh_.advertise<planning_ros_msgs::Path>("start_goal", 1, true);
   expanded_cloud_pub =
       pnh_.advertise<sensor_msgs::PointCloud>("expanded_cloud", 1, true);
+
+  local_map_cleared_pub =
+      pnh_.advertise<planning_ros_msgs::VoxelMap>("local_voxel_map_cleared", 1, true);
 
   // set up mpl planner
   mp_map_util_ = std::make_shared<MPL::VoxelMapUtil>();
@@ -318,8 +335,18 @@ void LocalPlanServer::process_goal() {
   goal.use_acc = start.use_acc;
   goal.use_jrk = start.use_jrk;
 
+
+  planning_ros_msgs::VoxelMap local_map_cleared;
+  local_map_cleared = *local_map_ptr_;
+  clear_footprint(local_map_cleared, start.pos);
+
+  if (pub_cleared_map_) {
+    local_map_cleared_pub.publish(local_map_cleared);
+    ROS_ERROR("Local map cleared published");
+  }
+
   bool local_planner_succeeded;
-  local_planner_succeeded = local_plan_process(start, goal, *local_map_ptr_);
+  local_planner_succeeded = local_plan_process(start, goal, local_map_cleared);
 
   if (!local_planner_succeeded) {
     // local plan fails
@@ -334,6 +361,54 @@ void LocalPlanServer::process_goal() {
   MPL::Trajectory3D traj = traj_;
   process_result(traj, local_planner_succeeded);
 }
+
+
+void LocalPlanServer::clear_footprint(planning_ros_msgs::VoxelMap &local_map, const Vec3f &start) {
+  // Clear robot footprint
+  // TODO (YUEZHAN): pass robot radius as param
+  // TODO (YUEZHAN): fix val_free;
+  int8_t val_free = 0;
+  ROS_WARN_ONCE("Value free is set as %d", val_free);
+  double robot_r = 0.5;
+  int robot_r_n = std::ceil(robot_r / local_map.resolution);
+
+  vec_Vec3i clear_ns;
+  for (int nx = -robot_r_n; nx <= robot_r_n; nx++) {
+    for (int ny = -robot_r_n; ny <= robot_r_n; ny++) {
+      for (int nz = -robot_r_n; nz <= robot_r_n; nz++) {
+        clear_ns.push_back(Eigen::Vector3i(nx, ny, nz));
+      }
+    }
+  }
+
+  auto origin_x = local_map.origin.x;
+  auto origin_y = local_map.origin.y;
+  auto origin_z = local_map.origin.z;
+  Eigen::Vector3i dim = Eigen::Vector3i::Zero();
+  dim(0) = local_map.dim.x;
+  dim(1) = local_map.dim.y;
+  dim(2) = local_map.dim.z;
+  auto res = local_map.resolution;
+  const Eigen::Vector3i pn = Eigen::Vector3i(std::round((start(0) - origin_x) / res),
+                                             std::round((start(1) - origin_y) / res),
+                                             std::round((start(2) - origin_z) / res));
+
+  for (const auto &n : clear_ns) {
+    Eigen::Vector3i pnn = pn + n;
+    int idx_tmp = pnn(0) + pnn(1) * dim(0) + pnn(2) * dim(0) * dim(1);
+    if (!is_outside_map(pnn, dim) && local_map.data[idx_tmp] != val_free) {
+      local_map.data[idx_tmp] = val_free;
+      // ROS_ERROR("clearing!!! idx %d", idx_tmp);
+    } 
+  }
+
+}
+
+
+bool LocalPlanServer::is_outside_map(const Eigen::Vector3i &pn, const Eigen::Vector3i &dim) {
+  return pn(0) < 0 || pn(0) >= dim(0) || pn(1) < 0 || pn(1) >= dim(1) || pn(2) < 0 || pn(2) >= dim(2);
+}
+
 
 bool LocalPlanServer::local_plan_process(
     const MPL::Waypoint3D &start, const MPL::Waypoint3D &goal,

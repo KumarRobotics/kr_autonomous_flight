@@ -171,6 +171,14 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
   ROS_DEBUG("[storage map addCloud]: %f",
             static_cast<double>(timer.elapsed().wall) / 1e6);
 
+
+  // FIXME: get and publish storage map (this is very slow, comment it out)
+  // planning_ros_msgs::VoxelMap storage_map =
+  //     storage_voxel_mapper_->getInflatedMap();
+  // storage_map.header.frame_id = map_frame_;
+  // storage_map_pub.publish(storage_map);
+
+
   timer.start();
   // crop local voxel map
   // the cropping step is using the lidar position in map frame

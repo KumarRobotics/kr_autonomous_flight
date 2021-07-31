@@ -114,15 +114,15 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
   bool use_lambda_;
   // bool use_yaw_;
   // bool ignore_yaw_;
-  double yaw_speed_;
+  // double yaw_speed_;
 
   // align yaw or not
-  bool align_yaw_ = false;
+  bool align_yaw_; 
   // align yaw with the direction of robot movement every yaw_align_dt seconds
   double last_yaw_ = 0.0;
   double align_time_passed_ = 0.0;
   ros::Time prev_align_start_time_;    // current alignment start timestamp
-  double yaw_dot_magnitude_ = 0.3;  // rad per second
+  double yaw_dot_magnitude_;  // rad per second
   ros::Time last_yaw_align_time_;
   bool yaw_alignment_initialized_ = false;
   bool alignment_ongoing_ = false;
@@ -161,7 +161,10 @@ void ActionTrajectoryTracker::Initialize(const ros::NodeHandle &nh) {
   // priv_nh.param("use_yaw", use_yaw_, false); // yaw error checking, disabled
   priv_nh.param("yaw_thr", yaw_thr_, 3.14159);
   priv_nh.param("use_lambda", use_lambda_, true);  // pose error checking
-  priv_nh.param("yaw_speed", yaw_speed_, 0.2);
+  // priv_nh.param("yaw_speed", yaw_speed_, 0.2);
+  priv_nh.param("align_yaw", align_yaw_, false);
+  priv_nh.param("yaw_speed_magnitude", yaw_dot_magnitude_, 0.3);
+
   // priv_nh.param("ignore_yaw", ignore_yaw_, false);
 
   epoch_pub_ = nh_->advertise<std_msgs::Int64>("epoch", 10);

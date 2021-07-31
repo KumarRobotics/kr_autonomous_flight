@@ -162,7 +162,7 @@ void ActionTrajectoryTracker::Initialize(const ros::NodeHandle &nh) {
   priv_nh.param("yaw_thr", yaw_thr_, 3.14159);
   priv_nh.param("use_lambda", use_lambda_, true);  // pose error checking
   // priv_nh.param("yaw_speed", yaw_speed_, 0.2);
-  priv_nh.param("align_yaw", align_yaw_, false);
+  priv_nh.param("align_yaw", align_yaw_, true);
   priv_nh.param("yaw_speed_magnitude", yaw_dot_magnitude_, 0.3);
 
   // priv_nh.param("ignore_yaw", ignore_yaw_, false);
@@ -513,6 +513,7 @@ void ActionTrajectoryTracker::AlignYaw(const nav_msgs::Odometry::ConstPtr &msg) 
     if (!alignment_ongoing_) {
       // no, start current alignment
       align_time_passed_ = 0.0;
+      alignment_ongoing_ = true;
     } else {
       // yes, continue the alignment
       align_time_passed_ = (ros::Time::now() - prev_align_start_time_).toSec();
@@ -528,6 +529,8 @@ void ActionTrajectoryTracker::AlignYaw(const nav_msgs::Odometry::ConstPtr &msg) 
     yaw_des_ = last_yaw_ + yaw_dot_des_ * align_time_passed_;
     // update the prev_align_start_time_
     prev_align_start_time_ = ros::Time::now();
+    ROS_WARN_STREAM("alignment des_yaw is "
+                    << yaw_des_  << " des_yaw_speed is" << yaw_dot_des_);
     // update the prev_yaw_
     last_yaw_ = yaw_des_;
   } else {

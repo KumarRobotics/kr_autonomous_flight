@@ -69,7 +69,13 @@
 		<arg name="odom" value="$(arg odom_topic)"/>
 	</include>
 
-	 <!-- bag record  -->
+	 <!-- throttle map and odom topics-->
+	<include file="$(find real_experiment_launch)/launch/throttle_map_odom.launch">
+		<arg name="robot" value="$(arg robot)"/>
+	</include>
+  
+
+  <!-- bag record  -->
 	<group if="$(arg record_bag)"> 
    <include file="$(find real_experiment_launch)/launch/record_bag.launch">
    </include>

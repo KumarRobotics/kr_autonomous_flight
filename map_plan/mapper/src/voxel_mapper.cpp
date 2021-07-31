@@ -15,7 +15,7 @@ VoxelMapper::VoxelMapper(const Eigen::Vector3d &origin,
   decay_times_to_empty = decay_times_to_empty;
   allocate(dim, origin);
   if (decay_times_to_empty >= 1) {
-    val_decay = (val_occ - val_even) / decay_times_to_empty;
+    val_decay = std::ceil((float)(val_occ - val_even) / (float)decay_times_to_empty);
   } else {
     val_decay = 0;  // no decay
   }

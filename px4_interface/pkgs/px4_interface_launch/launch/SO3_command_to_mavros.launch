@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+  <arg name="robot" default="$(optenv ROBOT_NAME quadrotor)"/>
+  <arg name="odom" default="odom"/>
+  <arg name="so3_cmd" default="so3_cmd"/>
+  <arg name="num_props" default="4.0"/>
+
+
+  <!-- Kartik model -->
+  <!-- DJI E600 -->
+  <!-- Thrust = a * RPM^2 + b * RPM + c -->
+  <!-- Thrust is in Newton not grams-force -->
+  <!-- 15" 1575 props -->
+  <arg name="thrust_vs_rpm_coeff_a" default="8.401e-7"/>
+  <arg name="thrust_vs_rpm_coeff_b" default="-1.400e-3"/>
+  <arg name="thrust_vs_rpm_coeff_c" default="1.12"/>
+  <!-- 13" 1355 props -->
+  <!-- <arg name="thrust_vs_rpm_coeff_a" default="4.424e-7"/> -->
+  <!-- <arg name="thrust_vs_rpm_coeff_b" default="-2.846e-4"/> -->
+  <!-- <arg name="thrust_vs_rpm_coeff_c" default="1.780e-1"/> -->
+  <!-- FLA props -->
+  <!-- <arg name="thrust_vs_rpm_coeff_a" default="2.909306e-7"/> -->
+  <!-- <arg name="thrust_vs_rpm_coeff_b" default="9.716351e-5"/> -->
+  <!-- <arg name="thrust_vs_rpm_coeff_c" default="-0.3474692246"/> -->
+  <!-- RPM = a * throttle + b where throttle in [0,1] -->
+  <arg name="rpm_vs_throttle_coeff_a" default="6000"/>
+  <arg name="rpm_vs_throttle_coeff_b" default="0"/>
+  <!-- <arg name="rpm_vs_throttle_coeff_a" default="6478.1337706"/> -->
+  <!-- <arg name="rpm_vs_throttle_coeff_b" default="1807.3243354"/> -->
+  <group ns="$(arg robot)">
+    <node pkg="nodelet" type="nodelet" args="standalone mavros_interface/SO3CmdToMavros" name="so3cmd_to_mavros" required="true" clear_params="true" output="screen">
+      <param name="num_props" value="$(arg num_props)"/>
+      <param name="thrust_vs_rpm_coeff_a" value="$(arg thrust_vs_rpm_coeff_a)"/>
+      <param name="thrust_vs_rpm_coeff_b" value="$(arg thrust_vs_rpm_coeff_b)"/>
+      <param name="thrust_vs_rpm_coeff_c" value="$(arg thrust_vs_rpm_coeff_c)"/>
+      <param name="rpm_vs_throttle_coeff_a" value="$(arg rpm_vs_throttle_coeff_a)"/>
+      <param name="rpm_vs_throttle_coeff_b" value="$(arg rpm_vs_throttle_coeff_b)"/>
+      <remap from="~odom" to="$(arg odom)"/>
+      <remap from="~so3_cmd" to="$(arg so3_cmd)"/>
+      <remap from="~imu" to="mavros/imu/data" />
+      <remap from="~attitude_raw" to="mavros/setpoint_raw/attitude" />
+      <remap from="~odom_pose" to="mavros/vision_pose/pose" />
+    </node>
+  </group>
+</launch>

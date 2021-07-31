@@ -273,6 +273,9 @@ void WaypointFrame::loadFromYaml(const std::string &filename) {
   for (auto it_wpt = root_node.begin(); it_wpt != root_node.end(); ++it_wpt) {
     // Get waypoint node, which is a list of key-value pairs
     YAML::Node wpt_node = *it_wpt;
+    // IMPORTANT UPDATES: publish one set of waypoints, instead of iterating and
+    // publishing multiple duplicate sets (thus, adding the last line of this
+    // function)
     for (auto it_map = wpt_node.begin(); it_map != wpt_node.end(); ++it_map) {
       // Do stuff depends on the key
       const std::string key = it_map->first.as<std::string>();
@@ -283,12 +286,16 @@ void WaypointFrame::loadFromYaml(const std::string &filename) {
         position.x = pos_node[0].as<double>();
         position.y = pos_node[1].as<double>();
         position.z = pos_node[2].as<double>();
+        ROS_WARN_STREAM("add waypoint whose x y z are: " << position.x << ", "
+                                                         << position.y << ", "
+                                                         << position.z);
         Ogre::Quaternion quat;
         wp_nav_tool_->makeIm(position, quat,
                              ui_->sixDcheckBox->checkState() == Qt::Checked);
       }
     }
   }
+  publishButtonClicked();
 }
 
 void WaypointFrame::loadFromJson(const std::string &filename) {}

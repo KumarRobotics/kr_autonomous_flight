@@ -311,7 +311,9 @@ void WaypointNavTool::makeIm(const Ogre::Vector3 &position,
 
   server_.applyChanges();
   frame_->setPose(position, quat);
-  frame_->publishButtonClicked();
+  // IMPORTANT UPDATES: publish one set of waypoints, instead of iterating and 
+  // publishing multiple duplicate sets (thus, the following line is removed)
+  // frame_->publishButtonClicked();
 }
 
 void WaypointNavTool::processFeedback(

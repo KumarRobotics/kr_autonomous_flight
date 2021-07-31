@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<launch>
+    <arg name="mapper_config" default="$(find map_plan_launch)/config/mapper.yaml"/>
+	<arg name="robot" default="quadrotor"/>
+	<!-- Mapper and Planner -->
+	<include file="$(find map_plan_launch)/launch/map_plan.launch">
+    		 <arg name="robot" value="$(arg robot)"/>
+         <arg name="cloud" value="os1_cloud_node/points"/>
+		 <arg name="mapper_config" value="$(arg mapper_config)"/>
+	</include>
+
+</launch>
+
+
+
+

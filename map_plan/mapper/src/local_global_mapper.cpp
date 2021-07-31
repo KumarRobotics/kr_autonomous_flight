@@ -62,6 +62,7 @@ bool global_use_robot_dim_z_;
 double local_max_raycast_, global_max_raycast_;  // maximum raycasting range
 double occ_map_height_;
 Eigen::Vector3d local_ori_offset_;
+bool pub_storage_map_ = false; // don't set this as true unless you're debugging, it's very slow
 
 int update_interval_;
 int counter_ = 0;
@@ -117,7 +118,7 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
                                                      cloud.header.stamp);
     if ((!tf_map_lidar) || (!tf_odom_lidar)) {
       ROS_WARN(
-          "Failed to get transform (either from %s to %s; or from %s to %s)",
+          "[Mapper real-robot:] Failed to get transform (either from %s to %s; or from %s to %s)",
           lidar_frame_.c_str(), map_frame_.c_str(), lidar_frame_.c_str(),
           odom_frame_.c_str());
       return;
@@ -130,11 +131,11 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
     auto tf_odom_lidar = tf_listener.LookupTransform(
         odom_frame_, cloud.header.frame_id, cloud.header.stamp);
     if (!tf_map_lidar) {
-      ROS_WARN("[Mapper:] Failed to get transform (from %s to %s)",
+      ROS_WARN("[Mapper simulation:] Failed to get transform map to lidar (from %s to %s)",
                cloud.header.frame_id.c_str(), map_frame_.c_str());
       return;
     } else if (!tf_odom_lidar) {
-      ROS_WARN("[Mapper:] Failed to get transform (from %s to %s)",
+      ROS_WARN("[Mapper simulation:] Failed to get transform odom to lidar (from %s to %s)",
                cloud.header.frame_id.c_str(), odom_frame_.c_str());
       return;
     }
@@ -170,6 +171,16 @@ void processCloud(const sensor_msgs::PointCloud &cloud) {
                                   local_max_raycast_);
   ROS_DEBUG("[storage map addCloud]: %f",
             static_cast<double>(timer.elapsed().wall) / 1e6);
+
+
+  // get and publish storage map (this is very slow)
+  if(pub_storage_map_){
+    planning_ros_msgs::VoxelMap storage_map =
+        storage_voxel_mapper_->getInflatedMap();
+    storage_map.header.frame_id = map_frame_;
+    storage_map_pub.publish(storage_map);
+  }
+
 
   timer.start();
   // crop local voxel map
@@ -365,33 +376,28 @@ int main(int argc, char **argv) {
   global_map_info_.dim.z =
       (int)ceil((global_map_dim_d_z) / global_map_info_.resolution);
 
-  double storage_map_cx, storage_map_cy, storage_map_cz, storage_map_dim_d_x,
-      storage_map_dim_d_y, storage_map_dim_d_z, local_map_dim_d_x,
-      local_map_dim_d_y;
-  nh.param("storage/center_y", storage_map_cy, 0.0);
-  nh.param("storage/center_z", storage_map_cz, 5.0);
-  nh.param("storage/range_x", storage_map_dim_d_x, 500.0);
-  nh.param("storage/range_y", storage_map_dim_d_y, 500.0);
-  nh.param("storage/range_z", storage_map_dim_d_z, 500.0);
-
+  double local_map_dim_d_x, local_map_dim_d_y, local_map_dim_d_z;
   nh.param("local/resolution", local_map_info_.resolution, 0.25f);
   nh.param("local/range_x", local_map_dim_d_x, 20.0);
   nh.param("local/range_y", local_map_dim_d_y, 20.0);
-  // nh.param("local/range_z", local_map_dim_d_z, 10.0);
+  nh.param("local/range_z", local_map_dim_d_z, 10.0);
   nh.param("local/max_raycast_range", local_max_raycast_, 20.0);
   nh.param("local/decay_times_to_empty", local_decay_times_to_empty_, 0);
-
+  
+  // storage map should have same resolution and z_dim as local map
   storage_map_info_.resolution = local_map_info_.resolution;
+  local_map_info_.dim.z =
+      (int)ceil((local_map_dim_d_z) / storage_map_info_.resolution);
+  storage_map_info_.dim.z = local_map_info_.dim.z;
 
-  storage_map_info_.origin.x = storage_map_cx - storage_map_dim_d_x / 2;
-  storage_map_info_.origin.y = storage_map_cy - storage_map_dim_d_y / 2;
-  storage_map_info_.origin.z = storage_map_cz - storage_map_dim_d_z / 2;
+  // storage map should have same x y z center and x_dim y_dim as global map
+  storage_map_info_.origin.x = global_map_info_.origin.x;
+  storage_map_info_.origin.y = global_map_info_.origin.y;
+  storage_map_info_.origin.z = global_map_info_.origin.z;
   storage_map_info_.dim.x =
-      (int)ceil((storage_map_dim_d_x) / storage_map_info_.resolution);
+      (int)ceil((global_map_dim_d_x) / storage_map_info_.resolution);
   storage_map_info_.dim.y =
-      (int)ceil((storage_map_dim_d_y) / storage_map_info_.resolution);
-  storage_map_info_.dim.z =
-      (int)ceil((storage_map_dim_d_z) / storage_map_info_.resolution);
+      (int)ceil((global_map_dim_d_y) / storage_map_info_.resolution);
 
   local_map_info_.dim.x =
       (int)ceil((local_map_dim_d_x) / local_map_info_.resolution);
@@ -399,7 +405,6 @@ int main(int argc, char **argv) {
       (int)ceil((local_map_dim_d_y) / local_map_info_.resolution);
 
   // local map range z and center_z will be the same as storage map
-  local_map_info_.dim.z = storage_map_info_.dim.z;
   local_map_info_.origin.z = storage_map_info_.origin.z;
 
   const Eigen::Vector3d local_dim_d(

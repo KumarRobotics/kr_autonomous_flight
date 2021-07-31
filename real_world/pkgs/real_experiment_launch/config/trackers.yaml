@@ -1,0 +1,16 @@
+trackers:
+  - std_trackers/LineTrackerMinJerkAction
+  - std_trackers/LineTrackerDistanceAction
+  #  - std_trackers/LineTrackerTrapezoid
+  #  - std_trackers/LineTrackerYaw
+  - std_trackers/VelocityTracker
+  - std_trackers/NullTracker
+  # - std_trackers/CircleTrackerAction
+  # - std_trackers/TrajectoryTracker
+  # - std_trackers/SmoothVelTrackerAction
+  # - std_trackers/LissajousTrackerAction
+  # - std_trackers/LissajousAdderAction
+  - action_trackers/TakeOffTracker
+  - action_trackers/LandTracker
+  - action_trackers/ActionPathTracker
+  - action_trackers/StoppingPolicy

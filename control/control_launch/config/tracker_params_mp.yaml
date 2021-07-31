@@ -21,17 +21,17 @@ take_off_tracker:
 
 trajectory_tracker:
   max_pos_error: 2.0  # maximum tracker position error (in xy plane) allowed, default 1.0
+  align_yaw: false # default false
+  yaw_speed_magnitude: 0.3 # in rad
+  use_lambda: true # pose error checking
 
 trajectory_planner:
   debug: false # default false
   verbose: false # default false
-  use_yaw: false # default false
-  yaw_speed: 0.2 # default 0.2
-  use_lambda: true # pose error checking
-  max_v: 3 # suggested for 2-D 9, for 3-D 3
-  max_a: 3 # suggested for 2-D 7, for 3-D 2
-  max_j: 1 # suggested for 2-D 3, for 3-D 2
-  max_u: 1 # suggested for 2-D 3, for 3-D 1
+  max_v: 5 # suggested for 2-D 9, for 3-D 3
+  max_a: 4 # suggested for 2-D 7, for 3-D 2
+  max_j: 2 # suggested for 2-D 3, for 3-D 2
+  max_u: 2 # suggested for 2-D 3, for 3-D 1
   use_3d: false # use 3d planner
   z_cost_factor: 1 # global map z cost factor (cost_along_z = z_cost_factor * cost_along_x_or_y)
   max_v_z: 1.0 # default 2.0
@@ -47,16 +47,17 @@ trajectory_planner:
   heuristic_weight: 5.0
 
 stopping_policy:
-  acc_xy_des: 6.0 #
-  jerk_xy_des: 3.0 #
-  acc_z_des: 3.0 #
-  jerk_z_des: 1.5 #
+  acc_xy_des: 4.0 #
+  jerk_xy_des: 2.0 #
+  acc_z_des: 2.0 #
+  jerk_z_des: 1.0 #
   acc_yaw_des: 0.05 # rad
 
 local_global_server:
   # local planning horizon will be from robot to the local voxel map boundary
-  termination_distance: 5 # distance threshold, final goal reached 
-  close_to_final_dist: 20 # distance-to-goal threshold, within which the velocity and acceleration checking will be turned on
+  waypoint_reach_threshold: 10.0 # distance threshold, within which intermidiate waypoint is regarded as reached 
+  final_goal_reach_threshold: 5.0 # within which final waypoint is regarded as reached, this should be smaller than waypoint_reach_threshold
+  close_to_final_dist: 5 # distance-to-goal threshold, within which the velocity and acceleration checking will be turned on, -1 means no velocity checking at all
   local_plan_timeout_duration: 1.0 # local planner timeout in seconds 
   max_local_plan_trials: 3
   global_planner_verbose: false #

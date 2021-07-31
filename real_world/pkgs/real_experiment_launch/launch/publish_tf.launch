@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+<arg name="robot" default="quadrotor"/>
+<arg name="robot_frame_id" default="$(arg robot)/base_link"/>
+<arg name="vio_imu_frame_id" default="$(arg robot)/ovc_camera_link"/>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="init_odom_map_transform_pub" args="0 0 0 0 0 0 $(arg robot)/map $(arg robot)/odom"/>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="init_map_world_transform_pub" args="0 0 0 0 0 0 world map"/>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="init_map_map_transform_pub" args="0 0 0 0 0 0 map $(arg robot)/map"/>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="$(arg robot)body_ovc_tf" args="0 0 0 -0.43 -0.43 0.56 0.56 $(arg robot_frame_id) $(arg vio_imu_frame_id)"/>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="$(arg robot)body_lidar_tf" args="0 0 0.1 0 0 0 $(arg robot_frame_id) $(arg robot)/lidar"/>
+</launch>

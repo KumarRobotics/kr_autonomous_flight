@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="dir" default="/root/bags/"/>
+  <node pkg="rosbag" type="record" name="recorder" args="
+  /quadrotor/vio/odom
+  /tf
+	/tf_static
+  /quadrotor/local_plan_server/traj
+  /quadrotor/global_plan_server/path 
+  /rosout
+	/rosout_agg
+  /ovc/left/image_raw
+  /ovc/right/image_raw
+  /ovc/vectornav
+    "
+    output="screen"/>
+</launch>

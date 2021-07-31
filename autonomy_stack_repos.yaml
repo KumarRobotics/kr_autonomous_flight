@@ -1,0 +1,20 @@
+repositories:
+  ouster_decoder:
+    type: git
+    url: git@github.com:versatran01/ouster_decoder.git 
+    version: main
+  
+  ouster_example:
+    type: git
+    url: git@github.com:XuRobotics/ouster_example.git 
+    version: master
+
+  msckf_vio:
+    type: git
+    url: git@github.com:KumarRobotics/msckf_vio.git
+    version: master
+
+  kr_mav_control:
+    type: git
+    url: git@github.com:KumarRobotics/kr_mav_control.git
+    version: master

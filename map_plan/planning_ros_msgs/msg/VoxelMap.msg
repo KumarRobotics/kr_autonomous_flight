@@ -8,5 +8,5 @@ geometry_msgs/Point origin
 # Dim is the dimension of the map stored as int
 geometry_msgs/Point dim
 
-# Subscript (xi, yi, zi) indices probability data[xi + dim.x * yi + zi * dim.y * dim.z]
+# Subscript (xi, yi, zi) indices probability data[xi + dim.x * yi + zi * dim.x * dim.y]
 int8[] data

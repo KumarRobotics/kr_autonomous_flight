@@ -1,0 +1,4 @@
+<launch>
+<node pkg="tf2_ros" type="static_transform_publisher" name="stereo_rig_link_broadcaster"      
+     args="0 0 0 0 0 -0.7071068 0.7071068 world vision" />
+</launch>

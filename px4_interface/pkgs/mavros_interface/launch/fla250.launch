@@ -1,0 +1,42 @@
+<launch>
+  <arg name="robot" default="/"/>
+  <arg name="odom" default="odom"/>
+  <arg name="so3_cmd" default="so3_cmd"/>
+  <arg name="num_props" default="3.2"/>
+
+  <!-- Kartik model -->
+  <!-- FLA 250 RX2206 6x4.5 -->
+  <!-- Modeling the full curve as one quadratic, hence rpm_vs_throttle is identity -->
+  <!-- Thrust = a * throttle^2 + b * throttle + c -->
+  <arg name="thrust_vs_rpm_coeff_a" default="7.556"/>
+  <arg name="thrust_vs_rpm_coeff_b" default="3.453"/>
+  <arg name="thrust_vs_rpm_coeff_c" default="-0.12"/>
+  <!-- RPM = a * throttle + b where throttle in [0,1] -->
+  <arg name="rpm_vs_throttle_coeff_a" default="1"/>
+  <arg name="rpm_vs_throttle_coeff_b" default="0"/>
+
+  <group ns="$(arg robot)">
+    <node pkg="nodelet"
+      type="nodelet"
+      args="standalone mavros_interface/SO3CmdToMavros"
+      name="so3cmd_to_mavros"
+      required="true"
+      clear_params="true"
+      output="screen">
+      <param name="num_props" value="$(arg num_props)"/>
+      <param name="thrust_vs_rpm_coeff_a" value="$(arg thrust_vs_rpm_coeff_a)"/>
+      <param name="thrust_vs_rpm_coeff_b" value="$(arg thrust_vs_rpm_coeff_b)"/>
+      <param name="thrust_vs_rpm_coeff_c" value="$(arg thrust_vs_rpm_coeff_c)"/>
+      <param name="rpm_vs_throttle_coeff_a" value="$(arg rpm_vs_throttle_coeff_a)"/>
+      <param name="rpm_vs_throttle_coeff_b" value="$(arg rpm_vs_throttle_coeff_b)"/>
+      <param name="use_kartik_thrust_model" value="true"/>
+      <param name="check_psi" value="false"/>
+      <remap from="~odom" to="$(arg odom)"/>
+      <remap from="~so3_cmd" to="$(arg so3_cmd)"/>
+      <remap from="~imu" to="mavros/imu/data" />
+      <remap from="~attitude_raw" to="mavros/setpoint_raw/attitude" />
+      <remap from="~odom_pose" to="mavros/vision_pose/pose" />
+      <remap from="~battery" to="mavros/battery" />
+    </node>
+  </group>
+</launch>

@@ -71,6 +71,11 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
    */
   void trajCB();
 
+  /**
+   * @brief Yaw alignment function.
+   */
+  void AlignYaw(const nav_msgs::Odometry::ConstPtr &odom_msg);
+
   void preemptCB();
   uint8_t status() const override;
 
@@ -103,12 +108,35 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
       as_;
   bool prempted{false};
   double prempted_time;
-  double yaw_, start_yaw_;
+  // double yaw_, start_yaw_;
   double yaw_thr_;
   boost::mutex mtx_;
-  bool use_yaw_, use_lambda_;
-  bool ignore_yaw_;  // should we check trajectory yaw
-  double yaw_speed_;
+  bool use_lambda_;
+  // bool use_yaw_;
+  // bool ignore_yaw_;
+  // double yaw_speed_;
+
+  // align yaw or not
+  bool align_yaw_; 
+  // align yaw with the direction of robot movement every yaw_align_dt seconds
+  double last_yaw_ = 0.0;
+  double align_time_passed_ = 0.0;
+  ros::Time prev_align_start_time_;    // current alignment start timestamp
+  double yaw_dot_magnitude_;  // rad per second
+  ros::Time last_yaw_align_time_;
+  bool yaw_alignment_initialized_ = false;
+  bool alignment_ongoing_ = false;
+  double yaw_align_dt_ =
+      0.3;  // derive yaw alignment direction every yaw_align_dt_ seconds
+  double last_yaw_align_x_ = 0.0;
+  double last_yaw_align_y_ = 0.0;
+  double yaw_des_ = 0.0;
+  double ultimate_yaw_des_ = 0.0;
+  double yaw_threshold_ =
+      0.5;  // rad, if yaw error is larger than this, alignment will start
+  double yaw_dot_des_ = 0.0;
+  bool odom_yaw_recorded_ = false;
+
   ros::Publisher epoch_pub_, point_pub_, lambda_pub_;
 
   static traj_opt::VecD make4d(const traj_opt::VecD &vec) {
@@ -130,19 +158,22 @@ void ActionTrajectoryTracker::Initialize(const ros::NodeHandle &nh) {
 
   ros::NodeHandle priv_nh(nh, "trajectory_tracker");
   priv_nh.param("max_pos_error", pos_err_max_, 1.0);
-  priv_nh.param("use_yaw", use_yaw_, false);
+  // priv_nh.param("use_yaw", use_yaw_, false); // yaw error checking, disabled
   priv_nh.param("yaw_thr", yaw_thr_, 3.14159);
   priv_nh.param("use_lambda", use_lambda_, true);  // pose error checking
-  priv_nh.param("yaw_speed", yaw_speed_, 0.2);
-  priv_nh.param("ignore_yaw", ignore_yaw_, false);
+  // priv_nh.param("yaw_speed", yaw_speed_, 0.2);
+  priv_nh.param("align_yaw", align_yaw_, false);
+  priv_nh.param("yaw_speed_magnitude", yaw_dot_magnitude_, 0.3);
+
+  // priv_nh.param("ignore_yaw", ignore_yaw_, false);
 
   epoch_pub_ = nh_->advertise<std_msgs::Int64>("epoch", 10);
   point_pub_ = nh_->advertise<geometry_msgs::PointStamped>("roi", 10);
   lambda_pub_ = nh_->advertise<geometry_msgs::Vector3>("lambda", 10);
 
   active_ = false;
-  start_yaw_ = 0;
-  if (ignore_yaw_) use_yaw_ = true;
+  // start_yaw_ = 0;
+  // if (ignore_yaw_) use_yaw_ = true;
 
   as_.reset(
       new actionlib::SimpleActionServer<action_trackers::RunTrajectoryAction>(
@@ -161,18 +192,24 @@ bool ActionTrajectoryTracker::Activate(
     const kr_mav_msgs::PositionCommand::ConstPtr &msg) {
   boost::mutex::scoped_lock lock(mtx_);
 
+  // initialization
+  started_ = ros::Time(0);
+  odom_yaw_recorded_ = false;
+  yaw_alignment_initialized_ = false;
+  alignment_ongoing_ = false;
+
   if (next_trajectory_.size() == 0) {
     if (msg == NULL)
       return false;
     else {
       init_cmd_.reset(new kr_mav_msgs::PositionCommand(*(msg)));
-      start_yaw_ = yaw_;
+      // start_yaw_ = yaw_;
       active_ = true;
       return true;
     }
   } else {
     active_ = true;
-    start_yaw_ = yaw_;
+    // start_yaw_ = yaw_;
     if (msg != NULL) init_cmd_.reset(new kr_mav_msgs::PositionCommand(*(msg)));
     return true;
   }
@@ -188,6 +225,9 @@ void ActionTrajectoryTracker::Deactivate(void) {
   current_epoch_ = 0;
   execution_time = -1;
   started_ = ros::Time(0);
+  odom_yaw_recorded_ = false;
+  yaw_alignment_initialized_ = false;
+  alignment_ongoing_ = false;
 }
 
 kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
@@ -375,7 +415,23 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
     traj_opt::EvaluateTrajectory(current_trajectory_, duration, cmd.get(), 2);
   }
 
-  //  cmd->yaw = start_yaw_, cmd->yaw_dot = 0;
+  if (align_yaw_) {
+    AlignYaw(msg);
+    cmd->yaw = yaw_des_, cmd->yaw_dot = yaw_dot_des_;
+  } else {
+    if (!odom_yaw_recorded_) {
+      // get yaw from odom's quaternion
+      double roll, pitch;
+      tf::Quaternion q(
+          msg->pose.pose.orientation.x, msg->pose.pose.orientation.y,
+          msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
+      tf::Matrix3x3 m(q);
+      m.getRPY(roll, pitch, yaw_des_);
+      odom_yaw_recorded_ = true;
+    }
+    cmd->yaw = yaw_des_, cmd->yaw_dot = 0.0;
+  }
+
   init_cmd_ = cmd;
 
   // check if current trajectory is finished
@@ -402,6 +458,84 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
   epoch_pub_.publish(epoch_msg);
 
   return cmd;
+}
+
+void ActionTrajectoryTracker::AlignYaw(const nav_msgs::Odometry::ConstPtr &msg) {
+  // this part is for yaw_alignment
+  double time_since_last_alignment;
+  if (!yaw_alignment_initialized_) {
+    yaw_alignment_initialized_ = true;
+    // this means not initialized, initializing everything
+    ROS_INFO(
+        "This is the very beginning of trajectory tracker, start yaw "
+        "aligning!");
+    last_yaw_align_time_ = ros::Time::now();
+    time_since_last_alignment = 0.0;
+    last_yaw_align_x_ = msg->pose.pose.position.x;
+    last_yaw_align_y_ = msg->pose.pose.position.y;
+    // get yaw from odom's quaternion
+    tf::Quaternion q(msg->pose.pose.orientation.x, msg->pose.pose.orientation.y,
+                     msg->pose.pose.orientation.z,
+                     msg->pose.pose.orientation.w);
+    tf::Matrix3x3 m(q);
+    double roll, pitch;
+    m.getRPY(roll, pitch, last_yaw_);
+  } else {
+    time_since_last_alignment =
+        (ros::Time::now() - last_yaw_align_time_).toSec();
+  }
+
+  if (time_since_last_alignment > yaw_align_dt_) {
+    // derive yaw alignment direction again
+    last_yaw_align_time_ = ros::Time::now();
+    // desired yaw direction should be arctan(dy, dx)
+    ultimate_yaw_des_ = atan2((msg->pose.pose.position.y - last_yaw_align_y_),
+                     (msg->pose.pose.position.x - last_yaw_align_x_));
+    // record x and y
+    last_yaw_align_x_ = msg->pose.pose.position.x;
+    last_yaw_align_y_ = msg->pose.pose.position.y;
+  }
+
+  if (abs(ultimate_yaw_des_ - last_yaw_) > yaw_threshold_) {
+    /*
+    ROS_INFO_STREAM(
+        "Aligning yaw by setting yaw_dot! yaw alignment is checked every "
+        << yaw_align_dt_ << "seconds.");
+        */
+
+    // set yaw dot to move robot to align with desired yaw
+    if (ultimate_yaw_des_ > last_yaw_) {
+      yaw_dot_des_ = yaw_dot_magnitude_ * 1.0;
+    } else {
+      yaw_dot_des_ = yaw_dot_magnitude_ * -1.0;
+    }
+    // check if it's current alignment is already ongoing
+    if (!alignment_ongoing_) {
+      // no, start current alignment
+      align_time_passed_ = 0.0;
+    } else {
+      // yes, continue the alignment
+      align_time_passed_ = (ros::Time::now() - prev_align_start_time_).toSec();
+    }
+    if (align_time_passed_ > 0.2) {
+      ROS_WARN_STREAM("alignment time passed is "
+                      << align_time_passed_
+                      << " seconds, which is large, this is not right, "
+                         "setting it to 0.01! Go fix it!");
+      align_time_passed_ = 0.01;  // just avoid aggressive movement
+    }
+    // yaw_1 = yaw_0 + yaw_dot * dt
+    yaw_des_ = last_yaw_ + yaw_dot_des_ * align_time_passed_;
+    // update the prev_align_start_time_
+    prev_align_start_time_ = ros::Time::now();
+    // update the prev_yaw_
+    last_yaw_ = yaw_des_;
+  } else {
+    // maintaining the last yaw
+    yaw_des_ = last_yaw_;
+    yaw_dot_des_ = 0.0;
+    alignment_ongoing_ = false;  // reset the align_time_passed_
+  }
 }
 
 void ActionTrajectoryTracker::trajCB() {
@@ -437,10 +571,10 @@ void ActionTrajectoryTracker::trajCB() {
     return;
   }
 
-  // set ignore_yaw according to the dimension of goal->traj
-  if (msg.dimensions < 4) {
-    ignore_yaw_ = true;
-  }
+  // // set ignore_yaw according to the dimension of goal->traj
+  // if (msg.dimensions < 4) {
+  //   ignore_yaw_ = true;
+  // }
 
   // change mode to either replanning or normal
   if (goal->replan_rate > 0) {

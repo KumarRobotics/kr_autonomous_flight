@@ -16,7 +16,7 @@
         <include file="$(find map_plan_launch)/launch/mapper.launch">
             <arg name="odom_frame" value="$(arg robot)/odom"/>
             <arg name="map_frame" value="$(arg robot)/map"/>
-            <arg name="lidar_frame" value="$(arg robot)/$(arg lidar_frame)"/>
+            <arg name="lidar_frame" value="$(arg lidar_frame)"/>
             <arg name="real_robot" value="$(arg real_robot)"/>
             <arg name="mapper_config" value="$(arg mapper_config)"/>
             <arg name="cloud" value="$(arg cloud)"/>

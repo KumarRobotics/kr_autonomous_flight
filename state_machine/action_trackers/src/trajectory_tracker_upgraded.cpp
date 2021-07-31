@@ -529,8 +529,8 @@ void ActionTrajectoryTracker::AlignYaw(const nav_msgs::Odometry::ConstPtr &msg) 
     yaw_des_ = last_yaw_ + yaw_dot_des_ * align_time_passed_;
     // update the prev_align_start_time_
     prev_align_start_time_ = ros::Time::now();
-    ROS_WARN_STREAM("alignment des_yaw is "
-                    << yaw_des_  << " des_yaw_speed is" << yaw_dot_des_);
+    // ROS_WARN_STREAM("alignment des_yaw is "
+                    // << yaw_des_  << " des_yaw_speed is" << yaw_dot_des_);
     // update the prev_yaw_
     last_yaw_ = yaw_des_;
   } else {

@@ -15,7 +15,7 @@
 
 take_off_tracker:
   thrust_rate: 5.0
-  max_thrust: 3.0
+  max_thrust: 4.0
   min_thurst: -9.8
   epsilon: 0.01
 
@@ -28,10 +28,10 @@ trajectory_planner:
   use_yaw: false # default false
   yaw_speed: 0.2 # default 0.2
   use_lambda: true # pose error checking
-  max_v: 7 # suggested for 2-D 9, for 3-D 3
-  max_a: 7 # suggested for 2-D 7, for 3-D 2
-  max_j: 3 # suggested for 2-D 3, for 3-D 2
-  max_u: 3 # suggested for 2-D 3, for 3-D 1
+  max_v: 3 # suggested for 2-D 9, for 3-D 3
+  max_a: 3 # suggested for 2-D 7, for 3-D 2
+  max_j: 1 # suggested for 2-D 3, for 3-D 2
+  max_u: 1 # suggested for 2-D 3, for 3-D 1
   use_3d: false # use 3d planner
   z_cost_factor: 1 # global map z cost factor (cost_along_z = z_cost_factor * cost_along_x_or_y)
   max_v_z: 1.0 # default 2.0
@@ -44,14 +44,13 @@ trajectory_planner:
   dt: 1.0 # execution time for each primitive
   ndt: 1.0 # default 1
   max_num: -1 # Maxmum number of expansion, -1 means no limitation
-  heuristic_weight: 10.0
+  heuristic_weight: 5.0
 
 stopping_policy:
-  #TODO(xu) verify whether this is actually working!
-  acc_xy_des: 10.0 #
-  jerk_xy_des: 4.0 #
-  acc_z_des: 5.0 #
-  jerk_z_des: 3.0 #
+  acc_xy_des: 6.0 #
+  jerk_xy_des: 3.0 #
+  acc_z_des: 3.0 #
+  jerk_z_des: 1.5 #
   acc_yaw_des: 0.05 # rad
 
 local_global_server:
@@ -61,3 +60,5 @@ local_global_server:
   local_plan_timeout_duration: 1.0 # local planner timeout in seconds 
   max_local_plan_trials: 3
   global_planner_verbose: false #
+  odom_frame: "quadrotor/odom"
+  map_frame: "quadrotor/map"

@@ -13,9 +13,13 @@
   <depend>action_planner</depend>
   <depend>action_trackers</depend>
   <depend>actionlib</depend>
+  <depend>tf2_ros</depend>
   <depend>actionlib_msgs</depend>
   <depend>kr_mav_msgs</depend>
   <depend>sensor_msgs</depend>
+  <depend>tf_conversions</depend>
+  <depend>eigen_conversions</depend>
+
   <depend>traj_opt_ros</depend>
   <depend>planning_ros_utils</depend>
   <depend>planning_ros_msgs</depend>

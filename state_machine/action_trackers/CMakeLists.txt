@@ -53,5 +53,5 @@ target_link_libraries(take_off_tracker PRIVATE ${PROJECT_NAME})
 add_library(land_tracker src/land_tracker.cpp)
 target_link_libraries(land_tracker PRIVATE ${PROJECT_NAME})
 
-add_library(action_trajectory_tracker src/trajectory_tracker.cpp)
+add_library(action_trajectory_tracker src/trajectory_tracker_upgraded.cpp)
 target_link_libraries(action_trajectory_tracker PRIVATE ${PROJECT_NAME})

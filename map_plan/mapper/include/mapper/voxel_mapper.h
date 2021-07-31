@@ -21,9 +21,11 @@ class VoxelMapper {
    * @param dim the range of map in x-y-z axes (float)
    * @param res voxel resolution
    * @param val set default map value
+   * @param decay_times_to_empty number of times of decay for an occupied voxel
+   * to be decayed into empty cell, 0 means no decay
    */
   VoxelMapper(const Eigen::Vector3d& origin, const Eigen::Vector3d& dim,
-              double res, int8_t val = 0);
+              double res, int8_t val = 0, int decay_times_to_empty = 0);
 
   /// Set all voxels as unknown
   void setMapUnknown();
@@ -164,7 +166,9 @@ class VoxelMapper {
   int8_t val_even = 50;
   /// Value decay (voxels will disappear if unobserved for (val_occ - val_even)
   /// / val_decay times)
-  int8_t val_decay = 0;
+  int decay_times_to_empty;
+  int8_t val_decay;
+
   // be careful of overflow (should always be within -128 and 128 range)
   // Add val_add to the voxel whenever a point lies in it. Voxel will be
   // occupied after (val_occ - val_free) / val_add times of such addition.

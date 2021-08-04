@@ -5,14 +5,16 @@
 	<arg name="odom_topic" default="odom"/>
   
   <arg name="throttled_odom_topic" default="odom_throttled"/>
-	<arg name="throttled_odom_hz" default="10"/>
+	<arg name="throttled_odom_hz" default="60"/>
 
   <arg name="global_map_topic" default="mapper/global_voxel_map"/>
   <arg name="local_map_topic" default="mapper/local_voxel_map"/>
   
-  <group ns="$(arg robot)"> 
+  <group ns="$(arg robot)">
+    
+    <node name="debug_stereo_throttler" type="throttle" pkg="topic_tools" args="messages image_processor/debug_stereo_image 5 image_processor/debug_stereo_image_throttled" />
 	  	<node name="odom_throttler" type="throttle" pkg="topic_tools" args="messages $(arg odom_topic) $(arg throttled_odom_hz) $(arg throttled_odom_topic)" />
-	  	<node name="local_map_throttler" type="throttle" pkg="topic_tools" args="messages $(arg local_map_topic) 1 $(arg local_map_topic)_throttled" />
-	  	<node name="global_map_throttler" type="throttle" pkg="topic_tools" args="messages $(arg global_map_topic) 0.2 $(arg global_map_topic)_throttled" />
+	  	<node name="local_map_throttler" type="throttle" pkg="topic_tools" args="messages $(arg local_map_topic) 0.5 $(arg local_map_topic)_throttled" />
+	  	<node name="global_map_throttler" type="throttle" pkg="topic_tools" args="messages $(arg global_map_topic) 0.1 $(arg global_map_topic)_throttled" />
 	</group>
 </launch>

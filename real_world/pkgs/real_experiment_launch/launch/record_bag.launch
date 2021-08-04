@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-  <arg name="dir" default="/root/bags/"/>
+  <arg name="dir" default="/home/dcist/bags/"/>
   <node pkg="rosbag" type="record" name="recorder" args="
   /quadrotor/vio/odom
   /tf
@@ -9,9 +9,16 @@
   /quadrotor/global_plan_server/path 
   /rosout
 	/rosout_agg
-  /ovc/left/image_raw
-  /ovc/right/image_raw
+  /quadrotor/image_processor/debug_stereo_image/compressed
+  /quadrotor/mapper/global_voxel_map_throttled
+  /quadrotor/mapper/local_voxel_map_throttled
+  /quadrotor/odom_throttled
   /ovc/vectornav
+  /ublox/fix
+  /ublox/fix_velocity
+  /os_node/imu_packets
+  /os_node/lidar_packets
+    
     "
     output="screen"/>
 </launch>

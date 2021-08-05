@@ -6,11 +6,11 @@
   <arg name="udp_dest" default="192.168.100.1" doc="hostname or IP where the sensor will send data packets"/>
   <arg name="lidar_port" default="7502" doc="port to which the sensor should send lidar data"/>
   <arg name="imu_port" default="7503" doc="port to which the sensor should send imu data"/>
-  <arg name="replay" default="false" doc="do not connect to a sensor; expect /os_node/{lidar,imu}_packets from replay"/>
+  <arg name="replay" default="true" doc="do not connect to a sensor; expect /os_node/{lidar,imu}_packets from replay"/>
   <arg name="lidar_mode" default="2048x10" doc="resolution and rate: either 512x10, 512x20, 1024x10, 1024x20, or 2048x10"/>
   <arg name="timestamp_mode" default="" doc="method used to timestamp measurements: TIME_FROM_INTERNAL_OSC, TIME_FROM_SYNC_PULSE_IN, TIME_FROM_PTP_1588"/>
   <arg name="metadata" default="ouster_metadata.json" doc="override default metadata file for replays"/>
-  <arg name="viz" default="false" doc="whether to run a rviz"/>
+  <arg name="viz" default="true" doc="whether to run a rviz"/>
   <arg name="rviz_config" default="-d $(find ouster_ros)/viz.rviz" doc="optional rviz config file"/>
   <arg name="tf_prefix" default="" doc="namespace for tf transforms"/>
 

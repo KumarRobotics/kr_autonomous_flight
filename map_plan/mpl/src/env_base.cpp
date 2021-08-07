@@ -36,15 +36,8 @@ decimal_t EnvBase<Dim>::cal_heur(const WaypointD &state,
                                  const WaypointD &goal) const {
   if (heur_ignore_dynamics_) {
     if (v_max_ > 0) {
-      double v_max_z = 1.0;  // TODO: read this from yaml
-      double heur_xy = w_ * (std::max(std::abs(state.pos[0] - goal.pos[0]),
-                                      std::abs(state.pos[1] - goal.pos[1])) /
-                             v_max_);
-      double heur_z = w_ * (std::abs(state.pos[2] - goal.pos[2]) / v_max_z);
-
-      return heur_xy + heur_z;
-      // return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>() /
-      //        v_max_;
+      return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>() /
+             v_max_;
     } else
       return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>();
   }
@@ -256,6 +249,7 @@ void EnvBase<Dim>::info() {
 
 template <int Dim>
 decimal_t EnvBase<Dim>::calculate_intrinsic_cost(const PrimitiveD &pr) const {
+  // pr.J is integration of square of jerk, dt_ >= dist / v_max (guaranteeing it's admissible and consistent)
   return pr.J(pr.control()) + w_ * dt_;
 }
 

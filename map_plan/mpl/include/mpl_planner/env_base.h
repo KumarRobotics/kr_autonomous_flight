@@ -59,6 +59,9 @@ class EnvBase {
   /// Set max acc in each axis
   void set_yaw_max(decimal_t yaw) { yaw_max_ = yaw; }
 
+  /// Set vertical semi-fov 
+  void set_vfov(decimal_t vfov) {vfov_ = vfov; }
+
   /// Set prior trajectory
   virtual void set_prior_trajectory(const Trajectory<Dim>& traj);
 
@@ -140,6 +143,8 @@ class EnvBase {
   decimal_t j_max_{-1.0};
   /// max yaw
   decimal_t yaw_max_{-1.0};
+  /// vertical semi-fov
+  decimal_t vfov_{-1.0};
   /// max time
   decimal_t t_max_{std::numeric_limits<decimal_t>::infinity()};
   /// duration of primitive

@@ -51,6 +51,8 @@ class PlannerBase {
   void setJmax(decimal_t j);
   /// Set max jerk in each axis
   void setYawmax(decimal_t yaw);
+  /// Set vertical semi-fov
+  void setVfov(decimal_t vfov);
   /// Set max time step to explore
   void setTmax(decimal_t t);
   /// Set dt for each primitive

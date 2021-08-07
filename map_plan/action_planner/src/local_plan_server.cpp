@@ -168,7 +168,7 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   }
 
   double dt;
-  double W;
+  double W, v_fov;
   int ndt, max_num;
   traj_planner_nh.param("tol_pos", tol_pos_, 0.5);
   traj_planner_nh.param("global_goal_tol_vel", goal_tol_vel_, 0.5);
@@ -178,6 +178,7 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   traj_planner_nh.param("ndt", ndt, -1);
   traj_planner_nh.param("max_num", max_num, -1);
   traj_planner_nh.param("heuristic_weight", W, 10.0);
+  traj_planner_nh.param("vertical_semi_fov", v_fov, 0.392);
 
   mp_planner_util_.reset(new MPL::VoxelMapPlanner(verbose_));  // verbose
   mp_planner_util_->setMapUtil(
@@ -186,6 +187,7 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   mp_planner_util_->setVmax(v_max);   // Set max velocity
   mp_planner_util_->setAmax(a_max);   // Set max acceleration
   mp_planner_util_->setJmax(j_max);   // Set max jerk
+  mp_planner_util_->setVfov(v_fov);   // Set vertical semi-fov
   // mp_planner_util_->setUmax(u_max); // Set max control input
   mp_planner_util_->setDt(dt);          // Set dt for each primitive
   mp_planner_util_->setTmax(ndt * dt);  // Set max time horizon of planning

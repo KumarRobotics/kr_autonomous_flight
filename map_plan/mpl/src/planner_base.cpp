@@ -68,6 +68,12 @@ void PlannerBase<Dim>::setYawmax(decimal_t yaw) {
 }
 
 template <int Dim>
+void PlannerBase<Dim>::setVfov(decimal_t vfov) {
+  env_->set_vfov(vfov);
+  if (planner_verbose_) printf("[PlannerBase] set vfov: %f\n", vfov);
+}
+
+template <int Dim>
 void PlannerBase<Dim>::setTmax(decimal_t t) {
   env_->set_t_max(t);
   if (planner_verbose_) printf("[PlannerBase] set max time: %f\n", t);

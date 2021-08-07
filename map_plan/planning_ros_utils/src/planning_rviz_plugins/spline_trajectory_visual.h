@@ -1,7 +1,7 @@
 // Copyright 2016 Michael Watterson
 
-#ifndef MAP_PLAN_PKGS_TRAJ_OPT_ROS_SRC_TRAJECTORY_VISUAL_H_
-#define MAP_PLAN_PKGS_TRAJ_OPT_ROS_SRC_TRAJECTORY_VISUAL_H_
+#ifndef MAP_PLAN_PLANNING_ROS_UTILS_SRC_PLANNING_RVIZ_PLUGINS_SPLINE_TRAJECTORY_VISUAL_H_
+#define MAP_PLAN_PLANNING_ROS_UTILS_SRC_PLANNING_RVIZ_PLUGINS_SPLINE_TRAJECTORY_VISUAL_H_
 
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreSceneNode.h>
@@ -10,6 +10,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -103,4 +104,4 @@ class SplineTrajectoryVisual {
 };
 // END_TUTORIAL
 }  // namespace planning_rviz_plugins
-#endif  // MAP_PLAN_PKGS_TRAJ_OPT_ROS_SRC_TRAJECTORY_VISUAL_H_
+#endif  // MAP_PLAN_PLANNING_ROS_UTILS_SRC_PLANNING_RVIZ_PLUGINS_SPLINE_TRAJECTORY_VISUAL_H_

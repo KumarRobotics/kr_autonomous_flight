@@ -1,5 +1,6 @@
 // Copyright 2016 Michael Watterson
-// Can be found https://github.com/fcladera/autonomy_stack/tree/5a8ae35284f82e05bb16603c8b234f5d3b7d9f88/map_plan/pkgs/traj_opt_ros/src
+// Can be found
+// https://github.com/fcladera/autonomy_stack/tree/5a8ae35284f82e05bb16603c8b234f5d3b7d9f88/map_plan/pkgs/traj_opt_ros/src
 
 #include "spline_trajectory_visual.h"  // NOLINT()
 
@@ -275,7 +276,7 @@ void SplineTrajectoryVisual::setShapeFromPosePair(const Ogre::Vector3 &p0,
 
 Eigen::VectorXd SplineTrajectoryVisual::evaluate(double t,
                                                  uint deriv_num) const {
-  // TODO make work for derivatives
+  // TODO(laura) make work for derivatives
   Eigen::VectorXd result(traj_->dimensions);
 
   for (int dim = 0; dim < traj_->dimensions; dim++) {

@@ -49,10 +49,6 @@ SplineTrajectoryDisplay::SplineTrajectoryDisplay() {
                                            "Turns arrow/lines on/off", this,
                                            SLOT(updateSampleLength()));
 
-  use_h_property_ = new rviz::BoolProperty("Plot NonFlat", false,
-                                           "Turns quadrotor orientation on/off",
-                                           this, SLOT(updateSampleLength()));
-
   history_length_property_ = new rviz::IntProperty(
       "History Length", 1,
       "Number of prior trajectories to display. Warning!! "
@@ -139,7 +135,6 @@ void SplineTrajectoryDisplay::updateStyle() {
   int style = style_property_->getOptionInt();
 
   for (size_t i = 0; i < visuals_.size(); i++) {
-    visuals_[i]->setStyle(style);
     visuals_[i]->draw();
   }
   updateColorAndAlpha();
@@ -163,11 +158,9 @@ void SplineTrajectoryDisplay::updateSampleLength() {
   int tangent_points = tangent_samples_property_->getInt();
   bool use_v = use_v_property_->getBool();
   bool use_a = use_a_property_->getBool();
-  bool use_h = use_h_property_->getBool();
 
   for (size_t i = 0; i < visuals_.size(); i++) {
-    visuals_[i]->resetTrajPoints(traj_points, tangent_points, use_v, use_a,
-                                 use_h);
+    visuals_[i]->resetTrajPoints(traj_points, tangent_points, use_v, use_a);
     visuals_[i]->draw();
   }
   updateColorAndAlpha();
@@ -206,10 +199,8 @@ void SplineTrajectoryDisplay::processMessage(
   int tangent_points = tangent_samples_property_->getInt();
   bool use_v = use_v_property_->getBool();
   bool use_a = use_a_property_->getBool();
-  bool use_h = use_h_property_->getBool();
   int style = style_property_->getOptionInt();
-  visual->setStyle(style);
-  visual->resetTrajPoints(traj_points, tangent_points, use_v, use_a, use_h);
+  visual->resetTrajPoints(traj_points, tangent_points, use_v, use_a);
   visual->draw();
   visual->setMessage(msg);
   visual->setFramePosition(position);
@@ -231,4 +222,5 @@ void SplineTrajectoryDisplay::randomizeColor() {}
 // Tell pluginlib about this class.  It is important to do this in
 // global scope, outside our package's namespace.
 #include <pluginlib/class_list_macros.h>  // NOLINT()
-PLUGINLIB_EXPORT_CLASS(planning_rviz_plugins::SplineTrajectoryDisplay, rviz::Display)
+PLUGINLIB_EXPORT_CLASS(planning_rviz_plugins::SplineTrajectoryDisplay,
+                       rviz::Display)

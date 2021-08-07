@@ -34,8 +34,6 @@ class Object;
 // could easily be expanded to include more of the message data.
 namespace planning_rviz_plugins {
 
-enum Style { Mike, Sikang, CJ, Hopf };
-
 class SplineTrajectoryVisual {
  public:
   // Constructor.  Creates the visual stuff and puts it into the
@@ -65,10 +63,9 @@ class SplineTrajectoryVisual {
   void setColorA(float r, float g, float b, float a);
   void setScale(float thickness);
   void setCurve();
-  void setStyle(int style);
 
   void resetTrajPoints(int traj_points, int tangent_points, bool use_v,
-                       bool use_a, bool use_h);
+                       bool use_a);
 
  private:
   Eigen::Matrix3d matFromVecD(const Eigen::VectorXd& vec);
@@ -76,7 +73,6 @@ class SplineTrajectoryVisual {
   // Tangent velocity vectors
   std::vector<std::shared_ptr<rviz::Object> > vel_arrows_;
   std::vector<std::shared_ptr<rviz::Object> > acc_arrows_;
-  std::vector<std::shared_ptr<rviz::Object> > hopf_arrows_;
   // Lines making up the actual trajectory
   std::vector<std::shared_ptr<rviz::Object> > trajectory_lines_;
   std::vector<std::shared_ptr<rviz::Shape> > trajectory_balls_;
@@ -87,10 +83,6 @@ class SplineTrajectoryVisual {
   int num_vel_points_{50};
   bool vel_on_{true};
   bool acc_on_{false};
-  bool hopf_on_{false};
-
-  //    Style style_{Style::Sikang}; // default to working style
-  Style style_{Style::Mike};  // default to better style
 
   static void setShapeFromPosePair(const Ogre::Vector3& p0,
                                    const Ogre::Vector3& p1, double scale,

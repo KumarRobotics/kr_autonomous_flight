@@ -1,7 +1,7 @@
 // Copyright 2016 Michael Watterson
 
-#ifndef MAP_PLAN_PKGS_TRAJ_OPT_ROS_SRC_TRAJECTORY_DISPLAY_H_
-#define MAP_PLAN_PKGS_TRAJ_OPT_ROS_SRC_TRAJECTORY_DISPLAY_H_
+#ifndef MAP_PLAN_PLANNING_ROS_UTILS_SRC_PLANNING_RVIZ_PLUGINS_SPLINE_TRAJECTORY_DISPLAY_H_
+#define MAP_PLAN_PLANNING_ROS_UTILS_SRC_PLANNING_RVIZ_PLUGINS_SPLINE_TRAJECTORY_DISPLAY_H_
 
 #ifndef Q_MOC_RUN
 #include <planning_ros_msgs/SplineTrajectory.h>
@@ -9,7 +9,6 @@
 
 #include <boost/circular_buffer.hpp>
 #endif
-
 
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreSceneNode.h>
@@ -21,6 +20,7 @@
 #include <rviz/properties/int_property.h>
 #include <rviz/visualization_manager.h>
 #include <tf/transform_listener.h>
+
 #include <Eigen/Core>
 
 #include "spline_trajectory_visual.h"  // NOLINT()
@@ -46,9 +46,9 @@ class SplineTrajectoryVisual;
 // which can be listed in the "Displays" panel is a subclass of
 // rviz::Display.
 //
-// SplineTrajectoryDisplay will show a 3D arrow showing the direction and magnitude
-// of the TRAJECTORY acceleration vector.  The base of the arrow will be at
-// the frame listed in the header of the SplineTrajectory message, and the
+// SplineTrajectoryDisplay will show a 3D arrow showing the direction and
+// magnitude of the TRAJECTORY acceleration vector.  The base of the arrow will
+// be at the frame listed in the header of the SplineTrajectory message, and the
 // direction of the arrow will be relative to the orientation of that
 // frame.  It will also optionally show a history of recent
 // acceleration vectors, which will be stored in a circular buffer.
@@ -111,8 +111,6 @@ class SplineTrajectoryDisplay
   rviz::IntProperty* tangent_samples_property_;
   rviz::EnumProperty* style_property_;
 };
-// END_TUTORIAL
-}
+}  // namespace planning_rviz_plugins
 
-#endif  // MAP_PLAN_PKGS_TRAJ_OPT_ROS_SRC_TRAJECTORY_DISPLAY_H_
-// %EndTag(FULL_SOURCE)%
+#endif  // MAP_PLAN_PLANNING_ROS_UTILS_SRC_PLANNING_RVIZ_PLUGINS_SPLINE_TRAJECTORY_DISPLAY_H_

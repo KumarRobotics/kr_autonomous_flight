@@ -72,20 +72,6 @@ SplineTrajectoryDisplay::SplineTrajectoryDisplay() {
                             this, SLOT(updateSampleLength()));
   tangent_samples_property_->setMin(10);
   tangent_samples_property_->setMax(500);
-
-  style_property_ = new rviz::EnumProperty(
-      "Style", "Mike",
-      "Mike style trajectories are plotted with cylinders and spheres. Tangent "
-      "velocity/acceleration is plotted with arrows. Sikang style trajectories "
-      "are plotted with Ogre lines (1 px thickness) and tangent "
-      "velocity/acceleration are plotted rotated 90 degrees around the z axis."
-      "CJ uses a color gradient based on the velocity magnitude"
-      "SE3 plots coordinate axes along the trajectory based on the orientation",
-      this, SLOT(updateStyle()));
-  style_property_->addOption("Mike", 0);
-  style_property_->addOption("Sikang", 1);
-  style_property_->addOption("CJ", 2);
-  //  style_property_->addOption("Hopf", 3);
 }
 
 // After the top-level rviz::Display::initialize() does its own setup,
@@ -132,8 +118,6 @@ void SplineTrajectoryDisplay::updateColorAndAlpha() {
 }
 
 void SplineTrajectoryDisplay::updateStyle() {
-  int style = style_property_->getOptionInt();
-
   for (size_t i = 0; i < visuals_.size(); i++) {
     visuals_[i]->draw();
   }
@@ -199,7 +183,6 @@ void SplineTrajectoryDisplay::processMessage(
   int tangent_points = tangent_samples_property_->getInt();
   bool use_v = use_v_property_->getBool();
   bool use_a = use_a_property_->getBool();
-  int style = style_property_->getOptionInt();
   visual->resetTrajPoints(traj_points, tangent_points, use_v, use_a);
   visual->draw();
   visual->setMessage(msg);

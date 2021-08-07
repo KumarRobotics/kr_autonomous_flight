@@ -1,4 +1,5 @@
 // Copyright 2016 Michael Watterson
+// Can be found https://github.com/fcladera/autonomy_stack/tree/5a8ae35284f82e05bb16603c8b234f5d3b7d9f88/map_plan/pkgs/traj_opt_ros/src
 
 #include "spline_trajectory_visual.h"  // NOLINT()
 
@@ -28,8 +29,7 @@ SplineTrajectoryVisual::SplineTrajectoryVisual(
   //  acceleration_arrow_.reset(new rviz::Arrow( scene_manager_, frame_node_ ));
 
   // allocate space for line objects
-  resetTrajPoints(num_traj_points_, num_vel_points_, vel_on_, acc_on_,
-                  hopf_on_);
+  resetTrajPoints(num_traj_points_, num_vel_points_, vel_on_, acc_on_);
 
   // allocate space of tangent objects
 }
@@ -53,25 +53,13 @@ Ogre::Vector3 SplineTrajectoryVisual::vecFromVecD(const Eigen::VectorXd &vec) {
   return vecr;
 }
 
-void SplineTrajectoryVisual::setStyle(int style) {
-  if (style == 0)
-    style_ = Style::Mike;
-  else if (style == 1)
-    style_ = Style::Sikang;
-  else if (style == 2)
-    style_ = Style::CJ;
-  else
-    style_ = Style::Hopf;
-}
-
 void SplineTrajectoryVisual::resetTrajPoints(int traj_points,
                                              int tangent_points, bool use_v,
-                                             bool use_a, bool use_h) {
+                                             bool use_a) {
   num_traj_points_ = traj_points;
   num_vel_points_ = tangent_points;
   vel_on_ = use_v;
   acc_on_ = use_a;
-  hopf_on_ = use_h;
 }
 
 void SplineTrajectoryVisual::draw() {
@@ -79,65 +67,31 @@ void SplineTrajectoryVisual::draw() {
   trajectory_balls_.clear();
   vel_arrows_.clear();
   acc_arrows_.clear();
-  hopf_arrows_.clear();
 
   // allocate space for line objects
   trajectory_lines_.reserve(num_traj_points_);
   if (vel_on_) vel_arrows_.reserve(num_vel_points_);
   if (acc_on_) acc_arrows_.reserve(num_vel_points_);
-  if (hopf_on_) hopf_arrows_.reserve(3 * num_vel_points_);
 
   // allocate objects
-  if (style_ == Style::Mike || style_ == Style::Hopf) {
-    trajectory_balls_.reserve(num_traj_points_ + 1);
+  trajectory_balls_.reserve(num_traj_points_ + 1);
+  trajectory_balls_.push_back(std::make_shared<rviz::Shape>(
+      rviz::Shape::Type::Sphere, scene_manager_, frame_node_));
+  for (int i = 0; i < num_traj_points_; i++) {
+    trajectory_lines_.push_back(std::make_shared<rviz::Shape>(
+        rviz::Shape::Type::Cylinder, scene_manager_, frame_node_));
     trajectory_balls_.push_back(std::make_shared<rviz::Shape>(
         rviz::Shape::Type::Sphere, scene_manager_, frame_node_));
   }
-  for (int i = 0; i < num_traj_points_; i++) {
-    if (style_ == Style::Mike || style_ == Style::Hopf) {
-      trajectory_lines_.push_back(std::make_shared<rviz::Shape>(
-          rviz::Shape::Type::Cylinder, scene_manager_, frame_node_));
-      trajectory_balls_.push_back(std::make_shared<rviz::Shape>(
-          rviz::Shape::Type::Sphere, scene_manager_, frame_node_));
-    } else {
-      trajectory_lines_.push_back(std::make_shared<rviz::Shape>(
-          rviz::Shape::Type::Cylinder, scene_manager_, frame_node_));
-    }
-  }
 
-  if (style_ != Style::CJ) {
-    for (int i = 0; i < num_vel_points_; i++) {
-      if (style_ == Style::Sikang) {
-        if (vel_on_) {
-          vel_arrows_.push_back(std::make_shared<rviz::Shape>(
-              rviz::Shape::Type::Cylinder, scene_manager_, frame_node_));
-        }
-        if (acc_on_) {
-          acc_arrows_.push_back(std::make_shared<rviz::Shape>(
-              rviz::Shape::Type::Cylinder, scene_manager_, frame_node_));
-        }
-      } else if (style_ == Style::Mike) {
-        if (vel_on_) {
-          vel_arrows_.push_back(
-              std::make_shared<rviz::Arrow>(scene_manager_, frame_node_));
-        }
-        if (acc_on_) {
-          acc_arrows_.push_back(
-              std::make_shared<rviz::Arrow>(scene_manager_, frame_node_));
-        }
-        if (hopf_on_) {
-          for (int c = 0; c < 3; c++) {
-            hopf_arrows_.push_back(std::make_shared<rviz::Shape>(
-                rviz::Shape::Type::Cylinder, scene_manager_, frame_node_));
-          }
-        }
-      } else if (style_ == Style::Hopf) {
-        if (vel_on_) {
-          for (int i = 0; i < 3; i++)
-            vel_arrows_.push_back(std::make_shared<rviz::Shape>(
-                rviz::Shape::Type::Cylinder, scene_manager_, frame_node_));
-        }
-      }
+  for (int i = 0; i < num_vel_points_; i++) {
+    if (vel_on_) {
+      vel_arrows_.push_back(
+          std::make_shared<rviz::Arrow>(scene_manager_, frame_node_));
+    }
+    if (acc_on_) {
+      acc_arrows_.push_back(
+          std::make_shared<rviz::Arrow>(scene_manager_, frame_node_));
     }
   }
 
@@ -171,15 +125,6 @@ void SplineTrajectoryVisual::setCurve() {
   float g_min = 114 / 255.0;
   float b_min = 0 / 255.0;
 
-  if (style_ == Style::CJ) {
-    double dt = t_total / static_cast<double>(num_traj_points_);
-    for (int i = 1; i <= num_traj_points_; i++) {
-      double dtt = static_cast<double>(i) * dt;
-      auto v = evaluate(dtt, 1);
-      if (v.norm() > v_max) v_max = v.norm();
-    }
-  }
-
   Ogre::Vector3 op1 = vecFromVecD(p1);
   Ogre::Vector3 balls(thickness_, thickness_, thickness_);
   // draw curve
@@ -189,47 +134,26 @@ void SplineTrajectoryVisual::setCurve() {
     p2 = evaluate(dtt, 0);
     Ogre::Vector3 op2 = vecFromVecD(p2);
 
-    if (style_ == Style::Mike) {
-      std::shared_ptr<rviz::Shape> sp =
-          std::dynamic_pointer_cast<rviz::Shape>(trajectory_lines_.at(i - 1));
-      setShapeFromPosePair(op1, op2, thickness_, sp.get());
-      if (i == 1) {
-        trajectory_balls_.at(0)->setPosition(op1);
-        trajectory_balls_.at(0)->setScale(balls);
-      }
-      trajectory_balls_.at(i)->setPosition(op2);
-      trajectory_balls_.at(i)->setScale(balls);
-    } else if (style_ == Style::Sikang) {
-      std::shared_ptr<rviz::Shape> sp =
-          std::dynamic_pointer_cast<rviz::Shape>(trajectory_lines_.at(i - 1));
-      setShapeFromPosePair(op1, op2, thickness_, sp.get());
-      // sp->setPoints(op1, op2);
-    } else if (style_ == Style::CJ) {
-      std::shared_ptr<rviz::Shape> sp =
-          std::dynamic_pointer_cast<rviz::Shape>(trajectory_lines_.at(i - 1));
-      setShapeFromPosePair(op1, op2, thickness_, sp.get());
-      if (vel_on_) {
-        Eigen::VectorXd v;
-        v = evaluate(dtt, 1);
-        float r = v.norm() / v_max * (r_max - r_min) + r_min;
-        float g = v.norm() / v_max * (g_max - g_min) + g_min;
-        float b = v.norm() / v_max * (b_max - b_min) + b_min;
-        sp->setColor(r, g, b, 1.0);
-      }
+    std::shared_ptr<rviz::Shape> sp =
+        std::dynamic_pointer_cast<rviz::Shape>(trajectory_lines_.at(i - 1));
+    setShapeFromPosePair(op1, op2, thickness_, sp.get());
+    if (i == 1) {
+      trajectory_balls_.at(0)->setPosition(op1);
+      trajectory_balls_.at(0)->setScale(balls);
     }
+    trajectory_balls_.at(i)->setPosition(op2);
+    trajectory_balls_.at(i)->setScale(balls);
     op1 = op2;
   }
 
   // Eigen::Quaternion<double> rot(1, 0, 0, 0);
   // // rotate tangent vectors about z
-  // if (style_ == Style::Sikang)
-  //   rot = Eigen::Quaternion<double>(0.707, 0, 0, -0.707);
 
   // // draw tangents
   // dt = t_total / static_cast<double>(num_vel_points_);
   // for (int i = 0; i < num_vel_points_; i++) {
   //   //      std::cout << "i " << i << std::endl;
-  //   if (!vel_on_ && !acc_on_ && !hopf_on_) break;
+  //   if (!vel_on_ && !acc_on_ ) break;
   //   double dtt = static_cast<double>(i) * dt;
   //   ;
   //   op1 = vecFromVecD(evaluate(dtt, 0));
@@ -245,16 +169,9 @@ void SplineTrajectoryVisual::setCurve() {
   //     }
   //     p2_3d = rot.matrix() * p2_3d + p1_3d;
   //     Ogre::Vector3 op2(p2_3d(0), p2_3d(1), p2_3d(2));
-  //     if (style_ == Style::Mike) {
   //       std::shared_ptr<rviz::Arrow> sp =
   //           std::dynamic_pointer_cast<rviz::Arrow>(vel_arrows_.at(i));
   //       setShapeFromPosePair(op1, op2, 0.5 * thickness_, sp.get());
-  //     } else if (style_ == Style::Sikang) {
-  //       std::shared_ptr<rviz::Shape> lp =
-  //           std::dynamic_pointer_cast<rviz::Shape>(vel_arrows_.at(i));
-  //       setShapeFromPosePair(op1, op2, 0.5 * thickness_, lp.get());
-  //       // lp->setPoints(op1, op2);
-  //     }
   //   }
   //   if (acc_on_) {
   //     p2 = evaluate(dtt, 2);
@@ -267,16 +184,9 @@ void SplineTrajectoryVisual::setCurve() {
 
   //     p2_3d = rot.matrix() * p2_3d + p1_3d;
   //     Ogre::Vector3 op2(p2_3d(0), p2_3d(1), p2_3d(2));
-  //     if (style_ == Style::Mike) {
   //       std::shared_ptr<rviz::Arrow> sp =
   //           std::dynamic_pointer_cast<rviz::Arrow>(acc_arrows_.at(i));
   //       setShapeFromPosePair(op1, op2, 0.5 * thickness_, sp.get());
-  //     } else if (style_ == Style::Sikang) {
-  //       std::shared_ptr<rviz::Shape> lp =
-  //           std::dynamic_pointer_cast<rviz::Shape>(acc_arrows_.at(i));
-  //       setShapeFromPosePair(op1, op2, 0.5 * thickness_, lp.get());
-  //       // lp->setPoints(op1, op2);
-  //     }
   //   }
   // }
 }
@@ -300,7 +210,6 @@ void SplineTrajectoryVisual::setFrameOrientation(
 
 // Color is passed through to the Arrow object.
 void SplineTrajectoryVisual::setColor(float r, float g, float b, float a) {
-  if (style_ == Style::CJ) return;
   for (auto &line : trajectory_lines_) line->setColor(r, g, b, a);
   for (auto &ball : trajectory_balls_) ball->setColor(r, g, b, a);
 }

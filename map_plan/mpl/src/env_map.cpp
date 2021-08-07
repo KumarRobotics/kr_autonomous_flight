@@ -104,7 +104,7 @@ void EnvMap<Dim>::get_succ(const WaypointD &curr, vec_E<WaypointD> &succ,
     Primitive<Dim> pr(curr, this->U_[i], this->dt_);
     Waypoint<Dim> tn = pr.evaluate(this->dt_);
     if (tn == curr || !validate_primitive(pr, this->v_max_, this->a_max_,
-                                          this->j_max_, this->yaw_max_))
+                                          this->j_max_, this->yaw_max_, this->vfov_))
       continue;
     tn.t = curr.t + this->dt_;
     succ.push_back(tn);

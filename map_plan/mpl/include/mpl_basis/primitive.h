@@ -7,6 +7,7 @@
 
 #include "mpl_basis/data_type.h"
 #include "mpl_basis/waypoint.h"
+#include <math.h> 
 
 namespace MPL {
 
@@ -231,17 +232,18 @@ typedef Primitive<3> Primitive3D;
  * @param ma is the max threshold for acceleration
  * @param mj is the max threshold for jerk
  * @param myaw is the max threshold for yaw
+ * @param vfov is sensor vertical semi-fov in rad
  *
  * Use L1 norm for the maximum
  */
 template <int Dim>
 bool validate_primitive(const Primitive<Dim>& pr, decimal_t mv = 0,
                         decimal_t ma = 0, decimal_t mj = 0,
-                        decimal_t myaw = 0) {
+                        decimal_t myaw = 0, decimal_t vfov = 0) {
   if (pr.control() == MPL::ACC)
     return validate_xxx(pr, mv, MPL::VEL);
   else if (pr.control() == MPL::JRK)
-    return validate_xxx(pr, mv, MPL::VEL) && validate_xxx(pr, ma, MPL::ACC);
+    return validate_xxx(pr, mv, MPL::VEL) && validate_xxx(pr, ma, MPL::ACC) && validate_vel_dir(pr, vfov);
   else if (pr.control() == MPL::SNP)
     return validate_xxx(pr, mv, MPL::VEL) && validate_xxx(pr, ma, MPL::ACC) &&
            validate_xxx(pr, mj, MPL::JRK);
@@ -301,5 +303,30 @@ bool validate_yaw(const Primitive<Dim>& pr, decimal_t my) {
   }
   return true;
 }
+
+/**
+ * @brief Check if the velocity direction is within sensor vertical FOV 
+ * @param fov is sensor vertical semi-fov 
+ *
+ */
+template <int Dim>
+bool validate_vel_dir(const Primitive<Dim>& pr, decimal_t vfov) {
+  // ignore non-positive threshold
+  if ((vfov <= 0) || (Dim < 3)) {return true;}
+  // check max vertical velocity angle, compare with vfov
+  decimal_t vx_max, vy_max, vz_max;
+  vx_max = std::abs(pr.max_vel(0));
+  vy_max = std::abs(pr.max_vel(1));
+  vz_max = std::abs(pr.max_vel(2));
+
+  decimal_t v_horizontal = sqrt(pow(vx_max,2) + pow(vy_max,2));
+  if ((vz_max / v_horizontal) <= tan(vfov)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+
 
 }  // namespace MPL

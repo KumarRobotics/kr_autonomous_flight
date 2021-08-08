@@ -283,9 +283,10 @@ Eigen::VectorXd SplineTrajectoryVisual::evaluate(double t,
     auto spline = traj_->data[dim];
     double dt = 0;
     for (auto poly : spline.segs) {
+      result(dim) = poly.coeffs[0];
+
       if (t < dt + poly.dt) {
-        result(dim) = 0;
-        for (int j = 0; j < poly.coeffs.size(); j++) {
+        for (int j = 1; j < poly.coeffs.size(); j++) {
           result(dim) += poly.coeffs[j] * std::pow(t - dt, j);
         }
         break;

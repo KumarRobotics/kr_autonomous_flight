@@ -144,8 +144,8 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   traj_planner_nh.param("max_j", j_max, 1.0);
   traj_planner_nh.param("max_u", u_max, 1.0);
 
-  bool use3d;
-  traj_planner_nh.param("use_3d", use3d, false);
+  bool use3d_local;
+  traj_planner_nh.param("use_3d_local", use3d_local, false);
   double vz_max, az_max, jz_max, uz_max;
   traj_planner_nh.param("max_v_z", vz_max, 2.0);
   traj_planner_nh.param("max_a_z", az_max, 1.0);
@@ -153,7 +153,7 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   traj_planner_nh.param("max_u_z", uz_max, 1.0);
 
   vec_E<VecDf> U;
-  if (!use3d) {
+  if (!use3d_local) {
     const decimal_t du = u_max;
     for (decimal_t dx = -u_max; dx <= u_max; dx += du)
       for (decimal_t dy = -u_max; dy <= u_max; dy += du)

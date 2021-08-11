@@ -28,10 +28,10 @@ trajectory_tracker:
 trajectory_planner:
   debug: false # default false
   verbose: false # default false
-  max_v: 2 # suggested for 2-D 9, for 3-D 3
-  max_a: 4 # suggested for 2-D 7, for 3-D 2
-  max_j: 2 # suggested for 2-D 3, for 3-D 2
-  max_u: 2 # suggested for 2-D 3, for 3-D 1, for each axis jerk increment choice is -max_u, 0, max_u
+  max_v: 1.5 # suggested for 2-D 9, for 3-D 3
+  max_a: 1.5 # suggested for 2-D 7, for 3-D 2
+  max_j: 1 # suggested for 2-D 3, for 3-D 2
+  max_u: 1 # suggested for 2-D 3, for 3-D 1, for each axis jerk increment choice is -max_u, 0, max_u
   use_3d_local: true # use 3d planner
 
   use_3d_global: false 
@@ -61,9 +61,9 @@ local_global_server:
   waypoint_reach_threshold: 10.0 # distance threshold, within which intermidiate waypoint is regarded as reached 
   final_goal_reach_threshold: 5.0 # within which final waypoint is regarded as reached, this should be smaller than waypoint_reach_threshold
   close_to_final_dist: 5 # distance-to-goal threshold, within which the velocity and acceleration checking will be turned on, -1 means no velocity checking at all
-  local_plan_timeout_duration: 1.0 # local planner timeout in seconds
+  local_plan_timeout_duration: 1.5 # local planner timeout in seconds
   max_local_plan_trials: 3
-  max_horizon: 5 # defulat 5, should be larger than local_plan_timeout_duration*max_local_plan_trials*replan_rate 
+  max_horizon: 10 # defulat 5, should be larger than local_plan_timeout_duration*max_local_plan_trials*replan_rate 
   global_planner_verbose: false #
   odom_frame: "quadrotor/odom"
   map_frame: "quadrotor/map"

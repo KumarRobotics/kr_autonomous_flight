@@ -144,8 +144,8 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   traj_planner_nh.param("max_j", j_max, 1.0);
   traj_planner_nh.param("max_u", u_max, 1.0);
 
-  bool use3d;
-  traj_planner_nh.param("use_3d", use3d, false);
+  bool use3d_local;
+  traj_planner_nh.param("use_3d_local", use3d_local, false);
   double vz_max, az_max, jz_max, uz_max;
   traj_planner_nh.param("max_v_z", vz_max, 2.0);
   traj_planner_nh.param("max_a_z", az_max, 1.0);
@@ -153,7 +153,7 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   traj_planner_nh.param("max_u_z", uz_max, 1.0);
 
   vec_E<VecDf> U;
-  if (!use3d) {
+  if (!use3d_local) {
     const decimal_t du = u_max;
     for (decimal_t dx = -u_max; dx <= u_max; dx += du)
       for (decimal_t dy = -u_max; dy <= u_max; dy += du)
@@ -168,7 +168,7 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   }
 
   double dt;
-  double W;
+  double W, v_fov;
   int ndt, max_num;
   traj_planner_nh.param("tol_pos", tol_pos_, 0.5);
   traj_planner_nh.param("global_goal_tol_vel", goal_tol_vel_, 0.5);
@@ -178,14 +178,22 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   traj_planner_nh.param("ndt", ndt, -1);
   traj_planner_nh.param("max_num", max_num, -1);
   traj_planner_nh.param("heuristic_weight", W, 10.0);
+  traj_planner_nh.param("vertical_semi_fov", v_fov, 0.392);
 
   mp_planner_util_.reset(new MPL::VoxelMapPlanner(verbose_));  // verbose
   mp_planner_util_->setMapUtil(
       mp_map_util_);                  // Set collision checking function
   mp_planner_util_->setEpsilon(1.0);  // Set greedy param (default equal to 1)
-  mp_planner_util_->setVmax(v_max);   // Set max velocity
+  if (v_max > vz_max){
+    mp_planner_util_->setVmax(v_max);   // Set max velocity
+  } else{
+    mp_planner_util_->setVmax(vz_max);   // Set max velocity
+    ROS_WARN("vz_max >= vxy_max, this is not recommended, change the yaml file!");
+  }
+  
   mp_planner_util_->setAmax(a_max);   // Set max acceleration
   mp_planner_util_->setJmax(j_max);   // Set max jerk
+  mp_planner_util_->setVfov(v_fov);   // Set vertical semi-fov
   // mp_planner_util_->setUmax(u_max); // Set max control input
   mp_planner_util_->setDt(dt);          // Set dt for each primitive
   mp_planner_util_->setTmax(ndt * dt);  // Set max time horizon of planning

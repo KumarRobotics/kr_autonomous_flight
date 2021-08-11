@@ -47,7 +47,7 @@ class GlobalPlanServer {
   ros::Subscriber odom_sub_;
 
   // use 2-d or 3-d for global planner
-  bool use_3d_;
+  bool use_3d_global_;
 
   // planner verbose
   bool jps_verbose_;
@@ -161,7 +161,7 @@ GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
                                    &GlobalPlanServer::globalMapCB, this);
 
   ros::NodeHandle traj_planner_nh(pnh_, "trajectory_planner");
-  traj_planner_nh.param("use_3d", use_3d_, false);
+  traj_planner_nh.param("use_3d_global", use_3d_global_, false);
   traj_planner_nh.param("z_cost_factor", z_cost_factor_, 1);
 
   ros::NodeHandle local_global_plan_nh(pnh_, "local_global_server");
@@ -180,7 +180,7 @@ GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
                              ros::TransportHints().tcpNoDelay());
 
   // Set map util for jps
-  if (use_3d_) {
+  if (use_3d_global_) {
     jps_3d_map_util_ = std::make_shared<JPS::VoxelMapUtil>();
     jps_3d_util_ = std::make_shared<JPS::JPSPlanner3D>(jps_verbose_);
     jps_3d_util_->setMapUtil(jps_3d_map_util_);
@@ -337,7 +337,7 @@ bool GlobalPlanServer::global_plan_process(
     const planning_ros_msgs::VoxelMap &global_map) {
   std::string map_frame;
   map_frame = global_map.header.frame_id;
-  if (use_3d_) {
+  if (use_3d_global_) {
     if (z_cost_factor_ > 1) {
       // increase the cost of z in voxel map
       planning_ros_msgs::VoxelMap non_uniform_cost_map =
@@ -357,7 +357,7 @@ bool GlobalPlanServer::global_plan_process(
   }
 
   // Path planning using JPS
-  if (use_3d_) {
+  if (use_3d_global_) {
     // scale up the z-axis value of goal and start to accommodate to the scaling
     // of voxel resolution
     auto goal_scaled = goal;

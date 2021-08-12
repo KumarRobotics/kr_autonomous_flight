@@ -124,7 +124,7 @@ class RePlanner {
   // maximum trials of local replan allowed
   int max_local_trials_;
   double failed_local_trials_ = 0;
-
+  unsigned int global_plan_counter_ = 0;
   double crop_radius_;    // local path crop radius (local path length will be
                           // this value)
   double crop_radius_z_;  // local path crop radius along z axis
@@ -542,8 +542,12 @@ bool RePlanner::PlanTrajectory(int horizon) {
   // Replan step 1: Global plan
   // ########################################################################################################
   // send goal to global plan server to replan (new goal will preempt old goals)
-  global_plan_client_->sendGoal(global_tpgoal);
-
+  if ((global_plan_counter_ % 2) == 0){
+    global_plan_client_->sendGoal(global_tpgoal);
+  
+    ROS_INFO("++++ global replan called at half of the frequency of local replan");
+  }
+  global_plan_counter_++;
   prev_start_pos_ = start_pos;  // keep updating prev_start_pos_
 
   //  Replan step 2: Crop global path to get local goal

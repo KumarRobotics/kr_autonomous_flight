@@ -21,18 +21,18 @@ take_off_tracker:
 
 trajectory_tracker:
   max_pos_error: 2.0  # maximum tracker position error (in xy plane) allowed, default 1.0
-  align_yaw: false # default false
+  align_yaw: true # default false
   yaw_speed_magnitude: 0.3 # in rad
   use_lambda: true # pose error checking
 
 trajectory_planner:
   debug: false # default false
   verbose: false # default false
-  max_v: 2 # suggested for 2-D 9, for 3-D 3
-  max_a: 4 # suggested for 2-D 7, for 3-D 2
-  max_j: 2 # suggested for 2-D 3, for 3-D 2
-  max_u: 2 # suggested for 2-D 3, for 3-D 1, for each axis jerk increment choice is -max_u, 0, max_u
-  use_3d_local: true # use 3d planner
+  max_v: 2.0 # suggested for 2-D 9, for 3-D 3
+  max_a: 3.0 # suggested for 2-D 7, for 3-D 2
+  max_j: 1.0 # suggested for 2-D 3, for 3-D 2
+  max_u: 1.0 # suggested for 2-D 3, for 3-D 1, for each axis jerk increment choice is -max_u, 0, max_u
+  use_3d_local: false # use 3d planner
 
   use_3d_global: false 
   z_cost_factor: 1 # global map z cost factor (cost_along_z = z_cost_factor * cost_along_x_or_y)
@@ -51,19 +51,19 @@ trajectory_planner:
 
 stopping_policy:
   acc_xy_des: 4.0 #
-  jerk_xy_des: 2.0 #
+  jerk_xy_des: 1.0 #
   acc_z_des: 2.0 #
   jerk_z_des: 1.0 #
   acc_yaw_des: 0.05 # rad
 
 local_global_server:
   # local planning horizon will be from robot to the local voxel map boundary
-  waypoint_reach_threshold: 10.0 # distance threshold, within which intermidiate waypoint is regarded as reached 
+  waypoint_reach_threshold: 20.0 # distance threshold, within which intermidiate waypoint is regarded as reached 
   final_goal_reach_threshold: 5.0 # within which final waypoint is regarded as reached, this should be smaller than waypoint_reach_threshold
   close_to_final_dist: 5 # distance-to-goal threshold, within which the velocity and acceleration checking will be turned on, -1 means no velocity checking at all
   local_plan_timeout_duration: 1.0 # local planner timeout in seconds
   max_local_plan_trials: 1 # should be set as 1 since state machine is now able to try multiple times after planner failures
-  max_horizon: 5 # defulat 5, should be larger than local_plan_timeout_duration*max_local_plan_trials*replan_rate 
+  max_horizon: 10 # defulat 5, should be larger than local_plan_timeout_duration*max_local_plan_trials*replan_rate 
   global_planner_verbose: false #
   odom_frame: "quadrotor/odom"
   map_frame: "quadrotor/map"

@@ -14,8 +14,6 @@
   /quadrotor/mapper/global_voxel_map_throttled
   /quadrotor/mapper/local_voxel_map_throttled
   /quadrotor/odom
-  /ovc/vectornav
-  /ovc/imu
   /ublox/fix
   /ublox/fix_velocity
   /os_node/imu_packets
@@ -24,7 +22,9 @@
   /ovc/left/image_raw
   /ovc/right/camera_info
   /ovc/right/image_raw   
-  /quadrotor/so3_cmd
+  /ovc/vectornav
+  /ovc/imu
+  /quadrotor/so3_control/cmd_viz
   /quadrotor/local_plan_server/expanded_cloud
   /diagnostics
     "

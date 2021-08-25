@@ -2,29 +2,29 @@
 
 debug: true
 robot_r: 0.75 # map will be dilated in x and y with a radius of [ceil(robot_r/res)] cells
-robot_h: 0.5 # map will be dilated in z direction for 2*[ceil(robot_h/res)] cells (if robot_r is set as 0, there will not be any dilation along z either).
+robot_h: 0.75 # map will be dilated in z direction for 2*[ceil(robot_h/res)] cells (if robot_r is set as 0, there will not be any dilation along z either).
 
 global:
-  center_x: 100.0
-  center_y: -5.0
-  range_x: 800.0
-  range_y: 800.0
-  center_z: 7 
-  range_z: 10
+  center_x: 0.0
+  center_y: 0.0
+  range_x: 500.0
+  range_y: 500.0
+  center_z: 4
+  range_z: 8
   resolution: 0.5 # 3
-  num_point_cloud_skip: 0.5 # integer
-  max_raycast_range: 50.0
+  num_point_cloud_skip: 2 # integer
+  max_raycast_range: 10.0
   dilate_xy: false
   dilate_z: false
-  decay_times_to_empty: 50 # times of decay to empty, std::ceil((float)(val_occ - val_even) / (float)decay_times_to_empty), 0 means no decay
+  decay_times_to_empty: 30 # times of decay to empty, std::ceil((float)(val_occ - val_even) / (float)decay_times_to_empty), 0 means no decay
 
 local: # local map range z and center_z will be the same as storage map
   # local planning horizon will be from robot to the local voxel map boundary
   range_x: 20.0
   range_y: 20.0
   range_z: 10.0
-  resolution: 0.25
-  max_raycast_range: 8.0
-  decay_times_to_empty: 30 # number of times of decay to empty, 0 means no decay
+  resolution: 0.2
+  max_raycast_range: 7.0
+  decay_times_to_empty: 15 # number of times of decay to empty, 0 means no decay
 
 

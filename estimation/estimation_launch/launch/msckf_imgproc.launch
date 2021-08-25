@@ -10,8 +10,8 @@
     <node pkg="nodelet" type="nodelet" name="image_processor" args="standalone msckf_vio/ImageProcessorNodelet" output="screen">
         <rosparam command="load" file="$(arg calibration_file)"/>
 
-        <param name="grid_row" value="5"/>
-        <param name="grid_col" value="6"/>
+        <param name="grid_row" value="4"/>
+        <param name="grid_col" value="5"/>
         <param name="grid_min_feature_num" value="2"/>
         <param name="grid_max_feature_num" value="3"/>
         <param name="pyramid_levels" value="3"/>

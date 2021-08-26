@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+
+
+    <arg name="takeoff_height" value="3" />
+    <arg name="use_lauras" value="false" />
+      <arg name="calibration_file" value="$(find real_experiment_launch)/config/msckf_calib.yaml"/>
+      <arg name="robot" value="quadrotor"/>
+      <arg name="output_odom" value="odom"/>
+      <arg name="cam0" value="/ovc/left"/>
+      <arg name="cam1" value="/ovc/right"/>
+      <arg name="robot_frame_id" value="$(arg robot)/base_link"/>
+      <arg name="vio_imu_frame_id" value="$(arg robot)/ovc_camera_link"/>
+      <arg name="imu" value="/ovc/vectornav"/>
+      <arg name="publish_body_camera_tf" default="false"/>
+      <arg name="lidar_cloud_topic" value="os_cloud_node/points" />
+      <arg name="lidar_frame" value="$(arg robot)/lidar" />
+      <arg name="publish_odom_tf" default="false"/>
+      <arg name="real_robot" value="true"/>
+      <arg name="use_motion_primitive" default="true"/>
+
+
+    <!-- S-MSCKF VIO -->
+		<include file="$(find estimation_launch)/launch/estimation.launch">
+			<!-- Those params are set for unity simulation, they may need to be modified if used for real robot experiments or other simulator -->
+			<arg name="publish_body_camera_tf" value="$(arg publish_body_camera_tf)"/>
+			<arg name="vio_imu_frame_id" value="$(arg vio_imu_frame_id)"/>			
+			<arg name="publish_odom_tf" value="$(arg publish_odom_tf)"/>
+			<arg name="cam0" value="$(arg cam0)"/>
+			<arg name="cam1" value="$(arg cam1)"/>
+			<arg name="imu" value="$(arg imu)"/>
+			<arg name="output_odom" value="$(arg output_odom)"/>
+			<arg name="robot_frame_id" value="$(arg robot_frame_id)"/>
+			<arg name="calibration_file" value="$(arg calibration_file)"/>		
+		</include>
+</launch>

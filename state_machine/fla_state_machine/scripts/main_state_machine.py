@@ -226,11 +226,21 @@ def main():
             "ExecuteMotionPrimitive",
             MP_Replanner.REPLANNER(quad_tracker),
             transitions={
-                "succeeded": "Hover",
-                "no_path": "Hover",
-                "failed": "Hover"
+                "succeeded": "RetryMPWaypoints",
+                "no_path": "RetryMPWaypoints",
+                "failed": "RetryMPWaypoints"
             },
         )
+
+        # for motion primitive planner:
+        smach.StateMachine.add('RetryMPWaypoints',
+                               RetryWaypoints(quad_tracker),
+                               transitions={
+                                   'succeeded': 'ExecuteMotionPrimitive',
+                                   'multi': 'ExecuteMotionPrimitive',
+                                   'failed': 'Hover'
+                               })
+        
         # the following moved to MP_Replanner
         # smach.StateMachine.add('CheckTrajectory', CheckTrajectory( quad_tracker),
         #                        transitions={'succeeded':'TrajTransition',

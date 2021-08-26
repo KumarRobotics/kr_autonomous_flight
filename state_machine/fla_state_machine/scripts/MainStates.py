@@ -47,7 +47,7 @@ class WaitForOffboard(smach.State):
 
 
 class GetWaypoints(smach.State):
-    """Gets waypoints from dinesh and prepends quadrotors pose"""
+    """Gets waypoints and prepends quadrotors pose"""
 
     def __init__(self, quad_monitor):
         smach.State.__init__(self, outcomes=["succeeded", "multi", "failed"])
@@ -60,6 +60,53 @@ class GetWaypoints(smach.State):
             rospy.logerr("Failed to get waypoints")
             return "failed"
 
+        self.quad_monitor.pose_goal = self.quad_monitor.waypoints.poses[-1].pose # record the last waypoint to check whether the robot has finished all waypoints when replanning
+        self.quad_monitor.pose_goals = [it.pose for it in self.quad_monitor.waypoints.poses]
+
+        ps = GM.PoseStamped()
+        ps.header = self.quad_monitor.waypoints.header
+        ps.pose = self.quad_monitor.pose_goal
+        self.reset_pub.publish(ps)
+
+        if len(self.quad_monitor.waypoints.poses) > 1:
+            rospy.loginfo("Multiple waypoints: {}".format(len(self.quad_monitor.waypoints.poses)))
+            return "multi"
+
+        return "succeeded"
+
+
+
+class RetryWaypoints(smach.State):
+    """Retry waypoints and prepends quadrotors pose"""
+
+    def __init__(self, quad_monitor):
+        smach.State.__init__(self, outcomes=["succeeded", "multi", "failed"])
+        self.quad_monitor = quad_monitor
+        self.reset_pub = rospy.Publisher("reset", GM.PoseStamped, queue_size=10)
+        self.num_trails = 1
+        self.max_trails = 10 # how many total trails are allowed in each mission
+        # time to wait for stopping policy to finish, should be large enough so that the robot fully stops
+        self.wait_for_stopping = 5.0 
+
+    def execute(self, userdata):
+        # print self.quad_monitor.waypoints
+        print("[state_machine:] waiting for stopping policy to finish, wait time is set as: ", self.wait_for_stopping, " seconds.")
+        rospy.sleep(self.wait_for_stopping)
+        print("\n")
+        print("[state_machine:] retrying waypoints! Have tried ", self.num_trails, " times up till now. max_trails is set as ", self.max_trails)
+        print("\n")
+        # TODO(xu:) add waypoint distance check here, choose the closest one!
+        
+        if self.num_trails >= self.max_trails:
+            print("Current number of trails >= max_trails, which is ", self.max_trails, " aborting the mission!")
+            return "failed"
+        else:
+            self.num_trails += 1
+        
+        if self.quad_monitor.waypoints is None or len(self.quad_monitor.waypoints.poses) == 0:
+            rospy.logerr("Failed to get waypoints")
+            return "failed"
+        
         self.quad_monitor.pose_goal = self.quad_monitor.waypoints.poses[-1].pose # record the last waypoint to check whether the robot has finished all waypoints when replanning
         self.quad_monitor.pose_goals = [it.pose for it in self.quad_monitor.waypoints.poses]
 

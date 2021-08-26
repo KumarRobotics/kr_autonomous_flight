@@ -62,7 +62,7 @@ local_global_server:
   final_goal_reach_threshold: 5.0 # within which final waypoint is regarded as reached, this should be smaller than waypoint_reach_threshold
   close_to_final_dist: 5 # distance-to-goal threshold, within which the velocity and acceleration checking will be turned on, -1 means no velocity checking at all
   local_plan_timeout_duration: 1.0 # local planner timeout in seconds
-  max_local_plan_trials: 1 # should be set as 1 since state machine is now able to try multiple times after planner failures
+  max_local_plan_trials: 2 # should be set as 1 since state machine is now able to try multiple times after planner failures
   max_horizon: 10 # defulat 5, should be larger than local_plan_timeout_duration*max_local_plan_trials*replan_rate 
   global_planner_verbose: false #
   odom_frame: "quadrotor/odom"

@@ -37,7 +37,7 @@ def main():
 
     quad_tracker = QuadTracker(rospy.names.get_namespace() + "abort")
     # specify replan rate, this will be recorded in the goal msg, as well as
-    replan_rate = 2
+    replan_rate = 2 
     quad_tracker.replan_rate = replan_rate
     quad_tracker.avoid = True  # obstacle avoidance in planner
 
@@ -226,11 +226,21 @@ def main():
             "ExecuteMotionPrimitive",
             MP_Replanner.REPLANNER(quad_tracker),
             transitions={
-                "succeeded": "Hover",
-                "no_path": "Hover",
-                "failed": "Hover"
+                "succeeded": "RetryMPWaypoints",
+                "no_path": "RetryMPWaypoints",
+                "failed": "RetryMPWaypoints"
             },
         )
+
+        # for motion primitive planner:
+        smach.StateMachine.add('RetryMPWaypoints',
+                               RetryWaypoints(quad_tracker),
+                               transitions={
+                                   'succeeded': 'ExecuteMotionPrimitive',
+                                   'multi': 'ExecuteMotionPrimitive',
+                                   'failed': 'Hover'
+                               })
+        
         # the following moved to MP_Replanner
         # smach.StateMachine.add('CheckTrajectory', CheckTrajectory( quad_tracker),
         #                        transitions={'succeeded':'TrajTransition',

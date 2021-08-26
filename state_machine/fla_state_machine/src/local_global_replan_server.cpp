@@ -124,7 +124,7 @@ class RePlanner {
   // maximum trials of local replan allowed
   int max_local_trials_;
   double failed_local_trials_ = 0;
-
+  unsigned int global_plan_counter_ = 0;
   double crop_radius_;    // local path crop radius (local path length will be
                           // this value)
   double crop_radius_z_;  // local path crop radius along z axis
@@ -448,11 +448,16 @@ void RePlanner::setup_replanner() {
   // wait for result (initial timeout duration can be large because robot is not
   // moving)
   bool local_finished_before_timeout =
-      local_plan_client_->waitForResult(ros::Duration(3.0));
+      local_plan_client_->waitForResult(ros::Duration(2.0));
 
+  // reset the counter
+  // TODO(xu:) double check this is working properlly
+  failed_local_trials_ = 0;
+  
   if (!local_finished_before_timeout) {
     // check result of local plan
     ROS_ERROR("Initial local planning timed out");
+    ROS_ERROR("Initial local planning timout duration is set as 2.0");
     AbortReplan();
     return;
   }
@@ -542,8 +547,12 @@ bool RePlanner::PlanTrajectory(int horizon) {
   // Replan step 1: Global plan
   // ########################################################################################################
   // send goal to global plan server to replan (new goal will preempt old goals)
-  global_plan_client_->sendGoal(global_tpgoal);
-
+  if ((global_plan_counter_ % 2) == 0){
+    global_plan_client_->sendGoal(global_tpgoal);
+  
+    ROS_INFO("++++ global replan called at half of the frequency of local replan");
+  }
+  global_plan_counter_++;
   prev_start_pos_ = start_pos;  // keep updating prev_start_pos_
 
   //  Replan step 2: Crop global path to get local goal
@@ -630,29 +639,31 @@ bool RePlanner::PlanTrajectory(int horizon) {
   }
 
   if (failed_local_trials_ >= max_local_trials_ - 1) {
-    if (waypoint_idx_ >= (pose_goals_.size() - 1)) {
+    // if (waypoint_idx_ >= (pose_goals_.size() - 1)) {
       // if this is the final waypoint, abort full mission
       active_ = false;
       if (replan_server_->isActive()) {
         replan_server_->setAborted(critical_);
       }
-    } else {
+    // } else {
       // otherwise, allow one more try with the next waypoint
       // TODO(xu): maybe abort full mission is a better choice if we want to
       // visit every waypoint?
 
-      ++waypoint_idx_;
-      ROS_WARN_STREAM(
-          "Current intermidiate waypoint leads to local planner timeout, for "
-          << max_local_trials_ - 1
-          << "times giving one last try with the next waypoint, "
-             "whose index is: "
-          << waypoint_idx_);
+      // ++waypoint_idx_;
 
-      failed_local_trials_ =
-          failed_local_trials_ - 0.5;  // - 0.5 so that if we timeout again, the
-                                       // replanner will be aborted
-    }
+      // TODO(xu:) handle this in state_machine instead
+      // ROS_WARN_STREAM(
+      //     "Current intermidiate waypoint leads to local planner timeout, for "
+      //     << max_local_trials_ - 1
+      //     << "times giving one last try with the next waypoint, "
+      //        "whose index is: "
+      //     << waypoint_idx_);
+
+      // failed_local_trials_ =
+      //     failed_local_trials_ - 0.5;  // - 0.5 so that if we timeout again, the
+      //                                  // replanner will be aborted
+    // }
     return false;
   }
 
@@ -924,6 +935,7 @@ bool RePlanner::CloseToFinal(const vec_Vec3f &original_path,
 }
 
 void RePlanner::AbortReplan(void) {
+
   active_ = false;
   if (replan_server_->isActive()) {
     replan_server_->setAborted(critical_);

@@ -12,7 +12,7 @@ global:
   center_z: 4
   range_z: 8
   resolution: 0.5 # 3
-  num_point_cloud_skip: 2 # integer
+  num_point_cloud_skip: 1 # integer
   max_raycast_range: 10.0
   dilate_xy: false
   dilate_z: false

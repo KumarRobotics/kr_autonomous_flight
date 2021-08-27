@@ -11,7 +11,7 @@ namespace traj_opt {
 class Trajectory {
  public:
   virtual ~Trajectory() {}
-  virtual bool evaluate(double t, uint derr, VecD &out) const = 0;
+  virtual bool evaluate(double t, uint derr, VecD &out) = 0;
   virtual double getTotalTime() const = 0;
   virtual double getCost() = 0;
   // execute time
@@ -28,10 +28,13 @@ class Trajectory {
 
   int getDim() { return dim_; }
   virtual TrajData serialize() = 0;
+  int getSegNumber(){ return seg_number_;}
 
  protected:
   double exec_t{-1.0};  // duration of execute time
   int dim_{0};
+  int seg_number_{-1};
+
 };
 
 }  // namespace traj_opt

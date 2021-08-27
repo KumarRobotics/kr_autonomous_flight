@@ -12,7 +12,7 @@ class MsgTrajectory : public Trajectory {
  public:
   explicit MsgTrajectory(const TrajData &traj);
 
-  bool evaluate(double t, uint derr, VecD &out) const override;
+  bool evaluate(double t, uint derr, VecD &out) override;
   //  bool evaluate(double t, VecD &out);
   bool evaluateS(double t, VecD &out);
   bool evaluateST(double t, VecD &out);

@@ -7,23 +7,9 @@ find_package(catkin REQUIRED COMPONENTS geometry_msgs nav_msgs
 
 add_message_files(
   DIRECTORY
-  msg
-  FILES
-  LambdaSeg.msg
-  Log.msg
-  Path.msg
-  PathArray.msg
-  Polynomial.msg
-  Primitive.msg
-  PrimitiveArray.msg
-  Spline.msg
-  SplineTrajectory.msg
-  Trajectory.msg
-  TrajectoryCommand.msg
-  StateTransition.msg
-  VoxelMap.msg)
+  msg)
 
-add_action_files(DIRECTORY action FILES PlanPath.action PlanTwoPoint.action)
+add_action_files(DIRECTORY action)
 
 generate_messages(DEPENDENCIES geometry_msgs nav_msgs actionlib_msgs)
 

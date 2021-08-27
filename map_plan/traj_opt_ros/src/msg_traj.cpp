@@ -6,6 +6,8 @@
 namespace traj_opt {
 
 MsgTrajectory::MsgTrajectory(const TrajData &traj) : traj_(traj) {
+  // TODO(laura) fails if each dimension of the traj has a different number of
+  // segments, or different dt's
   num_secs_ = traj_.data.front().segments;
   dim_ = traj_.dimensions;
 
@@ -39,7 +41,7 @@ MsgTrajectory::MsgTrajectory(const TrajData &traj) : traj_(traj) {
 }
 
 bool MsgTrajectory::evaluate(double t, uint derr,
-                             VecD &out) const {  // returns false when out
+                             VecD &out) {  // returns false when out
   out = VecD::Zero(dim_, 1);
   //  out << 0.0,0.0,0.0,0.0;
   bool success = false;
@@ -57,6 +59,7 @@ bool MsgTrajectory::evaluate(double t, uint derr,
   } else {
     // find appropriate section
     auto dt_it = dts.begin();
+    seg_number_ = 0;
     for (auto &it : derrives_.at(derr)) {
       if (t < *dt_it) {
         poly = &(it);
@@ -68,6 +71,7 @@ bool MsgTrajectory::evaluate(double t, uint derr,
       t -= *dt_it;
 
       ++dt_it;
+      ++seg_number_;
     }
     if (!success) {
       poly = &derrives_.at(derr).back();

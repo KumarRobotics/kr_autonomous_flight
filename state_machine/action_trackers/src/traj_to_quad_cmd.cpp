@@ -6,7 +6,7 @@ namespace traj_opt {
 
 using kr_mav_msgs::PositionCommand;
 
-void EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj, double dt,
+int EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj, double dt,
                         PositionCommand *out, uint max_derr_eval,
                         double scaling) {
   traj_opt::VecD val;
@@ -19,24 +19,25 @@ void EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj, double dt,
   if (val.rows() > 3) out->yaw = val(3);
   // if (val.rows() == 5) out->chart = val(4) > 0.5;
 
-  if (max_derr_eval < 1) return;
+  if (max_derr_eval < 1) return -1;
   traj->evaluate(dt, 1, val);
   if (val.rows() > 0) out->velocity.x = val(0);
   if (val.rows() > 1) out->velocity.y = val(1);
   if (val.rows() > 2) out->velocity.z = val(2);
   if (val.rows() > 3) out->yaw_dot = val(3);
-  if (max_derr_eval < 2) return;
+  if (max_derr_eval < 2) return -1;
 
   traj->evaluate(dt, 2, val);
   if (val.rows() > 0) out->acceleration.x = val(0);
   if (val.rows() > 1) out->acceleration.y = val(1);
   if (val.rows() > 2) out->acceleration.z = val(2);
-  if (max_derr_eval < 3) return;
+  if (max_derr_eval < 3) return -1;
 
   traj->evaluate(dt, 3, val);
   if (val.rows() > 0) out->jerk.x = val(0);
   if (val.rows() > 1) out->jerk.y = val(1);
   if (val.rows() > 2) out->jerk.z = val(2);
+  return traj->getSegNumber();
 }
 
 PositionCommand EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj,
@@ -47,7 +48,7 @@ PositionCommand EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj,
   return cmd;
 }
 
-bool EvaluateTrajectoryPos(const boost::shared_ptr<Trajectory> &traj,
+std::pair<bool,int> EvaluateTrajectoryPos(const boost::shared_ptr<Trajectory> &traj,
                            const nav_msgs::Odometry::ConstPtr &odom,
                            double err_max, double t_des, double ddt,
                            PositionCommand *out) {
@@ -69,8 +70,8 @@ bool EvaluateTrajectoryPos(const boost::shared_ptr<Trajectory> &traj,
     return_v = false;  // return false
   }
 
-  EvaluateTrajectory(traj, t_des, out);
-  return return_v;
+  int seg_num = EvaluateTrajectory(traj, t_des, out);
+  return std::make_pair(return_v, seg_num);
 }
 
 }  // namespace traj_opt

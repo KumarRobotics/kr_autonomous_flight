@@ -84,7 +84,7 @@ class RetryWaypoints(smach.State):
         self.quad_monitor = quad_monitor
         self.reset_pub = rospy.Publisher("reset", GM.PoseStamped, queue_size=10)
         self.num_trails = 1
-        self.max_trails = 10 # how many total trails are allowed in each mission
+        self.max_trails = 20 # how many total trails are allowed in each mission
         # time to wait for stopping policy to finish, should be large enough so that the robot fully stops
         self.wait_for_stopping = 5.0 
 

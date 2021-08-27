@@ -1,19 +1,19 @@
 
 
 debug: true
-robot_r: 0.75 # map will be dilated in x and y with a radius of [ceil(robot_r/res)] cells
+robot_r: 0.90 # map will be dilated in x and y with a radius of [ceil(robot_r/res)] cells
 robot_h: 0.75 # map will be dilated in z direction for 2*[ceil(robot_h/res)] cells (if robot_r is set as 0, there will not be any dilation along z either).
 
 global:
   center_x: 0.0
   center_y: 0.0
-  range_x: 500.0
-  range_y: 500.0
-  center_z: 4
+  range_x: 600.0
+  range_y: 600.0
+  center_z: 3
   range_z: 8
-  resolution: 1.0 # 3
+  resolution: 1.5 # 3
   num_point_cloud_skip: 2 # integer
-  max_raycast_range: 15.0
+  max_raycast_range: 10.0
   dilate_xy: false
   dilate_z: false
   decay_times_to_empty: 50 # times of decay to empty, std::ceil((float)(val_occ - val_even) / (float)decay_times_to_empty), 0 means no decay
@@ -23,8 +23,8 @@ local: # local map range z and center_z will be the same as storage map
   range_x: 20.0
   range_y: 20.0
   range_z: 10.0
-  resolution: 0.4
-  max_raycast_range: 7.0
+  resolution: 0.3
+  max_raycast_range: 8.0
   decay_times_to_empty: 20 # number of times of decay to empty, 0 means no decay
 
 

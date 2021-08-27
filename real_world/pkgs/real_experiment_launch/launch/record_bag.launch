@@ -27,6 +27,13 @@
   /quadrotor/so3_control/cmd_viz
   /quadrotor/local_plan_server/expanded_cloud
   /diagnostics
+  /graph_slam/incremental
+  /graph_slam/landmarks
+  /graph_slam/odom
+  /graph_slam/pose
+  /graph_slam/submap
+  /graph_slam/trajectory
+  /sloam/map_pose
     "
     output="screen"/>
 </launch>

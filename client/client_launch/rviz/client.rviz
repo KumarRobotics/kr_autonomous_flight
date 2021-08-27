@@ -10,19 +10,19 @@ Panels:
         - /TF1/Frames1
         - /Env1/Environment1
         - /Planner1
-        - /Planner1/global_path_wrt_odom1
-        - /Planner1/ExpandedCloud1
         - /Planner1/coverage_path1
         - /Maps1
-        - /Maps1/Local1
         - /Estimation1
+        - /Estimation1/ground_truth_odom1
         - /Estimation1/ground_truth_odom1/Shape1
         - /Estimation1/vio_corrected1/Shape1
         - /Estimation1/vio_corrected1/Covariance1
         - /Estimation1/vio_corrected1/Covariance1/Position1
         - /Estimation1/vio_corrected1/Covariance1/Orientation1
         - /Estimation1/vio_drifted1/Shape1
+        - /Estimation1/graphslam1
         - /Estimation1/graphslam1/Shape1
+        - /Estimation1/quad_odom1
         - /Estimation1/quad_odom1/Shape1
         - /fake_cloud1
         - /tree_semantic_cloud1
@@ -75,11 +75,11 @@ Visualization Manager:
       Value: true
     - Class: rviz/TF
       Enabled: false
-      Frame Timeout: 15
+      Frame Timeout: 1
       Frames:
         All Enabled: false
       Marker Alpha: 1
-      Marker Scale: 50
+      Marker Scale: 10
       Name: TF
       Show Arrows: true
       Show Axes: true
@@ -90,13 +90,13 @@ Visualization Manager:
       Value: false
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
-      Enabled: true
+      Enabled: false
       Name: InteractiveMarkers
       Show Axes: true
       Show Descriptions: true
       Show Visual Aids: true
       Update Topic: /waypoint_nav/update
-      Value: true
+      Value: false
     - Class: rviz/Group
       Displays:
         - Class: rviz/Marker
@@ -154,7 +154,7 @@ Visualization Manager:
           Queue Size: 10
           Selectable: true
           Size (Pixels): 3
-          Size (m): 0.5
+          Size (m): 0.10000000149011612
           Style: Boxes
           Topic: /quadrotor/local_plan_server/expanded_cloud
           Unreliable: false
@@ -312,8 +312,8 @@ Visualization Manager:
         - Alpha: 0.30000001192092896
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 1.125
-            Min Value: 0.07500000298023224
+            Max Value: 6.300000190734863
+            Min Value: 0.10000000149011612
             Value: true
           Axis: Z
           BoundScale: 0.5
@@ -342,7 +342,7 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
-        - Alpha: 0.5
+        - Alpha: 0.10000000149011612
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
             Max Value: 11.75
@@ -355,10 +355,10 @@ Visualization Manager:
           Color: 252; 233; 79
           Color Transformer: FlatColor
           Decay Time: 0
-          Enabled: false
+          Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
-          MeshAlpha: 0.20000000298023224
+          MeshAlpha: 0.10000000149011612
           MeshColor: 255; 255; 255
           MeshHeight: 0.5
           Min Color: 0; 0; 0
@@ -367,14 +367,14 @@ Visualization Manager:
           Queue Size: 1
           Selectable: true
           Size (Pixels): 10
-          Size (m): 1
+          Size (m): 0.5
           State: Occupied
           Style: Boxes
           Topic: /quadrotor/mapper/global_voxel_map
           Unreliable: true
           Use Fixed Frame: true
           Use rainbow: true
-          Value: false
+          Value: true
         - Alpha: 0.699999988079071
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -436,7 +436,7 @@ Visualization Manager:
           Queue Size: 10
           Shape:
             Alpha: 1
-            Axes Length: 6
+            Axes Length: 10
             Axes Radius: 0.5
             Color: 25; 255; 0
             Head Length: 0.30000001192092896
@@ -464,7 +464,7 @@ Visualization Manager:
               Scale: 1
               Value: true
             Value: true
-          Enabled: true
+          Enabled: false
           Keep: 1
           Name: vio_corrected
           Position Tolerance: 0.10000000149011612
@@ -481,42 +481,7 @@ Visualization Manager:
             Value: Axes
           Topic: /quadrotor/vio/odom
           Unreliable: false
-          Value: true
-        - Angle Tolerance: 0.10000000149011612
-          Class: rviz/Odometry
-          Covariance:
-            Orientation:
-              Alpha: 0.5
-              Color: 255; 255; 127
-              Color Style: Unique
-              Frame: Local
-              Offset: 1
-              Scale: 1
-              Value: true
-            Position:
-              Alpha: 0.30000001192092896
-              Color: 204; 51; 204
-              Scale: 1
-              Value: true
-            Value: true
-          Enabled: true
-          Keep: 1
-          Name: vio_drifted
-          Position Tolerance: 0.10000000149011612
-          Queue Size: 10
-          Shape:
-            Alpha: 1
-            Axes Length: 1
-            Axes Radius: 0.10000000149011612
-            Color: 136; 138; 133
-            Head Length: 1
-            Head Radius: 3
-            Shaft Length: 1
-            Shaft Radius: 1.5
-            Value: Arrow
-          Topic: /graph_slam/raw_drifted_vio
-          Unreliable: false
-          Value: true
+          Value: false
         - Angle Tolerance: 0.10000000149011612
           Class: rviz/Odometry
           Covariance:
@@ -536,12 +501,47 @@ Visualization Manager:
             Value: true
           Enabled: false
           Keep: 1
+          Name: vio_drifted
+          Position Tolerance: 0.10000000149011612
+          Queue Size: 10
+          Shape:
+            Alpha: 1
+            Axes Length: 1
+            Axes Radius: 0.10000000149011612
+            Color: 136; 138; 133
+            Head Length: 1
+            Head Radius: 3
+            Shaft Length: 1
+            Shaft Radius: 1.5
+            Value: Arrow
+          Topic: /graph_slam/raw_drifted_vio
+          Unreliable: false
+          Value: false
+        - Angle Tolerance: 0.10000000149011612
+          Class: rviz/Odometry
+          Covariance:
+            Orientation:
+              Alpha: 0.5
+              Color: 255; 255; 127
+              Color Style: Unique
+              Frame: Local
+              Offset: 1
+              Scale: 1
+              Value: true
+            Position:
+              Alpha: 0.30000001192092896
+              Color: 204; 51; 204
+              Scale: 1
+              Value: true
+            Value: true
+          Enabled: true
+          Keep: 1
           Name: graphslam
           Position Tolerance: 0.10000000149011612
           Queue Size: 1
           Shape:
             Alpha: 1
-            Axes Length: 5
+            Axes Length: 6
             Axes Radius: 0.75
             Color: 255; 25; 0
             Head Length: 0.30000001192092896
@@ -549,9 +549,9 @@ Visualization Manager:
             Shaft Length: 1
             Shaft Radius: 0.05000000074505806
             Value: Axes
-          Topic: /graph_slam/pose
+          Topic: /graph_slam/odom
           Unreliable: false
-          Value: false
+          Value: true
         - Alpha: 1
           Class: rviz/RobotModel
           Collision Enabled: false
@@ -585,15 +585,15 @@ Visualization Manager:
               Scale: 1
               Value: true
             Value: true
-          Enabled: false
+          Enabled: true
           Keep: 1
           Name: quad_odom
           Position Tolerance: 0.10000000149011612
           Queue Size: 10
           Shape:
             Alpha: 1
-            Axes Length: 2
-            Axes Radius: 0.15000000596046448
+            Axes Length: 3
+            Axes Radius: 1.5
             Color: 255; 25; 0
             Head Length: 0.30000001192092896
             Head Radius: 0.10000000149011612
@@ -602,13 +602,13 @@ Visualization Manager:
             Value: Axes
           Topic: /quadrotor/odom
           Unreliable: false
-          Value: false
+          Value: true
         - Alpha: 1
           Axes Length: 10
           Axes Radius: 0.10000000149011612
           Class: rviz/Pose
           Color: 255; 25; 0
-          Enabled: false
+          Enabled: true
           Head Length: 0.30000001192092896
           Head Radius: 0.10000000149011612
           Name: SE3_cmd
@@ -618,7 +618,7 @@ Visualization Manager:
           Shape: Axes
           Topic: /quadrotor/so3_control/cmd_viz
           Unreliable: false
-          Value: false
+          Value: true
       Enabled: true
       Name: Estimation
     - Alpha: 1
@@ -652,8 +652,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 1.8720345497131348
-        Min Value: -0.040049776434898376
+        Max Value: 11.722980499267578
+        Min Value: -1.1524415016174316
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -741,14 +741,6 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: false
-    - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /graph_slam/landmarks
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
   Enabled: true
   Global Options:
     Background Color: 189; 234; 201
@@ -782,7 +774,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 20.27643585205078
+      Distance: 21.553630828857422
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -790,17 +782,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -31.360477447509766
-        Y: 3.617875099182129
-        Z: 20.623971939086914
+        X: -8.764293670654297
+        Y: -5.843562126159668
+        Z: 20.62397575378418
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.3203960955142975
+      Pitch: 0.9303950071334839
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 3.0153887271881104
+      Yaw: 3.6053812503814697
     Saved: ~
 Window Geometry:
   Displays:

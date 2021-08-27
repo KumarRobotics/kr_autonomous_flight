@@ -291,6 +291,11 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
       traj_epoch.erase(traj_epoch.begin());
       init_cmd_->header.stamp = ros::Time::now();
       if (next_trajectory_.size() == 0) done_ = true;
+      
+      // abort by publishing negative epoch so that replanner is aware
+      std_msgs::Int64 epoch_msg;
+      epoch_msg.data = -1;
+      epoch_pub_.publish(epoch_msg);
       return init_cmd_;
     } else {
       // incontinuity is within threshold, accept next_trajectory_ as new
@@ -350,6 +355,10 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
                          << " check time " << check_time);
         next_trajectory_.erase(next_trajectory_.begin());
         traj_epoch.erase(traj_epoch.begin());
+      // abort by publishing negative epoch so that replanner is aware
+      std_msgs::Int64 epoch_msg;
+      epoch_msg.data = -1;
+      epoch_pub_.publish(epoch_msg);
 
       } else if ((vel_old - vel_new).norm() > 1.0) {
         // incontinuity in velocity is too large, abort
@@ -362,6 +371,10 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
                          << " execution time: " << execution_time);
         next_trajectory_.erase(next_trajectory_.begin());
         traj_epoch.erase(traj_epoch.begin());
+      // abort by publishing negative epoch so that replanner is aware
+      std_msgs::Int64 epoch_msg;
+      epoch_msg.data = -1;
+      epoch_pub_.publish(epoch_msg);
 
       } else {
         // incontinuity in vel and position are both within threshold, accept
@@ -392,6 +405,7 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
   // ROS_ERROR_STREAM_THROTTLE(1, "Evaluating duration" << duration);
 
   // evaluate trajectory and get the cmd,  see traj_opt_ros/traj_to_quad_cmd.h
+  bool error_check_success = true;
   if (use_lambda_) {
     // evaluatePos will return false if difference in position between odometry
     // and trajectory is larger than pos_err_max_
@@ -409,6 +423,7 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
           "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
           "+");
       ROS_ERROR_STREAM("Max  error threshold is:" << pos_err_max_);
+      error_check_success = false;
     }
   } else {
     // no pos or yaw check
@@ -453,10 +468,16 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
   }
 
   // publish current epoch
-  std_msgs::Int64 epoch_msg;
-  epoch_msg.data = current_epoch_ + int(std::floor(duration / execution_time));
-  epoch_pub_.publish(epoch_msg);
-
+  if (error_check_success){
+    std_msgs::Int64 epoch_msg;
+    epoch_msg.data = current_epoch_ + int(std::floor(duration / execution_time));
+    epoch_pub_.publish(epoch_msg);
+  } else {
+          // abort by publishing negative epoch so that replanner is aware
+      std_msgs::Int64 epoch_msg;
+      epoch_msg.data = -1;
+      epoch_pub_.publish(epoch_msg);
+  }
   return cmd;
 }
 

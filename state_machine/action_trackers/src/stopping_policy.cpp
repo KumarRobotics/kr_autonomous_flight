@@ -195,9 +195,10 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     if (duration < 0) {
       ROS_ERROR_STREAM("[StoppingPolicy:] duration is negative:"
                        << duration << ", this is not correct!");
+      ROS_ERROR_STREAM("[StoppingPolicy:] duration is negative, investigate into this!!!");
     }
 
-    if (duration >= 0 && duration < t_phase1 + t_phase2 + t_phase3) {
+    if ((duration >= 0) && (duration < (t_phase1 + t_phase2 + t_phase3))) {
       // For different phases we have different cmd_jrk
       if (duration < t_phase1) {
         // phase 1: increase |acceleration|, cmd_jrk should be -v0_dir

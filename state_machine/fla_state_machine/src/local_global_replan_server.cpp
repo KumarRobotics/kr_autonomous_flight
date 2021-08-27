@@ -224,6 +224,16 @@ void RePlanner::GlobalPathCb(const planning_ros_msgs::Path &path) {
 }
 
 void RePlanner::EpochCb(const std_msgs::Int64 &msg) {
+  if (msg.data < 0){
+    ROS_ERROR("[Replanner:] aborting mission because tracker failed!!!");
+    ROS_ERROR("[Replanner:] aborting mission because tracker failed!!!");
+    ROS_ERROR("[Replanner:] aborting mission because tracker failed!!!");
+    ROS_ERROR("RePlanner has not received position cmd, failing");
+
+    AbortReplan();
+    return;
+  }
+
   boost::mutex::scoped_lock lock(mtx_);
   static int epoch_old = -1;  // keep a record of last epoch
 

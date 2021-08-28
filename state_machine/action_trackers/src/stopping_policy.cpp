@@ -23,6 +23,7 @@ class StoppingPolicy : public kr_trackers_manager::Tracker {
 
  private:
   bool active_{false};
+  bool odom_first_call_{true};
   double j_xy_des_, a_xy_des_, j_z_des_, a_z_des_, a_yaw_des_;
   double prev_duration_;
   // record the lastest cmd calculated in stopping policy
@@ -69,7 +70,7 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
 
     j0_ << cmd->jerk.x, cmd->jerk.y, cmd->jerk.z, 0.0;
     cmd_jrk_ = j0_;
-    t0_ = cmd->header.stamp;
+    // t0_ = cmd->header.stamp;
     active_ = true;
     ROS_WARN("Stopping policy activated!");
     ROS_WARN_STREAM("vx:" << cmd->velocity.x << "vy:" << cmd->velocity.y
@@ -82,11 +83,20 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
   return false;
 }
 
-void StoppingPolicy::Deactivate() { active_ = false; }
+void StoppingPolicy::Deactivate() { active_ = false;
+   odom_first_call_ = true;
+   ROS_INFO("Stopping policy deactivated");
+   ROS_INFO("Stopping policy deactivated");
+   ROS_INFO("Stopping policy deactivated");
+  }
 
 PositionCommand::ConstPtr StoppingPolicy::update(
     const nav_msgs::Odometry::ConstPtr &msg) {
   ros::Time stamp = msg->header.stamp;
+  if (odom_first_call_) {
+   t0_ = stamp;
+   odom_first_call_ = false;
+  }   
   double duration = (stamp - t0_).toSec();
   double dt = duration - prev_duration_;
   prev_duration_ = duration;

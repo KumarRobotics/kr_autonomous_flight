@@ -37,7 +37,7 @@ def main():
 
     quad_tracker = QuadTracker(rospy.names.get_namespace() + "abort")
     # specify replan rate, this will be recorded in the goal msg, as well as
-    replan_rate = 2 
+    replan_rate = 1.5 
     quad_tracker.replan_rate = replan_rate
     quad_tracker.avoid = True  # obstacle avoidance in planner
 

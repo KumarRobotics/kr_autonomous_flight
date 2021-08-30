@@ -377,7 +377,7 @@ void LocalPlanServer::clear_footprint(planning_ros_msgs::VoxelMap &local_map, co
   // TODO (YUEZHAN): fix val_free;
   int8_t val_free = 0;
   ROS_WARN_ONCE("Value free is set as %d", val_free);
-  double robot_r = 0.5;
+  double robot_r = 1.0;
   int robot_r_n = std::ceil(robot_r / local_map.resolution);
 
   vec_Vec3i clear_ns;

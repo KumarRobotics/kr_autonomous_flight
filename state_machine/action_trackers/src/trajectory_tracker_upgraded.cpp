@@ -617,7 +617,7 @@ void ActionTrajectoryTracker::trajCB() {
   action_trackers::RunTrajectoryResult result;
   if (as_->isActive() && !goal->block) as_->setSucceeded(result);
 
-  ROS_INFO_STREAM("[Traj Tracker:] Current Epoch: " << current_epoch_);
+  // ROS_INFO_STREAM("[Traj Tracker:] Current Epoch: " << current_epoch_);
   static uint prevSize = 0;
   if (next_trajectory_.size() > prevSize) {
     prevSize = next_trajectory_.size();

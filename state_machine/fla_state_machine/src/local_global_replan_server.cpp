@@ -558,8 +558,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
   // send goal to global plan server to replan (new goal will preempt old goals)
   if ((global_plan_counter_ % 2) == 0){
     global_plan_client_->sendGoal(global_tpgoal);
-  
-    ROS_INFO("++++ global replan called at half of the frequency of local replan");
+    ROS_INFO_THROTTLE(2, "[Replanner:] global replan called at half of the frequency of local replan");
   }
   global_plan_counter_++;
   prev_start_pos_ = start_pos;  // keep updating prev_start_pos_
@@ -614,8 +613,8 @@ bool RePlanner::PlanTrajectory(int horizon) {
   tmsg2.header.frame_id = map_frame_;
   // millisecond
   tmsg2.temperature = static_cast<double>(timer.elapsed().wall) / 1e6;
-  ROS_WARN("[local_planner_time]: %f", tmsg2.temperature);
-  time_pub2.publish(tmsg2);
+  // ROS_WARN("[local_planner_time]: %f", tmsg2.temperature);
+  // time_pub2.publish(tmsg2);
 
   // check result of local plan
   bool local_succeeded = true;

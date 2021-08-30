@@ -21,7 +21,7 @@ take_off_tracker:
 
 trajectory_tracker:
   max_pos_error: 0.5  # maximum tracker position error (in xy plane) allowed, default 1.0
-  align_yaw: true # default false
+  align_yaw: false # default false
   yaw_speed_magnitude: 0.3 # in rad
   use_lambda: true # pose error checking
 

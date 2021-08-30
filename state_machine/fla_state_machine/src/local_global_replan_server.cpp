@@ -307,8 +307,7 @@ void RePlanner::ReplanGoalCb() {
   // check cmd
   if (cmd_pos_.norm() == 0) {
     ROS_ERROR("RePlanner has not received position cmd, failing");
-    active_ = false;
-    replan_server_->setAborted(critical_);
+    AbortReplan();
     return;
   }
 
@@ -405,6 +404,7 @@ void RePlanner::setup_replanner() {
     ROS_WARN("initial global plan succeeded!");
   } else {
     ROS_WARN("initial global plan failed!");
+    AbortReplan();
     return;
   }
 
@@ -474,8 +474,7 @@ void RePlanner::setup_replanner() {
   auto local_result = local_plan_client_->getResult();
   if (!local_result->success) {
     ROS_ERROR("Initial local planning failed to find a local trajectory!");
-    active_ = false;
-    replan_server_->setAborted(critical_);
+    AbortReplan();
     return;
   }
 
@@ -651,10 +650,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
   if (failed_local_trials_ >= max_local_trials_ - 1) {
     // if (waypoint_idx_ >= (pose_goals_.size() - 1)) {
       // if this is the final waypoint, abort full mission
-      active_ = false;
-      if (replan_server_->isActive()) {
-        replan_server_->setAborted(critical_);
-      }
+      AbortReplan();
     // } else {
       // otherwise, allow one more try with the next waypoint
       // TODO(xu): maybe abort full mission is a better choice if we want to

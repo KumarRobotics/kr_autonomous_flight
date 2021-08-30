@@ -53,6 +53,7 @@
       <arg name="robot_frame_id" value="$(arg robot)/base_link"/>
       <arg name="vio_imu_frame_id" value="$(arg robot)/ovc_camera_link"/>
       <arg name="imu" value="/ovc/vectornav/imu"/>
+      <arg name="mag" value="/ovc/vectornav/mag"/>
       <arg name="publish_body_camera_tf" default="false"/>
       <arg name="lidar_cloud_topic" value="os_cloud_node/points" />
       <arg name="lidar_frame" value="$(arg robot)/lidar" />

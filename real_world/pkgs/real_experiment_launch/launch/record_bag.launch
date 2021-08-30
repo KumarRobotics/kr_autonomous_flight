@@ -22,12 +22,13 @@
   /ovc/left/image_raw
   /ovc/right/camera_info
   /ovc/right/image_raw   
-  /ovc/vectornav
+  /ovc/vectornav/imu
+  /ovc/vectornav/mag
   /ovc/imu
   /quadrotor/so3_control/cmd_viz
+  /quadrotor/position_cmd
   /quadrotor/local_plan_server/expanded_cloud
   /diagnostics
-  /graph_slam/incremental
   /graph_slam/landmarks
   /graph_slam/odom
   /graph_slam/pose

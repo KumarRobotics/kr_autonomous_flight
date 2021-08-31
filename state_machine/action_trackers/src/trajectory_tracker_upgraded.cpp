@@ -20,7 +20,7 @@
 #include "traj_to_quad_cmd.h"
 
 // action stuff
-#include <planning_ros_msgs/RunTrajectoryAction.h>
+#include <action_trackers/RunTrajectoryAction.h>
 #include <actionlib/server/simple_action_server.h>
 // boost
 #include <boost/shared_ptr.hpp>
@@ -104,7 +104,7 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
 
   // action lib
   std::unique_ptr<
-      actionlib::SimpleActionServer<planning_ros_msgs::RunTrajectoryAction>>
+      actionlib::SimpleActionServer<action_trackers::RunTrajectoryAction>>
       as_;
   bool prempted{false};
   double prempted_time;
@@ -117,12 +117,12 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
   // double yaw_speed_;
 
   // align yaw or not
-  bool align_yaw_;
+  bool align_yaw_; 
   // align yaw with the direction of robot movement every yaw_align_dt seconds
   double last_yaw_ = 0.0;
   double align_time_passed_ = 0.0;
-  ros::Time prev_align_start_time_;  // current alignment start timestamp
-  double yaw_dot_magnitude_;         // rad per second
+  ros::Time prev_align_start_time_;    // current alignment start timestamp
+  double yaw_dot_magnitude_;  // rad per second
   ros::Time last_yaw_align_time_;
   bool yaw_alignment_initialized_ = false;
   bool alignment_ongoing_ = false;
@@ -176,7 +176,7 @@ void ActionTrajectoryTracker::Initialize(const ros::NodeHandle &nh) {
   // if (ignore_yaw_) use_yaw_ = true;
 
   as_.reset(
-      new actionlib::SimpleActionServer<planning_ros_msgs::RunTrajectoryAction>(
+      new actionlib::SimpleActionServer<action_trackers::RunTrajectoryAction>(
           nh, "execute_trajectory", false));
 
   // Register goal and preempt callbacks
@@ -403,18 +403,14 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
 
   //  if (duration < 1.0 || duration > 10.0)
   // ROS_ERROR_STREAM_THROTTLE(1, "Evaluating duration" << duration);
-  planning_ros_msgs::RunTrajectoryFeedback feedback;
-  feedback.seg_number = -1;
-  feedback.time_elapsed = duration;
+
   // evaluate trajectory and get the cmd,  see traj_opt_ros/traj_to_quad_cmd.h
   bool error_check_success = true;
   if (use_lambda_) {
     // evaluatePos will return false if difference in position between odometry
     // and trajectory is larger than pos_err_max_
-    auto [success,seg_number] = traj_opt::EvaluateTrajectoryPos(current_trajectory_, msg, pos_err_max_,
-                                         duration, 0.01, cmd.get());
-    feedback.seg_number = seg_number;
-    if (!success) {
+    if (!traj_opt::EvaluateTrajectoryPos(current_trajectory_, msg, pos_err_max_,
+                                         duration, 0.01, cmd.get())) {
       // this slowing down strategy is not working properly, commented out,
       // abort the mission instead
       // started_ = started_ + ros::Duration(0.01);
@@ -431,13 +427,9 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
     }
   } else {
     // no pos or yaw check
-    feedback.seg_number = traj_opt::EvaluateTrajectory(current_trajectory_,
-                                                       duration, cmd.get(), 2);
+    traj_opt::EvaluateTrajectory(current_trajectory_, duration, cmd.get(), 2);
   }
 
-  as_->publishFeedback(feedback);
-
-  // status message
   if (align_yaw_) {
     AlignYaw(msg);
     cmd->yaw = yaw_des_, cmd->yaw_dot = yaw_dot_des_;
@@ -470,7 +462,7 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
     current_trajectory_ = boost::shared_ptr<traj_opt::Trajectory>();
 
     if (as_->isActive()) {
-      planning_ros_msgs::RunTrajectoryResult result;
+      action_trackers::RunTrajectoryResult result;
       as_->setSucceeded(result);
     }
   }
@@ -489,8 +481,7 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
   return cmd;
 }
 
-void ActionTrajectoryTracker::AlignYaw(
-    const nav_msgs::Odometry::ConstPtr &msg) {
+void ActionTrajectoryTracker::AlignYaw(const nav_msgs::Odometry::ConstPtr &msg) {
   // this part is for yaw_alignment
   double time_since_last_alignment;
   if (!yaw_alignment_initialized_) {
@@ -520,7 +511,7 @@ void ActionTrajectoryTracker::AlignYaw(
     last_yaw_align_time_ = ros::Time::now();
     // desired yaw direction should be arctan(dy, dx)
     ultimate_yaw_des_ = atan2((msg->pose.pose.position.y - last_yaw_align_y_),
-                              (msg->pose.pose.position.x - last_yaw_align_x_));
+                     (msg->pose.pose.position.x - last_yaw_align_x_));
     // record x and y
     last_yaw_align_x_ = msg->pose.pose.position.x;
     last_yaw_align_y_ = msg->pose.pose.position.y;
@@ -560,7 +551,7 @@ void ActionTrajectoryTracker::AlignYaw(
     // update the prev_align_start_time_
     prev_align_start_time_ = ros::Time::now();
     // ROS_WARN_STREAM("alignment des_yaw is "
-    // << yaw_des_  << " des_yaw_speed is" << yaw_dot_des_);
+                    // << yaw_des_  << " des_yaw_speed is" << yaw_dot_des_);
     // update the prev_yaw_
     last_yaw_ = yaw_des_;
   } else {
@@ -623,7 +614,7 @@ void ActionTrajectoryTracker::trajCB() {
   // check for continuity
   traj_opt::TrajRosBridge::publish_msg(msg);
 
-  planning_ros_msgs::RunTrajectoryResult result;
+  action_trackers::RunTrajectoryResult result;
   if (as_->isActive() && !goal->block) as_->setSucceeded(result);
 
   // ROS_INFO_STREAM("[Traj Tracker:] Current Epoch: " << current_epoch_);

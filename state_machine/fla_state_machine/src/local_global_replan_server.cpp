@@ -1,10 +1,10 @@
 
+
 #include <action_trackers/RunTrajectoryAction.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/server/simple_action_server.h>
 #include <fla_state_machine/ReplanAction.h>
 #include <geometry_msgs/Pose.h>
-#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Twist.h>
@@ -17,10 +17,10 @@
 #include <sensor_msgs/Temperature.h>
 #include <std_msgs/Int64.h>
 #include <tf/transform_datatypes.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
-
 // #include <tf/transform_listener.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <traj_opt_ros/msg_traj.h>
 #include <traj_opt_ros/ros_bridge.h>
 
@@ -106,6 +106,7 @@ class RePlanner {
   traj_opt::VecD cmd_pos_{traj_opt::VecD::Zero(4, 1)};  // position command
   boost::shared_ptr<traj_opt::Trajectory>
       last_traj_;  // record of latest trajectory
+  planning_ros_msgs::SplineTrajectory last_traj_msg_;
   ros::NodeHandle nh_;
   ros::Subscriber cmd_sub_;
   ros::Subscriber local_map_sub_;
@@ -381,6 +382,7 @@ void RePlanner::setup_replanner() {
         replan_server_->setSucceeded(success);
       }
       last_traj_ = boost::shared_ptr<traj_opt::Trajectory>();
+      last_traj_msg_ = planning_ros_msgs::SplineTrajectory();
       return;
     } else if (waypoint_idx_ < (pose_goals_.size() - 1)) {
       // take the next waypoint if the intermidiate waypoint is reached
@@ -494,6 +496,7 @@ void RePlanner::setup_replanner() {
   }
 
   // get the result
+  last_traj_msg_ = local_result->traj;
   last_traj_ = boost::make_shared<traj_opt::MsgTrajectory>(
       traj_opt::TrajDataFromSplineTrajectory(local_result->traj));
   last_plan_epoch_ = local_result->epoch;
@@ -514,8 +517,7 @@ void RePlanner::RunTrajectory() {
 
   // set up run goal
   action_trackers::RunTrajectoryGoal rungoal;
-  rungoal.traj =
-      traj_opt::SplineTrajectoryFromTrajData(last_traj_->serialize());
+  rungoal.traj = last_traj_msg_;
   rungoal.epoch = last_plan_epoch_;
   rungoal.replan_rate = local_replan_rate_;
 
@@ -620,6 +622,8 @@ bool RePlanner::PlanTrajectory(int horizon) {
   local_tpgoal.p_final.position.x = local_goal(0);
   local_tpgoal.p_final.position.y = local_goal(1);
   local_tpgoal.p_final.position.z = local_goal(2);
+  local_tpgoal.eval_time = eval_time;
+  local_tpgoal.last_traj = last_traj_msg_;
 
   timer.start();
   // send goal to local trajectory plan action server
@@ -653,6 +657,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
     if (local_result->success) {
       last_traj_ = boost::make_shared<traj_opt::MsgTrajectory>(
           traj_opt::TrajDataFromSplineTrajectory(local_result->traj));
+      last_traj_msg_ = local_result->traj;
       last_plan_epoch_ = local_result->epoch;
       // ROS_INFO_STREAM("Got local plan with epoch " << last_plan_epoch_);
       failed_local_trials_ = 0;  // reset this
@@ -773,6 +778,7 @@ void RePlanner::update_status() {
       }
       ROS_INFO("RePlanner success!!");
       last_traj_ = boost::shared_ptr<traj_opt::Trajectory>();
+      last_traj_msg_ = planning_ros_msgs::SplineTrajectory();
       return;
     }
   }

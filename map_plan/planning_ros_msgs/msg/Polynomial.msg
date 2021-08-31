@@ -13,3 +13,5 @@ int32 degree
 float32 dt
 uint8 basis
 float32[] coeffs
+int32 start_index
+int32 end_index

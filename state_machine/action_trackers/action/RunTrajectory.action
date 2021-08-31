@@ -7,8 +7,6 @@ bool block # will not return until traj is complete (cannot be used with replann
 # Action result
 bool at_goal
 ---
-# Action feedback
+# Action status
 float32 time_remaining
 float32 percent_complete
-int64 seg_number
-float32 time_elapsed

@@ -8,10 +8,12 @@
   /tf_static
   /quadrotor/local_plan_server/traj
   /quadrotor/global_plan_server/path 
+  /quadrotor/local_global_replan_server/local_global_server/global_path_wrt_map  
   /rosout
   /rosout_agg
   /quadrotor/image_processor/debug_stereo_image/compressed
-  /quadrotor/mapper/global_voxel_map_throttled
+    /quadrotor/mapper/global_voxel_map_throttled
+    /graph_slam/raw_drifted_vio
   /quadrotor/mapper/local_voxel_map_throttled
   /quadrotor/odom
   /ublox/fix

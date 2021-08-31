@@ -1,6 +1,6 @@
 
 
-debug: true
+debug: false
 robot_r: 0.90 # map will be dilated in x and y with a radius of [ceil(robot_r/res)] cells
 robot_h: 0.75 # map will be dilated in z direction for 2*[ceil(robot_h/res)] cells (if robot_r is set as 0, there will not be any dilation along z either).
 
@@ -11,7 +11,7 @@ global:
   range_y: 600.0
   center_z: 3
   range_z: 8
-  resolution: 1.5 # 3
+  resolution: 0.75 # 3
   num_point_cloud_skip: 2 # integer
   max_raycast_range: 10.0
   dilate_xy: false

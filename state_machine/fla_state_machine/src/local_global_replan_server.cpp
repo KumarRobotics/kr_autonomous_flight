@@ -4,6 +4,7 @@
 #include <actionlib/server/simple_action_server.h>
 #include <fla_state_machine/ReplanAction.h>
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Twist.h>
@@ -16,7 +17,9 @@
 #include <sensor_msgs/Temperature.h>
 #include <std_msgs/Int64.h>
 #include <tf/transform_datatypes.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
+
 // #include <tf/transform_listener.h>
 #include <traj_opt_ros/msg_traj.h>
 #include <traj_opt_ros/ros_bridge.h>
@@ -85,9 +88,12 @@ class RePlanner {
   // ros::Publisher cropped_path_pub_;
 
   // transformed global path pub for visualization
-  ros::Publisher global_path_wrt_odom_pub_;
+  ros::Publisher global_path_wrt_map_pub_;
 
-  geometry_msgs::Pose pose_goal_;  // goal recorder
+  geometry_msgs::Pose pose_goal_;           // goal recorder
+  geometry_msgs::Pose pose_goal_wrt_odom_;  // goal recorder (transformed to
+                                            // account for odom drift)
+
   int waypoint_idx_;  // index of current goal in the array of goals (waypoints)
   std::vector<geometry_msgs::Pose> pose_goals_;  // an array of goals
 
@@ -204,9 +210,14 @@ class RePlanner {
                     double dist_threshold = 10.0);
 
   /**
+   * @brief transform global path from odom frame to map frame
+   */
+  vec_Vec3f TransformGlobalPath(const vec_Vec3f &path_original);
+
+  /**
    * @brief transform global path from map frame to odom frame
    */
-  vec_Vec3f TransformGlobalPath(const vec_Vec3f &path_wrt_map);
+  void TransformGlobalGoal();
 
   /**
    * @brief abort the replan process
@@ -224,7 +235,7 @@ void RePlanner::GlobalPathCb(const planning_ros_msgs::Path &path) {
 }
 
 void RePlanner::EpochCb(const std_msgs::Int64 &msg) {
-  if (msg.data < 0){
+  if (msg.data < 0) {
     ROS_ERROR("[Replanner:] aborting mission because tracker failed!!!");
     ROS_ERROR("[Replanner:] aborting mission because tracker failed!!!");
     ROS_ERROR("[Replanner:] aborting mission because tracker failed!!!");
@@ -285,11 +296,13 @@ void RePlanner::ReplanGoalCb() {
                           // specified in goal (assigned in state machine)
   pose_goals_ = goal->p_finals;
 
-  ROS_WARN_STREAM("[Replanner:] waypoints received, number of waypoints is:" << pose_goals_.size());
+  ROS_WARN_STREAM("[Replanner:] waypoints received, number of waypoints is:"
+                  << pose_goals_.size());
 
   if (pose_goals_.empty()) {
     ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-    ROS_WARN("[Replanner:] waypoints list is empty, now use single goal intead!");
+    ROS_WARN(
+        "[Replanner:] waypoints list is empty, now use single goal intead!");
     ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
     pose_goals_.push_back(goal->p_final);
   } else if (pose_goals_.size() > 1) {
@@ -300,6 +313,7 @@ void RePlanner::ReplanGoalCb() {
   }
   waypoint_idx_ = 0;
   pose_goal_ = pose_goals_[waypoint_idx_];
+  TransformGlobalGoal();
 
   avoid_obstacle_ = goal->avoid_obstacles;  // obstacle avoidance mode
                                             // (assigned in state machine)
@@ -347,10 +361,10 @@ void RePlanner::setup_replanner() {
   // Initial plan step 1: global plan
   // ########################################################################################################
   // get the distance from cmd pos to goal (waypoint) pos
-  float x_diff = (float)std::abs(pose_goal_.position.x - cmd_pos_(0));
-  float y_diff = (float)std::abs(pose_goal_.position.y - cmd_pos_(1));
-  Vec2f xy_diff = Vec2f{pose_goal_.position.x - cmd_pos_(0),
-                        pose_goal_.position.y - cmd_pos_(1)};
+  float x_diff = (float)std::abs(pose_goal_wrt_odom_.position.x - cmd_pos_(0));
+  float y_diff = (float)std::abs(pose_goal_wrt_odom_.position.y - cmd_pos_(1));
+  Vec2f xy_diff = Vec2f{pose_goal_wrt_odom_.position.x - cmd_pos_(0),
+                        pose_goal_wrt_odom_.position.y - cmd_pos_(1)};
   float dist_cmd_to_goal = xy_diff.norm();
   if (dist_cmd_to_goal <= waypoint_threshold_) {
     if ((waypoint_idx_ >= (pose_goals_.size() - 1)) &&
@@ -376,12 +390,13 @@ void RePlanner::setup_replanner() {
           "with the next waypoint!");
       ++waypoint_idx_;
       pose_goal_ = pose_goals_[waypoint_idx_];
+      TransformGlobalGoal();
     }
   };
 
   // set goal
   planning_ros_msgs::PlanTwoPointGoal global_tpgoal;
-  global_tpgoal.p_final = pose_goal_;
+  global_tpgoal.p_final = pose_goal_wrt_odom_;
   global_tpgoal.avoid_obstacles = avoid_obstacle_;
 
   // send goal to global plan action server
@@ -410,8 +425,8 @@ void RePlanner::setup_replanner() {
 
   //  Initial plan step 2: Crop global path to get local goal
   //  #################################################################################
-  vec_Vec3f global_path_wrt_odom = TransformGlobalPath(global_path_);
-  vec_Vec3f path_cropped_wrt_odom = PathCrop(global_path_wrt_odom);
+  vec_Vec3f global_path_wrt_map = TransformGlobalPath(global_path_);
+  vec_Vec3f path_cropped_wrt_odom = PathCrop(global_path_);
 
   if (path_cropped_wrt_odom.size() == 0) {
     ROS_ERROR("[Replanner:] Path crop failed!");
@@ -421,8 +436,8 @@ void RePlanner::setup_replanner() {
 
   bool close_to_final_goal;
   if (close_to_final_dist_ > 0) {
-    close_to_final_goal = CloseToFinal(
-        global_path_wrt_odom, path_cropped_wrt_odom, close_to_final_dist_);
+    close_to_final_goal =
+        CloseToFinal(global_path_, path_cropped_wrt_odom, close_to_final_dist_);
   } else {
     close_to_final_dist_ = false;
   }
@@ -463,7 +478,7 @@ void RePlanner::setup_replanner() {
   // reset the counter
   // TODO(xu:) double check this is working properlly
   failed_local_trials_ = 0;
-  
+
   if (!local_finished_before_timeout) {
     // check result of local plan
     ROS_ERROR("Initial local planning timed out");
@@ -536,7 +551,11 @@ bool RePlanner::PlanTrajectory(int horizon) {
 
   // set global goal
   planning_ros_msgs::PlanTwoPointGoal global_tpgoal;
-  global_tpgoal.p_final = pose_goal_;
+
+  // Important: for two reference frame system, we need to apply transform from
+  // slam to odom so that the global goal in odom frame is adjusted to account
+  // for the drift
+  global_tpgoal.p_final = pose_goal_wrt_odom_;
   global_tpgoal.avoid_obstacles = avoid_obstacle_;
 
   // set local goal
@@ -556,9 +575,13 @@ bool RePlanner::PlanTrajectory(int horizon) {
   // Replan step 1: Global plan
   // ########################################################################################################
   // send goal to global plan server to replan (new goal will preempt old goals)
-  if ((global_plan_counter_ % 2) == 0){
+  if ((global_plan_counter_ % 2) == 0) {
     global_plan_client_->sendGoal(global_tpgoal);
-    ROS_INFO_THROTTLE(2, "[Replanner:] global replan called at half of the frequency of local replan");
+    ROS_INFO_THROTTLE(2,
+                      "[Replanner:] global replan called at half of the "
+                      "frequency of local replan");
+    // this is just for visualization purposes
+    vec_Vec3f global_path_wrt_map = TransformGlobalPath(global_path_);
   }
   global_plan_counter_++;
   prev_start_pos_ = start_pos;  // keep updating prev_start_pos_
@@ -567,8 +590,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
   //  #################################################################################
 
   // ROS_WARN_STREAM("++++ total_crop_dist = " << crop_dist);
-  vec_Vec3f global_path_wrt_odom = TransformGlobalPath(global_path_);
-  vec_Vec3f path_cropped_wrt_odom = PathCrop(global_path_wrt_odom);
+  vec_Vec3f path_cropped_wrt_odom = PathCrop(global_path_);
   if (path_cropped_wrt_odom.size() == 0) {
     ROS_ERROR("[Replanner:] Path crop failed!");
     AbortReplan();
@@ -577,8 +599,8 @@ bool RePlanner::PlanTrajectory(int horizon) {
 
   bool close_to_final_goal;
   if (close_to_final_dist_ > 0) {
-    close_to_final_goal = CloseToFinal(
-        global_path_wrt_odom, path_cropped_wrt_odom, close_to_final_dist_);
+    close_to_final_goal =
+        CloseToFinal(global_path_, path_cropped_wrt_odom, close_to_final_dist_);
   } else {
     close_to_final_dist_ = false;
   }
@@ -648,26 +670,27 @@ bool RePlanner::PlanTrajectory(int horizon) {
 
   if (failed_local_trials_ >= max_local_trials_ - 1) {
     // if (waypoint_idx_ >= (pose_goals_.size() - 1)) {
-      // if this is the final waypoint, abort full mission
-      AbortReplan();
+    // if this is the final waypoint, abort full mission
+    AbortReplan();
     // } else {
-      // otherwise, allow one more try with the next waypoint
-      // TODO(xu): maybe abort full mission is a better choice if we want to
-      // visit every waypoint?
+    // otherwise, allow one more try with the next waypoint
+    // TODO(xu): maybe abort full mission is a better choice if we want to
+    // visit every waypoint?
 
-      // ++waypoint_idx_;
+    // ++waypoint_idx_;
 
-      // TODO(xu:) handle this in state_machine instead
-      // ROS_WARN_STREAM(
-      //     "Current intermidiate waypoint leads to local planner timeout, for "
-      //     << max_local_trials_ - 1
-      //     << "times giving one last try with the next waypoint, "
-      //        "whose index is: "
-      //     << waypoint_idx_);
+    // TODO(xu:) handle this in state_machine instead
+    // ROS_WARN_STREAM(
+    //     "Current intermidiate waypoint leads to local planner timeout, for "
+    //     << max_local_trials_ - 1
+    //     << "times giving one last try with the next waypoint, "
+    //        "whose index is: "
+    //     << waypoint_idx_);
 
-      // failed_local_trials_ =
-      //     failed_local_trials_ - 0.5;  // - 0.5 so that if we timeout again, the
-      //                                  // replanner will be aborted
+    // failed_local_trials_ =
+    //     failed_local_trials_ - 0.5;  // - 0.5 so that if we timeout again,
+    //     the
+    //                                  // replanner will be aborted
     // }
     return false;
   }
@@ -681,8 +704,8 @@ void RePlanner::update_status() {
   if (last_traj_ != NULL) {
     traj_opt::VecD pos_goal = traj_opt::VecD::Zero(4, 1);
     traj_opt::VecD pos_final, pos_finaln;
-    pos_goal(0) = pose_goal_.position.x;
-    pos_goal(1) = pose_goal_.position.y;
+    pos_goal(0) = pose_goal_wrt_odom_.position.x;
+    pos_goal(1) = pose_goal_wrt_odom_.position.y;
 
     // evaluate traj at 1.0/local_replan_rate_, output recorded to pos_finaln,
     // refer to msg_traj.cpp.
@@ -703,7 +726,8 @@ void RePlanner::update_status() {
         finished_replanning_ = true;
         ROS_INFO_STREAM(
             "Final waypoint reached! The distance threshold is set as: "
-            << final_waypoint_threshold_ << " Total " << pose_goals_.size() << " waypoints received");
+            << final_waypoint_threshold_ << " Total " << pose_goals_.size()
+            << " waypoints received");
       } else if (waypoint_idx_ < (pose_goals_.size() - 1)) {
         // take the next waypoint if the intermidiate waypoint is reached
         ++waypoint_idx_;
@@ -713,6 +737,7 @@ void RePlanner::update_status() {
             << waypoint_idx_
             << "The distance threshold is set as:" << waypoint_threshold_);
         pose_goal_ = pose_goals_[waypoint_idx_];
+        TransformGlobalGoal();
       }
     };
   }
@@ -824,46 +849,70 @@ vec_Vec3f RePlanner::PathCrop(const vec_Vec3f &path) {
   return cropped_path;
 }
 
-vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f &path_wrt_map) {
+vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f &path_original) {
   // get the latest tf from map to odom reference frames
   geometry_msgs::TransformStamped transformStamped;
 
   try {
     transformStamped = tfBuffer.lookupTransform(
-        odom_frame_, map_frame_, ros::Time(0), ros::Duration(0.4));
+        map_frame_, odom_frame_, ros::Time(0), ros::Duration(0.01));
+  } catch (tf2::TransformException &ex) {
+    ROS_ERROR("[Replanner:] Failed to get tf from %s to %s",
+              odom_frame_.c_str(), map_frame_.c_str());
+    // AbortReplan(); // no need to abort plan since this is just for
+    // visualization return original path
+    return path_original;
+  }
+
+  geometry_msgs::Pose map_to_odom;
+  map_to_odom.position.x = transformStamped.transform.translation.x;
+  map_to_odom.position.y = transformStamped.transform.translation.y;
+  map_to_odom.position.z = transformStamped.transform.translation.z;
+  map_to_odom.orientation.w = transformStamped.transform.rotation.w;
+  map_to_odom.orientation.x = transformStamped.transform.rotation.x;
+  map_to_odom.orientation.y = transformStamped.transform.rotation.y;
+  map_to_odom.orientation.z = transformStamped.transform.rotation.z;
+
+  // TF transform from the map frame to odom frame
+  auto map_to_odom_tf = toTF(map_to_odom);
+  Vec3f waypoint_wrt_map;
+
+  vec_Vec3f path_wrt_map;
+  for (unsigned int i = 0; i < path_original.size(); i++) {
+    // apply TF on current waypoint
+    waypoint_wrt_map = map_to_odom_tf * path_original[i];
+    path_wrt_map.push_back(waypoint_wrt_map);
+  }
+
+  // publish transformed global path for visualization
+  planning_ros_msgs::Path path_wrt_map_msg = path_to_ros(path_wrt_map);
+  path_wrt_map_msg.header.frame_id = map_frame_;
+  global_path_wrt_map_pub_.publish(path_wrt_map_msg);
+  return path_wrt_map;
+}
+
+void RePlanner::TransformGlobalGoal() {
+  // get the latest tf from map to odom reference frames
+  geometry_msgs::TransformStamped transformStamped;
+  try {
+    // TF transform from odom frame to the map frame
+    transformStamped = tfBuffer.lookupTransform(
+        odom_frame_, map_frame_, ros::Time(0), ros::Duration(0.01));
   } catch (tf2::TransformException &ex) {
     ROS_ERROR("[Replanner:] Failed to get tf from %s to %s", map_frame_.c_str(),
               odom_frame_.c_str());
     AbortReplan();
-    // return original path
-    return path_wrt_map;
   }
-
-  geometry_msgs::Pose odom_to_map;
-  odom_to_map.position.x = transformStamped.transform.translation.x;
-  odom_to_map.position.y = transformStamped.transform.translation.y;
-  odom_to_map.position.z = transformStamped.transform.translation.z;
-  odom_to_map.orientation.w = transformStamped.transform.rotation.w;
-  odom_to_map.orientation.x = transformStamped.transform.rotation.x;
-  odom_to_map.orientation.y = transformStamped.transform.rotation.y;
-  odom_to_map.orientation.z = transformStamped.transform.rotation.z;
-
-  // TF transform from the sensor frame to the map frame
-  auto odom_to_map_tf = toTF(odom_to_map);
-  Vec3f waypoint_wrt_odom;
-
-  vec_Vec3f path_wrt_odom;
-  for (unsigned int i = 0; i < path_wrt_map.size(); i++) {
-    // apply TF on current waypoint
-    waypoint_wrt_odom = odom_to_map_tf * path_wrt_map[i];
-    path_wrt_odom.push_back(waypoint_wrt_odom);
-  }
-
-  // publish transformed global path for visualization
-  planning_ros_msgs::Path path_wrt_odom_msg = path_to_ros(path_wrt_odom);
-  path_wrt_odom_msg.header.frame_id = map_frame_;
-  global_path_wrt_odom_pub_.publish(path_wrt_odom_msg);
-  return path_wrt_odom;
+  geometry_msgs::PoseStamped pose_in;
+  geometry_msgs::PoseStamped pose_out;
+  pose_in.pose = pose_goal_;
+  tf2::doTransform(pose_in, pose_out, transformStamped);
+  pose_goal_wrt_odom_ = pose_out.pose;
+  pose_goal_wrt_odom_.position.z = pose_goal_.position.z;
+  ROS_INFO_THROTTLE(
+      3,
+      "[Replanner:] when transforming global goal, keeping z-axis value the "
+      "same to guaranteed it's still within the voxel map");
 }
 
 vec_Vec3f RePlanner::PathCrop(const vec_Vec3f &path, double crop_dist_xyz,
@@ -940,7 +989,6 @@ bool RePlanner::CloseToFinal(const vec_Vec3f &original_path,
 }
 
 void RePlanner::AbortReplan(void) {
-
   active_ = false;
   if (replan_server_->isActive()) {
     replan_server_->setAborted(critical_);
@@ -962,8 +1010,8 @@ RePlanner::RePlanner() : nh_("~") {
   //     priv_nh.advertise<planning_ros_msgs::Path>("cropped_local_path", 1,
   //     true);
 
-  global_path_wrt_odom_pub_ = priv_nh.advertise<planning_ros_msgs::Path>(
-      "global_path_wrt_odom", 1, true);
+  global_path_wrt_map_pub_ = priv_nh.advertise<planning_ros_msgs::Path>(
+      "global_path_wrt_map", 1, true);
 
   priv_nh.param("max_horizon", max_horizon_, 5);
   priv_nh.param("crop_radius", crop_radius_, 10.0);

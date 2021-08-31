@@ -259,6 +259,7 @@ void GlobalPlanServer::process_goal() {
   // record current odometry as start
   start.pos = pose_to_eigen(odom_msg_->pose.pose);
   goal.pos = pose_to_eigen(goal_->p_final);
+  
 
   // call the planner
 

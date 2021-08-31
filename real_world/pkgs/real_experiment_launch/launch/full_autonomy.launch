@@ -12,6 +12,13 @@
 
 	<arg name="record_bag" default="true"/>
 
+  <arg name="poll_period" default="1.0"/>
+
+  <!-- cpu record -->
+  <node pkg="cpu_monitor" name="cpu_monitor" type="monitor.py" output="screen">
+    <param name="poll_period" value="$(arg poll_period)"/>
+  </node>
+  
   <!-- drivers -->
   <include file="$(find real_experiment_launch)/launch/os1_robot_ns.launch">
       <arg name="robot" value="$(arg robot)"/>

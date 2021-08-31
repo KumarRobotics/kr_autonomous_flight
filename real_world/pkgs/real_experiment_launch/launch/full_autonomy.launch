@@ -13,16 +13,16 @@
 	<arg name="record_bag" default="true"/>
 
   <!-- drivers -->
-  <!-- <include file="$(find real_experiment_launch)/launch/os1_robot_ns.launch"> -->
-      <!-- <arg name="robot" value="$(arg robot)"/> -->
-      <!-- <arg name="sensor_hostname" value="192.168.100.12"/> -->
-      <!-- <arg name="udp_dest" value="192.168.100.1"/> -->
-      <!-- <arg name="lidar_port" value="7502"/> -->
-      <!-- <arg name="imu_port" value="7503"/> -->
-      <!-- <arg name="replay" value="false"/> -->
-      <!-- <arg name="lidar_mode" value="2048x10"/> -->
-      <!-- <arg name="metadata" value="ouster_metadata.json"/> -->
-  <!-- </include> -->
+  <include file="$(find real_experiment_launch)/launch/os1_robot_ns.launch">
+      <arg name="robot" value="$(arg robot)"/>
+      <arg name="sensor_hostname" value="192.168.100.12"/>
+      <arg name="udp_dest" value="192.168.100.1"/>
+      <arg name="lidar_port" value="7502"/>
+      <arg name="imu_port" value="7503"/>
+      <arg name="replay" value="false"/>
+      <arg name="lidar_mode" value="2048x10"/>
+      <arg name="metadata" value="ouster_metadata.json"/>
+  </include>
 
    
    <!-- pixhawk (nice priority -15) -->

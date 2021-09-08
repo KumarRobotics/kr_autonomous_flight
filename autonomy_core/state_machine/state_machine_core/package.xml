@@ -27,6 +27,7 @@
   <depend>kr_planning_rviz_plugins</depend>
   <depend>kr_planning_msgs</depend>
   <depend>geometry_msgs</depend>
+  <depend>smach_ros</depend>
 
 
 

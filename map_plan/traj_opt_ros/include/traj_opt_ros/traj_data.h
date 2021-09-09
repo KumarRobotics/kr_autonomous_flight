@@ -18,9 +18,9 @@ enum PolyType {
 
 struct PolynomialData {
   int degree;
-  float dt;
+  double dt;
   PolyType basis;
-  std::vector<float> coeffs;
+  std::vector<double> coeffs;
   // polynomials are stored with parameterization s \in [0,1]
   // time duration dt is used to evaluate polynomial p(t/dt) for t \in [0,dt]
 
@@ -31,7 +31,7 @@ struct PolynomialData {
 
 struct SplineData {
   int segments;
-  float t_total;
+  double t_total;
   // t_total should equal the sum of dt for each segment
   std::vector<PolynomialData> segs;
 

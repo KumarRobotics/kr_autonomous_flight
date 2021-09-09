@@ -7,23 +7,19 @@ namespace traj_opt {
 
 MsgTrajectory::MsgTrajectory(const TrajData &traj) : traj_(traj) {
   // TODO(laura) fails if each dimension of the traj has a different number of
-  // segments
-
-  num_segs_ = traj_.data.front().segments;
+  // segments, or different dt's
+  num_secs_ = traj_.data.front().segments;
   dim_ = traj_.dimensions;
 
-  for (int dim = 0; dim < dim_; dim++) {
-    std::vector<double> dt;
-    for (auto &poly : traj_.data.at(dim).segs) dt.push_back(poly.dt);
-    dts_.push_back(dt);
-  }
-
+  for (auto &poly : traj_.data.front().segs) dts.push_back(poly.dt);
   exec_t = traj.data.front().t_total;
 
   deg_ = traj_.data.front().segs.front().degree;
-  polys_.reserve(num_segs_);
-  // unpack coefficients
-  for (uint i = 0; i < num_segs_; i++) {
+
+  polyies_.reserve(num_secs_);
+  // unpack coefficents
+  //  auto it = traj.coefficents.begin();
+  for (uint i = 0; i < num_secs_; i++) {
     std::vector<boost::shared_ptr<Poly>> polys;
     polys.clear();
     polys.reserve(dim_);
@@ -31,19 +27,20 @@ MsgTrajectory::MsgTrajectory(const TrajData &traj) : traj_(traj) {
       polys.push_back(boost::make_shared<Poly>(
           traj.data.at(j).segs.at(i).coeffs.data(), deg_));
     }
-    polys_.push_back(polys);
+    polyies_.push_back(polys);
   }
-  // take derivatives
-  derivatives_.push_back(polys_);
+  // take derrivatives
+  derrives_.push_back(polyies_);
   for (int i = 0; i < 3; i++) {
-    for (auto &p : polys_)
+    for (auto &p : polyies_)
       for (auto &q : p)
         q = boost::make_shared<Poly>(PolyCalculus::differentiate(*q));
-    derivatives_.push_back(polys_);
+
+    derrives_.push_back(polyies_);
   }
 }
 
-bool MsgTrajectory::evaluate(double t, uint deriv,
+bool MsgTrajectory::evaluate(double t, uint derr,
                              VecD &out) {  // returns false when out
   out = VecD::Zero(dim_, 1);
   //  out << 0.0,0.0,0.0,0.0;
@@ -54,44 +51,44 @@ bool MsgTrajectory::evaluate(double t, uint deriv,
   // of time range, but still
   // sets out to endpoint
   std::vector<boost::shared_ptr<Poly>> const *poly;
-  int success_counter = 0;
-  for (int dim = 0; dim < dim_; dim++) {
-    if (t < 0) {
-      poly = &derivatives_.at(deriv).front();
-      dt = dts_.at(dim).front();
-      dx = 0.0;
-    } else {
-      // find appropriate section
-      auto dt_it = dts_.at(dim).begin();
-      for (auto &it : derivatives_.at(deriv)) {
-        if (t < *dt_it) {
-          poly = &(it);
-          dt = *dt_it;
-          dx = t / (*dt_it);
-          success_counter++;
-          break;
-        }
-        t -= *dt_it;
+  if (t < 0) {
+    poly = &derrives_.at(derr).front();
+    dt = dts.front();
+    dx = 0.0;
+    success = false;
+  } else {
+    // find appropriate section
+    auto dt_it = dts.begin();
+    seg_number_ = 0;
+    for (auto &it : derrives_.at(derr)) {
+      if (t < *dt_it) {
+        poly = &(it);
+        dt = *dt_it;
+        dx = t / (*dt_it);
+        success = true;
+        break;
+      }
+      t -= *dt_it;
 
-        ++dt_it;
-      }
-      if (success_counter < dim + 1) {
-        poly = &derivatives_.at(deriv).back();
-        dt = dts_.at(dim).back();
-        dx = 1.0;
-      }
+      ++dt_it;
+      ++seg_number_;
     }
-    double ratio = std::pow(1 / dt, double(deriv));
-    out(dim) = ratio * poly->at(dim)->evaluate(dx);
+    if (!success) {
+      poly = &derrives_.at(derr).back();
+      dt = dts.back();
+      dx = 1.0;
+    }
+    success = false;
   }
-  if (success_counter == dim_) success = true;
+  double ratio = std::pow(1 / dt, double(derr));
+  for (int i = 0; i < dim_; i++) out(i) = ratio * poly->at(i)->evaluate(dx);
 
   return success;
 }
 
 double MsgTrajectory::getTotalTime() const {
   double tt = 0.0;
-  for (auto &t : dts_[0]) tt += t;
+  for (auto &t : dts) tt += t;
   return tt;
 }
 
@@ -112,6 +109,8 @@ bool MsgTrajectory::evaluateS(double t, VecD &out) {
   out.block<3, 1>(0, 0) = r5.block<3, 1>(0, 0);
   out.block<3, 1>(3, 0) = P;
 
+  //  std::cout << "Chart of trajm " << q.w() << ", "<< q.x() << ", "<< q.y() <<
+  //  ", "<< q.z()  << std::endl;
   return true;
 }
 bool MsgTrajectory::evaluateST(double t, VecD &out) {

@@ -22,11 +22,12 @@ class MsgTrajectory : public Trajectory {
 
  protected:
   TrajData traj_;
-  std::vector<std::vector<boost::shared_ptr<Poly>>> polys_;
-  std::vector<std::vector<std::vector<boost::shared_ptr<Poly>>>> derivatives_;
-  uint num_segs_;
-  std::vector<std::vector<double>> dts_;
+  std::vector<std::vector<boost::shared_ptr<Poly>>> polyies_;
+  std::vector<std::vector<std::vector<boost::shared_ptr<Poly>>>> derrives_;
+  uint num_secs_;
+  std::vector<double> dts;
   uint deg_;
+  //  int seg;
 };
 
 }  // namespace traj_opt

@@ -12,13 +12,6 @@
 
 	<arg name="record_bag" default="true"/>
 
-  <arg name="poll_period" default="1.0"/>
-
-  <!-- cpu record -->
-  <node pkg="cpu_monitor" name="cpu_monitor" type="monitor.py" output="screen">
-    <param name="poll_period" value="$(arg poll_period)"/>
-  </node>
-  
   <!-- drivers -->
   <include file="$(find real_experiment_launch)/launch/os1_robot_ns.launch">
       <arg name="robot" value="$(arg robot)"/>
@@ -46,36 +39,30 @@
    </include>
  
 
-   <!-- system launch that includes mapper planner state_machine controller state_estimation-->
-  <include file="$(find state_machine_launch)/launch/system_mp.launch">
-    <arg name="onboard_sensing" value="$(arg onboard_sensing)" />
-    <arg name="takeoff_height" value="2.5" />
-    <arg name="mass" value="$(arg mass)" />
-    <arg name="use_lauras" value="false" />
-      <arg name="calibration_file" value="$(find real_experiment_launch)/config/msckf_calib.yaml"/>
-      <arg name="robot" value="$(arg robot)"/>
-      <arg name="output_odom" value="odom"/>
-      <arg name="cam0" value="/ovc/left"/>
-      <arg name="cam1" value="/ovc/right"/>
-      <arg name="robot_frame_id" value="$(arg robot)/base_link"/>
-      <arg name="vio_imu_frame_id" value="$(arg robot)/ovc_camera_link"/>
-      <arg name="imu" value="/ovc/vectornav/imu"/>
-      <arg name="mag" value="/ovc/vectornav/mag"/>
-      <arg name="publish_body_camera_tf" default="false"/>
-      <arg name="lidar_cloud_topic" value="os_cloud_node/points" />
-      <arg name="lidar_frame" value="$(arg robot)/lidar" />
-      <arg name="publish_odom_tf" default="true"/>
-      <arg name="real_robot" value="true"/>
-      <arg name="mapper_config" value="$(arg mapper_config)"/>
-      <arg name="use_motion_primitive" default="true"/>
-  </include>
+   <!-- system launch that includes mapper planner state_machine controller state_estimation -->
+  <!-- <include file="$(find state_machine_launch)/launch/system_mp.launch"> -->
+    <!-- <arg name="onboard_sensing" value="$(arg onboard_sensing)" /> -->
+    <!-- <arg name="takeoff_height" value="3.5" /> -->
+    <!-- <arg name="mass" value="$(arg mass)" /> -->
+    <!-- <arg name="use_lauras" value="false" /> -->
+      <!-- <arg name="calibration_file" value="$(find real_experiment_launch)/config/msckf_calib.yaml"/> -->
+      <!-- <arg name="robot" value="$(arg robot)"/> -->
+      <!-- <arg name="output_odom" value="odom"/> -->
+      <!-- <arg name="cam0" value="/ovc/left"/> -->
+      <!-- <arg name="cam1" value="/ovc/right"/> -->
+      <!-- <arg name="robot_frame_id" value="$(arg robot)/base_link"/> -->
+      <!-- <arg name="vio_imu_frame_id" value="$(arg robot)/ovc_camera_link"/> -->
+      <!-- <arg name="imu" value="/ovc/vectornav"/> -->
+      <!-- <arg name="publish_body_camera_tf" default="false"/> -->
+      <!-- <arg name="lidar_cloud_topic" value="os_cloud_node/points" /> -->
+      <!-- <arg name="lidar_frame" value="$(arg robot)/lidar" /> -->
+      <!-- <arg name="publish_odom_tf" default="true"/> -->
+      <!-- <arg name="real_robot" value="true"/> -->
+      <!-- <arg name="mapper_config" value="$(arg mapper_config)"/> -->
+      <!-- <arg name="use_motion_primitive" default="true"/> -->
+  <!-- </include> -->
 
 
-	 <!-- mavros pixhawk interface -->
-	<include file="$(find px4_interface_launch)/launch/SO3_command_to_mavros.launch">
-		<arg name="robot" value="$(arg robot)"/>
-		<arg name="odom" value="$(arg odom_topic)"/>
-	</include>
 
 	 <!-- throttle map and odom topics-->
 	<include file="$(find real_experiment_launch)/launch/throttle_map_odom.launch">

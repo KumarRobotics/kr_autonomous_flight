@@ -9,6 +9,7 @@
 	<!-- Don't need to specify lidar_frame for simulation, will use whatever frame point cloud lies in -->
 	<arg name="lidar_frame" default=""/>
 	<arg name="lidar_cloud_topic" default="lidar"/>
+    <arg name="mag" default="mag"/>
 
     <arg name="depth_cam" default="DepthCamera"/>
     <arg name="use_motion_primitive" default="true"/>
@@ -43,6 +44,7 @@
 			<arg name="cam0" value="$(arg cam0)"/>
 			<arg name="cam1" value="$(arg cam1)"/>
 			<arg name="imu" value="$(arg imu)"/>
+			<arg name="mag" value="$(arg mag)"/>
 			<arg name="output_odom" value="$(arg output_odom)"/>
 			<arg name="robot_frame_id" value="$(arg robot_frame_id)"/>
 			<arg name="calibration_file" value="$(arg calibration_file)"/>		

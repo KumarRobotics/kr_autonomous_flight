@@ -8,10 +8,12 @@
   /tf_static
   /quadrotor/local_plan_server/traj
   /quadrotor/global_plan_server/path 
+  /quadrotor/local_global_replan_server/local_global_server/global_path_wrt_map  
   /rosout
   /rosout_agg
   /quadrotor/image_processor/debug_stereo_image/compressed
-  /quadrotor/mapper/global_voxel_map_throttled
+    /quadrotor/mapper/global_voxel_map_throttled
+    /graph_slam/raw_drifted_vio
   /quadrotor/mapper/local_voxel_map_throttled
   /quadrotor/odom
   /ublox/fix
@@ -22,11 +24,95 @@
   /ovc/left/image_raw
   /ovc/right/camera_info
   /ovc/right/image_raw   
-  /ovc/vectornav
+  /ovc/rgb/camera_info
+  /ovc/rgb/image_compressed/compressed
+  /ovc/rgb/image_compressed/compressed/parameter_descriptions
+  /ovc/rgb/image_compressed/compressed/parameter_updates
+  /ovc/rgb/image_metadata
+  /ovc/vectornav/imu
+  /ovc/vectornav/mag
   /ovc/imu
   /quadrotor/so3_control/cmd_viz
+  /quadrotor/position_cmd
   /quadrotor/local_plan_server/expanded_cloud
   /diagnostics
+  /graph_slam/landmarks
+  /graph_slam/odom
+  /graph_slam/pose
+  /graph_slam/submap
+  /graph_slam/trajectory
+  /sloam/debug/obs_tree_features
+  /sloam/map_pose
+  /cpu_monitor/cpu_monitor/cpu
+  /cpu_monitor/cpu_monitor/mem
+  /cpu_monitor/init_map_map_transform_pub/cpu
+  /cpu_monitor/init_map_map_transform_pub/mem
+  /cpu_monitor/init_map_world_transform_pub/cpu
+  /cpu_monitor/init_map_world_transform_pub/mem
+  /cpu_monitor/init_odom_map_transform_pub/cpu
+  /cpu_monitor/init_odom_map_transform_pub/mem
+  /cpu_monitor/os_node/cpu
+  /cpu_monitor/os_node/mem
+  /cpu_monitor/quadrotor/debug_stereo_throttler/cpu
+  /cpu_monitor/quadrotor/debug_stereo_throttler/mem
+  /cpu_monitor/quadrotor/fla_ukf/cpu
+  /cpu_monitor/quadrotor/fla_ukf/mem
+  /cpu_monitor/quadrotor/global_map_throttler/cpu
+  /cpu_monitor/quadrotor/global_map_throttler/mem
+  /cpu_monitor/quadrotor/global_plan_server/cpu
+  /cpu_monitor/quadrotor/global_plan_server/mem
+  /cpu_monitor/quadrotor/image_processor/cpu
+  /cpu_monitor/quadrotor/image_processor/mem
+  /cpu_monitor/quadrotor/local_global_replan_server/cpu
+  /cpu_monitor/quadrotor/local_global_replan_server/mem
+  /cpu_monitor/quadrotor/local_map_throttler/cpu
+  /cpu_monitor/quadrotor/local_map_throttler/mem
+  /cpu_monitor/quadrotor/local_plan_server/cpu
+  /cpu_monitor/quadrotor/local_plan_server/mem
+  /cpu_monitor/quadrotor/mapper/cpu
+  /cpu_monitor/quadrotor/mapper/mem
+  /cpu_monitor/quadrotor/mav_services/cpu
+  /cpu_monitor/quadrotor/mav_services/mem
+  /cpu_monitor/quadrotor/mavros/cpu
+  /cpu_monitor/quadrotor/mavros/mem
+  /cpu_monitor/quadrotor/odom_throttler/cpu
+  /cpu_monitor/quadrotor/odom_throttler/mem
+  /cpu_monitor/quadrotor/os_cloud_node/cpu
+  /cpu_monitor/quadrotor/os_cloud_node/mem
+  /cpu_monitor/quadrotor/quadrotor_manager_control/cpu
+  /cpu_monitor/quadrotor/quadrotor_manager_control/mem
+  /cpu_monitor/quadrotor/relay_imu/cpu
+  /cpu_monitor/quadrotor/relay_imu/mem
+  /cpu_monitor/quadrotor/relay_lidar/cpu
+  /cpu_monitor/quadrotor/relay_lidar/mem
+  /cpu_monitor/quadrotor/so3_control/cpu
+  /cpu_monitor/quadrotor/so3_control/mem
+  /cpu_monitor/quadrotor/so3cmd_to_mavros/cpu
+  /cpu_monitor/quadrotor/so3cmd_to_mavros/mem
+  /cpu_monitor/quadrotor/trackers_manager/cpu
+  /cpu_monitor/quadrotor/trackers_manager/mem
+  /cpu_monitor/quadrotor/vio/cpu
+  /cpu_monitor/quadrotor/vio/mem
+  /cpu_monitor/quadrotorbody_lidar_tf/cpu
+  /cpu_monitor/quadrotorbody_lidar_tf/mem
+  /cpu_monitor/quadrotorbody_ovc_tf/cpu
+  /cpu_monitor/quadrotorbody_ovc_tf/mem
+  /cpu_monitor/recorder/cpu
+  /cpu_monitor/recorder/mem
+  /cpu_monitor/rosout/cpu
+  /cpu_monitor/rosout/mem
+  /cpu_monitor/total_active_mem
+  /cpu_monitor/total_available_mem
+  /cpu_monitor/total_buffers_mem
+  /cpu_monitor/total_cached_mem
+  /cpu_monitor/total_cpu
+  /cpu_monitor/total_free_mem
+  /cpu_monitor/total_inactive_mem
+  /cpu_monitor/total_shared_mem
+  /cpu_monitor/total_slab_mem
+  /cpu_monitor/total_used_mem
+  /cpu_monitor/ublox/cpu
+  /cpu_monitor/ublox/mem
     "
     output="screen"/>
 </launch>

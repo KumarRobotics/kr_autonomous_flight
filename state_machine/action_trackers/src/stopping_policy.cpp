@@ -23,6 +23,7 @@ class StoppingPolicy : public kr_trackers_manager::Tracker {
 
  private:
   bool active_{false};
+  bool odom_first_call_{true};
   double j_xy_des_, a_xy_des_, j_z_des_, a_z_des_, a_yaw_des_;
   double prev_duration_;
   // record the lastest cmd calculated in stopping policy
@@ -69,9 +70,11 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
 
     j0_ << cmd->jerk.x, cmd->jerk.y, cmd->jerk.z, 0.0;
     cmd_jrk_ = j0_;
-    t0_ = cmd->header.stamp;
+    // t0_ = cmd->header.stamp;
     active_ = true;
     ROS_WARN("Stopping policy activated!");
+    // IMPORTANT: resetting odom_first_call_ flag to make sure duration starts from 0
+    odom_first_call_ = true;
     ROS_WARN_STREAM("vx:" << cmd->velocity.x << "vy:" << cmd->velocity.y
                           << "vz:" << cmd->velocity.z);
     return true;
@@ -82,20 +85,34 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
   return false;
 }
 
-void StoppingPolicy::Deactivate() { active_ = false; }
+void StoppingPolicy::Deactivate() { active_ = false;
+   ROS_INFO("Stopping policy deactivated");
+  }
 
 PositionCommand::ConstPtr StoppingPolicy::update(
     const nav_msgs::Odometry::ConstPtr &msg) {
-  ros::Time stamp = msg->header.stamp;
-  double duration = (stamp - t0_).toSec();
-  double dt = duration - prev_duration_;
-  prev_duration_ = duration;
-
+  // this function is called whenever there's odometry msg, even if stopping policy is deactivated
   if (!active_) {
     // return empty command, otherwise it will conflict with existing position
     // commands
     return PositionCommand::Ptr();
   }
+
+
+  ros::Time stamp = msg->header.stamp;
+  if (odom_first_call_) {
+  ROS_INFO_STREAM("This is stopping first call, duration is reset as 0!");
+   t0_ = stamp;
+   odom_first_call_ = false;
+  }   
+
+  double duration = (stamp - t0_).toSec();
+  if (duration >= 2.0) {
+      ROS_INFO_THROTTLE(1, "It has been %f seconds since the triggering of stopping policy.", duration);
+  }
+  // ROS_INFO_STREAM("Stopping policy duration is:"<<duration<<"start time is:"<<t0_);
+  double dt = duration - prev_duration_;
+  prev_duration_ = duration;
 
   // a_des_abs and j_des_abs are absolute values of acceleration and jerk
   double a_des_abs, j_des_abs, deacc_time, a0, new_cmd_jrk_1d, new_cmd_acc_1d,
@@ -195,9 +212,10 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     if (duration < 0) {
       ROS_ERROR_STREAM("[StoppingPolicy:] duration is negative:"
                        << duration << ", this is not correct!");
+      ROS_ERROR_STREAM("[StoppingPolicy:] duration is negative, investigate into this!!!");
     }
 
-    if (duration >= 0 && duration < t_phase1 + t_phase2 + t_phase3) {
+    if ((duration >= 0) && (duration < (t_phase1 + t_phase2 + t_phase3))) {
       // For different phases we have different cmd_jrk
       if (duration < t_phase1) {
         // phase 1: increase |acceleration|, cmd_jrk should be -v0_dir

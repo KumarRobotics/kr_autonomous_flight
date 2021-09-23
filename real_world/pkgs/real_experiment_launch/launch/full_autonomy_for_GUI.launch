@@ -90,7 +90,7 @@
 
   <!-- bag record  -->
 	<group if="$(arg record_bag)"> 
-   <include file="$(find real_experiment_launch)/launch/record_bag.launch">
+   <include file="$(find real_experiment_launch)/launch/record_bag_for_GUI.launch">
    </include>
   </group>
 

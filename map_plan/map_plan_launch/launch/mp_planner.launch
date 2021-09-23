@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
   <!-- use nice to set low priority for planner -->
-  <arg name="prefix" value="nice -n 1"/>
+  <arg name="prefix" value="nice -n 2"/>
   <arg name="odom" default="odom"/>
   <arg name="use_lauras" default="false"/>
   <arg name="planner_config" default="$(find control_launch)/config/tracker_params_mp.yaml"/>

@@ -12,7 +12,7 @@
 
         <param name="grid_row" value="5"/>
         <param name="grid_col" value="6"/>
-        <param name="grid_min_feature_num" value="2"/>
+        <param name="grid_min_feature_num" value="1"/>
         <param name="grid_max_feature_num" value="3"/>
         <param name="pyramid_levels" value="3"/>
         <param name="patch_size" value="15"/>

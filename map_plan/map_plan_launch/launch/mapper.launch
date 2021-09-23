@@ -7,8 +7,7 @@
     <arg name="lidar_frame" default=""/>
     <arg name="real_robot" default="false"/>
     <arg name="mapper_config"/>
-    <!-- <arg name="prefix" value="nice -n 1"/> -->
-    <arg name="prefix" value=""/>
+    <arg name="prefix" value="nice -n 1"/>
 
     <arg name="debug" default="true"/>
     <env if="$(arg debug)" name="ROSCONSOLE_CONFIG_FILE" value="$(find mapper)/launch/debug.conf"/>

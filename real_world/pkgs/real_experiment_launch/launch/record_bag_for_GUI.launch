@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="dir" default="/home/dcist/bags/falcon_forest"/>
+  <node pkg="rosbag" type="record" name="recorder" args="
+  -o $(arg dir)
+  /quadrotor/vio/odom
+  /tf
+  /tf_static
+  /rosout
+  /rosout_agg
+    /graph_slam/raw_drifted_vio
+  /quadrotor/odom
+  /ublox/fix
+  /ublox/fix_velocity
+  /os_node/imu_packets
+  /os_node/lidar_packets
+  /ovc/vectornav/imu
+  /ovc/vectornav/mag
+  /ovc/imu
+  /diagnostics
+    "
+    output="screen"/>
+</launch>

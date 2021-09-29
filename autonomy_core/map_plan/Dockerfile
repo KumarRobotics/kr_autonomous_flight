@@ -9,7 +9,7 @@ RUN apt update \
 
 RUN mkdir -p /root/map_plan_ws/src
 WORKDIR /root/map_plan_ws
-COPY map_plan/ src/
+COPY autonomy_core/map_plan/ src/
 
 RUN catkin init && catkin config --extend /root/control_ws/devel
 # RUN vcs import --input src/external-repos.yaml src/

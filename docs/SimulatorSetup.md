@@ -30,10 +30,7 @@ If you are a developer who will make changes to this code stack, building from s
         ```
         mkdir -p /path/to/your_code_directory
         cd /path/to/your_code_directory
-        vcs import < /path/to/autonomy_stack/calibration/external-repos.yaml
-        vcs import < /path/to/autonomy_stack/control/external-repos.yaml
-        vcs import < /path/to/autonomy_stack/estimation/external-repos.yaml
-        vcs import < /path/to/autonomy_stack/map_plan/external-repos.yaml
+        vcs import < /path/to/autonomy_stack/external.yaml
         vcs pull
         ```
     2. **Create symbolic links between the simulator and your repo**:

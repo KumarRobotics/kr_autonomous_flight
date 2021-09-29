@@ -1,0 +1,32 @@
+<launch>
+    <arg name="debug" default="true"/>
+    <env if="$(arg debug)" name="ROSCONSOLE_CONFIG_FILE" value="$(find fake_lidar)/launch/debug.conf"/>
+    <env name="GLOG_logtostderr" value="1"/>
+
+    <arg name="robot" default="/quadrotor"/>
+    <arg name="camera" default="DepthCamera"/>
+    <arg name="start_delay" default="0"/>
+    <arg name="save_as_images" default="false"/>
+    <arg name="save_path_prefix" default="/home/sam/Desktop/range_images"/>
+    <arg name="save_image_interval" default="2"/>
+
+
+    <node pkg="fake_lidar" type="fake_lidar_node" name="fake_lidar" output="screen" ns="$(arg robot)" launch-prefix="bash -c 'sleep $(arg start_delay); $0 $@'">
+        <remap from="~image1" to="$(arg camera)1/image_raw"/>
+        <remap from="~cinfo1" to="$(arg camera)1/camera_info"/>
+        <remap from="~semantic1" to="$(arg camera)1/semantic_image"/>
+        <remap from="~image2" to="$(arg camera)2/image_raw"/>
+        <remap from="~cinfo2" to="$(arg camera)2/camera_info"/>
+        <remap from="~semantic2" to="$(arg camera)2/semantic_image"/>
+        <remap from="~image3" to="$(arg camera)3/image_raw"/>
+        <remap from="~cinfo3" to="$(arg camera)3/camera_info"/>
+        <remap from="~semantic3" to="$(arg camera)3/semantic_image"/>
+        <remap from="~image4" to="$(arg camera)4/image_raw"/>
+        <remap from="~cinfo4" to="$(arg camera)4/camera_info"/>
+        <remap from="~semantic4" to="$(arg camera)4/semantic_image"/>
+        <rosparam command="load" file="$(find fake_lidar)/launch/os1-64.yaml"/>
+        <param name="save_as_images" value="$(arg save_as_images)" />
+        <param name="save_path_prefix" value="$(arg save_path_prefix)" />
+        <param name="save_image_interval" value="$(arg save_image_interval)" />
+    </node>
+</launch>

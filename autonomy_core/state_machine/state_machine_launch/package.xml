@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package>
+    <name>state_machine_launch</name>
+    <version>0.0.0</version>
+    <description>The state_machine_launch package</description>
+
+    <maintainer email="liuxu@seas.upenn.edu">Xu Liu</maintainer>
+    <maintainer email="quchao@seas.upenn.edu">Chao Qu</maintainer>
+
+    <license>Penn</license>
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <export>
+    </export>
+</package>

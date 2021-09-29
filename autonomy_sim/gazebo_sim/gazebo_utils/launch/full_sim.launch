@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+  <arg name="robot_name" default="quadrotor" />  
+  <arg name="robot_base_link" default="$(arg robot_name)/base_link"/>
+  <arg name="lidar_frame" default="os1_lidar"/>
+
+  <arg name="mass" default="1.83" /> 
+  <arg name="lidar_cloud_topic" default="/falcon4/os1_cloud_node/points" />
+  <arg name="gt_odom" default="ground_truth/odom"/>  
+
+  <arg name="launch_sim" default="true"/>
+  <arg name="world_model" default="forest1"/>
+  <arg name="x" default="-20"/>
+  <arg name="y" default="-20"/>
+  <arg name="z" default="1.0"/>
+  <arg name="yaw" default="-0.0"/>
+  <arg name="gains_file" default="$(find gazebo_utils)/config/falcon4_os1_so3_gains.yaml"/>
+
+  <include if="$(arg launch_sim)"
+    file="$(find gazebo_utils)/launch/simulation.launch">
+    <arg name="odom" value="$(arg gt_odom)"/>  
+    <arg name="robot" value="$(arg robot_name)"/>
+    <arg name="world_model" value="$(arg world_model)"/>
+    <arg name="x" value="$(arg x)"/>
+    <arg name="y" value="$(arg y)"/>
+    <arg name="z" value="$(arg z)"/>
+    <arg name="yaw" value="$(arg yaw)"/>
+  </include>
+
+
+
+  <!-- publishes tfs -->
+  <group ns="$(arg robot_name)">
+      #### robot/map to map ####
+      #### (need this because other modules use robot/map as map_frame_id) ####
+      <node pkg="tf2_ros" type="static_transform_publisher"
+        name="$(arg robot_name)_map_map_tf"
+        args="0.0 0.0 0.0 0.0 0.0 0.0 $(arg robot_name)/map map"/>
+
+      #### map to robot ####
+      <node name="$(arg robot_name)_odom_to_tf"
+        pkg="mrsl_quadrotor_utils"
+        type="msg_to_tf"
+        output="screen">
+        <remap from="~msg" to="odom"/>
+      </node>
+
+      #### robot_base_link to robot ####
+      #### (need this because other modules use robot_name as robot_frame_id) ####
+      <node pkg="tf2_ros" type="static_transform_publisher"
+        name="$(arg robot_name)_base_link_tf"
+        args="0.0 0.0 0.0 0.0 0.0 0.0 $(arg robot_base_link) $(arg robot_name)"/>
+
+      #### robot to lidar ####
+      <node pkg="tf2_ros" type="static_transform_publisher"
+        name="$(arg robot_name)_lidar_tf"
+        args="0.0 0.0 0.1 0.0 0.0 0.0 $(arg robot_name) $(arg lidar_frame)"/>
+  </group>
+
+
+  <include file="$(find state_machine_launch)/launch/system_mp.launch">
+    <arg name="robot" value="$(arg robot_name)" />
+    <arg name="lidar_cloud_topic" value="$(arg lidar_cloud_topic)" />
+    <arg name="mass" value="$(arg mass)" />
+    <arg name="takeoff_height" value="3" />
+    <arg name="gains_file" value="$(arg gains_file)"/>
+  </include>
+
+  <include file="$(find client_launch)/launch/client.launch">
+    <arg name="robot" value="$(arg robot_name)" />
+  </include>
+
+</launch>

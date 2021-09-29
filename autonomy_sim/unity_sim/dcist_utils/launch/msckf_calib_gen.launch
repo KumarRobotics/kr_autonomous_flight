@@ -1,0 +1,16 @@
+<launch>
+    <arg name="robot" default="quadrotor"/>
+
+    <arg name="cam0" default="cam_left"/>
+    <arg name="cam1" default="cam_right"/>
+    <arg name="imu" default="imu"/>
+    <arg name="output" default="$(find dcist_utils)/config/msckf_calib_auto_generated.yaml"/>
+
+    <node pkg="dcist_utils" type="msckf_calib_gen" name="msckf_calib_gen" output="screen" ns="$(arg robot)">
+        <param name="output" type="str" value="$(arg output)"/>
+
+        <remap from="~cam0/camera_info" to="$(arg cam0)/camera_info"/>
+        <remap from="~cam1/camera_info" to="$(arg cam1)/camera_info"/>
+        <remap from="~imu" to="$(arg imu)"/>
+    </node>
+</launch>

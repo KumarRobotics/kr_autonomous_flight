@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>real_experiment_launch</name>
+  <version>0.0.0</version>
+  <description>The real_experiment_launch package</description>
+
+  <maintainer email="liuxu@seas.upenn.edu">Xu Liu</maintainer>
+  <maintainer email="fclad@seas.upenn.edu">Fernando Cladera</maintainer>
+  <maintainer email="quchao@seas.upenn.edu">Chao Qu</maintainer>
+
+  <license>UPenn</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <export>
+  </export>
+</package>

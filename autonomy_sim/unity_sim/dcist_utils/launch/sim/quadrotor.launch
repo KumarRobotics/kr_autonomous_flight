@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<launch>
+    <arg name="robot"/>
+
+    <!-- x corresponds to z in Unity simulator, y corresponds to -x, z corresponds to y -->
+    <arg name="x" default="50.0"/>
+    <arg name="y" default="-30.0"/>
+    <arg name="z" default="5.0"/>
+
+    <arg name="cam_width" default="480"/>
+    <arg name="cam_height" default="320"/>
+    <arg name="semantic_width" default="480"/>
+    <arg name="semantic_height" default="320"/>
+    <arg name="stereo_frame_rate" default="20"/>
+
+    <!-- depth camera also has semantic feature, which will have the same width and height as depth image-->
+    <!-- <arg name="depth_width" default="256"/> -->
+    <!-- <arg name="depth_height" default="160"/> -->
+    <arg name="depth_width" default="512"/>
+    <arg name="depth_height" default="280"/>
+    <!-- <arg name="depth_width" default="1200"/> -->
+    <!-- <arg name="depth_height" default="720"/> -->
+    <arg name="depth_frame_rate" default="5"/>
+    <arg name="use_enhanced_yaml" default="true"/>
+    <!-- depth and semantic segmentation range, should not exceed 65 (i.e. 65000 mm) to prevent overflow since it's 16-bit image type-->
+    <arg name="depth_range" default="50"/> 
+    <arg name="semantic_range" default="20"/>
+
+    <arg name="description" default="$(find arl_unity_ros_air)/config/quadrotor_yaml.yaml"/>
+
+    <!-- Skip spawn robot launch to get mavlink_port argument available to rosparam -->
+    <arg name="unity_namespace" default="Simulation/"/>
+    <rosparam ns="spawn" file="$(arg description)" subst_value="true"/>
+
+    <node pkg="arl_unity_ros" type="spawn_yaml_robot.py" name="spawn_yaml_$(arg robot)" output="screen">
+        <rosparam command="load" file="$(arg description)" subst_value="true" if="$(arg use_enhanced_yaml)"/>
+    </node>
+
+    <!-- <node pkg="arl_unity_ros" type="spawn_robot.py" name="spawn_$(arg robot)" output="screen"> -->
+        <!-- <rosparam command="load" file="$(arg description)" subst_value="true" unless="$(arg use_enhanced_yaml)"/> -->
+    <!-- </node> -->
+</launch>

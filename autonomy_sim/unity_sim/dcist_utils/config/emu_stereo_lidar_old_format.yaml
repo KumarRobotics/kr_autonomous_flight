@@ -1,0 +1,9 @@
+commands:
+  - "$(arg unity_namespace)Spawner spawn Quadrotor $(arg robot) $(arg x) $(arg y) $(arg z) 0 0 0"
+  - "$(arg unity_namespace)Spawner spawn MonoCamera cam_left 0.1 0.1 0.0 0 0 0 $(arg robot)"
+  - "$(arg robot)/cam_left configure width:$(arg cam_width) height:$(arg cam_height)"
+  - "$(arg unity_namespace)Spawner spawn MonoCamera cam_right 0.1 -0.1 0.0 0 0 0 $(arg robot)"
+  - "$(arg robot)/cam_right configure width:$(arg cam_width) height:$(arg cam_height)"
+  - "$(arg unity_namespace)Spawner spawn IMU imu 0 0 0 0 0 0 $(arg robot)"
+  - "$(arg unity_namespace)Spawner spawn Lidar3D lidar 0.0 0.0 0.05 0 0 0 $(arg robot)"
+  - "$(arg robot)/lidar configure verticalBeams:32 horizontalBeams:1024"

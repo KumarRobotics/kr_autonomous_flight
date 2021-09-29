@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<launch>
+    <arg name="robot" default="quadrotor"/>
+    <arg name="launch_unity" default="true"/>
+	  <arg name="odom" default="/unity_command/ground_truth/$(arg robot)/odom"/>
+  	<!-- <arg name="odom" default="/unity_command/$(arg robot)/TrueState/odom"/> -->
+    <!-- <arg name="odom" default="ukf_odom"/> -->
+    
+    <!-- those should be passed in from full_sim -->  
+    <arg name="param_file" default=""/>
+    <arg name="x" default="0.0"/>
+    <arg name="y" default="0.0"/>
+    <arg name="z" default="0.0"/>
+
+    <!-- launches the unity ros simulator -->
+    <include file="$(find arl_unity_ros)/launch/simulator.launch"> 
+      <arg name="param_file" value="$(arg param_file)" />
+      <arg name="launch_unity" value="$(arg launch_unity)"/>
+    </include>
+
+
+    <!-- spawns a quadrotor  -->
+    <include file="$(find dcist_utils)/launch/sim/quadrotor.launch">
+        <arg name="use_enhanced_yaml" value="true"/> 
+	    <arg name="robot" value="$(arg robot)"/>
+        <arg name="description" value="$(find dcist_utils)/config/emu_stereo_lidar.yaml"/>
+        <arg name="x" value="$(arg x)"/>
+        <arg name="y" value="$(arg y)"/>
+        <arg name="z" value="$(arg z)"/>
+    </include>
+
+    <!-- launches rosflight and quadrotor_control related nodes, need to provide odom -->
+    <group ns="$(arg robot)">
+        <include file="$(find dcist_utils)/launch/rosflight.launch">
+        </include>
+
+        <include file="$(find dcist_utils)/launch/rosflight_interface.launch">
+        </include>
+
+        <node pkg="tf2_ros" type="static_transform_publisher" name="tf_map_odom" args="0 0 0 0 0 0 $(arg robot)/map $(arg robot)/odom"/>
+
+        <!-- publishes tf_world_map -->
+        <include file="$(find dcist_utils)/launch/odom2tf.launch">
+            <arg name="odom" value="$(arg odom)"/>
+            <arg name="robot" value="$(arg robot)"/>
+        </include>
+    </group>
+</launch>

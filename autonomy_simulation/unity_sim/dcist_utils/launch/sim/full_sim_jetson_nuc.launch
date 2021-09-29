@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+
+  <arg name="takeoff_node_start_delay" default="15.0" />  
+  <arg name="robot" default="quadrotor" />  
+  <arg name="use_lauras" default="false" />
+  <arg name="launch_unity" default="true" />
+    
+  <!-- If use onboard sensing, set it to be true and set odom to be ukf_odom /> -->
+  <arg name="onboard_sensing" default="true"/>
+  <arg name="odom" value="/unity_command/ground_truth/$(arg robot)/odom" unless="$(arg onboard_sensing)"/>
+  <arg name="odom" value="ukf_odom" if="$(arg onboard_sensing)"/>
+  
+  <!-- Choose the environment -->
+  <!-- <arg name="param_file" value="$(find arl_unity_ros)/config/polypixel.yaml"/> -->
+  <arg name="param_file" default="$(find arl_unity_ros)/config/overpasscity.yaml"/>
+  <!-- <arg name="param_file" default="$(find arl_unity_ros)/config/floodedgrounds.yaml"/> -->
+  <!-- <arg name="param_file" default="$(find arl_unity_ros)/config/basic_environment.yaml"/> -->
+  <arg name="x" default="2.0"/>
+  <arg name="y" default="2.0"/>
+  <arg name="z" default="1.0"/>
+
+  <include file="$(find dcist_utils)/launch/sim/sim_quad.launch">
+    <arg name="robot" value="$(arg robot)" />
+    <arg name="odom" value="$(arg odom)" />
+    <arg name="launch_unity" value="$(arg launch_unity)" />
+    <arg name="param_file" value="$(arg param_file)" />
+    <arg name="x" value="$(arg x)"/>
+    <arg name="y" value="$(arg y)"/>
+    <arg name="z" value="$(arg z)"/>
+  </include>
+
+  <include file="$(find client_launch)/launch/client.launch">
+    <arg name="robot" value="$(arg robot)" />
+  </include>
+
+  <node name="robot" pkg="arl_unity_ros_air" type="rosflight_offboard.py" ns="$(arg robot)" output="screen" launch-prefix="bash -c 'sleep $(arg takeoff_node_start_delay); $0 $@' " />
+</launch>

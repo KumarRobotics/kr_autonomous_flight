@@ -1,0 +1,65 @@
+$(arg robot):
+    type: Quadrotor
+    position: {x: $(arg x), y: $(arg y), z: $(arg z)}
+    orientation: {r: 0, p: 0, y: 0}
+    sensors:
+        cam_left: 
+            topic: cam_left/image_raw
+            type: RGBCamera
+            position: {x: 0.1, y: 0.1, z: 0.0}
+            orientation: {r: 0, p: 0, y: 0}
+            configure:
+              width: $(arg cam_width) 
+              height: $(arg cam_height)
+              farClipPlane: 60
+              targetFrameRate: $(arg stereo_frame_rate)
+            features:
+              detection:
+                 type: ObjectDetection
+                 topic: cam_left/detection
+              semantic_camera:
+                 topic: cam_left/semantic_image
+                 type: SemanticCamera
+                 configure:
+                   width: $(arg semantic_width) 
+                   height: $(arg semantic_height)
+                   farClipPlane: 15
+                   targetFrameRate: $(arg stereo_frame_rate)
+        cam_right: 
+            topic: cam_right/image_raw
+            type: RGBCamera
+            position: {x: 0.1, y: -0.1, z: 0.0}
+            orientation: {r: 0, p: 0, y: 0}
+            configure:
+              width: $(arg cam_width) 
+              height: $(arg cam_height)
+              farClipPlane: 60
+              targetFrameRate: $(arg stereo_frame_rate)
+            features:
+              detection:
+                 type: ObjectDetection
+                 topic: cam_right/detection
+              semantic_camera:
+                 topic: cam_right/semantic_image
+                 type: SemanticCamera
+                 configure:
+                   width: $(arg semantic_width) 
+                   height: $(arg semantic_height)
+                   farClipPlane: 15
+                   targetFrameRate: $(arg stereo_frame_rate)
+        lidar:
+            topic: lidar
+            type: Lidar3D
+            position: {x: 0, y: 0, z: 0.1}
+            orientation: {r: 0, p: 0, y: 0}
+            configure:
+                verticalBeams: 64
+                horizontalBeams: 512
+                minVerticalAngle: -30.0
+                maxVerticalAngle: 30.0
+                maxRange: 100.0
+        imu:
+            topic: imu
+            type: Imu
+            position: {x: 0, y: 0, z: 0}
+            orientation: {r: 0, p: 0, y: 0}

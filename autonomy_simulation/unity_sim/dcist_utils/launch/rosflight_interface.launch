@@ -1,0 +1,12 @@
+<launch>
+    <arg name="max_prop_force" default="7"/>
+    <node pkg="nodelet" type="nodelet" args="standalone kr_rosflight_interface/SO3CmdToRosflight" name="so3cmd_to_rosflight" required="true" clear_params="true" output="screen">
+        <param name="num_props" value="4"/>
+        <param name="max_prop_force" value="$(arg max_prop_force)"/>
+
+        <remap from="~odom" to="odom"/>
+        <remap from="~so3_cmd" to="so3_cmd"/>
+        <remap from="~imu" to="rosflight/imu/data" />
+        <remap from="~command" to="rosflight/command" />
+    </node>
+</launch>

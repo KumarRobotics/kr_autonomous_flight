@@ -1,0 +1,20 @@
+<launch>
+    <arg name="manager" default="/depth_proc_manager"/>
+    <arg name="camera_info" default="camera_info"/>
+    <arg name="image_raw_input" default="image_raw"/>
+    <arg name="image_rect_input" default="image_rect"/>
+    <arg name="convert_metric" default="true"/>
+    <arg name="camera"/>
+
+    <group ns="$(arg camera)">
+        <node pkg="nodelet" type="nodelet" name="convert_metric" args="load depth_image_proc/convert_metric $(arg manager)" output="screen" if="$(arg convert_metric)">
+            <remap from="image_raw" to="$(arg image_raw_input)"/>
+            <remap from="image" to="$(arg image_rect_input)"/>
+        </node>
+
+        <node pkg="nodelet" type="nodelet" name="point_cloud_xyz" args="load depth_image_proc/point_cloud_xyz $(arg manager)" output="screen">
+            <remap from="camera_info" to="$(arg camera_info)"/>
+            <remap from="image_rect" to="$(arg image_rect_input)"/>
+        </node>
+    </group>
+</launch>

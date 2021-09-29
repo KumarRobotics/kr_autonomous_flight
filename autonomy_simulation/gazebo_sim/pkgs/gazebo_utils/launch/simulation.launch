@@ -1,0 +1,49 @@
+<launch>
+  <arg name="gazebo_gui" default="true"/>
+  <arg name="robot" default="$(optenv FLA_ROBOT fla)"/>
+  <arg name="robot_frame" default="$(arg robot)/base_link"/>
+  <arg name="world_model" default="$(optenv FLA_ENV D60)"/>
+  <arg name="world_frame" default="map"/>
+  <arg name="odom" default="ground_truth/odom"/>  
+  <arg name="x" default="0.5"/>
+  <arg name="y" default="0.5"/>
+  <arg name="z" default="0"/>
+  <arg name="yaw" default="0.0"/>
+
+  <include file="$(find mrsl_quadrotor_launch)/launch/gazebo.launch">
+    <arg name="world" value="$(arg world_model)"/>
+    <arg name="gui" value="$(arg gazebo_gui)"/>
+  </include>
+
+  <group ns="$(arg robot)">
+    <node pkg="mrsl_quadrotor_utils"
+      type="change_header"
+      name="change_header"
+      output="screen">
+      <remap from="~odom_in" to="$(arg odom)"/>
+      <remap from="~odom_out" to="raw_odom"/>
+      <param name="robot_frame" value="$(arg robot_frame)"/>
+      <param name="world_frame" value="$(arg world_frame)"/>
+    </node>
+
+    <node pkg="mrsl_quadrotor_utils"
+      type="change_odom"
+      name="change_odom">
+      <remap from="~odom_in" to="raw_odom"/>
+      <remap from="~odom_out" to="odom"/>
+      <param name="dt_thr" value="0.5"/>
+    </node>
+  </group>
+
+  ###### spawn robot in gazebo #######
+  <include file="$(find mrsl_quadrotor_launch)/launch/spawn.launch">
+    <arg name="mav_name" value="$(arg robot)"/>
+    <arg name="mav_type" value="falcon4_os1"/>
+    <arg name="x" value="$(arg x)"/>
+    <arg name="y" value="$(arg y)"/>
+    <arg name="z" value="$(arg z)"/>
+    <arg name="Y" value="$(arg yaw)"/>
+  </include>
+
+
+</launch>

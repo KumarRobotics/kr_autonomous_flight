@@ -1,0 +1,36 @@
+<launch>
+    <arg name="debug" default="false"/>
+    <env if="$(arg debug)" name="ROSCONSOLE_CONFIG_FILE" value="$(find fake_lidar)/launch/debug.conf"/>
+    <env name="GLOG_logtostderr" value="1"/>
+
+    <arg name="robot" default="quadrotor"/>
+    <arg name="camera" default="DepthCamera"/>
+    <arg name="par" default="false"/>
+
+    <node pkg="nodelet" type="nodelet" name="depth_proc_manager" args="manager"/>
+
+    <include file="$(find fake_lidar)/launch/depth2cloud.launch">
+        <arg name="camera" value="$(arg robot)/$(arg camera)1"/>
+    </include>
+
+    <include file="$(find fake_lidar)/launch/depth2cloud.launch">
+        <arg name="camera" value="$(arg robot)/$(arg camera)2"/>
+    </include>
+
+    <include file="$(find fake_lidar)/launch/depth2cloud.launch">
+        <arg name="camera" value="$(arg robot)/$(arg camera)3"/>
+    </include>
+
+    <include file="$(find fake_lidar)/launch/depth2cloud.launch">
+        <arg name="camera" value="$(arg robot)/$(arg camera)4"/>
+    </include>
+
+    <node pkg="fake_lidar" type="fake_lidar_node2" name="fake_lidar" output="screen" ns="$(arg robot)">
+        <remap from="~points1" to="$(arg camera)1/points"/>
+        <remap from="~points2" to="$(arg camera)2/points"/>
+        <remap from="~points3" to="$(arg camera)3/points"/>
+        <remap from="~points4" to="$(arg camera)4/points"/>
+
+        <param name="parallel" type="bool" value="$(arg par)"/>
+    </node>
+</launch>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<launch>
+    <arg name="robot" default="quadrotor"/>
+    <group ns="$(arg robot)">
+        <node pkg="rqt_robot_steering" type="rqt_robot_steering" name="quadrotor_vel_control"/>
+    </group>
+</launch>

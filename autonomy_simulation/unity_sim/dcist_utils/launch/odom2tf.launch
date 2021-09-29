@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <!-- input odom topic -->
+    <arg name="odom"/>
+    <arg name="robot"/>
+    <arg name="world_frame" default="world"/>
+    <!-- ground truth robot frame you can find this out using rosrun rqt_tf_tree rqt_tf_tree -->
+    <arg name="ground_truth_robot_frame" default= "ground_truth/$(arg robot)/$(arg robot)"/>
+
+    
+
+    <!-- this node takes takes the first odom it receives from the estimator and publish a tf from it to world-->
+    <node pkg="dcist_utils" type="odom2tf" name="odom2tf" output="screen">
+        <remap from="~odom_in" to="$(arg odom)"/>
+        <remap from="~odom_out" to="odom"/>
+
+        <param name="world_frame" type="str" value="$(arg world_frame)"/>
+        <param name="robot" type="str" value="$(arg robot)"/>
+        <param name="ground_truth_robot_frame" type="str" value="$(arg ground_truth_robot_frame)"/>
+    </node>
+</launch>

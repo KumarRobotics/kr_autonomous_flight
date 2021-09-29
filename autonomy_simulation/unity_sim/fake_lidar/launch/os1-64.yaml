@@ -1,0 +1,8 @@
+n_beams: 64
+rpm: 600
+sample_freq: 20480 
+min_angle: deg(-22.5)
+max_angle: deg(22.5)
+min_range: 0.0
+max_range: 50.0
+model: "os1"

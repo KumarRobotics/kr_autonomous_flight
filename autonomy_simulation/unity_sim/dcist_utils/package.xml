@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>dcist_utils</name>
+  <version>0.0.0</version>
+  <description>The dcist_utils package</description>
+
+  <maintainer email="quchao@seas.upenn.edu">Chao Qu</maintainer>
+  <maintainer email="liuxu@seas.upenn.edu">Xu Liu</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <export>
+  </export>
+</package>

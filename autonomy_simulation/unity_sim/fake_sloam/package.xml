@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>fake_sloam</name>
+  <version>0.0.0</version>
+  <description>The fla_state_machine package</description>
+
+  <maintainer email="liuxu@seas.upenn.edu">Xu Liu</maintainer>
+  <maintainer email="quchao@seas.upenn.edu">Chao Qu</maintainer>
+  <maintainer email="guilhermenardari@gmail.com">Guilherme Nardari</maintainer>
+  <license>Apache-2.0</license>
+
+  <export>
+  </export>
+</package>

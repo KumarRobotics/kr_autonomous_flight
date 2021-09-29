@@ -10,7 +10,7 @@ on:
       - completed
   push:
     paths:
-    - 'estimation/**'
+    - 'autonomy_core/estimation/**'
     branches: [master]
   workflow_dispatch:
   # DO NOT add a schedule. This build will be triggered by base schedule.
@@ -39,7 +39,7 @@ jobs:
         with:
           push: true
           tags: kumarrobotics/autonomy:estimation
-          file: ./estimation/Dockerfile
+          file: ./autonomy_core/estimation/Dockerfile
           platforms: linux/amd64,linux/arm64
       -
         name: Image digest

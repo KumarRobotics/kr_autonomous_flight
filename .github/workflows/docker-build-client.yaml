@@ -11,7 +11,7 @@ on:
       - completed
   push:
     paths:
-    - 'client/**'
+    - 'autonomy_core/client/**'
     branches: [master]
   # DO NOT add a schedule. This build will be triggered by base schedule.
 
@@ -45,7 +45,7 @@ jobs:
           context: .
           push: true
           tags: kumarrobotics/autonomy:client
-          file: ./client/Dockerfile
+          file: ./autonomy_core/client/Dockerfile
           platforms: linux/amd64,linux/arm64
       -
         name: Image digest

@@ -14,7 +14,7 @@ on:
       - completed
   push:
     paths:
-    - 'calibration/**'
+    - 'autonomy_core/calibration/**'
     branches: [master]
   workflow_dispatch:
   # DO NOT add a schedule. This build will be triggered by base schedule.
@@ -42,7 +42,7 @@ jobs:
         with:
           push: true
           tags: kumarrobotics/autonomy:calibration
-          file: ./calibration/Dockerfile
+          file: ./autonomy_core/calibration/Dockerfile
           platforms: linux/amd64,linux/arm64
       -
         name: Image digest

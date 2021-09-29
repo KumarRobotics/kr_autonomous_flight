@@ -11,7 +11,7 @@ on:
       - completed
   push:
     paths:
-    - 'state_machine/**'
+    - 'autonomy_core/state_machine/**'
     branches: [master]
   # DO NOT add a schedule. This build will be triggered by base schedule.
 
@@ -45,7 +45,7 @@ jobs:
           context: .
           push: true
           tags: kumarrobotics/autonomy:state_machine
-          file: ./state_machine/Dockerfile
+          file: ./autonomy_core/state_machine/Dockerfile
           platforms: linux/amd64,linux/arm64
       -
         name: Image digest

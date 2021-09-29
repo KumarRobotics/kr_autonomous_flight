@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-    - 'control/**'
+    - 'autonomy_core/control/**'
     branches: [master]
   # DO NOT add a schedule. This build will be triggered by base schedule.
 
@@ -45,7 +45,7 @@ jobs:
           context: .
           push: true
           tags: kumarrobotics/autonomy:control
-          file: ./control/Dockerfile
+          file: ./autonomy_core/control/Dockerfile
           platforms: linux/amd64,linux/arm64
       -
         name: Image digest

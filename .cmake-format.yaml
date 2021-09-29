@@ -1,0 +1,44 @@
+additional_commands:
+  catkin_package:
+    kwargs:
+      INCLUDE_DIRS: "*"
+      LIBRARIES: "*"
+      CATKIN_DEPENDS: "*"
+      DEPENDS: "*"
+      CFG_EXTRAS: "*"
+  cc_library:
+    flags:
+      - INTERFACE
+    kwargs:
+      HDRS: "*"
+      SRCS: "*"
+      COPTS: "*"
+      DEFINES: "*"
+      LINKOPTS: "*"
+      DEPS: "*"
+      INCS: "*"
+  cc_binary:
+    kwargs:
+      SRCS: "*"
+      COPTS: "*"
+      DEFINES: "*"
+      LINKOPTS: "*"
+      DEPS: "*"
+  cc_test:
+    kwargs:
+      SRCS: "*"
+      COPTS: "*"
+      DEFINES: "*"
+      LINKOPTS: "*"
+      DEPS: "*"
+  cc_bench:
+    kwargs:
+      SRCS: "*"
+      COPTS: "*"
+      DEFINES: "*"
+      LINKOPTS: "*"
+      DEPS: "*"
+dangle_parens: false
+line_ending: unix
+line_width: 80
+tab_size: 2

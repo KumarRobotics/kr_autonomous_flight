@@ -9,7 +9,6 @@ repositories:
     url: git@github.com:wilselby/ouster_example.git
     version: master
 
-
   hector_gazebo:
     type: git
     url: git@github.com:tu-darmstadt-ros-pkg/hector_gazebo.git

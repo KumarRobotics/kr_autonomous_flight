@@ -14,6 +14,6 @@ RUN chmod +x install_geographiclib_datasets.sh \
 
 RUN usermod -aG dialout $(whoami)
 
-COPY docker/entrypoint.sh /entrypoint.sh
+COPY autonomy_core/docker/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 

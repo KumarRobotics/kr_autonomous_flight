@@ -41,5 +41,5 @@ RUN sudo /bin/sh -c 'echo "deb [trusted=yes] http://packages.ros.org/ros/ubuntu 
     && sudo apt clean \
     && rosdep update
 
-COPY base/docker/entrypoint.sh /entrypoint.sh
+COPY autonomy_core/base/docker/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

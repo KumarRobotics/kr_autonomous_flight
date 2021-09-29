@@ -6,5 +6,5 @@ COPY client/ src/
 RUN catkin init && catkin config --extend /root/map_plan_ws/devel
 RUN catkin build -j2 --no-status -DCMAKE_BUILD_TYPE=Release
 
-COPY client/docker/entrypoint.sh /entrypoint.sh
+COPY autonomy_core/client/docker/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

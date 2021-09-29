@@ -15,5 +15,5 @@ RUN catkin init && catkin config --extend /root/control_ws/devel
 # RUN vcs import --input src/external-repos.yaml src/
 RUN catkin build -j2 --no-status -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
-COPY map_plan/docker/entrypoint.sh /entrypoint.sh
+COPY autonomy_core/map_plan/docker/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

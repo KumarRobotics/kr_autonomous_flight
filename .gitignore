@@ -1,9 +1,220 @@
-# Remove temp files
-~
+#===========
+# C++
+# ===========
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# ==========
+# C
+# ==========
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Libraries
+*.lib
+*.a
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Intermediate
+*.s
+*.i
+
+# ===========
+# Java
+# ==========
+*.class
+*.pkg
+*.pkh
+*.bluej
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+# ==========
+# CMake
+# ==========
+CMakeCache.txt
+CMakeFiles
+build/Makefile
+cmake_install.cmake
+install_manifest.txt
+
+# ==========
+# Matlab
+# ==========
+*.mexa64
+*.mexgln
+*.mat
+*.m~
+
+# ==========
+# Vim
+# ==========
+.*.sw[a-z]
+*.un~
+Session.vim
+*.taghl
+tags
+
+# ==========
+# Python
+# ==========
 *.pyc
+.ropeproject
+.ipynb_checkpoints
+.coverage
+
+# ==========
+# Latex
+# ==========
+*.aux
+*.log
+*.out
+*.pdfsync
+*.synctex.gz
+*.blg
+*.bbl
+*.tex.bak
+*.pdf
+
+# ==========
+# Packages
+# ==========
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# ==========
+# ROS
+# ==========
+msg_gen/
+srv_gen/
+*.bag
+
+# ==========
+# Build Directories
+# ==========
+build/
+bin/
+lib/
+debug/
+
+# ==========
+# Others
+# ==========
+*.project
+*.cproject
+*.pydevproject
+
+# ==========
+# VCS
+# ==========
+.svn
+
+# ==========
+# Java IDE
+# ==========
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Intellij
 .idea/
-.vscode/
-ouster_example
-ouster_decoder
-msckf_vio
-kr_mav_control
+*.iml
+*.iws
+
+# Mac
+.DS_Store
+
+# Maven
+log/
+target/
+
+# BlueJ
+*.class
+*.pkh
+*.ctxt
+*.bluej
+.DS_Store
+
+# ==========
+# Gcov
+# ==========
+*.gcov
+*.gcda
+*.gcno
+*.cov
+
+# ==========
+# Ctags
+# ==========
+.tags*
+
+# ==========
+# QtCreator
+# ==========
+*.txt.user
+
+*~
+.kdev4/
+*.kdev4
+.spyproject/
+.spyderproject
+.spyderworkspace
+
+.cache/
+.pytest_cache/
+*.creator.user*
+.vscode
+*.srctrl*
+
+cmake-build*/

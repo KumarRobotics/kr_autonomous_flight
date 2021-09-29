@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>action_trackers</name>
+  <version>0.1.1</version>
+  <description>The action_trackers package</description>
+
+  <author email="wami@seas.upenn.edu">Mike Watterson</author>
+  <author email="kmohta@seas.upenn.edu">Kartik Mohta</author>
+  <author email="sikang@seas.upenn.edu">Sikang Liu</author>
+  <maintainer email="liuxu@seas.upenn.edu">Xu Liu</maintainer>
+  <maintainer email="quchao@seas.upenn.edu">Chao Qu</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>actionlib</depend>
+  <depend>actionlib_msgs</depend>
+
+  <depend>kr_trackers</depend>
+  <depend>kr_mav_msgs</depend>
+  <depend>kr_tracker_msgs</depend>
+  <depend>kr_trackers_manager</depend>
+
+  <depend>mapper</depend>
+  <depend>planning_ros_utils</depend>
+  <depend>planning_ros_msgs</depend>
+  <depend>traj_opt_ros</depend>
+  <depend>motion_primitive_library</depend>
+
+  <export>
+    <kr_trackers_manager plugin="${prefix}/nodelet_plugin.xml"/>
+  </export>
+
+</package>

@@ -67,6 +67,7 @@ vec_Vec3d VoxelMapper::getCloud() {
   return pts;
 }
 
+// GUI: NOT USED
 vec_Vec3d VoxelMapper::getInflatedCloud() {
   vec_Vec3d pts;
   Eigen::Vector3i n;

@@ -10,6 +10,7 @@
 	<arg name="robot_frame_id" default="$(arg robot)"/>
   <!-- This frame_id should be the frame_id of the imu used for S-MSCKF	 -->
 	<arg name="vio_imu_frame_id" default="$(arg robot)/stereo_rig_imu"/>
+	<arg name="lidar_frame_id" default="$(arg robot)/lidar"/>
 	<arg name="vio_ref_frame_id" default="$(arg robot)/odom"/>
 	<arg name="ukf_ref_frame_id" default="$(arg robot)/odom"/>
   <!-- This should be set true for simulation -->
@@ -45,16 +46,18 @@
 		  <remap from="~mag" to="$(arg mag)"/>
 		  <remap from="~height" to="mavros/distance_sensor/lidarlite_pub"/>
 		  <remap from="~vio_odom" to="vio/odom"/>
+      <remap from="~pose_lidar" to="/os_node/pose_cov"/>
 		  <remap from="~odom_out" to="$(arg output_odom)"/>
 		  <!-- fixed reference frame for ukf -->
 		  <param name="world_frame_id" value="$(arg ukf_ref_frame_id)"/>
 		  <param name="robot_frame_id" value="$(arg robot_frame_id)"/>
 		  <param name="cam_frame_id" value="$(arg vio_imu_frame_id)"/>
+      <param name="lidar_frame_id" value="$(arg lidar_frame_id)"/>
 		  <!-- fixed reference frame for vio -->
 		  <param name="vision_frame_id" value="$(arg vio_ref_frame_id)"/>
 		  <param name="enable_laser" value="false"/>
 		  <param name="enable_cam" value="false"/>
-		  <param name="enable_velodyne" value="false"/>
+		  <param name="enable_lidar" value="false"/>
 		  <param name="enable_gps" value="false"/>
 		  <param name="enable_height" value="false"/>
 		  <param name="enable_mag" value="false"/>

@@ -5,10 +5,11 @@ set(CMAKE_CXX_STANDARD 17)
 
 find_package(catkin REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(Boost REQUIRED)
 
 catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME})
 
 add_library(${PROJECT_NAME} src/graph_search.cpp src/jps_planner.cpp
                             src/map_util.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
-target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
+target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen Boost::boost)

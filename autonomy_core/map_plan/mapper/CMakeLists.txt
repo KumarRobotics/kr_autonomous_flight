@@ -17,8 +17,7 @@ find_package(Boost REQUIRED COMPONENTS timer)
 
 catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME})
 
-include_directories(${PROJECT_NAME} PUBLIC ${catkin_INCLUDE_DIRS}
-                                                  include)
+include_directories(${PROJECT_NAME} PUBLIC ${catkin_INCLUDE_DIRS} include)
 
 add_library(${PROJECT_NAME} src/tf_listener.cpp src/voxel_mapper.cpp)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES})

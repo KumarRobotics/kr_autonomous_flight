@@ -7,7 +7,10 @@ find_package(catkin REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED)
 
-catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} DEPENDS EIGEN3)
+catkin_package(
+  INCLUDE_DIRS include
+  LIBRARIES ${PROJECT_NAME}
+  DEPENDS EIGEN3)
 
 add_library(
   ${PROJECT_NAME}

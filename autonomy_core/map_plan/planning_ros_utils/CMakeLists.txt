@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(planning_ros_utils)
 
-# Set target C++ standard and required compiler features
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -28,14 +27,9 @@ find_package(Qt5 ${rviz_QT_VERSION} EXACT REQUIRED Core Widgets)
 set(QT_LIBRARIES Qt5::Widgets)
 
 catkin_package(
-  INCLUDE_DIRS
-  include
-  LIBRARIES
-  ${PROJECT_NAME}
-  planning_rviz_plugins
-  CATKIN_DEPENDS
-  planning_ros_msgs
-  motion_primitive_library)
+  INCLUDE_DIRS include
+  LIBRARIES ${PROJECT_NAME} planning_rviz_plugins
+  CATKIN_DEPENDS planning_ros_msgs motion_primitive_library)
 
 add_library(${PROJECT_NAME} src/data_ros_utils.cpp src/primitive_ros_utils.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC ${catkin_INCLUDE_DIRS}

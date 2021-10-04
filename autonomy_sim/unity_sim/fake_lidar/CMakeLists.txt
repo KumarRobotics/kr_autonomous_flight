@@ -19,13 +19,12 @@ find_package(
 
 find_package(Boost REQUIRED COMPONENTS timer)
 find_package(TBB REQUIRED)
-find_package(OpenCV)
 
 catkin_package()
 
 add_executable(fake_lidar_node src/fake_lidar_node.cpp)
 target_include_directories(fake_lidar_node PRIVATE ${catkin_INCLUDE_DIRS})
-target_link_libraries(fake_lidar_node PRIVATE ${OpenCV_LIBS} ${catkin_LIBRARIES} Boost::timer)
+target_link_libraries(fake_lidar_node PRIVATE ${catkin_LIBRARIES} Boost::timer)
 
 add_executable(fake_lidar_node2 src/fake_lidar_node2.cpp)
 target_include_directories(fake_lidar_node2 PRIVATE ${catkin_INCLUDE_DIRS})

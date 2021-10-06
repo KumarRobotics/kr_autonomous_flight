@@ -33,19 +33,18 @@
       <arg name="metadata" value="ouster_metadata.json"/>
   </include>
 
-   
    <!-- pixhawk (nice priority -15) -->
-<group ns="$(arg robot)"> 
-	<include file="$(find real_experiment_launch)/launch/px4.launch">
-  </include>
-</group>
+  <group ns="$(arg robot)"> 
+    <include file="$(find real_experiment_launch)/launch/px4.launch">
+    </include>
+  </group>
 
   <!-- publish_tf -->
-    <include file="$(find real_experiment_launch)/launch/publish_tf.launch">
-      <arg name="robot" value="$(arg robot)"/>
-      <arg name="robot_frame_id" value="$(arg robot)/base_link"/>
-      <arg name="vio_imu_frame_id" value="$(arg robot)/ovc_camera_link"/>
-   </include>
+  <include file="$(find real_experiment_launch)/launch/publish_tf.launch">
+    <arg name="robot" value="$(arg robot)"/>
+    <arg name="robot_frame_id" value="$(arg robot)/base_link"/>
+    <arg name="vio_imu_frame_id" value="$(arg robot)/ovc_camera_link"/>
+  </include>
  
 
    <!-- system launch that includes mapper planner state_machine controller state_estimation-->
@@ -84,9 +83,18 @@
 		<arg name="robot" value="$(arg robot)"/>
 	</include>
   
-	 <!--ublox-->
-   <include file="$(find ublox_gps)/launch/ublox_device.launch">
-   </include>
+  <!-- ublox -->
+  <!-- <include file="$(find ublox_gps)/launch/ublox_device.launch"> -->
+  <!-- </include> -->
+
+
+  <!-- llol -->
+  <include file="$(find llol)/launch/llol.launch">
+    <arg name="odom_frame" value="$(arg robot)/odom"/>
+    <arg name="decoder_ns" value="$(arg robot)"/>
+  </include>
+  
+
 
   <!-- bag record  -->
 	<group if="$(arg record_bag)"> 
@@ -94,4 +102,5 @@
    </include>
   </group>
 
+   
  </launch>

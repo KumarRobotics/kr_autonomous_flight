@@ -189,3 +189,22 @@ class REPLANNER(smach.StateMachine):
                 StoppingPolicyDone(quad_monitor),
                 transitions={"done": "succeeded"},
             )
+
+
+# This is removed from MainStates.py, maybe useful if come back to use JPS + line tracker
+    # class PlanPath(smach_ros.SimpleActionState):
+    #     def goal_cb(self, userdata, goal):
+    #         goal.p_init = self.quad_monitor.get_curr_poseC()
+    #         goal.p_final = self.quad_monitor.pose_goal
+    #         goal.p_finals = self.quad_monitor.pose_goals
+
+    #         return goal
+
+    #     def result_cb(self, userdata, status, result):
+    #         self.quad_monitor.path = result.path
+
+    #     def __init__(self, action_topic, quad_monitor):
+    #         smach_ros.SimpleActionState.__init__(
+    #             self, action_topic, AP.PlanPathAction, goal_cb=self.goal_cb, result_cb=self.result_cb
+    #         )
+    #         self.quad_monitor = quad_monitor

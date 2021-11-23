@@ -2,7 +2,7 @@
 <package format="2">
   <name>fake_sloam</name>
   <version>0.0.0</version>
-  <description>The fla_state_machine package</description>
+  <description>The fake_sloam package</description>
 
   <maintainer email="liuxu@seas.upenn.edu">Xu Liu</maintainer>
   <maintainer email="quchao@seas.upenn.edu">Chao Qu</maintainer>

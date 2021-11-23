@@ -4,22 +4,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import rospy
 import smach
 import smach_ros
-from MainStates import *
-import geometry_msgs.msg as GM
-import kr_mav_msgs.msg as QM
 import state_machine.msg as SM
-
 from Utils import *
-import tf
-import threading
-import numpy as np
 
 
 # Yaw-related classes (CheckYaw AlignYaw YawSearch) removed (exist in autonomy_stack repo before 8/16/2020).
-
 
 class StoppingPolicyDone(smach.State):
     def __init__(self, quad_monitor):
@@ -28,7 +19,6 @@ class StoppingPolicyDone(smach.State):
 
     def execute(self, userdata):
         return "done"
-
 
 class CheckRePlan(smach.State):
     def __init__(self, quad_monitor):
@@ -112,15 +102,6 @@ class REPLANNER(smach.StateMachine):
                                    transitions={'succeeded':'RePlan',
                                                 'aborted':'RePlan',
                                                 'preempted':'RePlan'})
-            # smach.StateMachine.add(
-            #     "TrajTransitionSR",
-            #     TrackerTransition(
-            #         "trackers_manager/transition",
-            #         "action_trackers/ActionPathTracker",
-            #         quad_monitor,
-            #     ),
-            #     transitions={"succeeded": "RePlan", "aborted": "RePlan", "preempted": "RePlan"},
-            # )
 
             smach.StateMachine.add(
                 "RePlan",

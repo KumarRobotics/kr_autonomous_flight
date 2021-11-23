@@ -2,7 +2,7 @@
 <launch>
   <arg name="max_horizon" default="5"/>
 
-  <node pkg="fla_state_machine" type="path_replanner" name="replanner" output="screen">
+  <node pkg="state_machine" type="path_replanner" name="replanner" output="screen">
     <param name="max_horizon" value="$(arg max_horizon)"/>
     <remap from="~epoch" to="epoch"/>
     <remap from="~plan_path" to="tpplanner/plan_path"/>

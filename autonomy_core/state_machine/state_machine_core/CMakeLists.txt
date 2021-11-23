@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(fla_state_machine)
+project(state_machine)
 
 set(CMAKE_CXX_STANDARD 17)
 find_package(Eigen3)

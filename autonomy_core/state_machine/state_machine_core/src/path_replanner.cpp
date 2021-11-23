@@ -5,8 +5,8 @@
 // internal actions
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/server/simple_action_server.h>
-#include <fla_state_machine/ReplanAction.h>
 #include <kr_mav_msgs/PositionCommand.h>
+#include <state_machine/ReplanAction.h>
 
 using actionlib::SimpleActionClient;
 using actionlib::SimpleActionServer;
@@ -15,9 +15,9 @@ class RePlanner {
  public:
   RePlanner();
   // private:
-  std::unique_ptr<SimpleActionServer<fla_state_machine::ReplanAction>>
+  std::unique_ptr<SimpleActionServer<state_machine::ReplanAction>>
       replan_server_;
-  // std::unique_ptr<actionlib::SimpleActionServer<fla_state_machine::UpdateGoalAction>
+  // std::unique_ptr<actionlib::SimpleActionServer<state_machine::UpdateGoalAction>
   // > update_server_;
   std::unique_ptr<SimpleActionClient<action_trackers::RunPathAction>>
       run_client_;
@@ -33,9 +33,10 @@ class RePlanner {
   boost::optional<PositionCommand> current_cmd_;
   ros::Subscriber cmd_sub_;
 
-  void cmd_cb(const PositionCommand &cmd) { current_cmd_ = cmd; }
+  void cmd_cb(const PositionCommand& cmd) { current_cmd_ = cmd; }
 
-  bool is_equal(const geometry_msgs::Pose &p1, const geometry_msgs::Pose &p2,
+  bool is_equal(const geometry_msgs::Pose& p1,
+                const geometry_msgs::Pose& p2,
                 double thr = 0) {
     return std::abs(p1.position.x - p2.position.x) < thr &&
            std::abs(p1.position.y - p2.position.y) < thr &&
@@ -47,8 +48,8 @@ class RePlanner {
     plan(goal->p_final, goal->p_finals);
   }
 
-  void plan(const geometry_msgs::Pose &pose_goal,
-            const std::vector<geometry_msgs::Pose> &pose_goals) {
+  void plan(const geometry_msgs::Pose& pose_goal,
+            const std::vector<geometry_msgs::Pose>& pose_goals) {
     if (!is_equal(pose_goal, last_pose_goal_)) finished_replanning = false;
 
     ROS_INFO("Number of pose_goals: %zu", pose_goals.size());
@@ -72,10 +73,10 @@ class RePlanner {
     last_pose_goals_ = pose_goals;
   }
 
-  bool plan_path(const geometry_msgs::Pose &pose_start,
-                 const geometry_msgs::Pose &pose_goal,
-                 const std::vector<geometry_msgs::Pose> &pose_goals,
-                 planning_ros_msgs::Path &path) {
+  bool plan_path(const geometry_msgs::Pose& pose_start,
+                 const geometry_msgs::Pose& pose_goal,
+                 const std::vector<geometry_msgs::Pose>& pose_goals,
+                 planning_ros_msgs::Path& path) {
     action_planner::PlanPathGoal tpgoal;
     tpgoal.p_init = pose_start;
     tpgoal.p_final = pose_goal;
@@ -87,8 +88,8 @@ class RePlanner {
 
     if (!finished_before_timeout) {
       ROS_ERROR("[PathReplanner]: Planner timed out");
-      fla_state_machine::ReplanResult critical;
-      critical.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
+      state_machine::ReplanResult critical;
+      critical.status = state_machine::ReplanResult::CRITICAL_ERROR;
       if (replan_server_->isActive()) replan_server_->setSucceeded(critical);
       return false;
     }
@@ -108,18 +109,19 @@ class RePlanner {
         ROS_WARN(
             "[PathReplanner]: Terminate replanning after time out, epcoh %d >= "
             "max horizon %d",
-            plan_epoch, max_horizon_);
+            plan_epoch,
+            max_horizon_);
         finished_replanning = true;
-        fla_state_machine::ReplanResult success;
-        success.status = fla_state_machine::ReplanResult::SUCCESS;
+        state_machine::ReplanResult success;
+        success.status = state_machine::ReplanResult::SUCCESS;
         if (replan_server_->isActive())
           replan_server_->setSucceeded(success);
         else
           ROS_ERROR("Fail to set success!");
         plan_epoch = 0;
       } else {
-        fla_state_machine::ReplanResult in_progress;
-        in_progress.status = fla_state_machine::ReplanResult::IN_PROGRESS;
+        state_machine::ReplanResult in_progress;
+        in_progress.status = state_machine::ReplanResult::IN_PROGRESS;
 
         if (replan_server_->isActive())
           replan_server_->setSucceeded(in_progress);
@@ -127,8 +129,8 @@ class RePlanner {
       return true;
     } else {
       ROS_WARN("[PathReplanner]: Abort full mission manually...");
-      fla_state_machine::ReplanResult abort;
-      abort.status = fla_state_machine::ReplanResult::ABORT_FULL_MISSION;
+      state_machine::ReplanResult abort;
+      abort.status = state_machine::ReplanResult::ABORT_FULL_MISSION;
       if (replan_server_->isActive()) replan_server_->setSucceeded(abort);
       return false;
     }
@@ -139,7 +141,7 @@ RePlanner::RePlanner() : nh_("~") {
   nh_.param("max_horizon", max_horizon_, 6);
 
   replan_server_.reset(
-      new actionlib::SimpleActionServer<fla_state_machine::ReplanAction>(
+      new actionlib::SimpleActionServer<state_machine::ReplanAction>(
           nh_, "replan", false));
 
   run_client_.reset(
@@ -158,7 +160,7 @@ RePlanner::RePlanner() : nh_("~") {
   replan_server_->start();
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   ros::init(argc, argv, "replanner");
   ros::NodeHandle nh;
 

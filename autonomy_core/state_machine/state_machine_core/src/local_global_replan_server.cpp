@@ -2,7 +2,6 @@
 #include <action_trackers/RunTrajectoryAction.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/server/simple_action_server.h>
-#include <fla_state_machine/ReplanAction.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
@@ -15,6 +14,7 @@
 #include <planning_ros_utils/data_ros_utils.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Temperature.h>
+#include <state_machine/ReplanAction.h>
 #include <std_msgs/Int64.h>
 #include <tf/transform_datatypes.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -25,8 +25,8 @@
 #include <traj_opt_ros/ros_bridge.h>
 
 #include <boost/timer/timer.hpp>
-#include <fla_state_machine/intersect_utils.hpp>
-#include <fla_state_machine/traj_opt_utils.hpp>
+#include <state_machine/intersect_utils.hpp>
+#include <state_machine/traj_opt_utils.hpp>
 
 // Timer stuff
 using boost::timer::cpu_timer;
@@ -57,8 +57,7 @@ class RePlanner {
   void update_status();
 
  private:
-  std::unique_ptr<
-      actionlib::SimpleActionServer<fla_state_machine::ReplanAction>>
+  std::unique_ptr<actionlib::SimpleActionServer<state_machine::ReplanAction>>
       replan_server_;
   std::unique_ptr<
       actionlib::SimpleActionClient<action_trackers::RunTrajectoryAction>>
@@ -78,7 +77,7 @@ class RePlanner {
 
   // tf_listener
   tf2_ros::Buffer tfBuffer;
-  tf2_ros::TransformListener *tfListener;
+  tf2_ros::TransformListener* tfListener;
 
   // reference frame names
   std::string map_frame_;   // map frame
@@ -139,7 +138,7 @@ class RePlanner {
   float waypoint_threshold_;
   bool avoid_obstacle_{true};
 
-  fla_state_machine::ReplanResult critical_;  // create critical bug report
+  state_machine::ReplanResult critical_;  // create critical bug report
 
   /**
    * @brief Epoch callback function, triggered by epoch msg published by
@@ -148,18 +147,18 @@ class RePlanner {
    plan_trajectory and RunTrajectory functions
 
    */
-  void EpochCb(const std_msgs::Int64 &msg);
+  void EpochCb(const std_msgs::Int64& msg);
 
   /**
    * @brief Command callback function, setting cmd_pos_ to be the commanded
    * position
    */
-  void CmdCb(const kr_mav_msgs::PositionCommand &cmd);
+  void CmdCb(const kr_mav_msgs::PositionCommand& cmd);
 
   /**
    * @brief map callback, update local_map_ptr_
    */
-  void LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr &msg);
+  void LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr& msg);
 
   /**
    * @brief Goal callback function
@@ -169,7 +168,7 @@ class RePlanner {
   /**
    * @brief Goal done callback function
    */
-  void GlobalPathCb(const planning_ros_msgs::Path &path);
+  void GlobalPathCb(const planning_ros_msgs::Path& path);
 
   /**
    * @brief Execute the planned trajectory, during which epoch will be published
@@ -191,7 +190,7 @@ class RePlanner {
    * @param d length of the cropped path
    *
    */
-  vec_Vec3f PathCrop(const vec_Vec3f &path);
+  vec_Vec3f PathCrop(const vec_Vec3f& path);
 
   /**
    * @brief Crop global path for local planner with a fixed distance
@@ -199,20 +198,21 @@ class RePlanner {
    * @param d length of the cropped path
    *
    */
-  vec_Vec3f PathCrop(const vec_Vec3f &path, double crop_dist_xyz,
+  vec_Vec3f PathCrop(const vec_Vec3f& path,
+                     double crop_dist_xyz,
                      double crop_dist_z);
 
   /**
    * @brief Check if cropped path reaches the end of original path
    */
-  bool CloseToFinal(const vec_Vec3f &original_path,
-                    const vec_Vec3f &cropped_path,
+  bool CloseToFinal(const vec_Vec3f& original_path,
+                    const vec_Vec3f& cropped_path,
                     double dist_threshold = 10.0);
 
   /**
    * @brief transform global path from odom frame to map frame
    */
-  vec_Vec3f TransformGlobalPath(const vec_Vec3f &path_original);
+  vec_Vec3f TransformGlobalPath(const vec_Vec3f& path_original);
 
   /**
    * @brief transform global path from map frame to odom frame
@@ -229,12 +229,12 @@ class RePlanner {
  * @brief Goal done callback function
  */
 
-void RePlanner::GlobalPathCb(const planning_ros_msgs::Path &path) {
+void RePlanner::GlobalPathCb(const planning_ros_msgs::Path& path) {
   global_path_.clear();
   global_path_ = ros_to_path(path);  // extract the global path information
 }
 
-void RePlanner::EpochCb(const std_msgs::Int64 &msg) {
+void RePlanner::EpochCb(const std_msgs::Int64& msg) {
   if (msg.data < 0) {
     ROS_ERROR("[Replanner:] aborting mission because tracker failed!!!");
     ROS_ERROR("[Replanner:] aborting mission because tracker failed!!!");
@@ -272,7 +272,7 @@ void RePlanner::EpochCb(const std_msgs::Int64 &msg) {
   update_status();
 }
 
-void RePlanner::CmdCb(const kr_mav_msgs::PositionCommand &cmd) {
+void RePlanner::CmdCb(const kr_mav_msgs::PositionCommand& cmd) {
   boost::mutex::scoped_lock lock(mtx_);
   cmd_pos_(0) = cmd.position.x;
   cmd_pos_(1) = cmd.position.y;
@@ -281,7 +281,7 @@ void RePlanner::CmdCb(const kr_mav_msgs::PositionCommand &cmd) {
 }
 
 // map callback, update local_map_
-void RePlanner::LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
+void RePlanner::LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
   ROS_WARN_ONCE("[Replanner:] Got the local voxel map!");
   local_map_ptr_ = msg;
 }
@@ -374,8 +374,8 @@ void RePlanner::setup_replanner() {
           "[Replanner:] Initial (and the only) waypoint is already close to "
           "the robot "
           "position, terminating the replanning process!");
-      fla_state_machine::ReplanResult success;
-      success.status = fla_state_machine::ReplanResult::SUCCESS;
+      state_machine::ReplanResult success;
+      success.status = state_machine::ReplanResult::SUCCESS;
       active_ = false;
       if (replan_server_->isActive()) {
         replan_server_->setSucceeded(success);
@@ -445,7 +445,7 @@ void RePlanner::setup_replanner() {
   // ##########################################################################################################
   // set goal
   planning_ros_msgs::PlanTwoPointGoal local_tpgoal;
-  fla_state_machine::VecToPose(
+  state_machine::VecToPose(
       cmd_pos_, &local_tpgoal.p_init);  // use current position command as the
                                         // start position for local planner
   // initialize prev_start_pos_ for replan purpose
@@ -527,8 +527,8 @@ void RePlanner::RunTrajectory() {
       run_client_->waitForResult(ros::Duration(tracker_timeout_dur));
   if (!tracker_finished_before_timeout) {
     ROS_ERROR("Tracker aborted or timeout!");
-    fla_state_machine::ReplanResult abort;
-    abort.status = fla_state_machine::ReplanResult::ABORT_FULL_MISSION;
+    state_machine::ReplanResult abort;
+    abort.status = state_machine::ReplanResult::ABORT_FULL_MISSION;
     active_ = false;
     replan_server_->setAborted(abort);
   }
@@ -540,8 +540,8 @@ bool RePlanner::PlanTrajectory(int horizon) {
   if (horizon > max_horizon_) {
     ROS_ERROR(
         "Planning horizon is larger than max_horizon_, aborting the mission!");
-    fla_state_machine::ReplanResult abort;
-    abort.status = fla_state_machine::ReplanResult::DYNAMICALLY_INFEASIBLE;
+    state_machine::ReplanResult abort;
+    abort.status = state_machine::ReplanResult::DYNAMICALLY_INFEASIBLE;
     active_ = false;
     if (replan_server_->isActive()) {
       replan_server_->setAborted(abort);
@@ -566,9 +566,12 @@ bool RePlanner::PlanTrajectory(int horizon) {
                            // current plan epoch (in seconds)
   // make the end of last trajectory consistent with the start of current
   // trajectory
-  fla_state_machine::EvaluateToMsgs(last_traj_, eval_time, &local_tpgoal.p_init,
-                                    &local_tpgoal.v_init, &local_tpgoal.a_init,
-                                    &local_tpgoal.j_init);
+  state_machine::EvaluateToMsgs(last_traj_,
+                                eval_time,
+                                &local_tpgoal.p_init,
+                                &local_tpgoal.v_init,
+                                &local_tpgoal.a_init,
+                                &local_tpgoal.j_init);
   Vec3f start_pos;
   start_pos = pose_to_eigen(local_tpgoal.p_init);
 
@@ -709,10 +712,11 @@ void RePlanner::update_status() {
 
     // evaluate traj at 1.0/local_replan_rate_, output recorded to pos_finaln,
     // refer to msg_traj.cpp.
-    last_traj_->evaluate(1.0 / local_replan_rate_, 0,
+    last_traj_->evaluate(1.0 / local_replan_rate_,
+                         0,
                          pos_finaln);  // TODO(mike) {fix this}.
 
-    pos_final = fla_state_machine::Make4d(pos_finaln);
+    pos_final = state_machine::Make4d(pos_finaln);
     pos_final(2) = 0;
     pos_final(3) = 0;
 
@@ -753,7 +757,7 @@ void RePlanner::update_status() {
     last_traj_->evaluate(last_traj_->getTotalTime(), 0, pos_finaln);
     last_traj_->evaluate(last_traj_->getTotalTime(), 0, pos_finaln);
     last_traj_->evaluate(last_traj_->getTotalTime(), 0, pos_finaln);
-    pos_final = fla_state_machine::Make4d(pos_finaln);
+    pos_final = state_machine::Make4d(pos_finaln);
 
     pos_no_yaw(2) = 0;
     pos_no_yaw(3) = 0;
@@ -765,8 +769,8 @@ void RePlanner::update_status() {
     // replan_server_ set as success if the commanded position and traj end
     // position is less than 1e-3
     if ((pos_no_yaw - pos_final).norm() <= 1e-3) {
-      fla_state_machine::ReplanResult success;
-      success.status = fla_state_machine::ReplanResult::SUCCESS;
+      state_machine::ReplanResult success;
+      success.status = state_machine::ReplanResult::SUCCESS;
       active_ = false;
       if (replan_server_->isActive()) {
         replan_server_->setSucceeded(success);
@@ -777,8 +781,8 @@ void RePlanner::update_status() {
     }
   }
 
-  // fla_state_machine::ReplanResult in_progress;
-  // in_progress.status = fla_state_machine::ReplanResult::IN_PROGRESS;
+  // state_machine::ReplanResult in_progress;
+  // in_progress.status = state_machine::ReplanResult::IN_PROGRESS;
 
   if (replan_server_->isActive()) {
     active_ = true;
@@ -786,7 +790,7 @@ void RePlanner::update_status() {
   }
 }
 
-vec_Vec3f RePlanner::PathCrop(const vec_Vec3f &path) {
+vec_Vec3f RePlanner::PathCrop(const vec_Vec3f& path) {
   if (path.size() < 2) {
     ROS_WARN("[Replanner:] global path has <= 1 waypoints. Check!");
     // return empty
@@ -810,7 +814,7 @@ vec_Vec3f RePlanner::PathCrop(const vec_Vec3f &path) {
   Vec3f map_upper = Vec3f{upper_x, upper_y, upper_z};
 
   bool start_in_box =
-      fla_state_machine::CheckPointInBox(map_lower, map_upper, path[0]);
+      state_machine::CheckPointInBox(map_lower, map_upper, path[0]);
   if (!start_in_box) {
     ROS_ERROR(
         "[Replanner:] global path start is outside local voxel map. Check!");
@@ -829,7 +833,7 @@ vec_Vec3f RePlanner::PathCrop(const vec_Vec3f &path) {
   Vec3f intersect_pt;
   bool intesected;
   for (unsigned int i = 1; i < path.size(); i++) {
-    intesected = fla_state_machine::IntersectLineBox(
+    intesected = state_machine::IntersectLineBox(
         map_lower, map_upper, path[i - 1], path[i], intersect_pt);
     if (intesected) {
       // intersects, add the intersection
@@ -849,16 +853,17 @@ vec_Vec3f RePlanner::PathCrop(const vec_Vec3f &path) {
   return cropped_path;
 }
 
-vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f &path_original) {
+vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f& path_original) {
   // get the latest tf from map to odom reference frames
   geometry_msgs::TransformStamped transformStamped;
 
   try {
     transformStamped = tfBuffer.lookupTransform(
         map_frame_, odom_frame_, ros::Time(0), ros::Duration(0.01));
-  } catch (tf2::TransformException &ex) {
+  } catch (tf2::TransformException& ex) {
     ROS_ERROR("[Replanner:] Failed to get tf from %s to %s",
-              odom_frame_.c_str(), map_frame_.c_str());
+              odom_frame_.c_str(),
+              map_frame_.c_str());
     // AbortReplan(); // no need to abort plan since this is just for
     // visualization return original path
     return path_original;
@@ -898,8 +903,9 @@ void RePlanner::TransformGlobalGoal() {
     // TF transform from odom frame to the map frame
     transformStamped = tfBuffer.lookupTransform(
         odom_frame_, map_frame_, ros::Time(0), ros::Duration(0.01));
-  } catch (tf2::TransformException &ex) {
-    ROS_ERROR("[Replanner:] Failed to get tf from %s to %s", map_frame_.c_str(),
+  } catch (tf2::TransformException& ex) {
+    ROS_ERROR("[Replanner:] Failed to get tf from %s to %s",
+              map_frame_.c_str(),
               odom_frame_.c_str());
     AbortReplan();
   }
@@ -915,7 +921,8 @@ void RePlanner::TransformGlobalGoal() {
       "same to guaranteed it's still within the voxel map");
 }
 
-vec_Vec3f RePlanner::PathCrop(const vec_Vec3f &path, double crop_dist_xyz,
+vec_Vec3f RePlanner::PathCrop(const vec_Vec3f& path,
+                              double crop_dist_xyz,
                               double crop_dist_z) {
   // return nonempty
   // precondition
@@ -970,8 +977,8 @@ vec_Vec3f RePlanner::PathCrop(const vec_Vec3f &path, double crop_dist_xyz,
   return cropped_path;
 }
 
-bool RePlanner::CloseToFinal(const vec_Vec3f &original_path,
-                             const vec_Vec3f &cropped_path,
+bool RePlanner::CloseToFinal(const vec_Vec3f& original_path,
+                             const vec_Vec3f& cropped_path,
                              double dist_threshold) {
   // precondition: original_path and cropped_path are non-empty
   if (original_path.size() < 2 || cropped_path.size() < 2) {
@@ -1026,7 +1033,7 @@ RePlanner::RePlanner() : nh_("~") {
 
   // replan action server
   replan_server_.reset(
-      new actionlib::SimpleActionServer<fla_state_machine::ReplanAction>(
+      new actionlib::SimpleActionServer<state_machine::ReplanAction>(
           nh_, "replan", false));
 
   // plan global path action client, auto spin option set to true
@@ -1060,7 +1067,7 @@ RePlanner::RePlanner() : nh_("~") {
       nh_.subscribe("global_path", 1, &RePlanner::GlobalPathCb, this);
 
   // create critical bug report
-  critical_.status = fla_state_machine::ReplanResult::CRITICAL_ERROR;
+  critical_.status = state_machine::ReplanResult::CRITICAL_ERROR;
 
   // Goal callback
   replan_server_->registerGoalCallback(
@@ -1069,7 +1076,7 @@ RePlanner::RePlanner() : nh_("~") {
   replan_server_->start();
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   ros::init(argc, argv, "replanner");
   ros::NodeHandle nh;
   RePlanner replanner;

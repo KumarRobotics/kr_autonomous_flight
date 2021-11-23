@@ -10,7 +10,7 @@
         </include>
 
     ##### motion primitive replanner#####
-    <node pkg="fla_state_machine"
+    <node pkg="state_machine"
       type="local_global_replan_server"
       name="local_global_replan_server"
       output="screen">

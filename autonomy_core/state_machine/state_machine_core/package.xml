@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>fla_state_machine</name>
+  <name>state_machine</name>
   <version>0.0.0</version>
-  <description>The fla_state_machine package</description>
+  <description>The state_machine package</description>
 
   <author email="wami@seas.upenn.edu">Mike Watterson</author>
   <maintainer email="liuxu@seas.upenn.edu">Xu Liu</maintainer>

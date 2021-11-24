@@ -7,6 +7,8 @@
 #include <std_msgs/Bool.h>
 
 #include <boost/timer/timer.hpp>
+#include <memory>
+#include <string>
 
 #include "mapper/tf_listener.h"
 #include "mapper/voxel_mapper.h"
@@ -21,7 +23,7 @@ class LocalGlobalMapperNode {
    * @brief Local Global Mapper Constructor
    * @param nh ROS Node handler
    */
-  LocalGlobalMapperNode(const ros::NodeHandle& nh);
+  explicit LocalGlobalMapperNode(const ros::NodeHandle& nh);
 
  private:
   /**
@@ -44,12 +46,12 @@ class LocalGlobalMapperNode {
    * @brief Lookup the transform from lidar to map frame and from lidar to odom
    * frame
    * @param cloud_header  Input cloud message header
-   * @param pose_map_lidar  Output tf from lidar to map
-   * @param pose_odom_lidar  Output tf from lidar to odom
+   * @param pose_map_lidar_ptr  Output tf from lidar to map
+   * @param pose_odom_lidar_ptr  Output tf from lidar to odom
    */
   void getLidarPoses_(const std_msgs::Header& cloud_header,
-                      geometry_msgs::Pose& pose_map_lidar,
-                      geometry_msgs::Pose& pose_odom_lidar);
+                      geometry_msgs::Pose* pose_map_lidar_ptr,
+                      geometry_msgs::Pose* pose_odom_lidar_ptr);
 
   /**
    * @brief Adds input cloud to storage map, publishes new local map and global

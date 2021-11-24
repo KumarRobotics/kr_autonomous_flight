@@ -234,8 +234,8 @@ void LocalGlobalMapperNode::getLidarPoses_(
           odom_frame_.c_str());
       return;
     } else {
-      pose_map_lidar_ptr = &(*tf_map_lidar);
-      pose_odom_lidar_ptr = &(*tf_odom_lidar);
+      *pose_map_lidar_ptr = *(tf_map_lidar);
+      *pose_odom_lidar_ptr = *(tf_odom_lidar);
     }
   } else {
     auto tf_map_lidar = tf_listener.LookupTransform(
@@ -257,8 +257,8 @@ void LocalGlobalMapperNode::getLidarPoses_(
           odom_frame_.c_str());
       return;
     } else {
-      pose_map_lidar_ptr = &(*tf_map_lidar);
-      pose_odom_lidar_ptr = &(*tf_odom_lidar);
+      *pose_map_lidar_ptr = *(tf_map_lidar);
+      *pose_odom_lidar_ptr = *(tf_odom_lidar);
     }
   }
 }

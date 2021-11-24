@@ -8,6 +8,8 @@ import smach
 import smach_ros
 import state_machine.msg as SM
 from Utils import *
+from MainStates import TrackerTransition
+import copy
 
 
 # Yaw-related classes (CheckYaw AlignYaw YawSearch) removed (exist in autonomy_stack repo before 8/16/2020).

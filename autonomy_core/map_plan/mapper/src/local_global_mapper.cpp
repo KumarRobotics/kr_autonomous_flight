@@ -18,23 +18,23 @@ LocalGlobalMapperNode::LocalGlobalMapperNode(const ros::NodeHandle& nh)
 
   // storage map should have same resolution and z_dim as local map
   storage_map_info_.resolution = local_map_info_.resolution;
-  local_map_info_.dim.z =
-      (int)ceil((local_map_dim_d_z_) / storage_map_info_.resolution);
+  local_map_info_.dim.z = static_cast<int>(
+      ceil((local_map_dim_d_z_) / storage_map_info_.resolution));
   storage_map_info_.dim.z = local_map_info_.dim.z;
 
   // storage map should have same x y z center and x_dim y_dim as global map
   storage_map_info_.origin.x = global_map_info_.origin.x;
   storage_map_info_.origin.y = global_map_info_.origin.y;
   storage_map_info_.origin.z = global_map_info_.origin.z;
-  storage_map_info_.dim.x =
-      (int)ceil((global_map_dim_d_x_) / storage_map_info_.resolution);
-  storage_map_info_.dim.y =
-      (int)ceil((global_map_dim_d_y_) / storage_map_info_.resolution);
+  storage_map_info_.dim.x = static_cast<int>(
+      ceil((global_map_dim_d_x_) / storage_map_info_.resolution));
+  storage_map_info_.dim.y = static_cast<int>(
+      ceil((global_map_dim_d_y_) / storage_map_info_.resolution));
 
   local_map_info_.dim.x =
-      (int)ceil((local_map_dim_d_x_) / local_map_info_.resolution);
+      static_cast<int>(ceil((local_map_dim_d_x_) / local_map_info_.resolution));
   local_map_info_.dim.y =
-      (int)ceil((local_map_dim_d_y_) / local_map_info_.resolution);
+      static_cast<int>(ceil((local_map_dim_d_y_) / local_map_info_.resolution));
 
   // local map range z and center_z will be the same as storage map
   local_map_info_.origin.z = storage_map_info_.origin.z;
@@ -88,12 +88,12 @@ void LocalGlobalMapperNode::initParams_() {
   global_map_info_.origin.x = global_map_cx - global_map_dim_d_x_ / 2;
   global_map_info_.origin.y = global_map_cy - global_map_dim_d_y_ / 2;
   global_map_info_.origin.z = global_map_cz - global_map_dim_d_z_ / 2;
-  global_map_info_.dim.x =
-      (int)ceil((global_map_dim_d_x_) / global_map_info_.resolution);
-  global_map_info_.dim.y =
-      (int)ceil((global_map_dim_d_y_) / global_map_info_.resolution);
-  global_map_info_.dim.z =
-      (int)ceil((global_map_dim_d_z_) / global_map_info_.resolution);
+  global_map_info_.dim.x = static_cast<int>(
+      ceil((global_map_dim_d_x_) / global_map_info_.resolution));
+  global_map_info_.dim.y = static_cast<int>(
+      ceil((global_map_dim_d_y_) / global_map_info_.resolution));
+  global_map_info_.dim.z = static_cast<int>(
+      ceil((global_map_dim_d_z_) / global_map_info_.resolution));
 
   nh_.param("local/resolution", local_map_info_.resolution, 0.25f);
   nh_.param("local/range_x", local_map_dim_d_x_, 20.0);
@@ -212,8 +212,8 @@ void LocalGlobalMapperNode::cropLocalMap_(
 
 void LocalGlobalMapperNode::getLidarPoses_(
     const std_msgs::Header& cloud_header,
-    geometry_msgs::Pose& pose_map_lidar,
-    geometry_msgs::Pose& pose_odom_lidar) {
+    geometry_msgs::Pose* pose_map_lidar_ptr,
+    geometry_msgs::Pose* pose_odom_lidar_ptr) {
   // get the transform from fixed frame to lidar frame
   static mapper::TFListener tf_listener;
   if (real_robot_) {
@@ -233,9 +233,10 @@ void LocalGlobalMapperNode::getLidarPoses_(
           lidar_frame_.c_str(),
           odom_frame_.c_str());
       return;
+    } else {
+      pose_map_lidar_ptr = &(*tf_map_lidar);
+      pose_odom_lidar_ptr = &(*tf_odom_lidar);
     }
-    pose_map_lidar = *tf_map_lidar;
-    pose_odom_lidar = *tf_odom_lidar;
   } else {
     auto tf_map_lidar = tf_listener.LookupTransform(
         map_frame_, cloud_header.frame_id, cloud_header.stamp);
@@ -255,9 +256,10 @@ void LocalGlobalMapperNode::getLidarPoses_(
           cloud_header.frame_id.c_str(),
           odom_frame_.c_str());
       return;
+    } else {
+      pose_map_lidar_ptr = &(*tf_map_lidar);
+      pose_odom_lidar_ptr = &(*tf_odom_lidar);
     }
-    pose_map_lidar = *tf_map_lidar;
-    pose_odom_lidar = *tf_odom_lidar;
   }
 }
 
@@ -270,7 +272,7 @@ void LocalGlobalMapperNode::processCloud_(
 
   geometry_msgs::Pose pose_map_lidar;
   geometry_msgs::Pose pose_odom_lidar;
-  getLidarPoses_(cloud.header, pose_map_lidar, pose_odom_lidar);
+  getLidarPoses_(cloud.header, &pose_map_lidar, &pose_odom_lidar);
 
   const Eigen::Affine3d T_map_lidar = toTF(pose_map_lidar);
   const Eigen::Affine3d T_odom_lidar = toTF(pose_odom_lidar);

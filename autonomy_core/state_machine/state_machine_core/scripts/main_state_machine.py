@@ -9,12 +9,11 @@ import smach
 import smach_ros
 import planning_ros_msgs.msg as MHL
 
-# from Helpers import *
 from MainStates import GetWaypoints, RetryWaypoints, WaitState, ArmDisarmMavros, PublishBoolMsgState, TrackerTransition, TakingOff, SetHomeHere, Landing 
 from SwitchState import SwitchState
 
 from QuadTracker import QuadTracker
-import MP_Replanner
+import Replanner
 from multiprocessing.pool import ThreadPool
 
 # state naming conventions
@@ -189,7 +188,7 @@ def main():
 
         smach.StateMachine.add(
             "ExecuteMotionPrimitive",
-            MP_Replanner.REPLANNER(quad_tracker),
+            Replanner.REPLANNER(quad_tracker),
             transitions={
                 "succeeded": "RetryMPWaypoints",
                 "no_path": "RetryMPWaypoints",

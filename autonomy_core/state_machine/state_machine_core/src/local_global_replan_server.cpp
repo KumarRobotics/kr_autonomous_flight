@@ -834,7 +834,7 @@ vec_Vec3f RePlanner::PathCrop(const vec_Vec3f& path) {
   bool intesected;
   for (unsigned int i = 1; i < path.size(); i++) {
     intesected = state_machine::IntersectLineBox(
-        map_lower, map_upper, path[i - 1], path[i], intersect_pt);
+        map_lower, map_upper, path[i - 1], path[i], &intersect_pt);
     if (intesected) {
       // intersects, add the intersection
       cropped_path.push_back(intersect_pt);

@@ -14,7 +14,7 @@ global:
   max_raycast_range: 30.0
   dilate_xy: true
   dilate_z: false
-  decay_times_to_empty: 50 # times of decay to empty, std::ceil((float)(val_occ - val_even) / (float)decay_times_to_empty), 0 means no decay
+  decay_times_to_empty: 10 # times of decay to empty, std::ceil((float)(val_occ - val_even) / (float)decay_times_to_empty), 0 means no decay
 
 local: # local map range z and center_z will be the same as storage map
   # local planning horizon will be from robot to the local voxel map boundary
@@ -23,6 +23,6 @@ local: # local map range z and center_z will be the same as storage map
   range_z: 8.0
   resolution: 0.5
   max_raycast_range: 20.0
-  decay_times_to_empty: 50 # number of times of decay to empty, 0 means no decay
+  decay_times_to_empty: 10 # number of times of decay to empty, 0 means no decay
 
 

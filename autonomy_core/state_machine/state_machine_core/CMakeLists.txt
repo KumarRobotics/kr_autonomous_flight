@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(fla_state_machine)
+project(state_machine)
 
 set(CMAKE_CXX_STANDARD 17)
 find_package(Eigen3)
@@ -31,12 +31,15 @@ target_include_directories(${PROJECT_NAME} PUBLIC include
 target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES})
 
 add_executable(local_global_replan_server src/local_global_replan_server.cpp)
-target_include_directories(local_global_replan_server PUBLIC include ${catkin_INCLUDE_DIRS})
-target_link_libraries(local_global_replan_server PUBLIC ${PROJECT_NAME} ${catkin_LIBRARIES} Boost::timer Eigen3::Eigen)
+target_include_directories(local_global_replan_server
+                           PUBLIC include ${catkin_INCLUDE_DIRS})
+target_link_libraries(
+  local_global_replan_server PUBLIC ${PROJECT_NAME} ${catkin_LIBRARIES}
+                                    Boost::timer Eigen3::Eigen)
 add_dependencies(local_global_replan_server ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
 
 # add_executable(path_replanner src/path_replanner.cpp)
 # target_link_libraries(path_replanner PUBLIC ${PROJECT_NAME})
 # add_dependencies(path_replanner ${${PROJECT_NAME}_EXPORTED_TARGETS}
-#                  ${catkin_EXPORTED_TARGETS})
+# ${catkin_EXPORTED_TARGETS})

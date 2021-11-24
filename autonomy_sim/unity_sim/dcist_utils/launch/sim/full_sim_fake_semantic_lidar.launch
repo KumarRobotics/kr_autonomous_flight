@@ -2,6 +2,7 @@
 <launch>
 
 
+  <!-- Increase this delay if your computer is not powerful enough /> -->
   <arg name="takeoff_node_start_delay" default="10.0" />  
   <arg name="robot" default="quadrotor" />  
   <arg name="use_lauras" default="false" />

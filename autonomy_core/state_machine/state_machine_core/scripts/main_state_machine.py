@@ -7,20 +7,13 @@ from __future__ import print_function
 import rospy
 import smach
 import smach_ros
-from std_srvs.srv import Empty
-from std_srvs.srv import EmptyResponse
 import planning_ros_msgs.msg as MHL
-import numpy
 
-# from Helpers import *
-from MainStates import *
-from SwitchState import *
+from MainStates import GetWaypoints, RetryWaypoints, WaitState, ArmDisarmMavros, PublishBoolMsgState, TrackerTransition, TakingOff, SetHomeHere, Landing 
+from SwitchState import SwitchState
 
-from QuadTracker import *
-from Replanner import *
-import MP_Replanner
-
-import threading
+from QuadTracker import QuadTracker
+import Replanner
 from multiprocessing.pool import ThreadPool
 
 # state naming conventions
@@ -143,14 +136,7 @@ def main():
                 "preempted": "Hover"
             },
         )
-        smach.StateMachine.add(
-            "SetHomeHere",
-            SetHomeHere(quad_tracker),
-            transitions={
-                "succeeded": "LandTransition",
-                "failed": "Hover"
-            },
-        )
+
         smach.StateMachine.add(
             "LandTransition",
             TrackerTransition("trackers_manager/transition",
@@ -161,50 +147,35 @@ def main():
                 "preempted": "Hover"
             },
         )
+
         # Hover States
         smach.StateMachine.add(
             "Hover",
             SwitchState(
                 "state_trigger",
                 MHL.StateTransition,
-                ["land_here", "short_range", "waypoints", "motion_plan"],
+                ["land_here", "waypoints"],
                 quad_tracker,
             ),
             transitions={
                 "invalid": "Hover",
                 "preempted": "Hover",
                 "land_here": "SetHomeHere",
-                "short_range": "GetShort",
-                # "waypoints": "GetWaypoints",
                 "waypoints":
-                "GetMPWaypoints",  #TODO: temporary change for test mp planner
-                "motion_plan": "GetMPWaypoints",
+                "GetMPWaypoints"
             },
         )
 
-        
-
+        # Set home position for land_here command
         smach.StateMachine.add(
-            "GetShort",
-            GetWaypoints(quad_tracker),
+            "SetHomeHere",
+            SetHomeHere(quad_tracker),
             transitions={
-                "succeeded": "ShortRange",
-                "multi": "ShortRange",
+                "succeeded": "LandTransition",
                 "failed": "Hover"
             },
         )
 
-
-
-        smach.StateMachine.add(
-            "ShortRange",
-            REPLANNER(quad_tracker),
-            transitions={
-                "succeeded": "Hover",
-                "no_path": "Hover",
-                "failed": "Hover"
-            },
-        )
 
         # for motion primitive planner:
         smach.StateMachine.add('GetMPWaypoints',
@@ -214,17 +185,10 @@ def main():
                                    'multi': 'ExecuteMotionPrimitive',
                                    'failed': 'Hover'
                                })
-        # smach.StateMachine.add('GetTrajectory', PlanTrajectory("tpplanner/plan_trajectory", quad_tracker),
-        #                        transitions={'succeeded':'ExecuteMotionPrimitive',
-        #                                     'aborted':'Hover',
-        #                                     'preempted':'Hover'})
-        # smach.StateMachine.add('GetTrajectoryWaypoints', PlanTrajectoryWaypoints("tpplanner/plan_trajectory", quad_tracker),
-        #                        transitions={'succeeded':'ExecuteMotionPrimitive',
-        #                                     'aborted':'Hover',
-        #                                     'preempted':'Hover'}) # plan_trajectory_waypoints seems deprecated per comments in mp_planner.cpp
+
         smach.StateMachine.add(
             "ExecuteMotionPrimitive",
-            MP_Replanner.REPLANNER(quad_tracker),
+            Replanner.REPLANNER(quad_tracker),
             transitions={
                 "succeeded": "RetryMPWaypoints",
                 "no_path": "RetryMPWaypoints",
@@ -241,19 +205,6 @@ def main():
                                    'failed': 'Hover'
                                })
         
-        # the following moved to MP_Replanner
-        # smach.StateMachine.add('CheckTrajectory', CheckTrajectory( quad_tracker),
-        #                        transitions={'succeeded':'TrajTransition',
-        #                                     'failed':'Hover'})
-        # smach.StateMachine.add('TrajTransition', TrackerTransition("trackers_manager/transition","action_trackers/ActionTrajectoryTracker", quad_tracker),
-        #                        transitions={'succeeded':'RunTrajectory',
-        #                                     'aborted':'Hover',
-        #                                     'preempted':'Hover'})
-        # # execute_trajectory defined in action_trackers/src/trajectory_tracker_upgraded.cpp
-        # smach.StateMachine.add('RunTrajectory', RunTrajectory("trackers_manager/execute_trajectory", quad_tracker),
-        #                        transitions={'succeeded':'Hover',
-        #                                     'preempted':'Hover',
-        #                                     'aborted':'Hover'})
 
     # Create and start the introspection server
     sis = smach_ros.IntrospectionServer("introspection_server", sm, "/SM_ROOT")

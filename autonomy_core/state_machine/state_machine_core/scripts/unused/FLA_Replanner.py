@@ -10,13 +10,12 @@ import smach_ros
 from MainStates import *
 import geometry_msgs.msg as GM
 import kr_mav_msgs.msg as QM
-import fla_state_machine.msg as SM
+import state_machine.msg as SM
 
 from Utils import *
 import tf
 import threading
 import numpy as np
-
 
 # Yaw-related classes (CheckYaw AlignYaw YawSearch) removed (exist in autonomy_stack repo before 8/16/2020).
 
@@ -27,6 +26,9 @@ class StoppingPolicyDone(smach.State):
         self.quad_monitor = quad_monitor
 
     def execute(self, userdata):
+        # clear all original waypoints for safety  (because no path has been found for them)
+        self.quad_monitor.waypoints = None
+        print("waypoints cleared!")
         return "done"
 
 
@@ -38,6 +40,7 @@ class CheckRePlan(smach.State):
                 "success",
                 "critical_error",
                 "abort",
+                "in_progress",
                 "no_path",
                 "abort_full_mission",
             ],
@@ -55,19 +58,14 @@ class CheckRePlan(smach.State):
 class RePlan(smach_ros.SimpleActionState):
     def goal_cb(self, userdata, goal):
         # rospy.logerr(type(goal.p_init))
-        goal.p_init = copy.deepcopy(self.quad_monitor.get_curr_poseC()) 
+        goal.p_init = copy.deepcopy(self.quad_monitor.get_curr_poseC())
         goal.p_final = copy.deepcopy(self.quad_monitor.pose_goal)
-        if self.quad_monitor.avoid is None:
-          goal.avoid_obstacles = True # default avoid obstacle
-        else:
-          goal.avoid_obstacles = self.quad_monitor.avoid
-          
+
         if self.quad_monitor.pose_goals is not None:
             goal.p_finals = self.quad_monitor.pose_goals
 
         goal.replan_rate = self.quad_monitor.replan_rate
         self.quad_monitor.replan_status = None
-
 
     def result_cb(self, userdata, status, result):
         # rospy.logwarn(result)
@@ -84,13 +82,9 @@ class RePlan(smach_ros.SimpleActionState):
             self.quad_monitor.replan_status = "critical_error"
             self.quad_monitor.abort = True
         elif result.status == 4:
-            raise Exception("The IN_PROGRESS result should have been disabled!")
-            # self.quad_monitor.replan_status = "in_progress"
+            self.quad_monitor.replan_status = "in_progress"
         elif result.status == 5:
             self.quad_monitor.replan_status = "abort_full_mission"
-
-        print("Final result is:", self.quad_monitor.replan_status)
-
 
     def __init__(self, action_topic, quad_monitor):
         smach_ros.SimpleActionState.__init__(
@@ -108,23 +102,20 @@ class REPLANNER(smach.StateMachine):
         safe = True
         self.quad_monitor = quad_monitor
         with self:
-            smach.StateMachine.add('TrajTransitionMP', TrackerTransition("trackers_manager/transition","action_trackers/ActionTrajectoryTracker", quad_monitor),
-                                   transitions={'succeeded':'RePlan',
-                                                'aborted':'RePlan',
-                                                'preempted':'RePlan'})
-            # smach.StateMachine.add(
-            #     "TrajTransitionSR",
-            #     TrackerTransition(
-            #         "trackers_manager/transition",
-            #         "action_trackers/ActionPathTracker",
-            #         quad_monitor,
-            #     ),
-            #     transitions={"succeeded": "RePlan", "aborted": "RePlan", "preempted": "RePlan"},
-            # )
+            # action_trackers/src/path_tracker.cpp
+            smach.StateMachine.add(
+                "TrajTransitionSR",
+                TrackerTransition(
+                    "trackers_manager/transition",
+                    "action_trackers/ActionPathTracker",
+                    quad_monitor,
+                ),
+                transitions={"succeeded": "RePlan", "aborted": "RePlan", "preempted": "RePlan"},
+            )
 
             smach.StateMachine.add(
                 "RePlan",
-                RePlan("local_global_replan_server/replan", quad_monitor),
+                RePlan("replanner/replan", quad_monitor),
                 transitions={
                     "succeeded": "CheckRePlan",
                     "aborted": "CheckRePlan",
@@ -137,10 +128,15 @@ class REPLANNER(smach.StateMachine):
                 transitions={
                     "success": "StoppingPolicySuccess",
                     "abort": "StoppingPolicy",
+                    "in_progress": "WaitForReplan",
                     "no_path": "StoppingPolicyNoPath",
                     "abort_full_mission": "StoppingPolicy",
                     "critical_error": "StoppingPolicy",
                 },
+            )
+            replan_rate = self.quad_monitor.replan_rate # Planner will run at replan_rate) hz
+            smach.StateMachine.add(
+                "WaitForReplan", WaitState(1.0 / replan_rate), transitions={"done": "RePlan"}
             )
 
             smach.StateMachine.add(
@@ -193,3 +189,22 @@ class REPLANNER(smach.StateMachine):
                 StoppingPolicyDone(quad_monitor),
                 transitions={"done": "succeeded"},
             )
+
+
+# This is removed from MainStates.py, maybe useful if come back to use JPS + line tracker
+    # class PlanPath(smach_ros.SimpleActionState):
+    #     def goal_cb(self, userdata, goal):
+    #         goal.p_init = self.quad_monitor.get_curr_poseC()
+    #         goal.p_final = self.quad_monitor.pose_goal
+    #         goal.p_finals = self.quad_monitor.pose_goals
+
+    #         return goal
+
+    #     def result_cb(self, userdata, status, result):
+    #         self.quad_monitor.path = result.path
+
+    #     def __init__(self, action_topic, quad_monitor):
+    #         smach_ros.SimpleActionState.__init__(
+    #             self, action_topic, AP.PlanPathAction, goal_cb=self.goal_cb, result_cb=self.result_cb
+    #         )
+    #         self.quad_monitor = quad_monitor

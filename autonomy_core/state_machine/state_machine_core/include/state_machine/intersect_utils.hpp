@@ -15,10 +15,10 @@ inline bool CheckPointInBox(Vec3f B1, Vec3f B2, Vec3f P1) {
 }
 
 inline int GetIntersection(
-    float fDst1, float fDst2, Vec3f P1, Vec3f P2, Vec3f& Hit) {
+    float fDst1, float fDst2, Vec3f P1, Vec3f P2, Vec3f* HitPtr) {
   if ((fDst1 * fDst2) >= 0.0f) return 0;
   if (fDst1 == fDst2) return 0;
-  Hit = P1 + (P2 - P1) * (-fDst1 / (fDst2 - fDst1));
+  *HitPtr = P1 + (P2 - P1) * (-fDst1 / (fDst2 - fDst1));
   return 1;
 }
 
@@ -38,31 +38,26 @@ inline int InBox(Vec3f Hit, Vec3f B1, Vec3f B2, const int Axis) {
 // returns true if line (L1, L2) intersects with the box (B1, B2)
 // returns intersection point in Hit
 inline bool IntersectLineBox(
-    Vec3f B1, Vec3f B2, Vec3f L1, Vec3f L2, Vec3f& Hit) {
+    Vec3f B1, Vec3f B2, Vec3f L1, Vec3f L2, Vec3f* HitPtr) {
   if (L2[0] < B1[0] && L1[0] < B1[0]) return false;
   if (L2[0] > B2[0] && L1[0] > B2[0]) return false;
   if (L2[1] < B1[1] && L1[1] < B1[1]) return false;
   if (L2[1] > B2[1] && L1[1] > B2[1]) return false;
   if (L2[2] < B1[2] && L1[2] < B1[2]) return false;
   if (L2[2] > B2[2] && L1[2] > B2[2]) return false;
-  //   if (L1[0] > B1[0] && L1[0] < B2[0] && L1[1] > B1[1] && L1[1] < B2[1] &&
-  //   L1[2] > B1[2] &&
-  //       L1[2] < B2[2]) {
-  //     Hit = L1;
-  //     return true;
-  //   }
-  if ((GetIntersection(L1[0] - B1[0], L2[0] - B1[0], L1, L2, Hit) &&
-       InBox(Hit, B1, B2, 1)) ||
-      (GetIntersection(L1[1] - B1[1], L2[1] - B1[1], L1, L2, Hit) &&
-       InBox(Hit, B1, B2, 2)) ||
-      (GetIntersection(L1[2] - B1[2], L2[2] - B1[2], L1, L2, Hit) &&
-       InBox(Hit, B1, B2, 3)) ||
-      (GetIntersection(L1[0] - B2[0], L2[0] - B2[0], L1, L2, Hit) &&
-       InBox(Hit, B1, B2, 1)) ||
-      (GetIntersection(L1[1] - B2[1], L2[1] - B2[1], L1, L2, Hit) &&
-       InBox(Hit, B1, B2, 2)) ||
-      (GetIntersection(L1[2] - B2[2], L2[2] - B2[2], L1, L2, Hit) &&
-       InBox(Hit, B1, B2, 3)))
+
+  if ((GetIntersection(L1[0] - B1[0], L2[0] - B1[0], L1, L2, HitPtr) &&
+       InBox(*HitPtr, B1, B2, 1)) ||
+      (GetIntersection(L1[1] - B1[1], L2[1] - B1[1], L1, L2, HitPtr) &&
+       InBox(*HitPtr, B1, B2, 2)) ||
+      (GetIntersection(L1[2] - B1[2], L2[2] - B1[2], L1, L2, HitPtr) &&
+       InBox(*HitPtr, B1, B2, 3)) ||
+      (GetIntersection(L1[0] - B2[0], L2[0] - B2[0], L1, L2, HitPtr) &&
+       InBox(*HitPtr, B1, B2, 1)) ||
+      (GetIntersection(L1[1] - B2[1], L2[1] - B2[1], L1, L2, HitPtr) &&
+       InBox(*HitPtr, B1, B2, 2)) ||
+      (GetIntersection(L1[2] - B2[2], L2[2] - B2[2], L1, L2, HitPtr) &&
+       InBox(*HitPtr, B1, B2, 3)))
     return true;
 
   return false;

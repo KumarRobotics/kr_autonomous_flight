@@ -79,29 +79,29 @@ class GetWaypoints(smach.State):
 class RetryWaypoints(smach.State):
     """Retry waypoints and prepends quadrotors pose"""
 
-    def __init__(self, quad_monitor):
+    def __init__(self, quad_monitor, max_planning_velocity, max_stopping_acceleration):
         smach.State.__init__(self, outcomes=["succeeded", "multi", "failed"])
         self.quad_monitor = quad_monitor
         self.reset_pub = rospy.Publisher("reset", GM.PoseStamped, queue_size=10)
-        self.num_trails = 1
-        self.max_trails = 200 # how many total trails are allowed in each mission
+        self.num_trials = 1
+        self.max_trials = quad_monitor.max_replan_trials
         # time to wait for stopping policy to finish, should be large enough so that the robot fully stops
-        self.wait_for_stopping = 3.0 
-
+        est_stopping_time = max_planning_velocity / (max_stopping_acceleration * 0.3) # reduce the acceleration to consider worst-case scenarios
+        self.wait_for_stopping = est_stopping_time
     def execute(self, userdata):
         # print self.quad_monitor.waypoints
         print("[state_machine:] waiting for stopping policy to finish, wait time is: ", self.wait_for_stopping, " seconds.")
         rospy.sleep(self.wait_for_stopping)
         print("\n")
-        print("[state_machine:] retrying waypoints! Have tried ", self.num_trails, " times up till now. max_trails is set as ", self.max_trails)
+        print("[state_machine:] retrying waypoints! Have tried ", self.num_trials, " times up till now. max_trials is set as ", self.max_trials)
         print("\n")
         # TODO(xu:) add waypoint distance check here, choose the closest one!
         
-        if self.num_trails >= self.max_trails:
-            print("Current number of trails >= max_trails, which is ", self.max_trails, " aborting the mission!")
+        if self.num_trials >= self.max_trials:
+            print("Current number of trials >= max_trials, which is ", self.max_trials, " aborting the mission!")
             return "failed"
         else:
-            self.num_trails += 1
+            self.num_trials += 1
         
         if self.quad_monitor.waypoints is None or len(self.quad_monitor.waypoints.poses) == 0:
             rospy.logerr("Failed to get waypoints")

@@ -127,12 +127,14 @@ class QuadTracker:
         self.waypoints = None
         # self.trajectory = None
         self.pose_goal = None
-        self.replan_rate = 3
+        # replan rate, calling local planner every (1/replan_rate) seconds
+        self.replan_rate = None
         self.replan_status = None
-        # 3 hz
         self.reset_server = True
         self.v_des = 100
         self.et = False
         self.pose_goals = None
         self.listener = tf.TransformListener()
         self.rel_z = 1.0
+        # max allowed trials to re-enter replanner
+        self.max_replan_trials = None 

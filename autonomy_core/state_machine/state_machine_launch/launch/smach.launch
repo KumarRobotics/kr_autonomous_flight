@@ -3,11 +3,14 @@
     <arg name="node_start_delay" default="20"/>
 
     <node pkg="state_machine" type="main_state_machine.py" name="main_state_machine" output="screen" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' ">
+        <rosparam file="$(find control_launch)/config/tracker_params_mp.yaml"/>
         <remap from="~odom" to="odom"/>
         <!-- <remap from="~odom" to="/unity_ros/$(arg robot)/TrueState/odom"/> -->
         <remap from="waypoints_done" to="done"/>
         <remap from="~height" to="mavros/distance_sensor/lidarlite_pub"/>
         <param name="takeoff_height" value="$(arg takeoff_height)"/>
+        <param name="takeoff_height" value="$(arg takeoff_height)"/>
         <remap from="~goal_pose" to="goal_pose"/>
+
     </node>
 </launch>

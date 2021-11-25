@@ -26,11 +26,15 @@ def main():
 
     rospy.init_node("smach_state_machine")
 
+    # replan_rate parameter should be set in the ros parameter YAML file under the state_machine field
+    if rospy.has_param("~state_machine/replan_rate"):
+        replan_rate = rospy.get_param("~state_machine/replan_rate")
+    else:
+        raise Exception("state_machine/replan_rate is not set in the ros param YAML file!")
+
     # Create holder for tracker object
 
     quad_tracker = QuadTracker(rospy.names.get_namespace() + "abort")
-    # specify replan rate, this will be recorded in the goal msg, as well as
-    replan_rate = 2.0 
     quad_tracker.replan_rate = replan_rate
     quad_tracker.avoid = True  # obstacle avoidance in planner
 

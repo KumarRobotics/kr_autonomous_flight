@@ -67,3 +67,6 @@ local_global_server:
   global_planner_verbose: false #
   odom_frame: "quadrotor/odom"
   map_frame: "quadrotor/map"
+
+state_machine:
+  replan_rate: 5.0 # calling local planner every (1/replan_rate) seconds

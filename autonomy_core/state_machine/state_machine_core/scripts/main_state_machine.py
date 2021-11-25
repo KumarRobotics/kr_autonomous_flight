@@ -29,21 +29,42 @@ def main():
     # replan_rate parameter should be set in the ros parameter YAML file under the state_machine field
     if rospy.has_param("~state_machine/replan_rate"):
         replan_rate = rospy.get_param("~state_machine/replan_rate")
+        print("[State machine:] Setting replan_rate as:", replan_rate)
     else:
-        raise Exception("state_machine/replan_rate is not set in the ros param YAML file!")
+        raise Exception("[State machine:] state_machine/replan_rate is not set in the ros param YAML file!")
+
+    # max_replan_trials parameter should be set in the ros parameter YAML file under the state_machine field
+    if rospy.has_param("~state_machine/max_replan_trials"):
+        max_replan_trials = rospy.get_param("~state_machine/max_replan_trials")
+        print("[State machine:] Setting max_replan_trials as:", max_replan_trials)
+    else:
+        raise Exception("[State machine:] state_machine/max_replan_trials is not set in the ros param YAML file!")
+
+    # max_planning_velocity parameter 
+    if rospy.has_param("~trajectory_planner/max_v"):
+        max_planning_velocity = rospy.get_param("~trajectory_planner/max_v")
+        print("[State machine:] Setting max_planning_velocity as:", max_planning_velocity)
+    else:
+        raise Exception("[State machine:] trajectory_planner/max_v is not set in the ros param YAML file!")
+
+    # max_stopping_acceleration parameter 
+    if rospy.has_param("~stopping_policy/acc_xy_des"):
+        max_stopping_acceleration = rospy.get_param("~stopping_policy/acc_xy_des")
+        print("[State machine:] Setting max_stopping_acceleration as:", max_stopping_acceleration)
+    else:
+        raise Exception("[State machine:] stopping_policy/acc_xy_des is not set in the ros param YAML file!")
 
     # Create holder for tracker object
-
     quad_tracker = QuadTracker(rospy.names.get_namespace() + "abort")
     quad_tracker.replan_rate = replan_rate
+    quad_tracker.max_replan_trials = max_replan_trials
     quad_tracker.avoid = True  # obstacle avoidance in planner
 
     # Create a SMACH state machine
     sm = smach.StateMachine(outcomes=["done"])
     with sm:
-        # Open the container
 
-        # On and Off States:
+        # IdleTransition state, activating take off tracker to prepare for taking off
         smach.StateMachine.add(
             "IdleTransition",
             TrackerTransition("trackers_manager/transition",
@@ -54,6 +75,8 @@ def main():
                 "preempted": "Off"
             },
         )
+
+        # off state
         smach.StateMachine.add(
             "Off",
             SwitchState("state_trigger", MHL.StateTransition, ["motors_on"],
@@ -65,6 +88,7 @@ def main():
             },
         )
 
+        # motor on state
         smach.StateMachine.add(
             "MotorOn",
             PublishBoolMsgState("motors", True),
@@ -74,10 +98,12 @@ def main():
             },
         )
 
+        # wait state, sleep for 1 second
         smach.StateMachine.add("WaitForOne",
                                WaitState(1),
                                transitions={"done": "Idle"})
 
+        # mavros arm state
         smach.StateMachine.add(
             "MavrosArm",
             ArmDisarmMavros("mavros/cmd/arming", True),
@@ -87,6 +113,7 @@ def main():
             },
         )
 
+        # mavros disarm state
         smach.StateMachine.add(
             "MavrosDisarm",
             ArmDisarmMavros("mavros/cmd/arming", False),
@@ -96,6 +123,7 @@ def main():
             },
         )
 
+        # motor off state
         smach.StateMachine.add(
             "MotorOff",
             PublishBoolMsgState("motors", False),
@@ -104,6 +132,8 @@ def main():
                 "failed": "MotorOff"
             },
         )
+
+        # idle state
         smach.StateMachine.add(
             "Idle",
             SwitchState(
@@ -120,7 +150,7 @@ def main():
             },
         )
 
-        # Up and Down States:
+        # taking off state
         smach.StateMachine.add(
             "TakingOff",
             TakingOff("trackers_manager/take_off", quad_tracker),
@@ -131,6 +161,7 @@ def main():
             },
         )
 
+        # landing state
         smach.StateMachine.add(
             "Landing",
             Landing("trackers_manager/land", quad_tracker),
@@ -141,18 +172,7 @@ def main():
             },
         )
 
-        smach.StateMachine.add(
-            "LandTransition",
-            TrackerTransition("trackers_manager/transition",
-                              "action_trackers/LandTracker", quad_tracker),
-            transitions={
-                "succeeded": "Landing",
-                "aborted": "Hover",
-                "preempted": "Hover"
-            },
-        )
-
-        # Hover States
+        # Hover state
         smach.StateMachine.add(
             "Hover",
             SwitchState(
@@ -180,8 +200,20 @@ def main():
             },
         )
 
+        # LandTransition state, activating land tracker
+        smach.StateMachine.add(
+            "LandTransition",
+            TrackerTransition("trackers_manager/transition",
+                              "action_trackers/LandTracker", quad_tracker),
+            transitions={
+                "succeeded": "Landing",
+                "aborted": "Hover",
+                "preempted": "Hover"
+            },
+        )
 
-        # for motion primitive planner:
+
+        # GetMPWaypoints state, processing waypoints for motion primitive based replanner:
         smach.StateMachine.add('GetMPWaypoints',
                                GetWaypoints(quad_tracker),
                                transitions={
@@ -190,6 +222,7 @@ def main():
                                    'failed': 'Hover'
                                })
 
+        # ExecuteMotionPrimitive state, entering replanner (sub-)state-machine
         smach.StateMachine.add(
             "ExecuteMotionPrimitive",
             Replanner.REPLANNER(quad_tracker),
@@ -200,9 +233,10 @@ def main():
             },
         )
 
-        # for motion primitive planner:
+        # RetryMPWaypoints state, re-entering ExecuteMotionPrimitive state if RetryWaypoints returns true (i.e. trail times < pre-defined max_trail_time);
+        # Otherwise, calling stopping policy and transiting to hover.
         smach.StateMachine.add('RetryMPWaypoints',
-                               RetryWaypoints(quad_tracker),
+                               RetryWaypoints(quad_tracker, max_planning_velocity, max_stopping_acceleration),
                                transitions={
                                    'succeeded': 'ExecuteMotionPrimitive',
                                    'multi': 'ExecuteMotionPrimitive',

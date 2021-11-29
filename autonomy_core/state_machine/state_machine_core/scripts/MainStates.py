@@ -55,13 +55,16 @@ class GetWaypoints(smach.State):
         self.reset_pub = rospy.Publisher("reset", GM.PoseStamped, queue_size=10)
 
     def execute(self, userdata):
-        # print self.quad_monitor.waypoints
         if self.quad_monitor.waypoints is None or len(self.quad_monitor.waypoints.poses) == 0:
             rospy.logerr("Failed to get waypoints")
             return "failed"
 
-        self.quad_monitor.pose_goal = self.quad_monitor.waypoints.poses[-1].pose # record the last waypoint to check whether the robot has finished all waypoints when replanning
-        self.quad_monitor.pose_goals = [it.pose for it in self.quad_monitor.waypoints.poses]
+        # record all waypoints
+        self.quad_monitor.pose_goals = [it.pose for it in self.quad_monitor.waypoints.poses] # will be feed into goal.p_finals later in RePlan class       
+        # record the last waypoint to check whether the robot has finished all waypoints when replanning
+        self.quad_monitor.pose_goal = self.quad_monitor.waypoints.poses[-1].pose #  will be feed into goal.p_final later in RePlan class
+        # this informs the replanner to starting a new mission
+        self.quad_monitor.continue_mission = False # will be feed into goal.continue_mission later in RePlan class
 
         ps = GM.PoseStamped()
         ps.header = self.quad_monitor.waypoints.header
@@ -95,29 +98,19 @@ class RetryWaypoints(smach.State):
         print("\n")
         print("[state_machine:] retrying waypoints! Have tried ", self.num_trials, " times up till now. max_trials is set as ", self.max_trials)
         print("\n")
-        # TODO(xu:) add waypoint distance check here, choose the closest one!
         
         if self.num_trials >= self.max_trials:
             print("Current number of trials >= max_trials, which is ", self.max_trials, " aborting the mission!")
             return "failed"
         else:
             self.num_trials += 1
-        
-        if self.quad_monitor.waypoints is None or len(self.quad_monitor.waypoints.poses) == 0:
-            rospy.logerr("Failed to get waypoints")
-            return "failed"
-        
-        self.quad_monitor.pose_goal = self.quad_monitor.waypoints.poses[-1].pose # record the last waypoint to check whether the robot has finished all waypoints when replanning
-        self.quad_monitor.pose_goals = [it.pose for it in self.quad_monitor.waypoints.poses]
-
+       
+        # this informs the replanner to continue to finish waypoints in existing mission instead of starting a new mission
+        self.quad_monitor.continue_mission = True # will be feed into goal.continue_mission later in RePlan class
         ps = GM.PoseStamped()
-        ps.header = self.quad_monitor.waypoints.header
+        ps.header = ""
         ps.pose = self.quad_monitor.pose_goal
         self.reset_pub.publish(ps)
-
-        if len(self.quad_monitor.waypoints.poses) > 1:
-            rospy.loginfo("Multiple waypoints: {}".format(len(self.quad_monitor.waypoints.poses)))
-            return "multi"
 
         return "succeeded"
 

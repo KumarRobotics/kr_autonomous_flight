@@ -20,6 +20,9 @@ class StoppingPolicyDone(smach.State):
         self.quad_monitor = quad_monitor
 
     def execute(self, userdata):
+        # clear all original waypoints for safety  (because no path has been found for them)
+        self.quad_monitor.waypoints = None
+        print("waypoints cleared!")
         return "done"
 
 class CheckRePlan(smach.State):
@@ -56,6 +59,8 @@ class RePlan(smach_ros.SimpleActionState):
           
         if self.quad_monitor.pose_goals is not None:
             goal.p_finals = self.quad_monitor.pose_goals
+        
+        goal.continue_mission = self.quad_monitor.continue_mission
 
         goal.replan_rate = self.quad_monitor.replan_rate
         self.quad_monitor.replan_status = None
@@ -66,6 +71,7 @@ class RePlan(smach_ros.SimpleActionState):
         # rospy.loginfo(result)
         if result.status == 0:
             self.quad_monitor.replan_status = "success"
+            self.quad_monitor.abort = False
         elif result.status == 1:
             self.quad_monitor.replan_status = "abort"
             self.quad_monitor.abort = True
@@ -80,6 +86,7 @@ class RePlan(smach_ros.SimpleActionState):
             # self.quad_monitor.replan_status = "in_progress"
         elif result.status == 5:
             self.quad_monitor.replan_status = "abort_full_mission"
+            self.quad_monitor.abort = True
 
         print("Final result is:", self.quad_monitor.replan_status)
 

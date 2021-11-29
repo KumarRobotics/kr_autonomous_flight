@@ -93,7 +93,8 @@ class RePlanner {
   geometry_msgs::Pose pose_goal_wrt_odom_;  // goal recorder (transformed to
                                             // account for odom drift)
 
-  int waypoint_idx_;  // index of current goal in the array of goals (waypoints)
+  int cur_cb_waypoint_idx_{0};  // index of current goal in the array of goals
+                                // (waypoints)
   std::vector<geometry_msgs::Pose> pose_goals_;  // an array of goals
 
   bool finished_replanning_{
@@ -236,11 +237,9 @@ void RePlanner::GlobalPathCb(const planning_ros_msgs::Path& path) {
 
 void RePlanner::EpochCb(const std_msgs::Int64& msg) {
   if (msg.data < 0) {
-    ROS_ERROR("[Replanner:] aborting mission because tracker failed!!!");
-    ROS_ERROR("[Replanner:] aborting mission because tracker failed!!!");
-    ROS_ERROR("[Replanner:] aborting mission because tracker failed!!!");
-    ROS_ERROR("RePlanner has not received position cmd, failing");
-
+    ROS_WARN("+++++++++++++++++++++++++++++++++++");
+    ROS_ERROR("aborting mission because tracker failed!!!");
+    ROS_WARN("+++++++++++++++++++++++++++++++++++");
     AbortReplan();
     return;
   }
@@ -282,7 +281,7 @@ void RePlanner::CmdCb(const kr_mav_msgs::PositionCommand& cmd) {
 
 // map callback, update local_map_
 void RePlanner::LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
-  ROS_WARN_ONCE("[Replanner:] Got the local voxel map!");
+  ROS_WARN_ONCE("Got the local voxel map!");
   local_map_ptr_ = msg;
 }
 
@@ -294,25 +293,42 @@ void RePlanner::ReplanGoalCb() {
   local_replan_rate_ =
       goal->replan_rate;  // set local planner replan_rate to be the same as
                           // specified in goal (assigned in state machine)
-  pose_goals_ = goal->p_finals;
 
-  ROS_WARN_STREAM("[Replanner:] waypoints received, number of waypoints is:"
-                  << pose_goals_.size());
-
-  if (pose_goals_.empty()) {
-    ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-    ROS_WARN(
-        "[Replanner:] waypoints list is empty, now use single goal intead!");
-    ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++");
-    pose_goals_.push_back(goal->p_final);
-  } else if (pose_goals_.size() > 1) {
-    ROS_INFO(
-        "[Replanner:] received more than one waypoints! Number of waypoints: "
-        "%zu",
-        pose_goals_.size());
+  if (goal->continue_mission) {
+    // this means continuing with previous mission
+    ROS_INFO("Continuing to finish waypoints in existing mission...");
+    if (pose_goals_.empty()) {
+      ROS_ERROR("++++++++++++++++++++++++++++++++++++++++++++");
+      ROS_ERROR("Existing waypoint list is empty, aborting replan!");
+      ROS_ERROR("This should not happen, check state machine or replanner!");
+      ROS_ERROR("++++++++++++++++++++++++++++++++++++++++++++");
+      AbortReplan();
+    } else {
+      // update the waypoint idx to continue executing the remaining waypoints
+      // from the previous replan callback
+      ROS_INFO("Last replan process has finished %d waypoints!",
+               cur_cb_waypoint_idx_);
+    }
+  } else {
+    // reset cur_cb_waypoint_idx
+    cur_cb_waypoint_idx_ = 0;
+    // this means starting a new mission
+    ROS_INFO("Non-empty goal is sent, excecuting a new mission...");
+    if ((goal->p_finals).empty()) {
+      ROS_INFO("waypoints list is empty, now using single goal intead!");
+      pose_goals_.push_back(goal->p_final);
+    } else {
+      pose_goals_ = goal->p_finals;
+      ROS_INFO(
+          "receive more than one waypoints! Number of waypoints: "
+          "%zu",
+          pose_goals_.size());
+    }
+    ROS_INFO_STREAM("new waypoints received, number of waypoints is:"
+                    << pose_goals_.size());
   }
-  waypoint_idx_ = 0;
-  pose_goal_ = pose_goals_[waypoint_idx_];
+
+  pose_goal_ = pose_goals_[cur_cb_waypoint_idx_];
   TransformGlobalGoal();
 
   avoid_obstacle_ = goal->avoid_obstacles;  // obstacle avoidance mode
@@ -335,7 +351,7 @@ void RePlanner::setup_replanner() {
   }
   if (local_map_ptr_ == nullptr) {
     ROS_WARN(
-        "[Replanner:] local_map_ptr_ is nullptr, local map not received "
+        "local_map_ptr_ is nullptr, local map not received "
         "yet!!!!!");
     return;
   }
@@ -367,11 +383,11 @@ void RePlanner::setup_replanner() {
                         pose_goal_wrt_odom_.position.y - cmd_pos_(1)};
   float dist_cmd_to_goal = xy_diff.norm();
   if (dist_cmd_to_goal <= waypoint_threshold_) {
-    if ((waypoint_idx_ >= (pose_goals_.size() - 1)) &&
+    if ((cur_cb_waypoint_idx_ >= (pose_goals_.size() - 1)) &&
         (dist_cmd_to_goal <= final_waypoint_threshold_)) {
       // exit replanning process if the final waypoint is reached
       ROS_WARN(
-          "[Replanner:] Initial (and the only) waypoint is already close to "
+          "Initial (and the only) waypoint is already close to "
           "the robot "
           "position, terminating the replanning process!");
       state_machine::ReplanResult success;
@@ -382,14 +398,14 @@ void RePlanner::setup_replanner() {
       }
       last_traj_ = boost::shared_ptr<traj_opt::Trajectory>();
       return;
-    } else if (waypoint_idx_ < (pose_goals_.size() - 1)) {
+    } else if (cur_cb_waypoint_idx_ < (pose_goals_.size() - 1)) {
       // take the next waypoint if the intermidiate waypoint is reached
       ROS_WARN(
-          "[Replanner:] Initial waypoint is already close to the robot "
+          "Initial waypoint is already close to the robot "
           "position, continuing "
           "with the next waypoint!");
-      ++waypoint_idx_;
-      pose_goal_ = pose_goals_[waypoint_idx_];
+      cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
+      pose_goal_ = pose_goals_[cur_cb_waypoint_idx_];
       TransformGlobalGoal();
     }
   };
@@ -429,7 +445,7 @@ void RePlanner::setup_replanner() {
   vec_Vec3f path_cropped_wrt_odom = PathCrop(global_path_);
 
   if (path_cropped_wrt_odom.size() == 0) {
-    ROS_ERROR("[Replanner:] Path crop failed!");
+    ROS_ERROR("Path crop failed!");
     AbortReplan();
     return;
   }
@@ -581,7 +597,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
   if ((global_plan_counter_ % 2) == 0) {
     global_plan_client_->sendGoal(global_tpgoal);
     ROS_INFO_THROTTLE(2,
-                      "[Replanner:] global replan called at half of the "
+                      "global replan called at half of the "
                       "frequency of local replan");
     // this is just for visualization purposes
     vec_Vec3f global_path_wrt_map = TransformGlobalPath(global_path_);
@@ -595,7 +611,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
   // ROS_WARN_STREAM("++++ total_crop_dist = " << crop_dist);
   vec_Vec3f path_cropped_wrt_odom = PathCrop(global_path_);
   if (path_cropped_wrt_odom.size() == 0) {
-    ROS_ERROR("[Replanner:] Path crop failed!");
+    ROS_ERROR("Path crop failed!");
     AbortReplan();
     return false;
   }
@@ -672,29 +688,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
   }
 
   if (failed_local_trials_ >= max_local_trials_ - 1) {
-    // if (waypoint_idx_ >= (pose_goals_.size() - 1)) {
-    // if this is the final waypoint, abort full mission
     AbortReplan();
-    // } else {
-    // otherwise, allow one more try with the next waypoint
-    // TODO(xu): maybe abort full mission is a better choice if we want to
-    // visit every waypoint?
-
-    // ++waypoint_idx_;
-
-    // TODO(xu:) handle this in state_machine instead
-    // ROS_WARN_STREAM(
-    //     "Current intermidiate waypoint leads to local planner timeout, for "
-    //     << max_local_trials_ - 1
-    //     << "times giving one last try with the next waypoint, "
-    //        "whose index is: "
-    //     << waypoint_idx_);
-
-    // failed_local_trials_ =
-    //     failed_local_trials_ - 0.5;  // - 0.5 so that if we timeout again,
-    //     the
-    //                                  // replanner will be aborted
-    // }
     return false;
   }
 
@@ -724,7 +718,7 @@ void RePlanner::update_status() {
     // get the distance from current pos to goal (waypoint) pos
     double dist_cmd_to_goal = (pos_goal - pos_final).norm();
     if (dist_cmd_to_goal <= waypoint_threshold_) {
-      if ((waypoint_idx_ >= (pose_goals_.size() - 1)) &&
+      if ((cur_cb_waypoint_idx_ >= (pose_goals_.size() - 1)) &&
           (dist_cmd_to_goal <= final_waypoint_threshold_)) {
         // finished_replanning_ is set as true if this is the final waypoint
         finished_replanning_ = true;
@@ -732,15 +726,15 @@ void RePlanner::update_status() {
             "Final waypoint reached! The distance threshold is set as: "
             << final_waypoint_threshold_ << " Total " << pose_goals_.size()
             << " waypoints received");
-      } else if (waypoint_idx_ < (pose_goals_.size() - 1)) {
+      } else if (cur_cb_waypoint_idx_ < (pose_goals_.size() - 1)) {
         // take the next waypoint if the intermidiate waypoint is reached
-        ++waypoint_idx_;
+        cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
         ROS_INFO_STREAM(
             "Intermidiate waypoint reached, continue to the next waypoint, "
             "whose index is: "
-            << waypoint_idx_
+            << cur_cb_waypoint_idx_
             << "The distance threshold is set as:" << waypoint_threshold_);
-        pose_goal_ = pose_goals_[waypoint_idx_];
+        pose_goal_ = pose_goals_[cur_cb_waypoint_idx_];
         TransformGlobalGoal();
       }
     };
@@ -775,7 +769,9 @@ void RePlanner::update_status() {
       if (replan_server_->isActive()) {
         replan_server_->setSucceeded(success);
       }
-      ROS_INFO("RePlanner success!!");
+      for (int i = 0; i < 5; i++) {
+        ROS_INFO("Congratulations! Mission accomplished!!!");
+      }
       last_traj_ = boost::shared_ptr<traj_opt::Trajectory>();
       return;
     }
@@ -792,7 +788,7 @@ void RePlanner::update_status() {
 
 vec_Vec3f RePlanner::PathCrop(const vec_Vec3f& path) {
   if (path.size() < 2) {
-    ROS_WARN("[Replanner:] global path has <= 1 waypoints. Check!");
+    ROS_WARN("global path has <= 1 waypoints. Check!");
     // return empty
     return vec_Vec3f{};
   }
@@ -816,8 +812,7 @@ vec_Vec3f RePlanner::PathCrop(const vec_Vec3f& path) {
   bool start_in_box =
       state_machine::CheckPointInBox(map_lower, map_upper, path[0]);
   if (!start_in_box) {
-    ROS_ERROR(
-        "[Replanner:] global path start is outside local voxel map. Check!");
+    ROS_ERROR("global path start is outside local voxel map. Check!");
     // return empty
     return vec_Vec3f{};
   }
@@ -861,7 +856,7 @@ vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f& path_original) {
     transformStamped = tfBuffer.lookupTransform(
         map_frame_, odom_frame_, ros::Time(0), ros::Duration(0.01));
   } catch (tf2::TransformException& ex) {
-    ROS_ERROR("[Replanner:] Failed to get tf from %s to %s",
+    ROS_ERROR("Failed to get tf from %s to %s",
               odom_frame_.c_str(),
               map_frame_.c_str());
     // AbortReplan(); // no need to abort plan since this is just for
@@ -904,7 +899,7 @@ void RePlanner::TransformGlobalGoal() {
     transformStamped = tfBuffer.lookupTransform(
         odom_frame_, map_frame_, ros::Time(0), ros::Duration(0.01));
   } catch (tf2::TransformException& ex) {
-    ROS_ERROR("[Replanner:] Failed to get tf from %s to %s",
+    ROS_ERROR("Failed to get tf from %s to %s",
               map_frame_.c_str(),
               odom_frame_.c_str());
     AbortReplan();
@@ -915,10 +910,9 @@ void RePlanner::TransformGlobalGoal() {
   tf2::doTransform(pose_in, pose_out, transformStamped);
   pose_goal_wrt_odom_ = pose_out.pose;
   pose_goal_wrt_odom_.position.z = pose_goal_.position.z;
-  ROS_INFO_THROTTLE(
-      3,
-      "[Replanner:] when transforming global goal, keeping z-axis value the "
-      "same to guaranteed it's still within the voxel map");
+  ROS_INFO_THROTTLE(3,
+                    "when transforming global goal, keeping z-axis value the "
+                    "same to guaranteed it's still within the voxel map");
 }
 
 vec_Vec3f RePlanner::PathCrop(const vec_Vec3f& path,
@@ -1000,7 +994,7 @@ void RePlanner::AbortReplan(void) {
   if (replan_server_->isActive()) {
     replan_server_->setAborted(critical_);
   }
-  ROS_ERROR("[Replanner:] Replanning terminated!!");
+  ROS_ERROR("Replanning terminated!!");
 }
 
 RePlanner::RePlanner() : nh_("~") {

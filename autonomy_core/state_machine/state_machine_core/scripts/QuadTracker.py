@@ -138,3 +138,5 @@ class QuadTracker:
         self.rel_z = 1.0
         # max allowed trials to re-enter replanner
         self.max_replan_trials = None 
+        # if False, start a new mission; otherwise, continue to finish waypoints in existing mission
+        self.continue_mission = False

@@ -22,7 +22,7 @@ local: # local map range z and center_z will be the same as storage map
   range_y: 40.0
   range_z: 8.0
   resolution: 0.5
-  max_raycast_range: 20.0
+  max_raycast_range: 30.0
   decay_times_to_empty: 10 # number of times of decay to empty, 0 means no decay
 
 

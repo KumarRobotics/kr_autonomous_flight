@@ -12,7 +12,6 @@ Panels:
         - /Planner1
         - /Planner1/coverage_path1
         - /Maps1
-        - /Maps1/Local1
         - /Maps1/Global1
         - /Estimation1
         - /Estimation1/ground_truth_odom1
@@ -49,7 +48,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: fake_cloud
+    SyncSource: tree_semantic_cloud
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -344,7 +343,7 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
-        - Alpha: 1
+        - Alpha: 0.5
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
             Max Value: 11.75
@@ -369,7 +368,7 @@ Visualization Manager:
           Queue Size: 1
           Selectable: true
           Size (Pixels): 10
-          Size (m): 0.5
+          Size (m): 1
           State: Occupied
           Style: Boxes
           Topic: /quadrotor/mapper/global_voxel_map
@@ -776,7 +775,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 347.791259765625
+      Distance: 64.82868957519531
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -784,17 +783,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -21.743593215942383
-        Y: -5.568892478942871
-        Z: 20.623979568481445
+        X: -12.563732147216797
+        Y: -2.806972026824951
+        Z: 20.624000549316406
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8803953528404236
+      Pitch: 1.2903950214385986
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 3.145379066467285
+      Yaw: 3.160378932952881
     Saved: ~
 Window Geometry:
   Displays:

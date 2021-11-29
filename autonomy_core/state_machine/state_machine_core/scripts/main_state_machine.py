@@ -227,7 +227,7 @@ def main():
             "ExecuteMotionPrimitive",
             Replanner.REPLANNER(quad_tracker),
             transitions={
-                "succeeded": "RetryMPWaypoints",
+                "succeeded": "Hover",
                 "no_path": "RetryMPWaypoints",
                 "failed": "RetryMPWaypoints"
             },

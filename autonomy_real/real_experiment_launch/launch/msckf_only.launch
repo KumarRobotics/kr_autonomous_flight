@@ -4,7 +4,7 @@
 
 
     <arg name="takeoff_height" value="3" />
-    <arg name="use_lauras" value="false" />
+    <arg name="min_dispersion_planner" value="false" />
       <arg name="calibration_file" value="$(find real_experiment_launch)/config/msckf_calib.yaml"/>
       <arg name="robot" value="quadrotor"/>
       <arg name="output_odom" value="odom"/>

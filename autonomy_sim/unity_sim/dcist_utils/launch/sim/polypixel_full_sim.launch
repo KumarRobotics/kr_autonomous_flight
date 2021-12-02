@@ -6,7 +6,7 @@
   <arg name="robot" default="quadrotor" />  
   <arg name="use_3d" default="false" />  
   <arg name="odom" default="/unity_command/ground_truth/$(arg robot)/odom" />
-  <arg name="use_lauras" default="false" />
+  <arg name="min_dispersion_planner" default="false" />
   <arg name="launch_unity" default="true" />
   <arg name="mapper_config" value="$(find map_plan_launch)/config/mapper_3d.yaml" if="$(arg use_3d)"/>
   <arg name="planner_config" value="$(find control_launch)/config/tracker_params_mp_3d.yaml" if="$(arg use_3d)"/>
@@ -26,7 +26,7 @@
   </include>
 
 
-  <group ns="$(arg robot)" if="$(arg use_lauras)">
+  <group ns="$(arg robot)" if="$(arg min_dispersion_planner)">
       <node pkg="motion_primitives"
         type="planning_server.py"
         name="local_plan_server"
@@ -40,7 +40,7 @@
      <include file="$(find state_machine_launch)/launch/system_mp.launch">
         <arg name="robot" value="$(arg robot)" />
         <arg name="takeoff_height" value="8" />
-        <arg name="use_lauras" value="$(arg use_lauras)" />
+        <arg name="min_dispersion_planner" value="$(arg min_dispersion_planner)" />
         <arg name="lidar_cloud_topic" value="fake_lidar/points" />
     	<arg name="mapper_config" value="$(arg mapper_config)"/>
     	<arg name="planner_config" value="$(arg planner_config)"/>

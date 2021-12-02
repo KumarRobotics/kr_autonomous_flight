@@ -3,7 +3,7 @@
   <!-- use nice to set low priority for planner -->
   <arg name="prefix" value="nice -n 2"/>
   <arg name="odom" default="odom"/>
-  <arg name="use_lauras" default="false"/>
+  <arg name="min_dispersion_planner" default="false"/>
   <arg name="planner_config" default="$(find control_launch)/config/tracker_params_mp.yaml"/>
   
     ##### planning server#####
@@ -17,8 +17,8 @@
       <remap from="~global_voxel_map" to="mapper/global_voxel_map"/>
     </node>
 
-    <!-- If NOT use laura's planner, launch local motion primtive planner. Otherwise, launch laura's planner in a separate file -->
-    <group unless="$(arg use_lauras)">
+    <!-- If NOT use laura's minimum dispersion motion primitive planner, launch local motion primtive planner. Otherwise, launch laura's planner in a separate file -->
+    <group unless="$(arg min_dispersion_planner)">
       <node pkg="action_planner"
         type="local_plan_server"
         name="local_plan_server"

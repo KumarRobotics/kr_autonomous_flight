@@ -3,7 +3,7 @@
     <arg name="robot" default="$(optenv ROBOT_NAME quadrotor)"/>
     <arg name="real_robot" default="false"/>
     <arg name="use_mp" default="false"/>
-    <arg name="use_lauras" default="false"/>
+    <arg name="min_dispersion_planner" default="false"/>
     <arg name="odom" default="odom"/>
 
     <!-- lidar_frame arg is only used when real_robot is true, otherwise the mapper will just use the same frame as the point cloud in simulator -->
@@ -32,7 +32,7 @@
         <include file="$(find map_plan_launch)/launch/mp_planner.launch">
             <arg name="planner_config" value="$(arg planner_config)" />
             <arg name="odom" value="$(arg odom)" />
-            <arg name="use_lauras" value="$(arg use_lauras)" />
+            <arg name="min_dispersion_planner" value="$(arg min_dispersion_planner)" />
         </include>
     </group>
 </launch>

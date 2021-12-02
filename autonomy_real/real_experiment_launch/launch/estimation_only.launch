@@ -26,7 +26,7 @@
     <arg name="onboard_sensing" value="$(arg onboard_sensing)" />
     <arg name="takeoff_height" value="2.5" />
     <arg name="mass" value="$(arg mass)" />
-    <arg name="use_lauras" value="false" />
+    <arg name="min_dispersion_planner" value="false" />
       <arg name="calibration_file" value="$(find real_experiment_launch)/config/msckf_calib.yaml"/>
       <arg name="robot" value="$(arg robot)"/>
       <arg name="output_odom" value="odom"/>

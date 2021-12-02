@@ -1,9 +1,9 @@
 # Autonomy Stack
 
 This is the autonomus flight code stack used at KumarRobotics. 
- - For detailed instructions on how to run in the **Gazebo** simulator, please visit [this link](https://github.com/KumarRobotics/autonomy_stack/blob/master/docs/GazeboSimulatorSetup.md).
- - For detailed instructions on how to run in the **Unity** simulator, please visit [this link](https://github.com/KumarRobotics/autonomy_stack/blob/master/docs/UnitySimulatorSetup.md).
- - For detailed instructions on how to run with the **real robot**, please visit [this link](https://github.com/KumarRobotics/autonomy_stack/blob/master/docs/RealRobotSetup.md)
+ - For detailed instructions on how to run in the **Gazebo** simulator, please visit: https://github.com/KumarRobotics/autonomy_stack/blob/master/docs/GazeboSimulatorSetup.md.
+ - For detailed instructions on how to run in the **Unity** simulator, please visit: https://github.com/KumarRobotics/autonomy_stack/blob/master/docs/UnitySimulatorSetup.md.
+ - For detailed instructions on how to set up a **real robot**, please visit: https://github.com/KumarRobotics/autonomy_stack/wiki.
 
 ## How to build Docker images
 

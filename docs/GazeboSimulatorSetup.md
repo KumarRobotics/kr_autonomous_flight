@@ -9,6 +9,7 @@
         vcs import < /path_to_your_workspace/src/autonomy_stack/external.yaml
         vcs pull
         ```
+        One change needed: open file  /path_to_your_workspace/src/ouster_example/ouster_ros/CMakeLists.txt, change set(CMAKE_CXX_STANDARD 11) to set(CMAKE_CXX_STANDARD 17) 
     2. **Install dependencies and build everything**:
         ```
         sudo apt install libnlopt-dev

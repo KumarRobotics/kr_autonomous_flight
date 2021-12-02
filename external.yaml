@@ -1,8 +1,8 @@
 repositories:
-  ouster_decoder:
-    type: git
-    url: git@github.com:versatran01/ouster_decoder.git 
-    version: main
+  # ouster_decoder:
+    # type: git
+    # url: git@github.com:versatran01/ouster_decoder.git
+    # version: main
   
   ouster_example:
     type: git

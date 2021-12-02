@@ -22,7 +22,7 @@ repositories:
   mrsl_quadrotor:
     type: git
     url: git@github.com:KumarRobotics/mrsl_quadrotor.git
-    version: extra_lidar_modes_for_falcon4 
+    version: master 
 
   ouster_example:
     type: git

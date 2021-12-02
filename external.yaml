@@ -18,3 +18,9 @@ repositories:
     type: git
     url: git@github.com:KumarRobotics/kr_mav_control.git
     version: master
+
+  mrsl_quadrotor:
+    type: git
+    url: git@github.com:KumarRobotics/mrsl_quadrotor.git
+    version: master
+

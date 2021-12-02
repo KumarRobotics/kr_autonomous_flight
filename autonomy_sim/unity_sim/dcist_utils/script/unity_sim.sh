@@ -42,7 +42,7 @@ tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 15; export DISPLAY=${C
 tmux select-layout -t $SESSION_NAME tiled
 
 tmux new-window -t $SESSION_NAME -n "SM/Planner"
-tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 1; export DISPLAY=${CURRENT_DISPLAY}; roslaunch state_machine_launch system_mp.launch robot:=${MAV_NAME} use_lauras:=${USE_LAURAS}" Enter
+tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 1; export DISPLAY=${CURRENT_DISPLAY}; roslaunch state_machine_launch system_mp.launch robot:=${MAV_NAME} min_dispersion_planner:=${USE_LAURAS}" Enter
 if ${USE_LAURAS}; then
   tmux split-window -t $SESSION_NAME
   tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 1; export DISPLAY=${CURRENT_DISPLAY}; roslaunch motion_primitives motion_primitives.launch robot:=${MAV_NAME}" Enter

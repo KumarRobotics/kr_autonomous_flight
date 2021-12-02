@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <launch>
   <arg name="gazebo_gui" default="true"/>
   <arg name="robot" default="quadrotor"/>
@@ -38,7 +39,10 @@
    <!-- spawn robot in gazebo  -->
   <include file="$(find mrsl_quadrotor_launch)/launch/spawn.launch">
     <arg name="mav_name" value="$(arg robot)"/>
-    <arg name="mav_type" value="falcon4_os1"/>
+    <!-- low resolution lidar to run real time -->
+    <arg name="mav_type" value="falcon4_os1_16_256"/>
+    <!-- alternatively you can use higher resolution lidar, but this requires more computation power -->
+    <!-- <arg name="mav_type" value="falcon4_os1_64_512"/> -->
     <arg name="x" value="$(arg x)"/>
     <arg name="y" value="$(arg y)"/>
     <arg name="z" value="$(arg z)"/>

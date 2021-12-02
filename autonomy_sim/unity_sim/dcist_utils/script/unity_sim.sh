@@ -44,7 +44,7 @@ tmux new-window -t $SESSION_NAME -n "SM/Planner"
 tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 1; export DISPLAY=${CURRENT_DISPLAY}; roslaunch state_machine_launch system_mp.launch robot:=${MAV_NAME} min_dispersion_planner:=${MIN_DISPERSION_PLANNER}" Enter
 if ${MIN_DISPERSION_PLANNER}; then
   tmux split-window -t $SESSION_NAME
-  tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 1; export DISPLAY=${CURRENT_DISPLAY}; roslaunch motion_primitives motion_primitives.launch robot:=${MAV_NAME}" Enter
+  tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 1; export DISPLAY=${CURRENT_DISPLAY}; roslaunch motion_primitives cpp_action_server.launch robot:=${MAV_NAME}" Enter
 fi
 tmux select-layout -t $SESSION_NAME tiled
 

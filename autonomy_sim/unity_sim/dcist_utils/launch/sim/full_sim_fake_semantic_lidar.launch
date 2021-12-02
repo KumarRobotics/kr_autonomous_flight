@@ -5,7 +5,7 @@
   <!-- Increase this delay if your computer is not powerful enough /> -->
   <arg name="takeoff_node_start_delay" default="10.0" />  
   <arg name="robot" default="quadrotor" />  
-  <arg name="use_lauras" default="false" />
+  <arg name="min_dispersion_planner" default="false" />
   <arg name="run_graph_slam" default="false" />
   <arg name="launch_unity" default="true" />
   <arg name="coverage_planner" default="false" />
@@ -51,7 +51,7 @@
   </include>
 
 
-  <group ns="$(arg robot)" if="$(arg use_lauras)">
+  <group ns="$(arg robot)" if="$(arg min_dispersion_planner)">
       <node pkg="motion_primitives"
         type="planning_server.py"
         name="local_plan_server"
@@ -66,7 +66,7 @@
     <arg name="lidar_frame" default="DepthCamera1"/>
     <arg name="robot" value="$(arg robot)" />
     <arg name="takeoff_height" value="4" />
-    <arg name="use_lauras" value="$(arg use_lauras)" />
+    <arg name="min_dispersion_planner" value="$(arg min_dispersion_planner)" />
     <arg name="lidar_cloud_topic" value="fake_lidar/cloud" />
   </include>
 

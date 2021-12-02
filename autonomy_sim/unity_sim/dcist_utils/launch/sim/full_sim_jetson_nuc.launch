@@ -4,7 +4,7 @@
 
   <arg name="takeoff_node_start_delay" default="15.0" />  
   <arg name="robot" default="quadrotor" />  
-  <arg name="use_lauras" default="false" />
+  <arg name="min_dispersion_planner" default="false" />
   <arg name="launch_unity" default="true" />
     
   <!-- If use onboard sensing, set it to be true and set odom to be ukf_odom /> -->

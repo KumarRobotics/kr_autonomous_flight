@@ -13,7 +13,7 @@
 
     <arg name="depth_cam" default="DepthCamera"/>
     <arg name="use_motion_primitive" default="true"/>
-    <arg name="use_lauras" default="false"/>
+    <arg name="min_dispersion_planner" default="false"/>
     <arg name="takeoff_height" default="5"/>
 	  <arg name="mass" default="1.74"/>
     <arg name="gains_file" default="$(find control_launch)/config/so3_control_gains.yaml"/>
@@ -94,7 +94,7 @@
 		     <arg name="mapper_config" value="$(arg mapper_config)"/>
                      <arg name="planner_config" value="$(arg planner_config)" />
 		     <arg name="use_mp" value="$(arg use_motion_primitive)"/>
-		     <arg name="use_lauras" value="$(arg use_lauras)"/>
+		     <arg name="min_dispersion_planner" value="$(arg min_dispersion_planner)"/>
 		     <arg name="robot" value="$(arg robot)"/>
 			 <arg name="lidar_frame" value="$(arg lidar_frame)"/>
 		</include>

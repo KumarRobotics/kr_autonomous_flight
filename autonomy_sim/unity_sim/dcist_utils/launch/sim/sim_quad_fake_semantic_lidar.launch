@@ -37,9 +37,10 @@
         <include file="$(find dcist_utils)/launch/rosflight_interface.launch">
         </include>
 
+        <!-- publishes map (SLAM reference frame) to odom (odometry reference frame) tf, which is initialized to be identity since initial drift of odometry is 0 -->
         <node pkg="tf2_ros" type="static_transform_publisher" name="tf_map_odom" args="0 0 0 0 0 0 $(arg robot)/map $(arg robot)/odom"/>
 
-        <!-- publishes tf_world_map -->
+        <!-- publishes tf -->
         <include file="$(find dcist_utils)/launch/odom2tf.launch">
             <arg name="odom" value="$(arg odom)"/>
             <arg name="robot" value="$(arg robot)"/>

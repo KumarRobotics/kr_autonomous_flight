@@ -1,8 +1,8 @@
 repositories:
-  ouster_decoder:
-    type: git
-    url: git@github.com:versatran01/ouster_decoder.git 
-    version: main
+  # ouster_decoder:
+    # type: git
+    # url: git@github.com:versatran01/ouster_decoder.git
+    # version: main
   
   ouster_example:
     type: git
@@ -18,3 +18,13 @@ repositories:
     type: git
     url: git@github.com:KumarRobotics/kr_mav_control.git
     version: master
+
+  mrsl_quadrotor:
+    type: git
+    url: git@github.com:KumarRobotics/mrsl_quadrotor.git
+    version: master 
+
+  ouster_example:
+    type: git
+    url: git@github.com:wilselby/ouster_example.git
+    version: os-sim

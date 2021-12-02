@@ -12,6 +12,7 @@
     2. **Install dependencies and build everything**:
         ```
         sudo apt install libnlopt-dev
+        sudo apt install ros-"your ros distro"-hector-gazebo-plugins
         sudo apt install libsdl-image1.2-dev
         cd /path_to_your_workspace/src
         catkin build -DCMAKE_BUILD_TYPE=Release

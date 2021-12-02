@@ -27,4 +27,4 @@ repositories:
   ouster_example:
     type: git
     url: git@github.com:wilselby/ouster_example.git
-    version: master
+    version: os-sim

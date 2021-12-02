@@ -1,6 +1,6 @@
 <launch>
   <arg name="gazebo_gui" default="true"/>
-  <arg name="robot" default="$(optenv FLA_ROBOT fla)"/>
+  <arg name="robot" default="quadrotor"/>
   <arg name="robot_frame" default="$(arg robot)/base_link"/>
   <arg name="world_model" default="$(optenv FLA_ENV D60)"/>
   <arg name="world_frame" default="map"/>
@@ -35,7 +35,7 @@
     </node>
   </group>
 
-  ###### spawn robot in gazebo #######
+   <!-- spawn robot in gazebo  -->
   <include file="$(find mrsl_quadrotor_launch)/launch/spawn.launch">
     <arg name="mav_name" value="$(arg robot)"/>
     <arg name="mav_type" value="falcon4_os1"/>

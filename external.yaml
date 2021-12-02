@@ -24,3 +24,7 @@ repositories:
     url: git@github.com:KumarRobotics/mrsl_quadrotor.git
     version: master
 
+  ouster_example:
+    type: git
+    url: git@github.com:wilselby/ouster_example.git
+    version: master

@@ -1,0 +1,17 @@
+repositories:
+  
+  
+  polygon_coverage_planning:
+    type: git
+    url: git@github.com:XuRobotics/polygon_coverage_planning.git
+    version: master
+    
+  cgal_catkin:
+    type: git
+    url: git@github.com:ethz-asl/cgal_catkin.git
+    version: master
+
+  catkin_simple:
+    type: git
+    url: git@github.com:catkin/catkin_simple.git
+    version: master

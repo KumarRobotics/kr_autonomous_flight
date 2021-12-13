@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>coverage_utils</name>
+    <version>0.0.1</version>
+    <description>TODO</description>
+
+    <maintainer email="liuxu@seas.upenn.edu">Xu Liu</maintainer>
+
+    <license>TODO</license>
+
+
+    <depend>roscpp</depend>
+    <depend>planning_ros_msgs</depend>
+
+
+    <buildtool_depend>catkin</buildtool_depend>
+    <export>
+    </export>
+</package>

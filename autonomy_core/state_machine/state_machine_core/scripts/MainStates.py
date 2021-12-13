@@ -108,7 +108,7 @@ class RetryWaypoints(smach.State):
         # this informs the replanner to continue to finish waypoints in existing mission instead of starting a new mission
         self.quad_monitor.continue_mission = True # will be feed into goal.continue_mission later in RePlan class
         ps = GM.PoseStamped()
-        ps.header = ""
+        ps.header = self.quad_monitor.waypoints.header
         ps.pose = self.quad_monitor.pose_goal
         self.reset_pub.publish(ps)
 

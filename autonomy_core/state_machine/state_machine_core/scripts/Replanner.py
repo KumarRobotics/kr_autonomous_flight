@@ -20,9 +20,10 @@ class StoppingPolicyDone(smach.State):
         self.quad_monitor = quad_monitor
 
     def execute(self, userdata):
-        # clear all original waypoints for safety  (because no path has been found for them)
-        self.quad_monitor.waypoints = None
-        print("waypoints cleared!")
+        # clear all original waypoints for safety  
+        # (no longer needed since we are using trajectory tracker instead of path tracker)
+        # self.quad_monitor.waypoints = None
+        # print("waypoints cleared!")
         return "done"
 
 class CheckRePlan(smach.State):

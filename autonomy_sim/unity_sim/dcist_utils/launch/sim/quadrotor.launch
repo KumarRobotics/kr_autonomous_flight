@@ -24,7 +24,7 @@
     <arg name="use_enhanced_yaml" default="true"/>
     <!-- depth and semantic segmentation range, should not exceed 65 (i.e. 65000 mm) to prevent overflow since it's 16-bit image type-->
     <arg name="depth_range" default="50"/> 
-    <arg name="semantic_range" default="20"/>
+    <arg name="semantic_range" default="50"/>
 
     <arg name="description" default="$(find arl_unity_ros_air)/config/quadrotor_yaml.yaml"/>
 

@@ -53,23 +53,30 @@ vector<pt> PreprocessData() {
 
   cout << "TODO: data path is hardcoded" << endl;
   double data1, data2;
+  char delimiter_symbol;
   double min_x, min_y;
-  bool is_first = true;
   double average_x, average_y;
   int num_data = 0;
-  while (in >> data1 && in >> data2) {
-    cout << "new point" << endl;
-    cout << data1 << endl;
-    cout << data2 << endl;
+  int idx = 0;
+
+  vector<pt> pt_vec;
+  while (in >> data1 >> delimiter_symbol >> data2) {
+    idx += 1;
+    if (idx == 1) {
+      // skip first line which is the header
+      cout << "skipping the first line which is header..."
+           << "/n";
+      continue;
+    }
+
+    if (idx == 2) {
+      // first data point, intialize min_x and min_y
+      min_x = data1;
+      min_y = data2;
+    }
 
     average_x += data1;
     average_y += data2;
-    if (is_first) {
-      min_x = data1;
-      min_y = data2;
-      is_first = false;
-    }
-
     if (data1 < min_x) {
       min_x = data1;
     }
@@ -77,27 +84,36 @@ vector<pt> PreprocessData() {
       min_y = data2;
     }
     num_data++;
-  }
-  in.close();
 
-  average_x = average_x / double(num_data);
-  average_y = average_y / double(num_data);
-  cout << "data point average x and y: " << average_x << " and " << average_y
-       << endl;
-
-  vector<pt> pt_vec;
-  ifstream in2(
-      "/home/sam/autonomy_stack/autonomy_core/map_plan/coverage_utils/config/"
-      "input.txt");
-  while (in2 >> data1 && in2 >> data2) {
     pt cur_pt;
-    // cur_pt.x = data1 - average_x;
-    // cur_pt.y = data2 - average_y;
-    cur_pt.x = data1 - average_x;  // move one axis to 0
-    cur_pt.y = data2 - min_y;      // move y to center
+    cur_pt.x = data1;
+    cur_pt.y = data2;
     pt_vec.push_back(cur_pt);
   }
-  in2.close();
+  if (num_data == 0) {
+    cout << "No tree position data found in the file!!!!!!" << '\n';
+  }
+  cout << "total tree positions extracted: " << num_data << '\n';
+  in.close();
+
+  // average_x = average_x / double(num_data);
+  // average_y = average_y / double(num_data);
+  // cout << "data point average x and y: " << average_x << " and " << average_y
+  //      << endl;
+
+  // vector<pt> pt_vec;
+  // ifstream in2(
+  //     "/home/sam/autonomy_stack/autonomy_core/map_plan/coverage_utils/config/"
+  //     "input.txt");
+  // while (in2 >> data1 && in2 >> data2) {
+  //   pt cur_pt;
+  //   // cur_pt.x = data1 - average_x;
+  //   // cur_pt.y = data2 - average_y;
+  //   cur_pt.x = data1 - average_x;  // move one axis to 0
+  //   cur_pt.y = data2 - min_y;      // move y to center
+  //   pt_vec.push_back(cur_pt);
+  // }
+  // in2.close();
 
   return pt_vec;
 }

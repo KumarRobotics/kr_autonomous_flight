@@ -89,8 +89,12 @@ class RetryWaypoints(smach.State):
         self.num_trials = 1
         self.max_trials = quad_monitor.max_replan_trials
         # time to wait for stopping policy to finish, should be large enough so that the robot fully stops
-        est_stopping_time = max_planning_velocity / (max_stopping_acceleration * 0.3) # reduce the acceleration to consider worst-case scenarios
-        self.wait_for_stopping = est_stopping_time
+        # TODO(xu:) this does not seem to work properly 
+        # est_stopping_time = max_planning_velocity / (max_stopping_acceleration * 0.3) # reduce the acceleration to consider worst-case scenarios
+        # time to wait for stopping policy to finish (in seconds)
+        # should wait for a period of time long that is enough for the quad to fully stop
+        self.wait_for_stopping = 3.0 # THIS IS VERY SAFETY CRITICAL! DO NOT CHANGE UNLESS YOU ARE SURE!    
+    
     def execute(self, userdata):
         # print self.quad_monitor.waypoints
         print("[state_machine:] waiting for stopping policy to finish, wait time is: ", self.wait_for_stopping, " seconds.")

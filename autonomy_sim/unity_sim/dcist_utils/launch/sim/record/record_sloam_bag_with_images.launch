@@ -5,7 +5,18 @@
   --lz4 -o $(arg dir)
 /clicked_point
 /clock
-/graph_slam/odom
+/quadrotor/cam_left/camera_info
+/quadrotor/cam_left/image_raw
+/quadrotor/cam_right/detection
+/quadrotor/cam_right/image_raw
+    /all_input_points
+    /quadrotor/coverage_path_visualization
+    /quadrotor/state_trigger
+    /quadrotor/waypoints
+    /quadrotor/image_processor/debug_stereo_image
+    /quadrotor/vio/feature_point_cloud
+    /quadrotor/vio/odom
+    /graph_slam/odom
 /initialpose
 /move_base_simple/goal
 /quadrotor/IMU

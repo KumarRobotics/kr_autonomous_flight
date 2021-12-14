@@ -14,7 +14,8 @@ namespace dcist {
 
 /// @brief Emit key value pair of std::vector
 template <typename T>
-void EmitStdVector(YAML::Emitter& out, const std::string& key,
+void EmitStdVector(YAML::Emitter& out,
+                   const std::string& key,
                    const std::vector<T>& values) {
   out << YAML::Key << key;
   out << YAML::Value << YAML::Flow;
@@ -25,7 +26,8 @@ void EmitStdVector(YAML::Emitter& out, const std::string& key,
 
 /// @brief Emit key value pair of eigen matrix, row major traversal
 template <typename Derived>
-void EmitMatrixRowwise(YAML::Emitter& out, const std::string& key,
+void EmitMatrixRowwise(YAML::Emitter& out,
+                       const std::string& key,
                        const Eigen::MatrixBase<Derived>& mat) {
   out << YAML::Key << key;
   out << YAML::Value << YAML::Flow;
@@ -38,7 +40,8 @@ void EmitMatrixRowwise(YAML::Emitter& out, const std::string& key,
   out << YAML::EndSeq;
 }
 
-void EmitCamera(YAML::Emitter& out, const sensor_msgs::CameraInfo& cinfo,
+void EmitCamera(YAML::Emitter& out,
+                const sensor_msgs::CameraInfo& cinfo,
                 const Eigen::Matrix4d& T_cam_imu,
                 const std::optional<Eigen::Matrix4d> T_cn_cnm1 = std::nullopt) {
   out << YAML::Value;
@@ -48,12 +51,13 @@ void EmitCamera(YAML::Emitter& out, const sensor_msgs::CameraInfo& cinfo,
   EmitMatrixRowwise(out, "T_cam_imu", T_cam_imu);
 
   out << YAML::Key << "camera_model" << YAML::Value << "pinhole";
-  EmitStdVector<double>(out, "intrinsics",
-                        {cinfo.K[0], cinfo.K[4], cinfo.K[2], cinfo.K[5]});
+  EmitStdVector<double>(
+      out, "intrinsics", {cinfo.K[0], cinfo.K[4], cinfo.K[2], cinfo.K[5]});
   out << YAML::Key << "distortion_model" << YAML::Value << "radtan";
   EmitStdVector(out, "distortion_coeffs", std::vector<double>(4, 0.0));
   EmitStdVector<int>(
-      out, "resolution",
+      out,
+      "resolution",
       {static_cast<int>(cinfo.width), static_cast<int>(cinfo.height)});
 
   out << YAML::Key << "rostopic" << YAML::Value
@@ -67,7 +71,8 @@ void EmitCamera(YAML::Emitter& out, const sensor_msgs::CameraInfo& cinfo,
 }
 
 geometry_msgs::TransformStamped LookupTransform(
-    const tf2_ros::Buffer& buffer, const std::string& target_frame,
+    const tf2_ros::Buffer& buffer,
+    const std::string& target_frame,
     const std::string& source_frame) {
   return buffer.lookupTransform(target_frame, source_frame, ros::Time(0));
 }
@@ -80,10 +85,10 @@ class CalibGenerator {
  public:
   CalibGenerator(const ros::NodeHandle& pnh)
       : pnh_(pnh),
-        sub_cinfo0_(pnh_.subscribe("cam0/camera_info", 1,
-                                   &CalibGenerator::Cinfo0Cb, this)),
-        sub_cinfo1_(pnh_.subscribe("cam1/camera_info", 1,
-                                   &CalibGenerator::Cinfo1Cb, this)),
+        sub_cinfo0_(pnh_.subscribe(
+            "cam0/camera_info", 1, &CalibGenerator::Cinfo0Cb, this)),
+        sub_cinfo1_(pnh_.subscribe(
+            "cam1/camera_info", 1, &CalibGenerator::Cinfo1Cb, this)),
         sub_imu_(pnh_.subscribe("imu", 1, &CalibGenerator::ImuCb, this)),
         listener_(buffer_),
         output_file_(pnh_.param<std::string>("output", "/tmp/calib.yaml")) {}
@@ -102,17 +107,19 @@ class CalibGenerator {
 
   void ImuCb(const sensor_msgs::Imu& imu_msg) {
     if (cinfo0_.header.frame_id.empty() || cinfo1_.header.frame_id.empty()) {
-      ROS_INFO_THROTTLE(1, "Waiting for camera info");
+      ROS_INFO_THROTTLE(1,
+                        "Waiting for camera info, maybe you need to add a rqt "
+                        "to visualize image topic so that it gets published!");
       return;
     }
 
-    tf_cam0_imu_ = LookupTransform(buffer_, cinfo0_.header.frame_id,
-                                   imu_msg.header.frame_id);
+    tf_cam0_imu_ = LookupTransform(
+        buffer_, cinfo0_.header.frame_id, imu_msg.header.frame_id);
     ROS_INFO_STREAM("T_cam0_imu: \n"
                     << tf2::transformToEigen(tf_cam0_imu_.transform).matrix());
 
-    tf_cam1_imu_ = LookupTransform(buffer_, cinfo1_.header.frame_id,
-                                   imu_msg.header.frame_id);
+    tf_cam1_imu_ = LookupTransform(
+        buffer_, cinfo1_.header.frame_id, imu_msg.header.frame_id);
     ROS_INFO_STREAM("T_cam1_imu: \n"
                     << tf2::transformToEigen(tf_cam1_imu_.transform).matrix());
 

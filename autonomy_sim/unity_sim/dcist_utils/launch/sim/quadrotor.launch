@@ -5,7 +5,7 @@
     <!-- x corresponds to z in Unity simulator, y corresponds to -x, z corresponds to y -->
     <arg name="x" default="50.0"/>
     <arg name="y" default="-30.0"/>
-    <arg name="z" default="5.0"/>
+    <arg name="z" default="1.0"/>
 
     <arg name="cam_width" default="480"/>
     <arg name="cam_height" default="320"/>
@@ -23,8 +23,8 @@
     <arg name="depth_frame_rate" default="5"/>
     <arg name="use_enhanced_yaml" default="true"/>
     <!-- depth and semantic segmentation range, should not exceed 65 (i.e. 65000 mm) to prevent overflow since it's 16-bit image type-->
-    <arg name="depth_range" default="50"/> 
-    <arg name="semantic_range" default="50"/>
+    <arg name="depth_range" default="40"/> 
+    <arg name="semantic_range" default="10"/>
 
     <arg name="description" default="$(find arl_unity_ros_air)/config/quadrotor_yaml.yaml"/>
 

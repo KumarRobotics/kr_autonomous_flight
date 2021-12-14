@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="dir" default="/home/sam/bags/unity_sloam"/>
+  <node pkg="rosbag" type="record" name="recorder" args="
+  --lz4 -o $(arg dir)
+/clicked_point
+/clock
+    /all_input_points
+    /quadrotor/coverage_path_visualization
+    /quadrotor/state_trigger
+    /quadrotor/waypoints
+    /quadrotor/image_processor/debug_stereo_image
+    /quadrotor/vio/feature_point_cloud
+    /quadrotor/vio/odom
+    /graph_slam/odom
+/initialpose
+/move_base_simple/goal
+/quadrotor/IMU
+/quadrotor/cmd_vel
+/quadrotor/coverage_path_visualization
+/quadrotor/diagnostics
+/quadrotor/estop
+/quadrotor/fake_lidar/cloud
+/quadrotor/fake_lidar/trees_cloud
+/quadrotor/global_plan_server/path
+/quadrotor/global_plan_server/plan_global_path/cancel
+/quadrotor/global_plan_server/plan_global_path/feedback
+/quadrotor/global_plan_server/plan_global_path/goal
+/quadrotor/global_plan_server/plan_global_path/result
+/quadrotor/global_plan_server/plan_global_path/status
+/quadrotor/heartbeat
+/quadrotor/imu
+/quadrotor/introspection_server/smach/container_init
+/quadrotor/introspection_server/smach/container_status
+/quadrotor/introspection_server/smach/container_structure
+/quadrotor/lidar
+/quadrotor/lidar_real_sparse
+/quadrotor/local_global_replan_server/local_global_server/global_path_wrt_map
+/quadrotor/local_global_replan_server/local_global_server/global_path_wrt_odom
+/quadrotor/local_global_replan_server/replan/cancel
+/quadrotor/local_global_replan_server/replan/feedback
+/quadrotor/local_global_replan_server/replan/goal
+/quadrotor/local_global_replan_server/replan/result
+/quadrotor/local_global_replan_server/replan/status
+/quadrotor/local_plan_server/expanded_cloud
+/quadrotor/local_plan_server/plan_local_trajectory/cancel
+/quadrotor/local_plan_server/plan_local_trajectory/feedback
+/quadrotor/local_plan_server/plan_local_trajectory/goal
+/quadrotor/local_plan_server/plan_local_trajectory/result
+/quadrotor/local_plan_server/plan_local_trajectory/status
+/quadrotor/local_plan_server/start_goal
+/quadrotor/local_plan_server/traj
+/quadrotor/local_plan_server/trajectory
+/quadrotor/make_marker
+/quadrotor/mav_services/status
+/quadrotor/mavros/distance_sensor/lidarlite_pub
+/quadrotor/motors
+/quadrotor/odom
+/quadrotor/position_cmd
+/quadrotor/quad_decode_msg/output_data
+/quadrotor/quadrotor_manager_control/bond
+/quadrotor/quadrotor_manager_control/trajectory
+/quadrotor/reset
+/quadrotor/so3_cmd
+/quadrotor/so3_control/cmd_viz
+/quadrotor/so3_control/corrections
+/quadrotor/so3_control/parameter_descriptions
+/quadrotor/so3_control/parameter_updates
+/quadrotor/state_trigger
+/quadrotor/trackers_manager/epoch
+/quadrotor/trackers_manager/execute_trajectory/cancel
+/quadrotor/trackers_manager/execute_trajectory/feedback
+/quadrotor/trackers_manager/execute_trajectory/goal
+/quadrotor/trackers_manager/execute_trajectory/result
+/quadrotor/trackers_manager/execute_trajectory/status
+/quadrotor/trackers_manager/roi
+/quadrotor/trackers_manager/status
+/quadrotor/trpy_cmd
+/quadrotor/unity_rosflight/RC
+/quadrotor/waypoint_nav/feedback
+/quadrotor/waypoint_nav/update
+/quadrotor/waypoint_nav/update_full
+/quadrotor/waypoints
+/rosout
+/rosout_agg
+/tf
+/tf_static
+/timing/mapper
+/timing/replanner/global_replan
+/timing/replanner/local_replan
+/unity_command/command_topic
+/unity_command/ground_truth/quadrotor/odom
+/unity_command/ground_truth/quadrotor/pose
+/unity_command/ground_truth/quadrotor/twist
+    "
+    output="screen"/>
+</launch>

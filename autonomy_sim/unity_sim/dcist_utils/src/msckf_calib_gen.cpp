@@ -14,60 +14,60 @@ namespace dcist {
 
 /// @brief Emit key value pair of std::vector
 template <typename T>
-void EmitStdVector(YAML::Emitter& out,
+void EmitStdVector(YAML::Emitter* out,
                    const std::string& key,
                    const std::vector<T>& values) {
-  out << YAML::Key << key;
-  out << YAML::Value << YAML::Flow;
-  out << YAML::BeginSeq;
-  for (const auto& v : values) out << v;
-  out << YAML::EndSeq;
+  *out << YAML::Key << key;
+  *out << YAML::Value << YAML::Flow;
+  *out << YAML::BeginSeq;
+  for (const auto& v : values) *out << v;
+  *out << YAML::EndSeq;
 }
 
 /// @brief Emit key value pair of eigen matrix, row major traversal
 template <typename Derived>
-void EmitMatrixRowwise(YAML::Emitter& out,
+void EmitMatrixRowwise(YAML::Emitter* out,
                        const std::string& key,
                        const Eigen::MatrixBase<Derived>& mat) {
-  out << YAML::Key << key;
-  out << YAML::Value << YAML::Flow;
-  out << YAML::BeginSeq;
+  *out << YAML::Key << key;
+  *out << YAML::Value << YAML::Flow;
+  *out << YAML::BeginSeq;
   for (int i = 0; i < mat.rows(); ++i) {
     for (int j = 0; j < mat.cols(); ++j) {
-      out << mat(i, j);
+      *out << mat(i, j);
     }
   }
-  out << YAML::EndSeq;
+  *out << YAML::EndSeq;
 }
 
-void EmitCamera(YAML::Emitter& out,
+void EmitCamera(YAML::Emitter* out,
                 const sensor_msgs::CameraInfo& cinfo,
                 const Eigen::Matrix4d& T_cam_imu,
                 const std::optional<Eigen::Matrix4d> T_cn_cnm1 = std::nullopt) {
-  out << YAML::Value;
-  out << YAML::BeginMap;
+  *out << YAML::Value;
+  *out << YAML::BeginMap;
 
   // transform
   EmitMatrixRowwise(out, "T_cam_imu", T_cam_imu);
 
-  out << YAML::Key << "camera_model" << YAML::Value << "pinhole";
+  *out << YAML::Key << "camera_model" << YAML::Value << "pinhole";
   EmitStdVector<double>(
       out, "intrinsics", {cinfo.K[0], cinfo.K[4], cinfo.K[2], cinfo.K[5]});
-  out << YAML::Key << "distortion_model" << YAML::Value << "radtan";
+  *out << YAML::Key << "distortion_model" << YAML::Value << "radtan";
   EmitStdVector(out, "distortion_coeffs", std::vector<double>(4, 0.0));
   EmitStdVector<int>(
       out,
       "resolution",
       {static_cast<int>(cinfo.width), static_cast<int>(cinfo.height)});
 
-  out << YAML::Key << "rostopic" << YAML::Value
-      << "/" + cinfo.header.frame_id + "/image_raw";
+  *out << YAML::Key << "rostopic" << YAML::Value
+       << "/" + cinfo.header.frame_id + "/image_raw";
 
   if (T_cn_cnm1) {
     EmitMatrixRowwise(out, "T_cn_cnm1", *T_cn_cnm1);
   }
 
-  out << YAML::EndMap;
+  *out << YAML::EndMap;
 }
 
 geometry_msgs::TransformStamped LookupTransform(
@@ -137,13 +137,13 @@ class CalibGenerator {
     out << YAML::BeginMap;
     out << YAML::Key << "cam0";
     const auto T_cam0_imu = tf2::transformToEigen(tf_cam0_imu_.transform);
-    EmitCamera(out, cinfo0_, T_cam0_imu.matrix());
+    EmitCamera(&out, cinfo0_, T_cam0_imu.matrix());
 
     out << YAML::Key << "cam1";
     // compute T_cam1_cam0
     const auto T_cam1_imu = tf2::transformToEigen(tf_cam1_imu_.transform);
     const auto T_cam1_cam0 = T_cam1_imu * T_cam0_imu.inverse();
-    EmitCamera(out, cinfo1_, T_cam1_imu.matrix(), {T_cam1_cam0.matrix()});
+    EmitCamera(&out, cinfo1_, T_cam1_imu.matrix(), {T_cam1_cam0.matrix()});
     out << YAML::EndMap;
   }
 

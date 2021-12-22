@@ -16,6 +16,8 @@ catkin_package(
   planning_ros_msgs
 )
 
+include_directories(${PROJECT_NAME} PUBLIC ${catkin_INCLUDE_DIRS} include)
+
 add_library(${PROJECT_NAME} 
   src/coverage_utils.cpp
   src/utils.cpp
@@ -23,15 +25,8 @@ add_library(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} PUBLIC
   ${catkin_LIBRARIES}
   Eigen3::Eigen)
-target_include_directories(${PROJECT_NAME} PUBLIC
-  include
-  ${catkin_INCLUDE_DIRS}
-)
 
 add_executable(coverage_utils_node
   src/coverage_utils_node.cpp)
 target_link_libraries(coverage_utils_node PUBLIC
 ${PROJECT_NAME} ${catkin_LIBRARIES})
-target_include_directories(coverage_utils_node PUBLIC 
-  ${PROJECT_NAME} 
-  ${catkin_INCLUDE_DIRS})

@@ -2,6 +2,7 @@
 #include <planning_ros_msgs/Path.h>
 
 #include <Eigen/StdVector>
+#include <vector>
 
 // Functions for convex_hull calculation are from
 // https://www.topcoder.com/blog/problem-of-the-week-save-the-trees/
@@ -21,5 +22,5 @@ using vec_E = std::vector<T, Eigen::aligned_allocator<T>>;
 typedef vec_E<Vec2f> vec_Vec2f;
 typedef vec_E<Vec3f> vec_Vec3f;
 planning_ros_msgs::Path path_to_ros(const vec_Vec3f& path, double h = 0);
-void convex_hull(std::vector<pt>& a);
+void convex_hull(std::vector<pt>* pts);
 std::vector<pt> PreprocessData();

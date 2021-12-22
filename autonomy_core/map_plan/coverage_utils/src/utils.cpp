@@ -1,11 +1,8 @@
-
-#include "utils.h"
+#include <utils.h>
 
 #include <fstream>
 #include <iostream>
 #include <vector>
-
-using namespace std;
 
 // Functions for convex_hull calculation are from
 // https://www.topcoder.com/blog/problem-of-the-week-save-the-trees/
@@ -19,39 +16,40 @@ bool ccw(pt a, pt b, pt c) {
   return a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y) > 0;
 }
 
-void convex_hull(vector<pt>& a) {
-  if (a.size() == 1) return;
+void convex_hull(std::vector<pt>* pts) {
+  if ((*pts).size() == 1) return;
 
-  sort(a.begin(), a.end(), &cmp);
-  pt p1 = a[0], p2 = a.back();
-  vector<pt> up, down;
+  sort((*pts).begin(), (*pts).end(), &cmp);
+  pt p1 = (*pts)[0], p2 = (*pts).back();
+  std::vector<pt> up, down;
   up.push_back(p1);
   down.push_back(p1);
-  for (int i = 1; i < (int)a.size(); i++) {
-    if (i == a.size() - 1 || cw(p1, a[i], p2)) {
-      while (up.size() >= 2 && !cw(up[up.size() - 2], up[up.size() - 1], a[i]))
+  for (int i = 1; i < static_cast<int>((*pts).size()); i++) {
+    if (i == (*pts).size() - 1 || cw(p1, (*pts)[i], p2)) {
+      while (up.size() >= 2 &&
+             !cw(up[up.size() - 2], up[up.size() - 1], (*pts)[i]))
         up.pop_back();
-      up.push_back(a[i]);
+      up.push_back((*pts)[i]);
     }
-    if (i == a.size() - 1 || ccw(p1, a[i], p2)) {
+    if (i == (*pts).size() - 1 || ccw(p1, (*pts)[i], p2)) {
       while (down.size() >= 2 &&
-             !ccw(down[down.size() - 2], down[down.size() - 1], a[i]))
+             !ccw(down[down.size() - 2], down[down.size() - 1], (*pts)[i]))
         down.pop_back();
-      down.push_back(a[i]);
+      down.push_back((*pts)[i]);
     }
   }
 
-  a.clear();
-  for (int i = 0; i < (int)up.size(); i++) a.push_back(up[i]);
-  for (int i = down.size() - 2; i > 0; i--) a.push_back(down[i]);
+  (*pts).clear();
+  for (int i = 0; i < static_cast<int>(up.size()); i++) (*pts).push_back(up[i]);
+  for (int i = down.size() - 2; i > 0; i--) (*pts).push_back(down[i]);
 }
 
-vector<pt> PreprocessData() {
-  ifstream in(
+std::vector<pt> PreprocessData() {
+  std::ifstream in(
       "/home/sam/autonomy_stack/autonomy_core/map_plan/coverage_utils/config/"
       "input.txt");
 
-  cout << "TODO: data path is hardcoded" << endl;
+  std::cout << "TODO: data path is hardcoded" << '\n';
   double data1, data2;
   char delimiter_symbol;
   double min_x, min_y;
@@ -59,13 +57,13 @@ vector<pt> PreprocessData() {
   int num_data = 0;
   int idx = 0;
 
-  vector<pt> pt_vec;
+  std::vector<pt> pt_vec;
   while (in >> data1 >> delimiter_symbol >> data2) {
     idx += 1;
     if (idx == 1) {
       // skip first line which is the header
-      cout << "skipping the first line which is header..."
-           << "/n";
+      std::cout << "skipping the first line which is header..."
+                << "/n";
       continue;
     }
 
@@ -91,29 +89,10 @@ vector<pt> PreprocessData() {
     pt_vec.push_back(cur_pt);
   }
   if (num_data == 0) {
-    cout << "No tree position data found in the file!!!!!!" << '\n';
+    std::cout << "No tree position data found in the file!!!!!!" << '\n';
   }
-  cout << "total tree positions extracted: " << num_data << '\n';
+  std::cout << "total tree positions extracted: " << num_data << '\n';
   in.close();
-
-  // average_x = average_x / double(num_data);
-  // average_y = average_y / double(num_data);
-  // cout << "data point average x and y: " << average_x << " and " << average_y
-  //      << endl;
-
-  // vector<pt> pt_vec;
-  // ifstream in2(
-  //     "/home/sam/autonomy_stack/autonomy_core/map_plan/coverage_utils/config/"
-  //     "input.txt");
-  // while (in2 >> data1 && in2 >> data2) {
-  //   pt cur_pt;
-  //   // cur_pt.x = data1 - average_x;
-  //   // cur_pt.y = data2 - average_y;
-  //   cur_pt.x = data1 - average_x;  // move one axis to 0
-  //   cur_pt.y = data2 - min_y;      // move y to center
-  //   pt_vec.push_back(cur_pt);
-  // }
-  // in2.close();
 
   return pt_vec;
 }

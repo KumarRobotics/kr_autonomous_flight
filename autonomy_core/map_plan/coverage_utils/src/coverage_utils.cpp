@@ -8,8 +8,6 @@
 #include <iostream>
 #include <vector>
 
-using namespace std;
-
 // Timer stuff
 using boost::timer::cpu_timer;
 using boost::timer::cpu_times;
@@ -28,22 +26,22 @@ void CoveragePlanner::RunPlanner() {
   // load all points
   auto pt_vec = PreprocessData();
 
-  vector<pt>::iterator it;
+  std::vector<pt>::iterator it;
   vec_Vec3f all_points;
   for (it = pt_vec.begin(); it != pt_vec.end(); it++) {
     all_points.push_back(Vec3f(it->x, it->y, 5));
   }
 
   // convex hull of all points
-  convex_hull(pt_vec);
+  convex_hull(&pt_vec);
   geometry_msgs::PolygonStamped stamped_poly;
   stamped_poly.header.frame_id = "map";
   stamped_poly.header.stamp = ros::Time::now();
   for (it = pt_vec.begin(); it != pt_vec.end(); it++) {
     geometry_msgs::Point32 point;
-    point.x = float(it->x);
-    point.y = float(it->y);
-    point.z = float(0.0);
+    point.x = static_cast<float>(it->x);
+    point.y = static_cast<float>(it->y);
+    point.z = static_cast<float>(0.0);
     stamped_poly.polygon.points.push_back(point);
   }
 

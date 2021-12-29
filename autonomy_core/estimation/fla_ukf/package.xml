@@ -5,7 +5,7 @@
   <description>The fla_ukf package</description>
 
   <maintainer email="kartikmohta@gmail.com">Kartik Mohta</maintainer>
-  <license>BSD</license>
+  <license>Penn Software License</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 

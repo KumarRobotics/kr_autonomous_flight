@@ -31,14 +31,5 @@
       <param name="publish_tf" value="$(arg publish_tf)"/>      
     </node>
 
-    <!-- this is done in estimation.launch instead of here  -->
-    <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="$(arg robot)_base_link_camera_tf" args="0 0 0 0 0 1.26 $(arg cam_frame_id) $(arg robot_frame_id)"/> -->
-
-    <!-- <node pkg="tf2_ros" type="static_transform_publisher" -->
-    <!-- name="fla3_base_link_camera_tf" -->
-    <!-- args="0 0 0 0 0 0 $(arg cam_frame_id) $(arg robot_frame_id)" /> -->
-
-    <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="stereo_rig_link_broadcaster" args="0 0 0 0 0 0 world vision" /> -->
-
   </group>
 </launch>

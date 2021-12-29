@@ -1,0 +1,1 @@
+This module includes necessary config and launch files related to controller. The actual controller implementation is open-sourced in kr_mav_control repository (check external.yaml for detail).

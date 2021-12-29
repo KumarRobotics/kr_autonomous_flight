@@ -2,10 +2,10 @@
 
 LocalGlobalMapperNode::LocalGlobalMapperNode(const ros::NodeHandle& nh)
     : nh_(nh) {
-  initParams_();
+  initParams();
 
   cloud_sub = nh_.subscribe(
-      cloud_name_, 1, &LocalGlobalMapperNode::cloudCallback_, this);
+      cloud_name_, 1, &LocalGlobalMapperNode::cloudCallback, this);
 
   global_map_pub =
       nh_.advertise<planning_ros_msgs::VoxelMap>("global_voxel_map", 1, true);
@@ -49,19 +49,18 @@ LocalGlobalMapperNode::LocalGlobalMapperNode(const ros::NodeHandle& nh)
   local_ori_offset_ = -local_dim_d / 2;
 
   // Initialize maps.
-  globalMapInit_();
-  storageMapInit_();
-  localInflaInit_();
+  globalMapInit();
+  storageMapInit();
+  localInflaInit();
 
   timer.stop();
 }
 
-void LocalGlobalMapperNode::initParams_() {
+void LocalGlobalMapperNode::initParams() {
   nh_.param("map_frame", map_frame_, std::string("map"));
   nh_.param("odom_frame", odom_frame_, std::string("odom"));
   nh_.param("lidar_frame", lidar_frame_, std::string("lidar"));
   nh_.param("real_robot", real_robot_, false);
-  nh_.param("debug", debug_, true);
   nh_.param("cloud_msg", cloud_name_, std::string("cloud"));
   nh_.param("occ_map_height", occ_map_height_, 2.0);
   nh_.param("robot_r", robot_r_, 0.2);
@@ -103,7 +102,7 @@ void LocalGlobalMapperNode::initParams_() {
   nh_.param("local/decay_times_to_empty", local_decay_times_to_empty_, 0);
 }
 
-void LocalGlobalMapperNode::globalMapInit_() {
+void LocalGlobalMapperNode::globalMapInit() {
   // TODO(xu): combine two parts into one.
   ROS_WARN("[Mapper]: get 3D map info!");
   // part1: global
@@ -146,7 +145,7 @@ void LocalGlobalMapperNode::globalMapInit_() {
   }
 }
 
-void LocalGlobalMapperNode::storageMapInit_() {
+void LocalGlobalMapperNode::storageMapInit() {
   const Eigen::Vector3d storage_origin(storage_map_info_.origin.x,
                                        storage_map_info_.origin.y,
                                        storage_map_info_.origin.z);
@@ -165,7 +164,7 @@ void LocalGlobalMapperNode::storageMapInit_() {
                               local_decay_times_to_empty_));
 }
 
-void LocalGlobalMapperNode::localInflaInit_() {
+void LocalGlobalMapperNode::localInflaInit() {
   const double res = storage_map_info_.resolution;
   local_infla_array_.clear();
   int rn = std::ceil(robot_r_ / res);
@@ -181,7 +180,7 @@ void LocalGlobalMapperNode::localInflaInit_() {
   }
 }
 
-void LocalGlobalMapperNode::cropLocalMap_(
+void LocalGlobalMapperNode::cropLocalMap(
     const Eigen::Vector3d& center_position_map,
     const Eigen::Vector3d& center_position_odom) {
   const Eigen::Vector3d local_dim_d(
@@ -210,7 +209,7 @@ void LocalGlobalMapperNode::cropLocalMap_(
   local_map_pub.publish(local_voxel_map);
 }
 
-void LocalGlobalMapperNode::getLidarPoses_(
+void LocalGlobalMapperNode::getLidarPoses(
     const std_msgs::Header& cloud_header,
     geometry_msgs::Pose* pose_map_lidar_ptr,
     geometry_msgs::Pose* pose_odom_lidar_ptr) {
@@ -263,7 +262,7 @@ void LocalGlobalMapperNode::getLidarPoses_(
   }
 }
 
-void LocalGlobalMapperNode::processCloud_(
+void LocalGlobalMapperNode::processCloud(
     const sensor_msgs::PointCloud& cloud) {
   if ((storage_voxel_mapper_ == nullptr) || (global_voxel_mapper_ == nullptr)) {
     ROS_WARN("voxel mapper not initialized!");
@@ -272,7 +271,7 @@ void LocalGlobalMapperNode::processCloud_(
 
   geometry_msgs::Pose pose_map_lidar;
   geometry_msgs::Pose pose_odom_lidar;
-  getLidarPoses_(cloud.header, &pose_map_lidar, &pose_odom_lidar);
+  getLidarPoses(cloud.header, &pose_map_lidar, &pose_odom_lidar);
 
   const Eigen::Affine3d T_map_lidar = toTF(pose_map_lidar);
   const Eigen::Affine3d T_odom_lidar = toTF(pose_odom_lidar);
@@ -315,7 +314,7 @@ void LocalGlobalMapperNode::processCloud_(
   timer.start();
   // crop local voxel map
   // the cropping step is using the lidar position in map frame
-  cropLocalMap_(lidar_position_map, lidar_position_odom);
+  cropLocalMap(lidar_position_map, lidar_position_odom);
   ROS_DEBUG("[local map crop]: %f",
             static_cast<double>(timer.elapsed().wall) / 1e6);
 
@@ -350,16 +349,16 @@ void LocalGlobalMapperNode::processCloud_(
       1, "[Mapper]: Got cloud, number of points: [%zu]", cloud.points.size());
 }
 
-void LocalGlobalMapperNode::cloudCallback_(
+void LocalGlobalMapperNode::cloudCallback(
     const sensor_msgs::PointCloud2::ConstPtr& msg) {
   ROS_WARN_ONCE("[Mapper]: got the point cloud!");
   sensor_msgs::PointCloud cloud;
   sensor_msgs::convertPointCloud2ToPointCloud(*msg, cloud);
-  processCloud_(cloud);
+  processCloud(cloud);
 }
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "cloud_to_map");
+  ros::init(argc, argv, "local_global_mapper");
   ros::NodeHandle nh("~");
 
   LocalGlobalMapperNode lgMapper(nh);

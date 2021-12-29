@@ -1,8 +1,4 @@
 <launch>
-    <arg name="debug" default="true"/>
-    <env if="$(arg debug)" name="ROSCONSOLE_CONFIG_FILE" value="$(find fake_lidar)/launch/debug.conf"/>
-    <env name="GLOG_logtostderr" value="1"/>
-
     <arg name="robot" default="/quadrotor"/>
     <arg name="camera" default="DepthCamera"/>
     <arg name="start_delay" default="0"/>

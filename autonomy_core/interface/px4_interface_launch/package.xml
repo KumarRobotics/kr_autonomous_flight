@@ -5,9 +5,9 @@
     <description>The px4_interface_launch package</description>
 
     <maintainer email="quchao@seas.upenn.edu">chao</maintainer>
-    <maintainer email="chenste@seas.upenn.edu">chao</maintainer>
+    <maintainer email="chenste@seas.upenn.edu">steven</maintainer>
 
-    <license>MIT</license>
+    <license>Penn Software License</license>
     <buildtool_depend>catkin</buildtool_depend>
 
     <export>

@@ -29,7 +29,7 @@ class LocalGlobalMapperNode {
   /**
    * @brief Reads parameters from ROS parameter server
    */
-  void initParams_();
+  void initParams();
 
   /**
    * @brief Crops the local map from the storage map, transforms it to odometry
@@ -39,7 +39,7 @@ class LocalGlobalMapperNode {
    * @param center_position_odom  Robot position in odom frame (to shift the
    * local map)
    */
-  void cropLocalMap_(const Eigen::Vector3d& center_position_map,
+  void cropLocalMap(const Eigen::Vector3d& center_position_map,
                      const Eigen::Vector3d& center_position_odom);
 
   /**
@@ -49,7 +49,7 @@ class LocalGlobalMapperNode {
    * @param pose_map_lidar_ptr  Output tf from lidar to map
    * @param pose_odom_lidar_ptr  Output tf from lidar to odom
    */
-  void getLidarPoses_(const std_msgs::Header& cloud_header,
+  void getLidarPoses(const std_msgs::Header& cloud_header,
                       geometry_msgs::Pose* pose_map_lidar_ptr,
                       geometry_msgs::Pose* pose_odom_lidar_ptr);
 
@@ -58,30 +58,30 @@ class LocalGlobalMapperNode {
    * map (if enough msgs were received)
    * @param cloud Input cloud message
    */
-  void processCloud_(const sensor_msgs::PointCloud& cloud);
+  void processCloud(const sensor_msgs::PointCloud& cloud);
 
   /**
    * @brief Point Cloud topic callback. Will convert from
    * sensor_msgs::PointCloud2 to sensor_msgs::PointCloud
    * @param msg Const pointer to input cloud message
    */
-  void cloudCallback_(const sensor_msgs::PointCloud2::ConstPtr& msg);
+  void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg);
 
   /**
    * @brief Allocates memory for the global mapper and initializes the arrays
    * for inflation
    */
-  void globalMapInit_();
+  void globalMapInit();
 
   /**
    * @brief Allocates memory for the storage mapper
    */
-  void storageMapInit_();
+  void storageMapInit();
 
   /**
    * @brief Initializes the array for inflation for the local map
    */
-  void localInflaInit_();
+  void localInflaInit();
 
   cpu_timer timer;
 
@@ -106,7 +106,6 @@ class LocalGlobalMapperNode {
   ros::Publisher local_voxel_map_pub;
   // ros::Publisher local_cloud_pub;
 
-  bool debug_;
   bool real_robot_;         // define it's real-robot experiment or not
   std::string map_frame_;   // map frame
   std::string odom_frame_;  // odom frame

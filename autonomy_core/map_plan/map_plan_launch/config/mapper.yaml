@@ -1,4 +1,3 @@
-debug: true
 robot_r: 1.0 # map will be dilated in x and y with a radius of [ceil(robot_r/res)] cells
 robot_h: 0.50 # map will be dilated in z direction for 2*[ceil(robot_h/res)] cells (if robot_r is set as 0, there will not be any dilation along z either).
 

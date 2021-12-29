@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(mavros_interface)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 find_package(catkin REQUIRED COMPONENTS roscpp nav_msgs geometry_msgs
                                         mavros_msgs kr_mav_msgs nodelet)
 find_package(Eigen3 REQUIRED)

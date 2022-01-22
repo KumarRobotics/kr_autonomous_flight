@@ -1,6 +1,6 @@
 # Unity Simulation Setup
 
-One may set up the simulator [building the code from source](https://github.com/KumarRobotics/autonomy_stack/blob/master/README.md#build-from-source) or [using Docker](https://github.com/KumarRobotics/autonomy_stack/blob/master/README.md#use-with-docker) .
+One may set up the simulator [building the code from source](https://github.com/KumarRobotics/kr_autonomous_flight/blob/master/README.md#build-from-source) or [using Docker](https://github.com/KumarRobotics/kr_autonomous_flight/blob/master/README.md#use-with-docker) .
 
 If you are a developer who will make changes to this code stack, building from source is recommended. Otherwise, if you are a user who will NOT make changes to this code stack, using Docker is recommended.
 
@@ -30,7 +30,7 @@ If you are a developer who will make changes to this code stack, building from s
         ```
         mkdir -p /path/to/your_code_directory
         cd /path/to/your_code_directory
-        vcs import < /path/to/autonomy_stack/external.yaml
+        vcs import < /path/to/kr_autonomous_flight/external.yaml
         vcs pull
         ```
     2. **Create symbolic links between the simulator and your repo**:

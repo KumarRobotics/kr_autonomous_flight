@@ -5,8 +5,8 @@
         ```
         mkdir -p /path_to_your_workspace/src
         cd /path_to_your_workspace/src
-        git clone git@github.com:KumarRobotics/autonomy_stack.git
-        vcs import < /path_to_your_workspace/src/autonomy_stack/external.yaml
+        git clone git@github.com:KumarRobotics/kr_autonomous_flight.git
+        vcs import < /path_to_your_workspace/src/kr_autonomous_flight/external.yaml
         vcs pull
         ```
     2. **Install dependencies and build everything**:

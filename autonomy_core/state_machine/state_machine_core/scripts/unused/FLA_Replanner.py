@@ -17,7 +17,7 @@ import tf
 import threading
 import numpy as np
 
-# Yaw-related classes (CheckYaw AlignYaw YawSearch) removed (exist in autonomy_stack repo before 8/16/2020).
+# Yaw-related classes (CheckYaw AlignYaw YawSearch) removed (exist in kr_autonomous_flight repo before 8/16/2020).
 
 
 class StoppingPolicyDone(smach.State):

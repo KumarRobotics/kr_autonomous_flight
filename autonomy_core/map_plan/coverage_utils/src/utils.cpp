@@ -46,7 +46,7 @@ void convex_hull(std::vector<pt>* pts) {
 
 std::vector<pt> PreprocessData() {
   std::ifstream in(
-      "/home/sam/autonomy_stack/autonomy_core/map_plan/coverage_utils/config/"
+      "kr_autonomous_flight/autonomy_core/map_plan/coverage_utils/config/"
       "input.txt");
 
   std::cout << "TODO: data path is hardcoded" << '\n';

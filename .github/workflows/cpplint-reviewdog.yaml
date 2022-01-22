@@ -8,7 +8,7 @@ jobs:
     - uses: actions/checkout@master
     - uses: reviewdog/action-cpplint@master
       with:
-        github_token: ${{ secrets.AUTONOMY_STACK_TOKEN_REVIEWDOG }}
+        github_token: ${{ secrets.kr_autonomous_flight_TOKEN_REVIEWDOG }}
         reporter: github-pr-check
         # flags: --linelength=50 # Optional
         filter: "-whitespace/comments,-whitespace/indent,-build/include_order,-whitespace/ending_newline"

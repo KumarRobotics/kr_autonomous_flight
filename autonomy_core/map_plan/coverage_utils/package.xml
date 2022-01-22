@@ -6,7 +6,7 @@
 
     <maintainer email="liuxu@seas.upenn.edu">Xu Liu</maintainer>
 
-    <license>TODO</license>
+    <license>Penn Software License</license>
 
 
     <depend>roscpp</depend>

@@ -7,7 +7,7 @@
   <maintainer email="quchao@seas.upenn.edu">Chao Qu</maintainer>
   <maintainer email="liuxu@seas.upenn.edu">Xu Liu</maintainer>
 
-  <license>TODO</license>
+  <license>Penn Software License</license>
 
   <buildtool_depend>catkin</buildtool_depend>
   <export>

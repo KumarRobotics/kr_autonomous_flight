@@ -4,7 +4,7 @@
   <description>Provides a GUI plugin for MAV Manager.</description>
   <maintainer email="ablasdel@gmail.com">Dinesh Thakur</maintainer>
 
-  <license>BSD</license>
+  <license>Penn Software License</license>
 
   <url type="website">http://ros.org/wiki/rqt_quadrotor_safety</url>
   <url type="repository">https://github.com/KumarRobotics/kr_ui</url>

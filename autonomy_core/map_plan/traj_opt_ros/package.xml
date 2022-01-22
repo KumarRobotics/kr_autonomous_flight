@@ -6,7 +6,7 @@
 
   <maintainer email="wami@seas.upenn.edu">Mike Watterson</maintainer>
 
-  <license>Upenn</license>
+  <license>Penn Software License</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 

@@ -11,7 +11,7 @@ set(SOURCE_FILES waypoint_nav_frame.cpp waypoint_nav_tool.cpp ${MOC_FILES})
 
 set(KR_LIB_NAME kr_waypoint_nav_plugin)
 add_library(${KR_LIB_NAME} ${SOURCE_FILES} ${MOC_SOURCES} ${UIC_FILES})
-target_link_libraries(${KR_LIB_NAME} ${catkin_LIBRARIES} ${QT_LIBRARIES})
+target_link_libraries(${KR_LIB_NAME} ${catkin_LIBRARIES} ${QT_LIBRARIES} ${YAML_CPP_LIBRARIES})
 
 # Install rules
 

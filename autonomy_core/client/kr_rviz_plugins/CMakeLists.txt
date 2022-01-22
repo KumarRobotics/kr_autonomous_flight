@@ -21,6 +21,8 @@ set(QT_LIBRARIES Qt5::Widgets)
 add_definitions(-DQT_NO_KEYWORDS)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frounding-math -Werror=return-type")
 
+find_package(yaml-cpp REQUIRED)
+
 add_subdirectory(plugin_waypoint_navigation)
 
 # Install rules

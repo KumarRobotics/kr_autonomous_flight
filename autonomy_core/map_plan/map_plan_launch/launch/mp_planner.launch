@@ -17,7 +17,7 @@
       <remap from="~global_voxel_map" to="mapper/global_voxel_map"/>
     </node>
 
-    <!-- If NOT use laura's minimum dispersion motion primitive planner, launch local motion primtive planner. Otherwise, launch laura's planner in a separate file -->
+    <!-- If NOT use minimum dispersion motion primitive planner, launch local motion primtive planner. Otherwise, launch planner in a separate file -->
     <group unless="$(arg min_dispersion_planner)">
       <node pkg="action_planner"
         type="local_plan_server"

@@ -3,6 +3,7 @@
 
 #include <Eigen/StdVector>
 #include <vector>
+#include <string>
 
 // Functions for convex_hull calculation are from
 // https://www.topcoder.com/blog/problem-of-the-week-save-the-trees/

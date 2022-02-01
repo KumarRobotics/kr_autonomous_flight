@@ -4,6 +4,7 @@
 #include <utils.h>
 
 #include <Eigen/StdVector>
+#include <string>
 
 class CoveragePlanner {
  public:

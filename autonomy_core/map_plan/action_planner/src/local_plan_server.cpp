@@ -248,7 +248,6 @@ void LocalPlanServer::process_result(const MPL::Trajectory3D &traj,
     // execution_time, get corresponding waypoints and record in result
     // (result_->p_stop etc.) (evaluate the whole traj if execution_time is not
     // set (i.e. not in replan mode))
-    // TODO(xu): why 5? should be >= max_horizon in replanner?
     int num_goals = 5;
     if (endt <= 0) {
       endt = traj.getTotalTime();
@@ -373,8 +372,6 @@ void LocalPlanServer::process_goal() {
 
 void LocalPlanServer::clear_footprint(planning_ros_msgs::VoxelMap &local_map, const Vec3f &start) {
   // Clear robot footprint
-  // TODO (YUEZHAN): pass robot radius as param
-  // TODO (YUEZHAN): fix val_free;
   int8_t val_free = 0;
   ROS_WARN_ONCE("Value free is set as %d", val_free);
   double robot_r = 1.0;

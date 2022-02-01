@@ -285,8 +285,6 @@ void GlobalPlanServer::process_goal() {
 
 void GlobalPlanServer::clear_position(planning_ros_msgs::VoxelMap &global_map, const Vec3f &position) {
   // Clear robot position
-  // TODO (YUEZHAN): pass robot radius as param
-  // TODO (YUEZHAN): fix val_free;
   int8_t val_free = 0;
   ROS_WARN_ONCE("Value free is set as %d", val_free);
   double robot_r = 1.0;
@@ -376,7 +374,7 @@ bool GlobalPlanServer::global_plan_process(
         global_path.push_back(Vec3f(it(0), it(1), it(2) / z_cost_factor_));
       }
 
-      // publishglobal_path_msg_
+      // publish global_path_msg_
       global_path_msg_ = path_to_ros(global_path);
       global_path_msg_.header.frame_id = map_frame;
       path_pub_.publish(global_path_msg_);
@@ -480,7 +478,6 @@ int main(int argc, char **argv) {
   while (nh.ok()) {
     ros::spinOnce();
     r.sleep();
-    // tpp.process_all();
   }
 
   return 0;

@@ -1,6 +1,4 @@
 // Copyright 2016 Michael Watterson
-// Can be found
-// https://github.com/fcladera/kr_autonomous_flight/tree/5a8ae35284f82e05bb16603c8b234f5d3b7d9f88/map_plan/pkgs/traj_opt_ros/src
 
 #include "spline_trajectory_visual.h"  // NOLINT()
 

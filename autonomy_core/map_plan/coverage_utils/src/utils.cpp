@@ -6,6 +6,7 @@
 
 // Functions for convex_hull calculation are from
 // https://www.topcoder.com/blog/problem-of-the-week-save-the-trees/
+
 bool cmp(pt a, pt b) { return a.x < b.x || (a.x == b.x && a.y < b.y); }
 
 bool cw(pt a, pt b, pt c) {
@@ -44,12 +45,10 @@ void convex_hull(std::vector<pt>* pts) {
   for (int i = down.size() - 2; i > 0; i--) (*pts).push_back(down[i]);
 }
 
-std::vector<pt> PreprocessData() {
-  std::ifstream in(
-      "kr_autonomous_flight/autonomy_core/map_plan/coverage_utils/config/"
-      "input.txt");
+std::vector<pt> PreprocessData(const std::string& fname) {
+  std::ifstream in(fname);
 
-  std::cout << "TODO: data path is hardcoded" << '\n';
+  std::cout << "reading data from:" << fname << '\n';
   double data1, data2;
   char delimiter_symbol;
   double min_x, min_y;
@@ -89,6 +88,8 @@ std::vector<pt> PreprocessData() {
     pt_vec.push_back(cur_pt);
   }
   if (num_data == 0) {
+    std::cout << "No tree position data found in the file!!!!!!" << '\n';
+    std::cout << "No tree position data found in the file!!!!!!" << '\n';
     std::cout << "No tree position data found in the file!!!!!!" << '\n';
   }
   std::cout << "total tree positions extracted: " << num_data << '\n';

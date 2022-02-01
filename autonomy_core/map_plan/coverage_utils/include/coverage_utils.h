@@ -4,6 +4,7 @@
 #include <utils.h>
 
 #include <Eigen/StdVector>
+#include <string>
 
 class CoveragePlanner {
  public:
@@ -11,8 +12,10 @@ class CoveragePlanner {
   void RunPlanner();
 
  private:
-  ros::NodeHandle private_node_handle_;
+  ros::NodeHandle nh_;
+  ros::NodeHandle pnh_;
   ros::Publisher path_pub_;
   ros::Publisher all_points_pub_;
   ros::Publisher initial_polygon_publisher_;
+  std::string fname_;
 };

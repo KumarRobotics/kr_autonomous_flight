@@ -12,19 +12,18 @@
 using boost::timer::cpu_timer;
 using boost::timer::cpu_times;
 
-CoveragePlanner::CoveragePlanner() : private_node_handle_("/") {
+CoveragePlanner::CoveragePlanner() : nh_("/"), pnh_("~") {
   initial_polygon_publisher_ =
-      private_node_handle_.advertise<geometry_msgs::PolygonStamped>(
-          "original_polygon", 1);
-  path_pub_ = private_node_handle_.advertise<planning_ros_msgs::Path>(
-      "coverage_path", 1, true);
-  all_points_pub_ = private_node_handle_.advertise<planning_ros_msgs::Path>(
-      "all_input_points", 1, true);
+      nh_.advertise<geometry_msgs::PolygonStamped>("original_polygon", 1);
+  path_pub_ = nh_.advertise<planning_ros_msgs::Path>("coverage_path", 1, true);
+  all_points_pub_ =
+      nh_.advertise<planning_ros_msgs::Path>("all_input_points", 1, true);
+  pnh_.param("input_file_path", fname_, std::string("input.txt"));
 }
 
 void CoveragePlanner::RunPlanner() {
   // load all points
-  auto pt_vec = PreprocessData();
+  auto pt_vec = PreprocessData(fname_);
 
   std::vector<pt>::iterator it;
   vec_Vec3f all_points;

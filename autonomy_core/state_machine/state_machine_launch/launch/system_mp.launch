@@ -77,7 +77,7 @@
 		<include file="$(find map_plan_launch)/launch/map_plan.launch">
       <arg name="cloud" value="$(arg depth_cam)/points"/>
 		     <arg name="mapper_config" value="$(arg mapper_config)"/>
-                     <arg name="planner_config" value="$(arg planner_config)" />
+             <arg name="planner_config" value="$(arg planner_config)" />
 		     <arg name="use_mp" value="$(arg use_motion_primitive)"/>
 		     <arg name="robot" value="$(arg robot)"/>
 			 <arg name="lidar_frame" value="$(arg lidar_frame)"/>
@@ -92,7 +92,7 @@
 			<arg name="real_robot" value="$(arg real_robot)"/>
 		     <arg name="cloud" value="$(arg lidar_cloud_topic)"/>
 		     <arg name="mapper_config" value="$(arg mapper_config)"/>
-                     <arg name="planner_config" value="$(arg planner_config)" />
+             <arg name="planner_config" value="$(arg planner_config)" />
 		     <arg name="use_mp" value="$(arg use_motion_primitive)"/>
 		     <arg name="min_dispersion_planner" value="$(arg min_dispersion_planner)"/>
 		     <arg name="robot" value="$(arg robot)"/>

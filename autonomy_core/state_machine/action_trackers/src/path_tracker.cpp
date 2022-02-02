@@ -10,25 +10,30 @@
 
 using kr_mav_msgs::PositionCommand;
 
-// This tracker calculates the velocity target's magnitude using vel_cur +
-// dt * max_acc, and direction by finding the intersection between the
-// planned path and a sphere around robot's current position.
+/*
+ * This tracker is no longer used after switching to motion primitive planner.
+ * This tracker calculates the velocity target's magnitude using vel_cur + dt *
+ * max_acc, and direction by finding the intersection between the planned path
+ * and a sphere around robot's current position.
+ *
+ */
+
 class ActionPathTracker : public kr_trackers_manager::Tracker {
  public:
-  void Initialize(const ros::NodeHandle &nh) override;
-  bool Activate(const PositionCommand::ConstPtr &cmd) override;
+  void Initialize(const ros::NodeHandle& nh) override;
+  bool Activate(const PositionCommand::ConstPtr& cmd) override;
   void Deactivate() override;
 
-  PositionCommand::ConstPtr update(const nav_msgs::Odometry::ConstPtr &msg);
+  PositionCommand::ConstPtr update(const nav_msgs::Odometry::ConstPtr& msg);
   uint8_t status() const override;
 
   void pathCB();
   void preemptCB();
-  void cloudCB(const sensor_msgs::PointCloud::ConstPtr &msg);
-  void desMaxCB(const std_msgs::Float64MultiArray::ConstPtr &msg);
+  void cloudCB(const sensor_msgs::PointCloud::ConstPtr& msg);
+  void desMaxCB(const std_msgs::Float64MultiArray::ConstPtr& msg);
 
  private:
-  void Decelerate(PositionCommand::Ptr &cmd);
+  void Decelerate(PositionCommand::Ptr& cmd);
   boost::shared_ptr<ros::NodeHandle> nh_;
   Projector proj_;
 
@@ -59,7 +64,7 @@ class ActionPathTracker : public kr_trackers_manager::Tracker {
   ros::Subscriber des_max_sub;
 };
 
-void ActionPathTracker::Initialize(const ros::NodeHandle &nh) {
+void ActionPathTracker::Initialize(const ros::NodeHandle& nh) {
   nh_ = boost::make_shared<ros::NodeHandle>(nh);
   nh_->param("gains/pos/x", kx_[0], 2.5);
   nh_->param("gains/pos/y", kx_[1], 2.5);
@@ -107,7 +112,7 @@ void ActionPathTracker::Initialize(const ros::NodeHandle &nh) {
   ROS_INFO("[ActionPathTracker]: v_min = %f", v_min_);
 }
 
-bool ActionPathTracker::Activate(const PositionCommand::ConstPtr &msg) {
+bool ActionPathTracker::Activate(const PositionCommand::ConstPtr& msg) {
   active_ = true;
   if (msg == NULL)
     return false;
@@ -125,12 +130,12 @@ void ActionPathTracker::Deactivate(void) {
 }
 
 // Heuristic to go to zero velocity
-void ActionPathTracker::Decelerate(PositionCommand::Ptr &cmd) {
+void ActionPathTracker::Decelerate(PositionCommand::Ptr& cmd) {
   // ROS_WARN_THROTTLE(1, "[ActionPathTracker]: decelerate...");
-  Eigen::Vector3d pos(init_cmd_->position.x, init_cmd_->position.y,
-                      init_cmd_->position.z);
-  Eigen::Vector3d vel(init_cmd_->velocity.x, init_cmd_->velocity.y,
-                      init_cmd_->velocity.z);
+  Eigen::Vector3d pos(
+      init_cmd_->position.x, init_cmd_->position.y, init_cmd_->position.z);
+  Eigen::Vector3d vel(
+      init_cmd_->velocity.x, init_cmd_->velocity.y, init_cmd_->velocity.z);
   Eigen::Vector3d acc = Eigen::Vector3d::Zero();
   Eigen::Vector3d jrk = Eigen::Vector3d::Zero();
   if (!init_vel_) {
@@ -139,9 +144,7 @@ void ActionPathTracker::Decelerate(PositionCommand::Ptr &cmd) {
   }
   double a_max = init_vel_->norm() * 2;
 
-  // Magic numbers to cap the min and max acceleration
-  // ? Is the lower bound on a_max preventing robot from completely reaching
-  // goal?
+  // Thresholds to cap the min and max acceleration
   if (a_max < 0.5)
     a_max = 0.5;
   else if (a_max > 4.0)
@@ -179,7 +182,7 @@ void ActionPathTracker::Decelerate(PositionCommand::Ptr &cmd) {
 }
 
 PositionCommand::ConstPtr ActionPathTracker::update(
-    const nav_msgs::Odometry::ConstPtr &msg) {
+    const nav_msgs::Odometry::ConstPtr& msg) {
   if (!active_ || !proj_.exist()) {
     return PositionCommand::ConstPtr();
   }
@@ -217,7 +220,6 @@ PositionCommand::ConstPtr ActionPathTracker::update(
   cmd->kv[0] = kv_[0], cmd->kv[1] = kv_[1], cmd->kv[2] = kv_[2];
 
   // Decelerate
-  // ? Where is start_dec_ set to true?
   if (start_dec_) {
     Decelerate(cmd);
     cmd->yaw = init_cmd_->yaw;
@@ -227,21 +229,20 @@ PositionCommand::ConstPtr ActionPathTracker::update(
   }
 
   // Get current pos, vel, acc
-  const Vec3f curr_pos(init_cmd_->position.x, init_cmd_->position.y,
-                       init_cmd_->position.z);
-  const Vec3f curr_vel(init_cmd_->velocity.x, init_cmd_->velocity.y,
-                       init_cmd_->velocity.z);
-  const Vec3f curr_acc(init_cmd_->acceleration.x, init_cmd_->acceleration.y,
+  const Vec3f curr_pos(
+      init_cmd_->position.x, init_cmd_->position.y, init_cmd_->position.z);
+  const Vec3f curr_vel(
+      init_cmd_->velocity.x, init_cmd_->velocity.y, init_cmd_->velocity.z);
+  const Vec3f curr_acc(init_cmd_->acceleration.x,
+                       init_cmd_->acceleration.y,
                        init_cmd_->acceleration.z);
 
   // Eigen aligned ellipsoid3D
   // fast_flight/mpl_ros/DecompRos/DecompUtil/include/decomp_geometry
   vec_E<Ellipsoid3D> es;
-  // ? What is dist_a? a "safety" region that allows you to decelerate?
-  // Increasing a_max_ decreases dist_a
 
-  // To allow the robot accelerate and decelerate gentally. (Don't tune
-  // outer_r_max or r_max, tune this!)
+  // Increasing a_max_ decreases dist_a to allow the robot accelerate and
+  // decelerate gentally. (Don't tune outer_r_max or r_max, tune this!)
   double stop_acc = 0.5 * a_max_;
   double dist_a = curr_vel.norm() * curr_vel.norm() /
                   (2.0 * stop_acc);  // s = 1/2 (a*t^2) = 1/2 * (a*(v/a)^2) =
@@ -305,7 +306,7 @@ PositionCommand::ConstPtr ActionPathTracker::update(
       es = proj_.project_array(curr_pos, 10, 0.4);
       double r = (projected_goal - curr_pos).norm();
       if (r <= 0) ROS_ERROR("[ActionPathTracker]: error!!!!!");
-      for (const auto &it : es) {
+      for (const auto& it : es) {
         if (it.C_(0, 0) < r) r = it.C_(0, 0);
       }
 
@@ -391,17 +392,19 @@ void ActionPathTracker::pathCB() {
 }
 
 void ActionPathTracker::desMaxCB(
-    const std_msgs::Float64MultiArray::ConstPtr &msg) {
+    const std_msgs::Float64MultiArray::ConstPtr& msg) {
   if (msg->data.size() == 3) {
     v_max_ = msg->data[0];
     a_max_ = msg->data[1];
     v_min_ = msg->data[2];
-    ROS_WARN("[ActionPathTracker]: v_max: %f, a_max: %f, v_min: %f", v_max_,
-             a_max_, v_min_);
+    ROS_WARN("[ActionPathTracker]: v_max: %f, a_max: %f, v_min: %f",
+             v_max_,
+             a_max_,
+             v_min_);
   }
 }
 
-void ActionPathTracker::cloudCB(const sensor_msgs::PointCloud::ConstPtr &msg) {
+void ActionPathTracker::cloudCB(const sensor_msgs::PointCloud::ConstPtr& msg) {
   ROS_WARN_ONCE("[ActionPathTracker]: Connect to rgbd cloud");
   proj_.set_obs(cloud_to_vec(*msg));
 }

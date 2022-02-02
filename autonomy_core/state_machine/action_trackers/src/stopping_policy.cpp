@@ -10,15 +10,19 @@
 using kr_mav_msgs::PositionCommand;
 using kr_tracker_msgs::TrackerStatus;
 
+/*
+ * Constant jerk stopping policy
+ *
+ */
 class StoppingPolicy : public kr_trackers_manager::Tracker {
  public:
   StoppingPolicy() = default;
-  void Initialize(const ros::NodeHandle &nh) override;
-  bool Activate(const PositionCommand::ConstPtr &cmd) override;
+  void Initialize(const ros::NodeHandle& nh) override;
+  bool Activate(const PositionCommand::ConstPtr& cmd) override;
   void Deactivate() override;
 
   PositionCommand::ConstPtr update(
-      const nav_msgs::Odometry::ConstPtr &msg) override;
+      const nav_msgs::Odometry::ConstPtr& msg) override;
   uint8_t status() const override;
 
  private:
@@ -33,7 +37,7 @@ class StoppingPolicy : public kr_trackers_manager::Tracker {
   ros::Time t0_;
 };
 
-void StoppingPolicy::Initialize(const ros::NodeHandle &nh) {
+void StoppingPolicy::Initialize(const ros::NodeHandle& nh) {
   ros::NodeHandle priv_nh(nh, "stopping_policy");
 
   priv_nh.param("acc_xy_des", a_xy_des_, 10.0);
@@ -43,7 +47,7 @@ void StoppingPolicy::Initialize(const ros::NodeHandle &nh) {
   priv_nh.param("acc_yaw_des", a_yaw_des_, 0.1);
 }
 
-bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
+bool StoppingPolicy::Activate(const PositionCommand::ConstPtr& cmd) {
   if (cmd != NULL) {
     prev_duration_ = 0;
     p0_ = Eigen::Matrix<double, Eigen::Dynamic, 1>::Zero(4, 1);
@@ -73,7 +77,8 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
     // t0_ = cmd->header.stamp;
     active_ = true;
     ROS_WARN("Stopping policy activated!");
-    // IMPORTANT: resetting odom_first_call_ flag to make sure duration starts from 0
+    // IMPORTANT: resetting odom_first_call_ flag to make sure duration starts
+    // from 0
     odom_first_call_ = true;
     ROS_WARN_STREAM("vx:" << cmd->velocity.x << "vy:" << cmd->velocity.y
                           << "vz:" << cmd->velocity.z);
@@ -85,32 +90,35 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr &cmd) {
   return false;
 }
 
-void StoppingPolicy::Deactivate() { active_ = false;
-   ROS_INFO("Stopping policy deactivated");
-  }
+void StoppingPolicy::Deactivate() {
+  active_ = false;
+  ROS_INFO("Stopping policy deactivated");
+}
 
 PositionCommand::ConstPtr StoppingPolicy::update(
-    const nav_msgs::Odometry::ConstPtr &msg) {
-  // this function is called whenever there's odometry msg, even if stopping policy is deactivated
+    const nav_msgs::Odometry::ConstPtr& msg) {
+  // this function is called whenever there's odometry msg, even if stopping
+  // policy is deactivated
   if (!active_) {
     // return empty command, otherwise it will conflict with existing position
     // commands
     return PositionCommand::Ptr();
   }
 
-
   ros::Time stamp = msg->header.stamp;
   if (odom_first_call_) {
-  ROS_INFO_STREAM("This is stopping first call, duration is reset as 0!");
-   t0_ = stamp;
-   odom_first_call_ = false;
-  }   
+    ROS_INFO_STREAM("This is stopping first call, duration is reset as 0!");
+    t0_ = stamp;
+    odom_first_call_ = false;
+  }
 
   double duration = (stamp - t0_).toSec();
   if (duration >= 2.0) {
-      ROS_INFO_THROTTLE(1, "It has been %f seconds since the triggering of stopping policy.", duration);
+    ROS_INFO_THROTTLE(
+        1,
+        "It has been %f seconds since the triggering of stopping policy.",
+        duration);
   }
-  // ROS_INFO_STREAM("Stopping policy duration is:"<<duration<<"start time is:"<<t0_);
   double dt = duration - prev_duration_;
   prev_duration_ = duration;
 
@@ -178,10 +186,11 @@ PositionCommand::ConstPtr StoppingPolicy::update(
       // update j_des so that the robot stops exactly when acc is is decreased
       // from a0 to 0
       ROS_WARN_STREAM(
-          "[Stopping policy:] Special case where phase 3 can completely stop the robot, original jerk is: " << j_des_abs);
+          "[Stopping policy:] Special case where phase 3 can completely stop "
+          "the robot, original jerk is: "
+          << j_des_abs);
       j_des_abs = pow(a0, 2) / (2 * v0_norm);
-      ROS_WARN_STREAM(
-          "jerk is increased to: " << j_des_abs);
+      ROS_WARN_STREAM("jerk is increased to: " << j_des_abs);
       t_phase3 = abs(0 - a0) / j_des_abs;  // from a0 to 0
     } else if (total_deacc_abs > v0_norm) {
       // Case 2: a_des_abs will not be reached, using geometric method to solve
@@ -212,7 +221,8 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     if (duration < 0) {
       ROS_ERROR_STREAM("[StoppingPolicy:] duration is negative:"
                        << duration << ", this is not correct!");
-      ROS_ERROR_STREAM("[StoppingPolicy:] duration is negative, investigate into this!!!");
+      ROS_ERROR_STREAM(
+          "[StoppingPolicy:] duration is negative, investigate into this!!!");
     }
 
     if ((duration >= 0) && (duration < (t_phase1 + t_phase2 + t_phase3))) {

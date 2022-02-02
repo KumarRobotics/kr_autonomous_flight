@@ -1,18 +1,5 @@
 # This should contain tracker parameters
 
-#line_tracker_distance:
-#  default_v_des: 2.5
-#  default_a_des: 1.5
-#  default_w_des: 2.5
-#  epsilon: 0.1
-
-#line_tracker_min_jerk:
-#  default_v_des: 2.5
-#  default_a_des: 1.5
-#  default_yaw_v_des: 1.0
-#  default_yaw_a_des: 0.5
-
-
 take_off_tracker:
   thrust_rate: 5.0
   max_thrust: 4.0

@@ -9,8 +9,7 @@ bool Projector::project(const Vec3f &pt) {
   // At the minimum it will be r_min_
   projected_ellipsoid_ = find_sphere(pt, obs_, r_max_);
 
-  // Q: What is direction_ellipsoid?
-  // A: Ellipsoid is the largest ball centered at the curr_pos (pt) that does
+  // Ellipsoid is the largest ball centered at the curr_pos (pt) that does
   // not intersect any obs_ (points in point cloud)
   direction_ellipsoid_ = projected_ellipsoid_;
   for (int i = 0; i < 3; i++) {
@@ -35,7 +34,6 @@ bool Projector::project(const Vec3f &pt) {
                                     // locally to avoid messing up path_.
   }
 
-  // Projects the goal point onto the projected_illpsoid?
   find_intersection(path, projected_ellipsoid_, projected_goal_);
   on_ellipsoid_ = (projected_goal_ - pt).norm() > (r() - 1e-3);
 
@@ -83,14 +81,11 @@ Vec3f Projector::search_pt(const Vec3f &pt, double dist) {
   const auto ps = path_downsample(path_, 0.1);
   vec_Vec3f new_ps;
   // Add the Vec3f in the paths until very close to the pt (projected goal)
-  // Reversed?
   for (int i = ps.size() - 1; i >= 0; i--) {
     new_ps.push_back(ps[i]);
-    if ((ps[i] - pt).norm() <= 0.1)  // the threshold tolerance is 0.1 (which
-                                     // is why we stop when within 0.1?
+    if ((ps[i] - pt).norm() <= 0.1)  
       break;
   }
-  // Reverse back? Which is front and back?
   std::reverse(new_ps.begin(), new_ps.end());
 
   // Make sure there is at least one point on path

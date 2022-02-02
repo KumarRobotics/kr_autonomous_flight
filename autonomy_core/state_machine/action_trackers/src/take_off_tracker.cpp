@@ -173,7 +173,6 @@ void TakeOffTracker::odomTocmd(const nav_msgs::Odometry &msg,
 
 PositionCommand::ConstPtr TakeOffTracker::update(
     const nav_msgs::Odometry::ConstPtr &msg) {
-  // ROS_ERROR_THROTTLE(1,"Updated action line tracker");
 
   pos_(0) = msg->pose.pose.position.x;
   pos_(1) = msg->pose.pose.position.y;
@@ -281,8 +280,6 @@ PositionCommand::ConstPtr TakeOffTracker::update(
 
   double dt = (msg->header.stamp - traj_start_time_).toSec();
   double T = std::sqrt(14 * pf / a0);
-  // We leave it as an exercise to the reader to find where this time allocation
-  // comes from. Hint. Try making it longer, but only run it in sim.
 
   if (dt > T) {
     goal_reached_ = true;
@@ -296,7 +293,7 @@ PositionCommand::ConstPtr TakeOffTracker::update(
     dt = T;
   }
 
-  // // These were found using matlab
+  // These were found using matlab
   cmd->position.z =
       start_pos_(2) + a0 * (dt * dt) * (1.0 / 2.0) -
       1.0 / (T * T * T * T * T * T * T) * (dt * dt * dt * dt * dt * dt * dt) *
@@ -354,11 +351,6 @@ void TakeOffTracker::goal_callback() {
   take_off_h_ = as_->acceptNewGoal()->height;
 
   if (goal_set_ || goal_reached_ || ramp_up_done_) {
-    ROS_ERROR_STREAM(
-        "After careful consideration, we are unable to accept your takeoff "
-        "submission in its current form. Have you considered not taking off "
-        "while a takeoff is already is progress?  The reviewers have "
-        "determined that this submission will CRASH THE ROBOT!");
     return;
   }
 

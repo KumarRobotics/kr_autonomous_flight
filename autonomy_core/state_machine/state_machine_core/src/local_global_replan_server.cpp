@@ -1,4 +1,4 @@
-#include <state_machine/local_global_replan_server.hpp>
+#include <local_global_replan_server.hpp>
 
 /**
  * @brief Goal done callback function

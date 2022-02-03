@@ -1,6 +1,6 @@
-#include "./projector.hpp"
+#include <projector.hpp>
 
-bool Projector::project(const Vec3f &pt) {
+bool Projector::project(const Vec3f& pt) {
   // obs_ is set by ActionPathTracker::cloudCb in path_tracker
   // it is a list of points from a pointCloud
   // This returns the largest ball centered at the curr_pos (pt) that does not
@@ -46,14 +46,16 @@ bool Projector::project(const Vec3f &pt) {
     ellipsoid_array_.push_back(projected_ellipsoid_);
 
   if (projected_ellipsoid_.C_(0, 0) + 0.1 < (projected_goal_ - pt).norm()) {
-    ROS_ERROR("Project error! r: %f, dist: %f", projected_ellipsoid_.C_(0, 0),
+    ROS_ERROR("Project error! r: %f, dist: %f",
+              projected_ellipsoid_.C_(0, 0),
               (projected_goal_ - pt).norm());
     return false;
   } else
     return true;
 }
 
-vec_E<Ellipsoid3D> Projector::project_array(const Vec3f &pt, int num,
+vec_E<Ellipsoid3D> Projector::project_array(const Vec3f& pt,
+                                            int num,
                                             double res) {
   vec_Vec3f path = path_;
   if ((path.front() - pt).norm() > 0.1) path.insert(path.begin(), pt);
@@ -67,24 +69,23 @@ vec_E<Ellipsoid3D> Projector::project_array(const Vec3f &pt, int num,
   std::reverse(new_ps.begin(), new_ps.end());
 
   vec_E<Ellipsoid3D> es;
-  for (const auto &it : new_ps) {
+  for (const auto& it : new_ps) {
     es.push_back(find_sphere(it, obs_, r_max_));
     if (static_cast<int>(es.size()) > num) break;
   }
 
-  for (const auto &it : ellipsoid_array_) es.push_back(it);
+  for (const auto& it : ellipsoid_array_) es.push_back(it);
   return es;
 }
 
-Vec3f Projector::search_pt(const Vec3f &pt, double dist) {
+Vec3f Projector::search_pt(const Vec3f& pt, double dist) {
   // Downsample the path
   const auto ps = path_downsample(path_, 0.1);
   vec_Vec3f new_ps;
   // Add the Vec3f in the paths until very close to the pt (projected goal)
   for (int i = ps.size() - 1; i >= 0; i--) {
     new_ps.push_back(ps[i]);
-    if ((ps[i] - pt).norm() <= 0.1)  
-      break;
+    if ((ps[i] - pt).norm() <= 0.1) break;
   }
   std::reverse(new_ps.begin(), new_ps.end());
 
@@ -102,7 +103,7 @@ Vec3f Projector::search_pt(const Vec3f &pt, double dist) {
   return new_ps.back();
 }
 
-vec_Vec3f Projector::path_downsample(const vec_Vec3f &ps, double d) {
+vec_Vec3f Projector::path_downsample(const vec_Vec3f& ps, double d) {
   // subdivide according to length
   if (ps.empty()) return ps;
   vec_Vec3f path;
@@ -117,9 +118,9 @@ vec_Vec3f Projector::path_downsample(const vec_Vec3f &ps, double d) {
   return path;
 }
 
-bool Projector::find_intersection(const vec_Vec3f &path,
-                                  const Ellipsoid3D &ellipsoid,
-                                  Vec3f &intersect_pt) {
+bool Projector::find_intersection(const vec_Vec3f& path,
+                                  const Ellipsoid3D& ellipsoid,
+                                  Vec3f& intersect_pt) {
   int id = -1;
   vec_Vec3f gs;
   for (unsigned int i = 0; i < path.size() - 1; i++) {
@@ -141,9 +142,9 @@ bool Projector::find_intersection(const vec_Vec3f &path,
   }
 }
 
-vec_Vec3f Projector::ps_in_ellipsoid(const Ellipsoid3D &E, const vec_Vec3f &O) {
+vec_Vec3f Projector::ps_in_ellipsoid(const Ellipsoid3D& E, const vec_Vec3f& O) {
   vec_Vec3f new_O;
-  for (const auto &it : O) {
+  for (const auto& it : O) {
     Vec3f vt = E.C_.inverse() * (it - E.d_);
     if (vt.norm() <= 1) new_O.push_back(it);
   }
@@ -154,7 +155,8 @@ vec_Vec3f Projector::ps_in_ellipsoid(const Ellipsoid3D &E, const vec_Vec3f &O) {
 // intersect any obs_ (points in point cloud)
 // It starts at r_max_, but can get smaller
 // At the minimum it will be r_min_
-Ellipsoid3D Projector::find_sphere(const Vec3f &pt, const vec_Vec3f &obs,
+Ellipsoid3D Projector::find_sphere(const Vec3f& pt,
+                                   const vec_Vec3f& obs,
                                    double f) {
   Ellipsoid3D E(f * Mat3f::Identity(), pt);
 
@@ -172,7 +174,7 @@ Ellipsoid3D Projector::find_sphere(const Vec3f &pt, const vec_Vec3f &obs,
   // closest point
   Vec3f closest_o = pt;
   double min_dist = f;
-  for (const auto &it : Os) {
+  for (const auto& it : Os) {
     if ((it - pt).norm() < min_dist) {
       min_dist = (it - pt).norm();
       closest_o = it;
@@ -188,8 +190,12 @@ Ellipsoid3D Projector::find_sphere(const Vec3f &pt, const vec_Vec3f &obs,
   return E;
 }
 
-bool Projector::intersect(const Vec3f &p1, const Vec3f &p2, const Vec3f &c,
-                          float r, Vec3f &g, bool force) {
+bool Projector::intersect(const Vec3f& p1,
+                          const Vec3f& p2,
+                          const Vec3f& c,
+                          float r,
+                          Vec3f& g,
+                          bool force) {
   if (p1 == p2) return false;
 
   Vec3f d = (p2 - p1).normalized();
@@ -218,8 +224,11 @@ bool Projector::intersect(const Vec3f &p1, const Vec3f &p2, const Vec3f &c,
   return true;
 }
 
-bool Projector::intersect(const Vec3f &p1_w, const Vec3f &p2_w, Vec3f &g,
-                          bool force, const Ellipsoid3D &ellipsoid) {
+bool Projector::intersect(const Vec3f& p1_w,
+                          const Vec3f& p2_w,
+                          Vec3f& g,
+                          bool force,
+                          const Ellipsoid3D& ellipsoid) {
   if (p1_w == p2_w) {
     if ((p1_w - ellipsoid.d_).norm() < ellipsoid.C_(0, 0)) {
       g = p1_w;
@@ -229,7 +238,10 @@ bool Projector::intersect(const Vec3f &p1_w, const Vec3f &p2_w, Vec3f &g,
   }
   bool find = intersect(ellipsoid.C_.inverse() * (p1_w - ellipsoid.d_),
                         ellipsoid.C_.inverse() * (p2_w - ellipsoid.d_),
-                        Vec3f::Zero(), 1, g, force);
+                        Vec3f::Zero(),
+                        1,
+                        g,
+                        force);
   if (find) g = ellipsoid.C_ * g + ellipsoid.d_;
   return find;
 }

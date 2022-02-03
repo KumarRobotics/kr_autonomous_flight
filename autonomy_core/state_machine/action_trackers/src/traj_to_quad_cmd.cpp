@@ -1,13 +1,14 @@
-#include "traj_to_quad_cmd.h"
-
 #include <angles/angles.h>
+#include <traj_to_quad_cmd.h>
 
 namespace traj_opt {
 
 using kr_mav_msgs::PositionCommand;
 
-void EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj, double dt,
-                        PositionCommand *out, uint max_derr_eval,
+void EvaluateTrajectory(const boost::shared_ptr<Trajectory>& traj,
+                        double dt,
+                        PositionCommand* out,
+                        uint max_derr_eval,
                         double scaling) {
   traj_opt::VecD val;
 
@@ -39,18 +40,21 @@ void EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj, double dt,
   if (val.rows() > 2) out->jerk.z = val(2);
 }
 
-PositionCommand EvaluateTrajectory(const boost::shared_ptr<Trajectory> &traj,
-                                   double dt, uint max_derr_eval,
+PositionCommand EvaluateTrajectory(const boost::shared_ptr<Trajectory>& traj,
+                                   double dt,
+                                   uint max_derr_eval,
                                    double scaling) {
   PositionCommand cmd;
   EvaluateTrajectory(traj, dt, &cmd, max_derr_eval, scaling);
   return cmd;
 }
 
-bool EvaluateTrajectoryPos(const boost::shared_ptr<Trajectory> &traj,
-                           const nav_msgs::Odometry::ConstPtr &odom,
-                           double err_max, double t_des, double ddt,
-                           PositionCommand *out) {
+bool EvaluateTrajectoryPos(const boost::shared_ptr<Trajectory>& traj,
+                           const nav_msgs::Odometry::ConstPtr& odom,
+                           double err_max,
+                           double t_des,
+                           double ddt,
+                           PositionCommand* out) {
   // return false if need to adjust time
   bool return_v = true;
   VecD pos = VecD(4, 1);

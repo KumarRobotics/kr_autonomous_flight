@@ -36,7 +36,7 @@ catkin_package(CATKIN_DEPENDS kr_mav_msgs actionlib_msgs planning_ros_msgs
                               kr_tracker_msgs)
 
 add_library(${PROJECT_NAME} src/projector.cpp src/traj_to_quad_cmd.cpp)
-target_include_directories(${PROJECT_NAME} PUBLIC src ${catkin_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC include ${catkin_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES} Eigen3::Eigen)
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})

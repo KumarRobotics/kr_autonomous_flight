@@ -1,16 +1,15 @@
 #pragma once
 
+#include <decompros.h>
 #include <planning_ros_utils/data_ros_utils.h>
 
 #include <boost/circular_buffer.hpp>
-
-#include "./decompros.h"
 
 class Projector {
  public:
   Projector(int num = 5) { ellipsoid_array_.set_capacity(num); }
   void set_obs(const vec_Vec3f obs) { obs_ = obs; }
-  void set_path(const vec_Vec3f &path) { path_ = path; }
+  void set_path(const vec_Vec3f& path) { path_ = path; }
   void set_outer_r_max(double r) { outer_r_max_ = r; }
   void set_r_max(double r) { r_max_ = r; }
   void set_r_min(double r) { r_min_ = r; }
@@ -29,27 +28,35 @@ class Projector {
 
   bool exist() { return !path_.empty(); }
 
-  bool project(const Vec3f &pt);
+  bool project(const Vec3f& pt);
 
-  vec_E<Ellipsoid3D> project_array(const Vec3f &pt, int num, double res);
+  vec_E<Ellipsoid3D> project_array(const Vec3f& pt, int num, double res);
 
-  Vec3f search_pt(const Vec3f &pt, double dist);
+  Vec3f search_pt(const Vec3f& pt, double dist);
 
  private:
-  vec_Vec3f path_downsample(const vec_Vec3f &ps, double d);
+  vec_Vec3f path_downsample(const vec_Vec3f& ps, double d);
 
-  bool find_intersection(const vec_Vec3f &path, const Ellipsoid3D &ellipsoid,
-                         Vec3f &intersect_pt);
+  bool find_intersection(const vec_Vec3f& path,
+                         const Ellipsoid3D& ellipsoid,
+                         Vec3f& intersect_pt);
 
-  vec_Vec3f ps_in_ellipsoid(const Ellipsoid3D &E, const vec_Vec3f &O);
+  vec_Vec3f ps_in_ellipsoid(const Ellipsoid3D& E, const vec_Vec3f& O);
 
-  Ellipsoid3D find_sphere(const Vec3f &pt, const vec_Vec3f &obs, double f);
+  Ellipsoid3D find_sphere(const Vec3f& pt, const vec_Vec3f& obs, double f);
 
-  bool intersect(const Vec3f &p1, const Vec3f &p2, const Vec3f &c, float r,
-                 Vec3f &g, bool force);
+  bool intersect(const Vec3f& p1,
+                 const Vec3f& p2,
+                 const Vec3f& c,
+                 float r,
+                 Vec3f& g,
+                 bool force);
 
-  bool intersect(const Vec3f &p1_w, const Vec3f &p2_w, Vec3f &g, bool force,
-                 const Ellipsoid3D &ellipsoid);
+  bool intersect(const Vec3f& p1_w,
+                 const Vec3f& p2_w,
+                 Vec3f& g,
+                 bool force,
+                 const Ellipsoid3D& ellipsoid);
 
   double outer_r_max_{2.5};
   double r_max_{1.0};

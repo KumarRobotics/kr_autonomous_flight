@@ -16,8 +16,7 @@
 #include <std_msgs/Empty.h>
 #include <traj_opt_ros/msg_traj.h>
 #include <traj_opt_ros/ros_bridge.h>
-
-#include "traj_to_quad_cmd.h"
+#include <traj_to_quad_cmd.h>
 
 // action stuff
 #include <action_trackers/RunTrajectoryAction.h>
@@ -372,7 +371,7 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
   cmd->kx[0] = kx_[0], cmd->kx[1] = kx_[1], cmd->kx[2] = kx_[2];
   cmd->kv[0] = kv_[0], cmd->kv[1] = kv_[1], cmd->kv[2] = kv_[2];
 
-  // evaluate trajectory and get the cmd,  see traj_opt_ros/traj_to_quad_cmd.h
+  // evaluate trajectory and get the cmd,  see traj_to_quad_cmd.h
   bool error_check_success = true;
   if (use_lambda_) {
     // evaluatePos will return false if difference in position between odometry

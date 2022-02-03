@@ -39,6 +39,7 @@ target_link_libraries(
 add_dependencies(local_global_replan_server ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
 
+# JPS + line tracker based replanner, no longer used since we are using motion primitive planner
 # add_executable(path_replanner src/path_replanner.cpp)
 # target_link_libraries(path_replanner PUBLIC ${PROJECT_NAME})
 # add_dependencies(path_replanner ${${PROJECT_NAME}_EXPORTED_TARGETS}

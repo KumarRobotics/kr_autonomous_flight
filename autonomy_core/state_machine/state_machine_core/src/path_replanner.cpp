@@ -11,9 +11,9 @@
 using actionlib::SimpleActionClient;
 using actionlib::SimpleActionServer;
 using kr_mav_msgs::PositionCommand;
-class RePlanner {
+class PathRePlanner {
  public:
-  RePlanner();
+  PathRePlanner();
   // private:
   std::unique_ptr<SimpleActionServer<state_machine::ReplanAction>>
       replan_server_;
@@ -137,7 +137,7 @@ class RePlanner {
   }
 };
 
-RePlanner::RePlanner() : nh_("~") {
+PathRePlanner::PathRePlanner() : nh_("~") {
   nh_.param("max_horizon", max_horizon_, 6);
 
   replan_server_.reset(
@@ -152,10 +152,10 @@ RePlanner::RePlanner() : nh_("~") {
       new actionlib::SimpleActionClient<action_planner::PlanPathAction>(
           nh_, "plan_path", true));
 
-  cmd_sub_ = nh_.subscribe("position_cmd", 1, &RePlanner::cmd_cb, this);
+  cmd_sub_ = nh_.subscribe("position_cmd", 1, &PathRePlanner::cmd_cb, this);
 
   replan_server_->registerGoalCallback(
-      boost::bind(&RePlanner::replan_goal, this));
+      boost::bind(&PathRePlanner::replan_goal, this));
 
   replan_server_->start();
 }
@@ -164,7 +164,7 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "replanner");
   ros::NodeHandle nh;
 
-  RePlanner replanner;
+  PathRePlanner replanner;
 
   ros::spin();
 

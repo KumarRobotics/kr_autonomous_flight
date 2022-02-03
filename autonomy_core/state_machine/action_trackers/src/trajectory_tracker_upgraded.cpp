@@ -38,12 +38,12 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
   /**
    * @brief initialize tracker
    */
-  void Initialize(const ros::NodeHandle &nh) override;
+  void Initialize(const ros::NodeHandle& nh) override;
 
   /**
    * @brief activate tracker
    */
-  bool Activate(const kr_mav_msgs::PositionCommand::ConstPtr &cmd) override;
+  bool Activate(const kr_mav_msgs::PositionCommand::ConstPtr& cmd) override;
 
   /**
    * @brief deactivate tracker
@@ -63,7 +63,7 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
    * yaw. If both use_lambda_ and use_yaw_ set as false, will check nothing
    */
   kr_mav_msgs::PositionCommand::ConstPtr update(
-      const nav_msgs::Odometry::ConstPtr &msg) override;
+      const nav_msgs::Odometry::ConstPtr& msg) override;
 
   /**
    * @brief Goal callback function.
@@ -73,7 +73,7 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
   /**
    * @brief Yaw alignment function.
    */
-  void AlignYaw(const nav_msgs::Odometry::ConstPtr &odom_msg);
+  void AlignYaw(const nav_msgs::Odometry::ConstPtr& odom_msg);
 
   void preemptCB();
   uint8_t status() const override;
@@ -109,14 +109,14 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
   double prempted_time;
   double yaw_thr_;
   bool use_lambda_;
-  
+
   // align yaw or not
-  bool align_yaw_; 
+  bool align_yaw_;
   // align yaw with the direction of robot movement every yaw_align_dt seconds
   double last_yaw_ = 0.0;
   double align_time_passed_ = 0.0;
-  ros::Time prev_align_start_time_;    // current alignment start timestamp
-  double yaw_dot_magnitude_;  // rad per second
+  ros::Time prev_align_start_time_;  // current alignment start timestamp
+  double yaw_dot_magnitude_;         // rad per second
   ros::Time last_yaw_align_time_;
   bool yaw_alignment_initialized_ = false;
   bool alignment_ongoing_ = false;
@@ -133,7 +133,7 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
 
   ros::Publisher epoch_pub_, point_pub_, lambda_pub_;
 
-  static traj_opt::VecD make4d(const traj_opt::VecD &vec) {
+  static traj_opt::VecD make4d(const traj_opt::VecD& vec) {
     traj_opt::VecD out = traj_opt::VecD::Zero(4);
     long int rows = std::min(vec.rows(), static_cast<long int>(4));
     out.block(0, 0, rows, 1) = vec.block(0, 0, rows, 1);
@@ -141,7 +141,7 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
   }
 };
 
-void ActionTrajectoryTracker::Initialize(const ros::NodeHandle &nh) {
+void ActionTrajectoryTracker::Initialize(const ros::NodeHandle& nh) {
   nh_ = boost::make_shared<ros::NodeHandle>(nh);
   nh_->param("gains/pos/x", kx_[0], 2.5);
   nh_->param("gains/pos/y", kx_[1], 2.5);
@@ -156,7 +156,6 @@ void ActionTrajectoryTracker::Initialize(const ros::NodeHandle &nh) {
   priv_nh.param("use_lambda", use_lambda_, true);  // pose error checking
   priv_nh.param("align_yaw", align_yaw_, true);
   priv_nh.param("yaw_speed_magnitude", yaw_dot_magnitude_, 0.3);
-
 
   epoch_pub_ = nh_->advertise<std_msgs::Int64>("epoch", 10);
   point_pub_ = nh_->advertise<geometry_msgs::PointStamped>("roi", 10);
@@ -178,8 +177,7 @@ void ActionTrajectoryTracker::Initialize(const ros::NodeHandle &nh) {
 }
 
 bool ActionTrajectoryTracker::Activate(
-    const kr_mav_msgs::PositionCommand::ConstPtr &msg) {
-
+    const kr_mav_msgs::PositionCommand::ConstPtr& msg) {
   // initialization
   started_ = ros::Time(0);
   odom_yaw_recorded_ = false;
@@ -216,8 +214,7 @@ void ActionTrajectoryTracker::Deactivate(void) {
 }
 
 kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
-    const nav_msgs::Odometry::ConstPtr &msg) {
-
+    const nav_msgs::Odometry::ConstPtr& msg) {
   if (!active_) {
     return kr_mav_msgs::PositionCommand::ConstPtr();
   }
@@ -269,7 +266,7 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
       traj_epoch.erase(traj_epoch.begin());
       init_cmd_->header.stamp = ros::Time::now();
       if (next_trajectory_.size() == 0) done_ = true;
-      
+
       // abort by publishing negative epoch so that replanner is aware
       std_msgs::Int64 epoch_msg;
       epoch_msg.data = -1;
@@ -333,10 +330,10 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
                          << " check time " << check_time);
         next_trajectory_.erase(next_trajectory_.begin());
         traj_epoch.erase(traj_epoch.begin());
-      // abort by publishing negative epoch so that replanner is aware
-      std_msgs::Int64 epoch_msg;
-      epoch_msg.data = -1;
-      epoch_pub_.publish(epoch_msg);
+        // abort by publishing negative epoch so that replanner is aware
+        std_msgs::Int64 epoch_msg;
+        epoch_msg.data = -1;
+        epoch_pub_.publish(epoch_msg);
 
       } else if ((vel_old - vel_new).norm() > 1.0) {
         // discontinuity in velocity is too large, abort
@@ -349,10 +346,10 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
                          << " execution time: " << execution_time);
         next_trajectory_.erase(next_trajectory_.begin());
         traj_epoch.erase(traj_epoch.begin());
-      // abort by publishing negative epoch so that replanner is aware
-      std_msgs::Int64 epoch_msg;
-      epoch_msg.data = -1;
-      epoch_pub_.publish(epoch_msg);
+        // abort by publishing negative epoch so that replanner is aware
+        std_msgs::Int64 epoch_msg;
+        epoch_msg.data = -1;
+        epoch_pub_.publish(epoch_msg);
 
       } else {
         // discontinuity in vel and position are both within threshold, accept
@@ -368,7 +365,6 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
     }
   }
 
-
   // reset command
   cmd.reset(new kr_mav_msgs::PositionCommand);
   cmd->header.stamp = t_now;
@@ -381,16 +377,16 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
   if (use_lambda_) {
     // evaluatePos will return false if difference in position between odometry
     // and trajectory is larger than pos_err_max_
-    if (!traj_opt::EvaluateTrajectoryPos(current_trajectory_, msg, pos_err_max_,
-                                         duration, 0.01, cmd.get())) {
-
+    if (!traj_opt::EvaluateTrajectoryPos(current_trajectory_,
+                                         msg,
+                                         pos_err_max_,
+                                         duration,
+                                         0.01,
+                                         cmd.get())) {
       ROS_ERROR(
-          "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
           "[Traj Tracker:] Max position error (between odom and trajectory) "
           "threshold violated (you need to slow down your execution or tune "
-          "gains!)! Now aborting the mission!!!"
-          "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-          "+");
+          "gains!)! Now aborting the mission!!!");
       ROS_ERROR_STREAM("Max  error threshold is:" << pos_err_max_);
       error_check_success = false;
     }
@@ -406,9 +402,10 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
     if (!odom_yaw_recorded_) {
       // get yaw from odom's quaternion
       double roll, pitch;
-      tf::Quaternion q(
-          msg->pose.pose.orientation.x, msg->pose.pose.orientation.y,
-          msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
+      tf::Quaternion q(msg->pose.pose.orientation.x,
+                       msg->pose.pose.orientation.y,
+                       msg->pose.pose.orientation.z,
+                       msg->pose.pose.orientation.w);
       tf::Matrix3x3 m(q);
       m.getRPY(roll, pitch, yaw_des_);
       odom_yaw_recorded_ = true;
@@ -437,20 +434,22 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
   }
 
   // publish current epoch
-  if (error_check_success){
+  if (error_check_success) {
     std_msgs::Int64 epoch_msg;
-    epoch_msg.data = current_epoch_ + int(std::floor(duration / execution_time));
+    epoch_msg.data =
+        current_epoch_ + int(std::floor(duration / execution_time));
     epoch_pub_.publish(epoch_msg);
   } else {
-          // abort by publishing negative epoch so that replanner is aware
-      std_msgs::Int64 epoch_msg;
-      epoch_msg.data = -1;
-      epoch_pub_.publish(epoch_msg);
+    // abort by publishing negative epoch so that replanner is aware
+    std_msgs::Int64 epoch_msg;
+    epoch_msg.data = -1;
+    epoch_pub_.publish(epoch_msg);
   }
   return cmd;
 }
 
-void ActionTrajectoryTracker::AlignYaw(const nav_msgs::Odometry::ConstPtr &msg) {
+void ActionTrajectoryTracker::AlignYaw(
+    const nav_msgs::Odometry::ConstPtr& msg) {
   // this part is for yaw_alignment
   double time_since_last_alignment;
   if (!yaw_alignment_initialized_) {
@@ -464,7 +463,8 @@ void ActionTrajectoryTracker::AlignYaw(const nav_msgs::Odometry::ConstPtr &msg) 
     last_yaw_align_x_ = msg->pose.pose.position.x;
     last_yaw_align_y_ = msg->pose.pose.position.y;
     // get yaw from odom's quaternion
-    tf::Quaternion q(msg->pose.pose.orientation.x, msg->pose.pose.orientation.y,
+    tf::Quaternion q(msg->pose.pose.orientation.x,
+                     msg->pose.pose.orientation.y,
                      msg->pose.pose.orientation.z,
                      msg->pose.pose.orientation.w);
     tf::Matrix3x3 m(q);
@@ -480,14 +480,13 @@ void ActionTrajectoryTracker::AlignYaw(const nav_msgs::Odometry::ConstPtr &msg) 
     last_yaw_align_time_ = ros::Time::now();
     // desired yaw direction should be arctan(dy, dx)
     ultimate_yaw_des_ = atan2((msg->pose.pose.position.y - last_yaw_align_y_),
-                     (msg->pose.pose.position.x - last_yaw_align_x_));
+                              (msg->pose.pose.position.x - last_yaw_align_x_));
     // record x and y
     last_yaw_align_x_ = msg->pose.pose.position.x;
     last_yaw_align_y_ = msg->pose.pose.position.y;
   }
 
   if (abs(ultimate_yaw_des_ - last_yaw_) > yaw_threshold_) {
-
     // set yaw dot to move robot to align with desired yaw
     if (ultimate_yaw_des_ > last_yaw_) {
       yaw_dot_des_ = yaw_dot_magnitude_ * 1.0;

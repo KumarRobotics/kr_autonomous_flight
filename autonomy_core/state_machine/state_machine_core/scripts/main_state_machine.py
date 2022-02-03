@@ -40,25 +40,16 @@ def main():
     else:
         raise Exception("[State machine:] state_machine/max_replan_trials is not set in the ros param YAML file!")
 
-    # max_planning_velocity parameter 
-    if rospy.has_param("~trajectory_planner/max_v"):
-        max_planning_velocity = rospy.get_param("~trajectory_planner/max_v")
-        print("[State machine:] Setting max_planning_velocity as:", max_planning_velocity)
-    else:
-        raise Exception("[State machine:] trajectory_planner/max_v is not set in the ros param YAML file!")
-
-    # max_stopping_acceleration parameter 
-    if rospy.has_param("~stopping_policy/acc_xy_des"):
-        max_stopping_acceleration = rospy.get_param("~stopping_policy/acc_xy_des")
-        print("[State machine:] Setting max_stopping_acceleration as:", max_stopping_acceleration)
-    else:
-        raise Exception("[State machine:] stopping_policy/acc_xy_des is not set in the ros param YAML file!")
-
     # Create holder for tracker object
     quad_tracker = QuadTracker(rospy.names.get_namespace() + "abort")
     quad_tracker.replan_rate = replan_rate
     quad_tracker.max_replan_trials = max_replan_trials
     quad_tracker.avoid = True  # obstacle avoidance in planner
+
+    # Seconds to wait for the stopping policy to finish, should be large enough so that the robot fully stops
+    # THIS IS VERY SAFETY CRITICAL! DO NOT CHANGE UNLESS YOU ARE SURE!      
+    # TODO(xu:) get feedback from stopping policy, instead of hard-coding a wait time
+    wait_for_stop = 5.0
 
     # Create a SMACH state machine
     sm = smach.StateMachine(outcomes=["done"])
@@ -228,7 +219,6 @@ def main():
             Replanner.REPLANNER(quad_tracker),
             transitions={
                 "succeeded": "Hover",
-                "no_path": "RetryMPWaypoints",
                 "failed": "RetryMPWaypoints"
             },
         )
@@ -236,7 +226,7 @@ def main():
         # RetryMPWaypoints state, re-entering ExecuteMotionPrimitive state if RetryWaypoints returns true (i.e. trail times < pre-defined max_trail_time);
         # Otherwise, calling stopping policy and transiting to hover.
         smach.StateMachine.add('RetryMPWaypoints',
-                               RetryWaypoints(quad_tracker, max_planning_velocity, max_stopping_acceleration),
+                               RetryWaypoints(quad_tracker, wait_for_stop),
                                transitions={
                                    'succeeded': 'ExecuteMotionPrimitive',
                                    'multi': 'ExecuteMotionPrimitive',

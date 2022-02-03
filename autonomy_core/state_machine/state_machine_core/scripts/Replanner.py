@@ -20,10 +20,6 @@ class StoppingPolicyDone(smach.State):
         self.quad_monitor = quad_monitor
 
     def execute(self, userdata):
-        # clear all original waypoints for safety  
-        # (no longer needed since we are using trajectory tracker instead of path tracker)
-        # self.quad_monitor.waypoints = None
-        # print("waypoints cleared!")
         return "done"
 
 class CheckRePlan(smach.State):
@@ -68,8 +64,6 @@ class RePlan(smach_ros.SimpleActionState):
 
 
     def result_cb(self, userdata, status, result):
-        # rospy.logwarn(result)
-        # rospy.loginfo(result)
         if result.status == 0:
             self.quad_monitor.replan_status = "success"
             self.quad_monitor.abort = False
@@ -84,7 +78,6 @@ class RePlan(smach_ros.SimpleActionState):
             self.quad_monitor.abort = True
         elif result.status == 4:
             raise Exception("The IN_PROGRESS result should have been disabled!")
-            # self.quad_monitor.replan_status = "in_progress"
         elif result.status == 5:
             self.quad_monitor.replan_status = "abort_full_mission"
             self.quad_monitor.abort = True
@@ -104,7 +97,7 @@ class REPLANNER(smach.StateMachine):
         return True
 
     def __init__(self, quad_monitor):
-        smach.StateMachine.__init__(self, outcomes=["succeeded", "no_path", "failed"])
+        smach.StateMachine.__init__(self, outcomes=["succeeded", "failed"])
         safe = True
         self.quad_monitor = quad_monitor
         with self:
@@ -126,61 +119,48 @@ class REPLANNER(smach.StateMachine):
                 "CheckRePlan",
                 CheckRePlan(quad_monitor),
                 transitions={
-                    "success": "StoppingPolicySuccess",
-                    "abort": "StoppingPolicy",
-                    "no_path": "StoppingPolicyNoPath",
-                    "abort_full_mission": "StoppingPolicy",
-                    "critical_error": "StoppingPolicy",
+                    "success": "StoppingPolicySucceeded",
+                    "abort": "StoppingPolicyFailed",
+                    "no_path": "StoppingPolicyFailed",
+                    "abort_full_mission": "StoppingPolicyFailed",
+                    "critical_error": "StoppingPolicyFailed",
                 },
             )
 
+            # If succeeded all waypoints have been reached), exit replanner with "succeeded" outcome
             smach.StateMachine.add(
-                "StoppingPolicy",
+                "StoppingPolicySucceeded",
                 TrackerTransition(
                     "trackers_manager/transition", "action_trackers/StoppingPolicy", quad_monitor
                 ),
                 transitions={
-                    "succeeded": "StoppingPolicyDone",
-                    "aborted": "StoppingPolicyDone",
-                    "preempted": "StoppingPolicyDone",
-                },
-            )
-
-            smach.StateMachine.add(
-                "StoppingPolicyDone",
-                StoppingPolicyDone(quad_monitor),
-                transitions={"done": "failed"},
-            )
-            smach.StateMachine.add(
-                "StoppingPolicyNoPath",
-                TrackerTransition(
-                    "trackers_manager/transition", "action_trackers/StoppingPolicy", quad_monitor
-                ),
-                transitions={
-                    "succeeded": "StoppingPolicyDoneNP",
-                    "aborted": "StoppingPolicyDoneNP",
-                    "preempted": "StoppingPolicyDoneNP",
+                    "succeeded": "StoppingPolicyDoneSucceeded",
+                    "aborted": "StoppingPolicyDoneSucceeded",
+                    "preempted": "StoppingPolicyDoneSucceeded",
                 },
             )
             smach.StateMachine.add(
-                "StoppingPolicyDoneNP",
-                StoppingPolicyDone(quad_monitor),
-                transitions={"done": "no_path"},
-            )
-
-            smach.StateMachine.add(
-                "StoppingPolicySuccess",
-                TrackerTransition(
-                    "trackers_manager/transition", "action_trackers/StoppingPolicy", quad_monitor
-                ),
-                transitions={
-                    "succeeded": "StoppingPolicyDoneSuccess",
-                    "aborted": "StoppingPolicyDoneSuccess",
-                    "preempted": "StoppingPolicyDoneSuccess",
-                },
-            )
-            smach.StateMachine.add(
-                "StoppingPolicyDoneSuccess",
+                "StoppingPolicyDoneSucceeded",
                 StoppingPolicyDone(quad_monitor),
                 transitions={"done": "succeeded"},
             )
+
+            
+            # If failed, exit replanner with "failed" outcome
+            smach.StateMachine.add(
+                "StoppingPolicyFailed",
+                TrackerTransition(
+                    "trackers_manager/transition", "action_trackers/StoppingPolicy", quad_monitor
+                ),
+                transitions={
+                    "succeeded": "StoppingPolicyDoneFailed",
+                    "aborted": "StoppingPolicyDoneFailed",
+                    "preempted": "StoppingPolicyDoneFailed",
+                },
+            )
+            smach.StateMachine.add(
+                "StoppingPolicyDoneFailed",
+                StoppingPolicyDone(quad_monitor),
+                transitions={"done": "failed"},
+            )
+

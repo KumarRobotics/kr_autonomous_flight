@@ -1,4 +1,4 @@
-#include <traj_opt_utils.hpp>
+#include <state_machine/traj_opt_utils.hpp>
 
 namespace state_machine {
 

@@ -25,8 +25,8 @@
 #include <traj_opt_ros/ros_bridge.h>
 
 #include <boost/timer/timer.hpp>
-#include <intersect_utils.hpp>
-#include <traj_opt_utils.hpp>
+#include <state_machine/intersect_utils.hpp>
+#include <state_machine/traj_opt_utils.hpp>
 
 // Timer stuff
 using boost::timer::cpu_timer;

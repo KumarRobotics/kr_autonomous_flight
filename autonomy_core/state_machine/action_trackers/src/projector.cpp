@@ -1,4 +1,4 @@
-#include <projector.hpp>
+#include <action_trackers/projector.hpp>
 
 bool Projector::project(const Vec3f& pt) {
   // obs_ is set by ActionPathTracker::cloudCb in path_tracker

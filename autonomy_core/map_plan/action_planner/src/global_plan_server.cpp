@@ -65,7 +65,7 @@ class GlobalPlanServer {
   // mutexes
   boost::mutex map_mtx;
   // current global map
-  planning_ros_msgs::VoxelMapConstPtr global_map_;
+  planning_ros_msgs::VoxelMapConstPtr global_map_ptr_;
 
   bool global_planner_succeeded_{false};
   bool global_plan_exist_{false};
@@ -108,7 +108,7 @@ class GlobalPlanServer {
   void process_result(bool solved);
 
   /**
-   * @brief map callback, update global_map_
+   * @brief map callback, update global_map_ptr_
    */
   void globalMapCB(const planning_ros_msgs::VoxelMap::ConstPtr& msg);
 
@@ -137,8 +137,8 @@ class GlobalPlanServer {
   /**
    * @brief clear global map position
    */
-  void clear_position(planning_ros_msgs::VoxelMap& global_map,
-                      const Vec3f& position);
+  planning_ros_msgs::VoxelMap clear_map_position(
+      const planning_ros_msgs::VoxelMap& global_map, const Vec3f& position);
 
   /**
    * @brief global planner check if outside map
@@ -148,7 +148,7 @@ class GlobalPlanServer {
 
 void GlobalPlanServer::globalMapCB(
     const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
-  global_map_ = msg;
+  global_map_ptr_ = msg;
 }
 
 GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
@@ -263,17 +263,16 @@ void GlobalPlanServer::process_goal() {
 
   // call the planner
 
-  if (!global_map_) {
+  if (!global_map_ptr_) {
     ROS_ERROR("Voxel Map is not yet received");
     return;
   }
 
   // clear start and goal
   planning_ros_msgs::VoxelMap global_map_cleared;
-  global_map_cleared = *global_map_;
 
-  clear_position(global_map_cleared, start.pos);
-  clear_position(global_map_cleared, goal.pos);
+  global_map_cleared = clear_map_position(*global_map_ptr_, start.pos);
+  global_map_cleared = clear_map_position(*global_map_ptr_, goal.pos);
   if (pub_cleared_map_) {
     global_map_cleared_pub_.publish(global_map_cleared);
   }
@@ -283,13 +282,18 @@ void GlobalPlanServer::process_goal() {
   process_result(global_planner_succeeded_);
 }
 
-void GlobalPlanServer::clear_position(planning_ros_msgs::VoxelMap& global_map,
-                                      const Vec3f& position) {
-  // Clear robot position
+planning_ros_msgs::VoxelMap GlobalPlanServer::clear_map_position(
+    const planning_ros_msgs::VoxelMap& global_map_original,
+    const Vec3f& position) {
+  // make a copy, not the most efficient way, but necessary because we need to
+  // maintain both original and cleared maps
+  planning_ros_msgs::VoxelMap global_map_cleared;
+  global_map_cleared = global_map_original;
+
   int8_t val_free = 0;
   ROS_WARN_ONCE("Value free is set as %d", val_free);
   double robot_r = 1.0;
-  int robot_r_n = std::ceil(robot_r / global_map.resolution);
+  int robot_r_n = std::ceil(robot_r / global_map_cleared.resolution);
 
   vec_Vec3i clear_ns;
   for (int nx = -robot_r_n; nx <= robot_r_n; nx++) {
@@ -300,14 +304,14 @@ void GlobalPlanServer::clear_position(planning_ros_msgs::VoxelMap& global_map,
     }
   }
 
-  auto origin_x = global_map.origin.x;
-  auto origin_y = global_map.origin.y;
-  auto origin_z = global_map.origin.z;
+  auto origin_x = global_map_cleared.origin.x;
+  auto origin_y = global_map_cleared.origin.y;
+  auto origin_z = global_map_cleared.origin.z;
   Eigen::Vector3i dim = Eigen::Vector3i::Zero();
-  dim(0) = global_map.dim.x;
-  dim(1) = global_map.dim.y;
-  dim(2) = global_map.dim.z;
-  auto res = global_map.resolution;
+  dim(0) = global_map_cleared.dim.x;
+  dim(1) = global_map_cleared.dim.y;
+  dim(2) = global_map_cleared.dim.z;
+  auto res = global_map_cleared.resolution;
   const Eigen::Vector3i pn =
       Eigen::Vector3i(std::round((position(0) - origin_x) / res),
                       std::round((position(1) - origin_y) / res),
@@ -316,11 +320,13 @@ void GlobalPlanServer::clear_position(planning_ros_msgs::VoxelMap& global_map,
   for (const auto& n : clear_ns) {
     Eigen::Vector3i pnn = pn + n;
     int idx_tmp = pnn(0) + pnn(1) * dim(0) + pnn(2) * dim(0) * dim(1);
-    if (!is_outside_map(pnn, dim) && global_map.data[idx_tmp] != val_free) {
-      global_map.data[idx_tmp] = val_free;
+    if (!is_outside_map(pnn, dim) &&
+        global_map_cleared.data[idx_tmp] != val_free) {
+      global_map_cleared.data[idx_tmp] = val_free;
       // ROS_ERROR("clearing!!! idx %d", idx_tmp);
     }
   }
+  return global_map_cleared;
 }
 
 bool GlobalPlanServer::is_outside_map(const Eigen::Vector3i& pn,

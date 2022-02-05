@@ -13,10 +13,10 @@
 #include <planning_ros_msgs/SplineTrajectory.h>
 
 // traj_opt stuff
+#include <action_trackers/traj_to_quad_cmd.h>
 #include <std_msgs/Empty.h>
 #include <traj_opt_ros/msg_traj.h>
 #include <traj_opt_ros/ros_bridge.h>
-#include <traj_to_quad_cmd.h>
 
 // action stuff
 #include <action_trackers/RunTrajectoryAction.h>
@@ -26,6 +26,8 @@
 // angles
 #include <angles/angles.h>
 #include <geometry_msgs/Vector3.h>
+
+#include <memory>
 
 class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
  public:

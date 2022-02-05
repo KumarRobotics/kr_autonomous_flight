@@ -39,7 +39,7 @@ class Projector {
 
   bool find_intersection(const vec_Vec3f& path,
                          const Ellipsoid3D& ellipsoid,
-                         Vec3f& intersect_pt);
+                         Vec3f* intersect_pt_ptr);
 
   vec_Vec3f ps_in_ellipsoid(const Ellipsoid3D& E, const vec_Vec3f& O);
 
@@ -49,12 +49,12 @@ class Projector {
                  const Vec3f& p2,
                  const Vec3f& c,
                  float r,
-                 Vec3f& g,
+                 Vec3f* g_ptr,
                  bool force);
 
   bool intersect(const Vec3f& p1_w,
                  const Vec3f& p2_w,
-                 Vec3f& g,
+                 Vec3f* g_ptr,
                  bool force,
                  const Ellipsoid3D& ellipsoid);
 

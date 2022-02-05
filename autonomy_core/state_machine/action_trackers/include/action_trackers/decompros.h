@@ -34,7 +34,7 @@ struct Polyhedron {
   /// Null constructor
   Polyhedron() {}
   /// Construct from Hyperplane array
-  Polyhedron(const vec_E<Hyperplane<Dim>>& vs) : vs_(vs) {}
+  explicit Polyhedron(const vec_E<Hyperplane<Dim>>& vs) : vs_(vs) {}
 
   /// Append Hyperplane
   void add(const Hyperplane<Dim>& v) { vs_.push_back(v); }

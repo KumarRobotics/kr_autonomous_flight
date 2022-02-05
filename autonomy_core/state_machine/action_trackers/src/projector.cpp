@@ -34,12 +34,12 @@ bool Projector::project(const Vec3f& pt) {
                                     // locally to avoid messing up path_.
   }
 
-  find_intersection(path, projected_ellipsoid_, projected_goal_);
+  find_intersection(path, projected_ellipsoid_, &projected_goal_);
   on_ellipsoid_ = (projected_goal_ - pt).norm() > (r() - 1e-3);
 
   outer_projected_goal_ = search_pt(projected_goal_, outer_r_max_);
 
-  find_intersection(path, direction_ellipsoid_, direction_goal_);
+  find_intersection(path, direction_ellipsoid_, &direction_goal_);
 
   if (ellipsoid_array_.empty() ||
       (pt - ellipsoid_array_.back().d_).norm() >= 0.2)
@@ -120,12 +120,12 @@ vec_Vec3f Projector::path_downsample(const vec_Vec3f& ps, double d) {
 
 bool Projector::find_intersection(const vec_Vec3f& path,
                                   const Ellipsoid3D& ellipsoid,
-                                  Vec3f& intersect_pt) {
+                                  Vec3f* intersect_pt_ptr) {
   int id = -1;
   vec_Vec3f gs;
   for (unsigned int i = 0; i < path.size() - 1; i++) {
     Vec3f gp;
-    if (intersect(path[i], path[i + 1], gp, i == path.size() - 2, ellipsoid)) {
+    if (intersect(path[i], path[i + 1], &gp, i == path.size() - 2, ellipsoid)) {
       if (i < path.size() - 2)
         id = i;
       else if ((gp - ellipsoid.d_).norm() < ellipsoid.C_(0, 0) + 1e-3)
@@ -134,10 +134,10 @@ bool Projector::find_intersection(const vec_Vec3f& path,
     gs.push_back(gp);
   }
   if (id >= 0) {
-    intersect_pt = gs[id];
+    *intersect_pt_ptr = gs[id];
     return true;
   } else {
-    intersect_pt = path.front();
+    *intersect_pt_ptr = path.front();
     return false;
   }
 }
@@ -194,7 +194,7 @@ bool Projector::intersect(const Vec3f& p1,
                           const Vec3f& p2,
                           const Vec3f& c,
                           float r,
-                          Vec3f& g,
+                          Vec3f* g_ptr,
                           bool force) {
   if (p1 == p2) return false;
 
@@ -214,24 +214,24 @@ bool Projector::intersect(const Vec3f& p1,
   double k_max = (p2 - p1).norm();
   if (k > k_max || k < 0) {
     if (force && k > k_max) {
-      g = p2;
+      *g_ptr = p2;
       return true;
     } else
       return false;
   }
 
-  g = p1 + k * d;
+  *g_ptr = p1 + k * d;
   return true;
 }
 
 bool Projector::intersect(const Vec3f& p1_w,
                           const Vec3f& p2_w,
-                          Vec3f& g,
+                          Vec3f* g_ptr,
                           bool force,
                           const Ellipsoid3D& ellipsoid) {
   if (p1_w == p2_w) {
     if ((p1_w - ellipsoid.d_).norm() < ellipsoid.C_(0, 0)) {
-      g = p1_w;
+      *g_ptr = p1_w;
       return true;
     } else
       return false;
@@ -240,8 +240,8 @@ bool Projector::intersect(const Vec3f& p1_w,
                         ellipsoid.C_.inverse() * (p2_w - ellipsoid.d_),
                         Vec3f::Zero(),
                         1,
-                        g,
+                        g_ptr,
                         force);
-  if (find) g = ellipsoid.C_ * g + ellipsoid.d_;
+  if (find) *g_ptr = ellipsoid.C_ * (*g_ptr) + ellipsoid.d_;
   return find;
 }

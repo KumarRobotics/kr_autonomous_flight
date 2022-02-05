@@ -374,7 +374,6 @@ planning_ros_msgs::VoxelMap LocalPlanServer::clear_map_position(
   // maintain both original and cleared maps
   planning_ros_msgs::VoxelMap local_map_cleared;
   local_map_cleared = local_map_original;
-  
   int8_t val_free = 0;
   ROS_WARN_ONCE("Value free is set as %d", val_free);
   double robot_r = 1.0;
@@ -405,7 +404,8 @@ planning_ros_msgs::VoxelMap LocalPlanServer::clear_map_position(
   for (const auto& n : clear_ns) {
     Eigen::Vector3i pnn = pn + n;
     int idx_tmp = pnn(0) + pnn(1) * dim(0) + pnn(2) * dim(0) * dim(1);
-    if (!is_outside_map(pnn, dim) && local_map_cleared.data[idx_tmp] != val_free) {
+    if (!is_outside_map(pnn, dim) &&
+        local_map_cleared.data[idx_tmp] != val_free) {
       local_map_cleared.data[idx_tmp] = val_free;
       // ROS_ERROR("clearing!!! idx %d", idx_tmp);
     }

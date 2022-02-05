@@ -1,4 +1,3 @@
-#include <memory>
 #include <state_machine/local_global_replan_server.hpp>
 
 /**

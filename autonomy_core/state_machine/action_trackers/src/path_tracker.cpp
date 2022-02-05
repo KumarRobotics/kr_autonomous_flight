@@ -33,7 +33,7 @@ class ActionPathTracker : public kr_trackers_manager::Tracker {
   void desMaxCB(const std_msgs::Float64MultiArray::ConstPtr& msg);
 
  private:
-  void Decelerate(PositionCommand::Ptr& cmd);
+  void Decelerate(PositionCommand::Ptr* cmd);
   boost::shared_ptr<ros::NodeHandle> nh_;
   Projector proj_;
 
@@ -130,7 +130,7 @@ void ActionPathTracker::Deactivate(void) {
 }
 
 // Heuristic to go to zero velocity
-void ActionPathTracker::Decelerate(PositionCommand::Ptr& cmd) {
+void ActionPathTracker::Decelerate(PositionCommand::Ptr* cmd) {
   // ROS_WARN_THROTTLE(1, "[ActionPathTracker]: decelerate...");
   Eigen::Vector3d pos(
       init_cmd_->position.x, init_cmd_->position.y, init_cmd_->position.z);
@@ -167,18 +167,18 @@ void ActionPathTracker::Decelerate(PositionCommand::Ptr& cmd) {
   }
 
   // Set it as command
-  cmd->position.x = pos(0);
-  cmd->position.y = pos(1);
-  cmd->position.z = pos(2);
-  cmd->velocity.x = vel(0);
-  cmd->velocity.y = vel(1);
-  cmd->velocity.z = vel(2);
-  cmd->acceleration.x = acc(0);
-  cmd->acceleration.y = acc(1);
-  cmd->acceleration.z = acc(2);
-  cmd->jerk.x = jrk(0);
-  cmd->jerk.y = jrk(1);
-  cmd->jerk.z = jrk(2);
+  (*cmd)->position.x = pos(0);
+  (*cmd)->position.y = pos(1);
+  (*cmd)->position.z = pos(2);
+  (*cmd)->velocity.x = vel(0);
+  (*cmd)->velocity.y = vel(1);
+  (*cmd)->velocity.z = vel(2);
+  (*cmd)->acceleration.x = acc(0);
+  (*cmd)->acceleration.y = acc(1);
+  (*cmd)->acceleration.z = acc(2);
+  (*cmd)->jerk.x = jrk(0);
+  (*cmd)->jerk.y = jrk(1);
+  (*cmd)->jerk.z = jrk(2);
 }
 
 PositionCommand::ConstPtr ActionPathTracker::update(
@@ -221,7 +221,7 @@ PositionCommand::ConstPtr ActionPathTracker::update(
 
   // Decelerate
   if (start_dec_) {
-    Decelerate(cmd);
+    Decelerate(&cmd);
     cmd->yaw = init_cmd_->yaw;
     cmd->yaw_dot = 0;
     init_cmd_ = cmd;
@@ -357,11 +357,11 @@ PositionCommand::ConstPtr ActionPathTracker::update(
       cmd->jerk.y = des_jrk[1];
       cmd->jerk.z = des_jrk[2];
     } else
-      Decelerate(cmd);
+      Decelerate(&cmd);
 
   } else {
     ROS_ERROR("Fail to find a project point!");
-    Decelerate(cmd);
+    Decelerate(&cmd);
     init_cmd_->header.stamp = ros::Time::now();
     done_ = true;
 

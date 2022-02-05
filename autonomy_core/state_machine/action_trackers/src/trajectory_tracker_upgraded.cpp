@@ -437,8 +437,8 @@ kr_mav_msgs::PositionCommand::ConstPtr ActionTrajectoryTracker::update(
   // publish current epoch
   if (error_check_success) {
     std_msgs::Int64 epoch_msg;
-    epoch_msg.data =
-        current_epoch_ + int(std::floor(duration / execution_time));
+    epoch_msg.data = current_epoch_ +
+                     static_cast<int>(std::floor(duration / execution_time));
     epoch_pub_.publish(epoch_msg);
   } else {
     // abort by publishing negative epoch so that replanner is aware

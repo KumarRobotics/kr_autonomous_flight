@@ -22,7 +22,7 @@ using boost::irange;
 // Local planning server for Sikang's motion primitive planner
 class LocalPlanServer {
  public:
-  explicit LocalPlanServer(const ros::NodeHandle &nh);
+  explicit LocalPlanServer(const ros::NodeHandle& nh);
 
   /**
    * @brief Call process_goal function, check planner timeout
@@ -84,40 +84,40 @@ class LocalPlanServer {
   /**
    * @brief Record result (trajectory, status, etc)
    */
-  void process_result(const MPL::Trajectory3D &traj, bool solved);
+  void process_result(const MPL::Trajectory3D& traj, bool solved);
 
   /**
    * @brief map callback, update local_map_ptr_
    */
-  void localMapCB(const planning_ros_msgs::VoxelMap::ConstPtr &msg);
+  void localMapCB(const planning_ros_msgs::VoxelMap::ConstPtr& msg);
 
   /**
    * @brief Local planner warpper
    */
-  bool local_plan_process(const MPL::Waypoint3D &start,
-                          const MPL::Waypoint3D &goal,
-                          const planning_ros_msgs::VoxelMap &map);
-
+  bool local_plan_process(const MPL::Waypoint3D& start,
+                          const MPL::Waypoint3D& goal,
+                          const planning_ros_msgs::VoxelMap& map);
 
   /**
    * @brief Local planner clear footprint
    */
-  void clear_footprint(planning_ros_msgs::VoxelMap &local_map, const Vec3f &start);
+  planning_ros_msgs::VoxelMap clear_map_position(
+      const planning_ros_msgs::VoxelMap& local_map, const Vec3f& start);
 
   /**
    * @brief Local planner check if outside map
    */
-  bool is_outside_map(const Eigen::Vector3i &pn, const Eigen::Vector3i &dim);
+  bool is_outside_map(const Eigen::Vector3i& pn, const Eigen::Vector3i& dim);
 };
 
 // map callback, update local_map_ptr_
 void LocalPlanServer::localMapCB(
-    const planning_ros_msgs::VoxelMap::ConstPtr &msg) {
+    const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
   ROS_WARN_ONCE("[Local planner:] Got the local voxel map!");
   local_map_ptr_ = msg;
 }
 
-LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
+LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   traj_pub = pnh_.advertise<planning_ros_msgs::Trajectory>("traj", 1, true);
   local_map_sub_ =
       pnh_.subscribe("local_voxel_map", 2, &LocalPlanServer::localMapCB, this);
@@ -130,8 +130,8 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   expanded_cloud_pub =
       pnh_.advertise<sensor_msgs::PointCloud>("expanded_cloud", 1, true);
 
-  local_map_cleared_pub =
-      pnh_.advertise<planning_ros_msgs::VoxelMap>("local_voxel_map_cleared", 1, true);
+  local_map_cleared_pub = pnh_.advertise<planning_ros_msgs::VoxelMap>(
+      "local_voxel_map_cleared", 1, true);
 
   // set up mpl planner
   mp_map_util_ = std::make_shared<MPL::VoxelMapUtil>();
@@ -184,16 +184,17 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle &nh) : pnh_(nh) {
   mp_planner_util_->setMapUtil(
       mp_map_util_);                  // Set collision checking function
   mp_planner_util_->setEpsilon(1.0);  // Set greedy param (default equal to 1)
-  if (v_max > vz_max){
-    mp_planner_util_->setVmax(v_max);   // Set max velocity
-  } else{
-    mp_planner_util_->setVmax(vz_max);   // Set max velocity
-    ROS_WARN("vz_max >= vxy_max, this is not recommended, change the yaml file!");
+  if (v_max > vz_max) {
+    mp_planner_util_->setVmax(v_max);  // Set max velocity
+  } else {
+    mp_planner_util_->setVmax(vz_max);  // Set max velocity
+    ROS_WARN(
+        "vz_max >= vxy_max, this is not recommended, change the yaml file!");
   }
-  
-  mp_planner_util_->setAmax(a_max);   // Set max acceleration
-  mp_planner_util_->setJmax(j_max);   // Set max jerk
-  mp_planner_util_->setVfov(v_fov);   // Set vertical semi-fov
+
+  mp_planner_util_->setAmax(a_max);  // Set max acceleration
+  mp_planner_util_->setJmax(j_max);  // Set max jerk
+  mp_planner_util_->setVfov(v_fov);  // Set vertical semi-fov
   // mp_planner_util_->setUmax(u_max); // Set max control input
   mp_planner_util_->setDt(dt);          // Set dt for each primitive
   mp_planner_util_->setTmax(ndt * dt);  // Set max time horizon of planning
@@ -224,7 +225,7 @@ void LocalPlanServer::process_all() {
   }
 }
 
-void LocalPlanServer::process_result(const MPL::Trajectory3D &traj,
+void LocalPlanServer::process_result(const MPL::Trajectory3D& traj,
                                      bool solved) {
   result_ = boost::make_shared<planning_ros_msgs::PlanTwoPointResult>();
   result_->success = solved;  // set success status
@@ -342,10 +343,8 @@ void LocalPlanServer::process_goal() {
   goal.use_acc = start.use_acc;
   goal.use_jrk = start.use_jrk;
 
-
   planning_ros_msgs::VoxelMap local_map_cleared;
-  local_map_cleared = *local_map_ptr_;
-  clear_footprint(local_map_cleared, start.pos);
+  local_map_cleared = clear_map_position(*local_map_ptr_, start.pos);
 
   if (pub_cleared_map_) {
     local_map_cleared_pub.publish(local_map_cleared);
@@ -369,13 +368,17 @@ void LocalPlanServer::process_goal() {
   process_result(traj, local_planner_succeeded);
 }
 
-
-void LocalPlanServer::clear_footprint(planning_ros_msgs::VoxelMap &local_map, const Vec3f &start) {
-  // Clear robot footprint
+planning_ros_msgs::VoxelMap LocalPlanServer::clear_map_position(
+    const planning_ros_msgs::VoxelMap& local_map_original, const Vec3f& start) {
+  // make a copy, not the most efficient way, but necessary because we need to
+  // maintain both original and cleared maps
+  planning_ros_msgs::VoxelMap local_map_cleared;
+  local_map_cleared = local_map_original;
+  
   int8_t val_free = 0;
   ROS_WARN_ONCE("Value free is set as %d", val_free);
   double robot_r = 1.0;
-  int robot_r_n = std::ceil(robot_r / local_map.resolution);
+  int robot_r_n = std::ceil(robot_r / local_map_cleared.resolution);
 
   vec_Vec3i clear_ns;
   for (int nx = -robot_r_n; nx <= robot_r_n; nx++) {
@@ -386,38 +389,40 @@ void LocalPlanServer::clear_footprint(planning_ros_msgs::VoxelMap &local_map, co
     }
   }
 
-  auto origin_x = local_map.origin.x;
-  auto origin_y = local_map.origin.y;
-  auto origin_z = local_map.origin.z;
+  auto origin_x = local_map_cleared.origin.x;
+  auto origin_y = local_map_cleared.origin.y;
+  auto origin_z = local_map_cleared.origin.z;
   Eigen::Vector3i dim = Eigen::Vector3i::Zero();
-  dim(0) = local_map.dim.x;
-  dim(1) = local_map.dim.y;
-  dim(2) = local_map.dim.z;
-  auto res = local_map.resolution;
-  const Eigen::Vector3i pn = Eigen::Vector3i(std::round((start(0) - origin_x) / res),
-                                             std::round((start(1) - origin_y) / res),
-                                             std::round((start(2) - origin_z) / res));
+  dim(0) = local_map_cleared.dim.x;
+  dim(1) = local_map_cleared.dim.y;
+  dim(2) = local_map_cleared.dim.z;
+  auto res = local_map_cleared.resolution;
+  const Eigen::Vector3i pn =
+      Eigen::Vector3i(std::round((start(0) - origin_x) / res),
+                      std::round((start(1) - origin_y) / res),
+                      std::round((start(2) - origin_z) / res));
 
-  for (const auto &n : clear_ns) {
+  for (const auto& n : clear_ns) {
     Eigen::Vector3i pnn = pn + n;
     int idx_tmp = pnn(0) + pnn(1) * dim(0) + pnn(2) * dim(0) * dim(1);
-    if (!is_outside_map(pnn, dim) && local_map.data[idx_tmp] != val_free) {
-      local_map.data[idx_tmp] = val_free;
+    if (!is_outside_map(pnn, dim) && local_map_cleared.data[idx_tmp] != val_free) {
+      local_map_cleared.data[idx_tmp] = val_free;
       // ROS_ERROR("clearing!!! idx %d", idx_tmp);
-    } 
+    }
   }
-
+  return local_map_cleared;
 }
 
-
-bool LocalPlanServer::is_outside_map(const Eigen::Vector3i &pn, const Eigen::Vector3i &dim) {
-  return pn(0) < 0 || pn(0) >= dim(0) || pn(1) < 0 || pn(1) >= dim(1) || pn(2) < 0 || pn(2) >= dim(2);
+bool LocalPlanServer::is_outside_map(const Eigen::Vector3i& pn,
+                                     const Eigen::Vector3i& dim) {
+  return pn(0) < 0 || pn(0) >= dim(0) || pn(1) < 0 || pn(1) >= dim(1) ||
+         pn(2) < 0 || pn(2) >= dim(2);
 }
-
 
 bool LocalPlanServer::local_plan_process(
-    const MPL::Waypoint3D &start, const MPL::Waypoint3D &goal,
-    const planning_ros_msgs::VoxelMap &map) {
+    const MPL::Waypoint3D& start,
+    const MPL::Waypoint3D& goal,
+    const planning_ros_msgs::VoxelMap& map) {
   // for visualization: publish a path connecting local start and local goal
   vec_Vec3f sg;
   sg.push_back(start.pos);
@@ -462,7 +467,7 @@ void LocalPlanServer::goalCB() {
   process_all();
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   ros::init(argc, argv, "action_planner");
 
   ros::NodeHandle nh("~");

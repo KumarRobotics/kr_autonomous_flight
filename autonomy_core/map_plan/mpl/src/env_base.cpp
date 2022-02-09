@@ -5,7 +5,7 @@
 namespace MPL {
 
 template <int Dim>
-bool EnvBase<Dim>::is_goal(const WaypointD &state) const {
+bool EnvBase<Dim>::is_goal(const WaypointD& state) const {
   if (state.t >= t_max_) return true;
   bool goaled =
       (state.pos - goal_node_.pos).template lpNorm<Eigen::Infinity>() <=
@@ -22,7 +22,7 @@ bool EnvBase<Dim>::is_goal(const WaypointD &state) const {
 }
 
 template <int Dim>
-decimal_t EnvBase<Dim>::get_heur(const WaypointD &state) const {
+decimal_t EnvBase<Dim>::get_heur(const WaypointD& state) const {
   if (goal_node_ == state) return 0;
   size_t id = state.t / dt_;
   if (!prior_traj_.empty() && id < prior_traj_.size())
@@ -32,11 +32,14 @@ decimal_t EnvBase<Dim>::get_heur(const WaypointD &state) const {
 }
 
 template <int Dim>
-decimal_t EnvBase<Dim>::cal_heur(const WaypointD &state,
-                                 const WaypointD &goal) const {
+decimal_t EnvBase<Dim>::cal_heur(const WaypointD& state,
+                                 const WaypointD& goal) const {
+  // the corresponding cost calculation is in cal_intrinsic_cost
   if (heur_ignore_dynamics_) {
     if (v_max_ > 0) {
-      return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>() /
+      return w_ *
+             ((state.pos - goal.pos).template lpNorm<Eigen::Infinity>() +
+              abs(state.pos[2] - goal.pos[2])) /
              v_max_;
     } else
       return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>();
@@ -189,7 +192,7 @@ decimal_t EnvBase<Dim>::cal_heur(const WaypointD &state,
 }
 
 template <int Dim>
-Veci<Dim> EnvBase<Dim>::round(const Vecf<Dim> &vec, decimal_t res) const {
+Veci<Dim> EnvBase<Dim>::round(const Vecf<Dim>& vec, decimal_t res) const {
   Veci<Dim> vecI;
   for (int i = 0; i < Dim; i++) vecI(i) = std::round(vec(i) / res);
   return vecI;
@@ -203,13 +206,14 @@ Veci<Dim> EnvBase<Dim>::round(const Vecf<Dim> &vec, decimal_t res) const {
 //}
 
 template <int Dim>
-void EnvBase<Dim>::forward_action(const WaypointD &curr, int action_id,
-                                  PrimitiveD &pr) const {
+void EnvBase<Dim>::forward_action(const WaypointD& curr,
+                                  int action_id,
+                                  PrimitiveD& pr) const {
   pr = Primitive<Dim>(curr, U_[action_id], dt_);
 }
 
 template <int Dim>
-void EnvBase<Dim>::set_prior_trajectory(const TrajectoryD &traj) {
+void EnvBase<Dim>::set_prior_trajectory(const TrajectoryD& traj) {
   prior_traj_.clear();
   decimal_t total_time = traj.getTotalTime();
   for (decimal_t t = 0; t < total_time; t += dt_) {
@@ -219,7 +223,7 @@ void EnvBase<Dim>::set_prior_trajectory(const TrajectoryD &traj) {
 }
 
 template <int Dim>
-bool EnvBase<Dim>::set_goal(const WaypointD &state) {
+bool EnvBase<Dim>::set_goal(const WaypointD& state) {
   if (prior_traj_.empty()) goal_node_ = state;
   return prior_traj_.empty();
 }
@@ -248,8 +252,12 @@ void EnvBase<Dim>::info() {
 }
 
 template <int Dim>
-decimal_t EnvBase<Dim>::calculate_intrinsic_cost(const PrimitiveD &pr) const {
-  // pr.J is integration of square of jerk, dt_ >= dist / v_max (guaranteeing it's admissible and consistent)
+decimal_t EnvBase<Dim>::cal_intrinsic_cost(const PrimitiveD& pr) const {
+  // the corresponding heuristic calculation is in cal_intrinsic_cost
+
+  // pr.J is integration of square of jerk, dt_ >= dist / v_max (guaranteeing
+  // it's admissible and consistent) the larger the heuristic_weight, the more
+  // emphasis on min time and the less emphasis on min control effort
   return pr.J(pr.control()) + w_ * dt_;
 }
 

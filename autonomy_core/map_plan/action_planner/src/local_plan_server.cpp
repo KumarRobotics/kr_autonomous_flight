@@ -7,6 +7,7 @@
 #include <planning_ros_msgs/PlanTwoPointAction.h>
 #include <planning_ros_utils/data_ros_utils.h>
 #include <planning_ros_utils/primitive_ros_utils.h>
+#include <ros/console.h>
 #include <ros/ros.h>
 #include <traj_opt_ros/ros_bridge.h>
 
@@ -152,6 +153,7 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   traj_planner_nh.param("max_j_z", jz_max, 1.0);
   traj_planner_nh.param("max_u_z", uz_max, 1.0);
 
+  // Important: set motion primitive control inputs
   vec_E<VecDf> U;
   if (!use3d_local) {
     const decimal_t du = u_max;
@@ -329,15 +331,24 @@ void LocalPlanServer::process_goal() {
   start.vel = twist_to_eigen(goal_->v_init);
   start.acc = twist_to_eigen(goal_->a_init);
   start.jrk = twist_to_eigen(goal_->j_init);
+
+  // Important: define use position, velocity, acceleration or jerk as control
+  // inputs, note that the lowest order "false" term will be used as control
+  // input, see instructions here:
+  // https://github.com/KumarRobotics/kr_autonomous_flight/tree/master/autonomy_core/map_plan/mpl#example-usage
   start.use_pos = true;
   start.use_vel = true;
   start.use_acc = true;
   start.use_jrk = false;
+  // yaw planning or not (note that yaw alignment with velocity can be turned on
+  // in trajectory_tracker)
+  start.use_yaw = false;
 
   goal.pos = pose_to_eigen(goal_->p_final);
   goal.vel = twist_to_eigen(goal_->v_final);
   goal.acc = twist_to_eigen(goal_->a_final);
   goal.jrk = twist_to_eigen(goal_->j_final);
+  goal.use_yaw = start.use_yaw;
   goal.use_pos = start.use_pos;
   goal.use_vel = start.use_vel;
   goal.use_acc = start.use_acc;

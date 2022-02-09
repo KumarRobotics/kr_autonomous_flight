@@ -3,7 +3,7 @@
 namespace MPL {
 
 template <int Dim>
-bool EnvMap<Dim>::is_goal(const WaypointD &state) const {
+bool EnvMap<Dim>::is_goal(const WaypointD& state) const {
   bool goaled =
       (state.pos - this->goal_node_.pos).template lpNorm<Eigen::Infinity>() <=
       this->tol_pos_;
@@ -20,7 +20,7 @@ bool EnvMap<Dim>::is_goal(const WaypointD &state) const {
     goaled = std::abs(state.yaw - this->goal_node_.yaw) <= this->tol_yaw_;
   if (goaled) {
     auto pns = map_util_->rayTrace(state.pos, this->goal_node_.pos);
-    for (const auto &it : pns) {
+    for (const auto& it : pns) {
       if (map_util_->isOccupied(it)) return false;
     }
   }
@@ -28,20 +28,20 @@ bool EnvMap<Dim>::is_goal(const WaypointD &state) const {
 }
 
 template <int Dim>
-bool EnvMap<Dim>::is_free(const Vecf<Dim> &pt) const {
+bool EnvMap<Dim>::is_free(const Vecf<Dim>& pt) const {
   const auto pn = map_util_->floatToInt(pt);
   return map_util_->isFree(pn);
 }
 
 template <int Dim>
-bool EnvMap<Dim>::is_free(const PrimitiveD &pr) const {
+bool EnvMap<Dim>::is_free(const PrimitiveD& pr) const {
   decimal_t max_v = 0;
   for (int i = 0; i < Dim; i++) {
     if (pr.max_vel(i) > max_v) max_v = pr.max_vel(i);
   }
   int n = std::ceil(max_v * pr.t() / map_util_->getRes());
   vec_E<WaypointD> pts = pr.sample(n);
-  for (const auto &pt : pts) {
+  for (const auto& pt : pts) {
     Veci<Dim> pn = map_util_->floatToInt(pt.pos);
     if (map_util_->isOccupied(pn) || map_util_->isOutside(pn)) return false;
     if (!this->search_region_.empty() &&
@@ -53,7 +53,7 @@ bool EnvMap<Dim>::is_free(const PrimitiveD &pr) const {
 }
 
 template <int Dim>
-decimal_t EnvMap<Dim>::traverse_primitive(const PrimitiveD &pr) const {
+decimal_t EnvMap<Dim>::traverse_primitive(const PrimitiveD& pr) const {
   decimal_t max_v = 0;
   for (int i = 0; i < Dim; i++) {
     if (pr.max_vel(i) > max_v) {
@@ -92,25 +92,31 @@ decimal_t EnvMap<Dim>::traverse_primitive(const PrimitiveD &pr) const {
 }
 
 template <int Dim>
-void EnvMap<Dim>::get_succ(const WaypointD &curr, vec_E<WaypointD> &succ,
-                           std::vector<decimal_t> &succ_cost,
-                           std::vector<int> &action_idx) const {
+void EnvMap<Dim>::get_succ(const WaypointD& curr,
+                           vec_E<WaypointD>& succ,
+                           std::vector<decimal_t>& succ_cost,
+                           std::vector<int>& action_idx) const {
   succ.clear();
   succ_cost.clear();
   action_idx.clear();
 
   this->expanded_nodes_.push_back(curr.pos);
+  // U_ is given in local_plan_server.cpp (variable named U)
   for (unsigned int i = 0; i < this->U_.size(); i++) {
     Primitive<Dim> pr(curr, this->U_[i], this->dt_);
     Waypoint<Dim> tn = pr.evaluate(this->dt_);
-    if (tn == curr || !validate_primitive(pr, this->v_max_, this->a_max_,
-                                          this->j_max_, this->yaw_max_, this->vfov_))
+    if (tn == curr || !validate_primitive(pr,
+                                          this->v_max_,
+                                          this->a_max_,
+                                          this->j_max_,
+                                          this->yaw_max_,
+                                          this->vfov_))
       continue;
     tn.t = curr.t + this->dt_;
     succ.push_back(tn);
     decimal_t cost = curr.pos == tn.pos ? 0 : traverse_primitive(pr);
     if (!std::isinf(cost)) {
-      cost += this->calculate_intrinsic_cost(pr);
+      cost += this->cal_intrinsic_cost(pr);
       this->expanded_edges_.push_back(pr);
     }
 

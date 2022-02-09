@@ -104,7 +104,7 @@ class EnvBase {
   /// Check if a primitive is in free space
   virtual bool is_free(const Primitive<Dim>& pr) const = 0;
 
-  virtual decimal_t calculate_intrinsic_cost(const PrimitiveD& pr) const;
+  virtual decimal_t cal_intrinsic_cost(const PrimitiveD& pr) const;
 
   /// Retrieve dt
   decimal_t get_dt() const { return dt_; }

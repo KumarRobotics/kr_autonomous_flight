@@ -318,7 +318,7 @@ planning_ros_msgs::VoxelMap GlobalPlanServer::clear_map_position(
   Vec3f position;
   Eigen::Vector3i pn;
 
-  for (unsigned int pos_idx = 1; pos_idx < positions.size() - 1; pos_idx++) {
+  for (unsigned int pos_idx = 0; pos_idx < positions.size(); pos_idx++) {
     position = positions[pos_idx];
 
     pn = Eigen::Vector3i(std::round((position(0) - origin_x) / res),

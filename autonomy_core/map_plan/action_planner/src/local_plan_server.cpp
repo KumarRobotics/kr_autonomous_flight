@@ -145,8 +145,8 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   traj_planner_nh.param("max_j", j_max, 1.0);
   traj_planner_nh.param("max_u", u_max, 1.0);
 
-  bool use3d_local;
-  traj_planner_nh.param("use_3d_local", use3d_local, false);
+  bool use_3d_local_;
+  traj_planner_nh.param("use_3d_local", use_3d_local_, false);
   double vz_max, az_max, jz_max, uz_max;
   traj_planner_nh.param("max_v_z", vz_max, 2.0);
   traj_planner_nh.param("max_a_z", az_max, 1.0);
@@ -155,7 +155,7 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
 
   // Important: set motion primitive control inputs
   vec_E<VecDf> U;
-  if (!use3d_local) {
+  if (!use_3d_local_) {
     const decimal_t du = u_max;
     for (decimal_t dx = -u_max; dx <= u_max; dx += du)
       for (decimal_t dy = -u_max; dy <= u_max; dy += du)
@@ -182,6 +182,9 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   traj_planner_nh.param("heuristic_weight", W, 10.0);
   traj_planner_nh.param("vertical_semi_fov", v_fov, 0.392);
 
+  // TODO(xu:) not differentiating between 2D and 3D, causing extra resource
+  // usage for 2D case, this needed to be changed in both planner util as well
+  // as map util, which requires the slicing map function
   mp_planner_util_.reset(new MPL::VoxelMapPlanner(verbose_));  // verbose
   mp_planner_util_->setMapUtil(
       mp_map_util_);                  // Set collision checking function

@@ -77,6 +77,9 @@ class RePlanner {
   ros::Publisher time_pub1;
   ros::Publisher time_pub2;
   cpu_timer timer;
+  double total_replan_time_ = 0;
+  double timer_counter_ = 0;
+  double average_time_ = 0;
 
   // tf_listener
   tf2_ros::Buffer tfBuffer;

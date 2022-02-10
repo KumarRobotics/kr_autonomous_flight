@@ -17,6 +17,8 @@
   <arg name="odom" value="/unity_command/ground_truth/$(arg robot)/odom" unless="$(arg onboard_sensing)"/>
   <arg name="odom" value="ukf_odom" if="$(arg onboard_sensing)"/>
 
+  <arg name="sim_binary_name" default="forest.x86_64" />
+  <!-- <arg name="sim_binary_name" default="arl-unity-robotics.x86_64" /> -->
 
   <!-- Choose the environment -->
   <!-- <arg name="param_file" value="$(find arl_unity_ros)/config/polypixel.yaml"/> -->
@@ -41,6 +43,7 @@
   </include>
 
   <include file="$(find dcist_utils)/launch/sim/sim_quad_fake_semantic_lidar.launch">
+    <arg name="sim_binary_name" value="$(arg sim_binary_name)"/>
     <arg name="robot" value="$(arg robot)" />  
     <arg name="odom" value="$(arg odom)" />
     <arg name="launch_unity" value="$(arg launch_unity)" />

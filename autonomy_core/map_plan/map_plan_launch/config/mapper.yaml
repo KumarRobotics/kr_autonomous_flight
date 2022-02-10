@@ -6,11 +6,11 @@ global:
   center_y: 0.0
   range_x: 500.0
   range_y: 500.0
-  center_z: 5.0
-  range_z: 8.0
-  resolution: 1.0 # 3
+  center_z: 6.0
+  range_z: 12.0
+  resolution: 1.5 # 3
   num_point_cloud_skip: 2 # integer
-  max_raycast_range: 30.0
+  max_raycast_range: 50.0
   dilate_xy: true
   dilate_z: false
   decay_times_to_empty: 10 # times of decay to empty, std::ceil((float)(val_occ - val_even) / (float)decay_times_to_empty), 0 means no decay
@@ -19,7 +19,7 @@ local: # local map range z and center_z will be the same as storage map
   # local planning horizon will be from robot to the local voxel map boundary
   range_x: 40.0
   range_y: 40.0
-  range_z: 8.0
+  range_z: 12.0
   resolution: 0.5
   max_raycast_range: 30.0
   decay_times_to_empty: 10 # number of times of decay to empty, 0 means no decay

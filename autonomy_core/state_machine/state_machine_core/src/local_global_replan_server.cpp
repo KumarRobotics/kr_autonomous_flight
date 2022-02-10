@@ -427,7 +427,11 @@ bool RePlanner::PlanTrajectory(int horizon) {
   tmsg2.header.frame_id = map_frame_;
   // millisecond
   tmsg2.temperature = static_cast<double>(timer.elapsed().wall) / 1e6;
-  // ROS_WARN("[local_planner_time]: %f", tmsg2.temperature);
+  // total_replan_time_ += tmsg2.temperature;
+  // timer_counter_ += 1;
+  // average_time_ = total_replan_time_ / timer_counter_;
+  // ROS_WARN("[current local_planner_time]: %f", tmsg2.temperature);
+  // ROS_WARN("[average local_planner_time]: %f", average_time_);
   // time_pub2.publish(tmsg2);
 
   // check result of local plan

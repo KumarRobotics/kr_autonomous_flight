@@ -5,8 +5,9 @@
 
 #pragma once
 
-#include "mpl_basis/data_type.h"
+#include <cmath>
 
+#include "mpl_basis/data_type.h"
 namespace MPL {
 
 /**
@@ -24,7 +25,7 @@ struct VirtualPoint {
 class LambdaSeg {
  public:
   LambdaSeg() = default;
-  LambdaSeg(const VirtualPoint &v1, const VirtualPoint &v2);
+  LambdaSeg(const VirtualPoint& v1, const VirtualPoint& v2);
 
   VirtualPoint evaluate(decimal_t tau) const;
   decimal_t getT(decimal_t t) const;
@@ -42,7 +43,7 @@ class LambdaSeg {
 class Lambda {
  public:
   Lambda() = default;
-  Lambda(const std::vector<VirtualPoint> &vs);
+  Lambda(const std::vector<VirtualPoint>& vs);
 
   bool exist() const { return !segs.empty(); }
   std::vector<VirtualPoint> sample(int N);

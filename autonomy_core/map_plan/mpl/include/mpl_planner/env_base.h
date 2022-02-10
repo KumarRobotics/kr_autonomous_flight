@@ -1,9 +1,10 @@
 #pragma once
 
+#include <cmath>
+
 #include "mpl_basis/primitive.h"
 #include "mpl_basis/trajectory.h"
 #include "mpl_basis/waypoint.h"
-
 namespace MPL {
 
 /**
@@ -41,14 +42,18 @@ class EnvBase {
   //  std::string to_string(const Veci<Dim>& vec) const;
 
   /// Recover trajectory
-  void forward_action(const WaypointD& curr, int action_id,
+  void forward_action(const WaypointD& curr,
+                      int action_id,
                       PrimitiveD& pr) const;
 
   /// Set control input
   void set_u(const vec_E<VecDf>& U) { U_ = U; }
 
-  /// Set max vel in each axis
-  void set_v_max(decimal_t v) { v_max_ = v; }
+  /// Set max vel in xy axis
+  void set_v_xy(decimal_t v) { v_max_ = v; }
+
+  /// Set max vel in z axis
+  void set_v_z(decimal_t vz) { v_max_z_ = vz; }
 
   /// Set max acc in each axis
   void set_a_max(decimal_t a) { a_max_ = a; }
@@ -59,8 +64,8 @@ class EnvBase {
   /// Set max acc in each axis
   void set_yaw_max(decimal_t yaw) { yaw_max_ = yaw; }
 
-  /// Set vertical semi-fov 
-  void set_vfov(decimal_t vfov) {vfov_ = vfov; }
+  /// Set vertical semi-fov
+  void set_vfov(decimal_t vfov) { vfov_ = vfov; }
 
   /// Set prior trajectory
   virtual void set_prior_trajectory(const Trajectory<Dim>& traj);
@@ -117,7 +122,8 @@ class EnvBase {
    * @param action_idx The array stores corresponding idx of control for each
    * successor
    */
-  virtual void get_succ(const WaypointD& curr, vec_E<WaypointD>& succ,
+  virtual void get_succ(const WaypointD& curr,
+                        vec_E<WaypointD>& succ,
                         std::vector<decimal_t>& succ_cost,
                         std::vector<int>& action_idx) const = 0;
 
@@ -135,8 +141,10 @@ class EnvBase {
   decimal_t tol_acc_{-1.0};
   /// tolerance of yaw for goal region, 0 means no tolerance
   decimal_t tol_yaw_{-1.0};
-  /// max velocity
+  /// max velocity along x and y
   decimal_t v_max_{-1.0};
+  /// max velocity along z
+  decimal_t v_max_z_{-1.0};
   /// max acceleration
   decimal_t a_max_{-1.0};
   /// max jerk

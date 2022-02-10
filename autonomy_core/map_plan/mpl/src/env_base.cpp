@@ -36,13 +36,24 @@ decimal_t EnvBase<Dim>::cal_heur(const WaypointD& state,
                                  const WaypointD& goal) const {
   // the corresponding cost calculation is in cal_intrinsic_cost
   if (heur_ignore_dynamics_) {
-    if (v_max_ > 0) {
-      return w_ *
-             ((state.pos - goal.pos).template lpNorm<Eigen::Infinity>() +
-              abs(state.pos[2] - goal.pos[2])) /
-             v_max_;
-    } else
+    if (v_max_ > 0 && v_max_z_ > 0) {
+      double t_xy = std::max(std::abs(state.pos[0] - goal.pos[0]),
+                             std::abs(state.pos[1] - goal.pos[1])) /
+                    v_max_;
+      double t_z = std::abs(state.pos[2] - goal.pos[2]) / v_max_z_;
+      // encouraging x and y direction search and penalizing z direction search
+      double z_penalty_factor = 3.0;  // this value should be > 1
+      // combine the two to take both xy and z direction cost into consideration
+      // decrease xy instead of increase tz avoid overestimating the time cost
+      double time_est = t_xy / z_penalty_factor + t_z;
+      // divide into half to guarantee that it never overestimates the time cost
+      // (t_xy + t_z) / 2 <= max(t_xy, t_z) <= actual_time_cost
+      time_est *= 0.5;
+      return w_ * time_est;
+    } else {
+      printf("[Motion primitive planner:] max_v_xy or max_v_z is negative");
       return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>();
+    }
   }
 
   if (state.control == MPL::JRK && goal.control == MPL::JRK) {
@@ -236,7 +247,8 @@ void EnvBase<Dim>::info() {
   printf("+               wyaw: %.2f               +\n", wyaw_);
   printf("+                 dt: %.2f               +\n", dt_);
   printf("+              t_max: %.2f               +\n", t_max_);
-  printf("+              v_max: %.2f               +\n", v_max_);
+  printf("+              v_xy_max: %.2f               +\n", v_max_);
+  printf("+              v_z_max: %.2f               +\n", v_max_z_);
   printf("+              a_max: %.2f               +\n", a_max_);
   printf("+              j_max: %.2f               +\n", j_max_);
   printf("+            yaw_max: %.2f               +\n", yaw_max_);

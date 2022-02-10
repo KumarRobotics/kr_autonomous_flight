@@ -84,10 +84,10 @@ vec_Vecf<Dim> JPSPlanner<Dim>::removeLinePts(const vec_Vecf<Dim> &path) {
   for (unsigned int i = 1; i < path.size() - 1; i++) {
     Vecf<Dim> p = (path[i + 1] - path[i]) - (path[i] - path[i - 1]);
     if (Dim == 3) {
-      if (fabs(p(0)) + fabs(p(1)) + fabs(p(2)) > 1e-2)
+      if (std::abs(p(0)) + std::abs(p(1)) + std::abs(p(2)) > 1e-2)
         new_path.push_back(path[i]);
     } else {
-      if (fabs(p(0)) + fabs(p(1)) > 1e-2) new_path.push_back(path[i]);
+      if (std::abs(p(0)) + std::abs(p(1)) > 1e-2) new_path.push_back(path[i]);
     }
   }
   new_path.push_back(path.back());

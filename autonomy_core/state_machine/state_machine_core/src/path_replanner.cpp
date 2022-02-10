@@ -8,6 +8,7 @@
 #include <kr_mav_msgs/PositionCommand.h>
 #include <state_machine/ReplanAction.h>
 
+#include <cmath>
 using actionlib::SimpleActionClient;
 using actionlib::SimpleActionServer;
 using kr_mav_msgs::PositionCommand;

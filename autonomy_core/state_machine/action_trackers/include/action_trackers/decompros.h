@@ -2,10 +2,10 @@
 
 #include <mpl_basis/data_type.h>
 
+#include <cmath>
 #include <iostream>
 #include <limits>   // numeric_limits
 #include <utility>  // pair
-
 template <int Dim>
 struct Hyperplane {
   Hyperplane() {}

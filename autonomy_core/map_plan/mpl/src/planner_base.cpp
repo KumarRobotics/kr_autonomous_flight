@@ -7,7 +7,7 @@ namespace MPL {
 template <int Dim>
 vec_Vecf<Dim> PlannerBase<Dim>::getOpenSet() const {
   vec_Vecf<Dim> ps;
-  for (const auto &it : ss_ptr_->pq_) {
+  for (const auto& it : ss_ptr_->pq_) {
     ps.push_back(it.second->coord.pos);
   }
   return ps;
@@ -16,7 +16,7 @@ vec_Vecf<Dim> PlannerBase<Dim>::getOpenSet() const {
 template <int Dim>
 vec_Vecf<Dim> PlannerBase<Dim>::getCloseSet() const {
   vec_Vecf<Dim> ps;
-  for (const auto &it : ss_ptr_->hm_) {
+  for (const auto& it : ss_ptr_->hm_) {
     if (it.second && it.second->iterationclosed)
       ps.push_back(it.second->coord.pos);
   }
@@ -40,10 +40,18 @@ void PlannerBase<Dim>::setLPAstar(bool use_lpastar) {
 }
 
 template <int Dim>
-void PlannerBase<Dim>::setVmax(decimal_t v) {
-  env_->set_v_max(v);
+void PlannerBase<Dim>::setVxy(decimal_t v) {
+  env_->set_v_xy(v);
   if (planner_verbose_) {
-    printf("[PlannerBase] set v_max: %f\n", v);
+    printf("[PlannerBase] set v_xy_max: %f\n", v);
+  }
+}
+
+template <int Dim>
+void PlannerBase<Dim>::setVz(decimal_t vz) {
+  env_->set_v_z(vz);
+  if (planner_verbose_) {
+    printf("[PlannerBase]set v_z_max: %f\n", vz);
   }
 }
 
@@ -117,12 +125,13 @@ void PlannerBase<Dim>::setMaxNum(int num) {
 }
 
 template <int Dim>
-void PlannerBase<Dim>::setU(const vec_E<VecDf> &U) {
+void PlannerBase<Dim>::setU(const vec_E<VecDf>& U) {
   env_->set_u(U);
 }
 
 template <int Dim>
-void PlannerBase<Dim>::setTol(decimal_t tol_pos, decimal_t tol_vel,
+void PlannerBase<Dim>::setTol(decimal_t tol_pos,
+                              decimal_t tol_vel,
                               decimal_t tol_acc) {
   env_->set_tol_pos(tol_pos);
   env_->set_tol_vel(tol_vel);
@@ -135,8 +144,8 @@ void PlannerBase<Dim>::setTol(decimal_t tol_pos, decimal_t tol_vel,
 }
 
 template <int Dim>
-bool PlannerBase<Dim>::plan(const PlannerBase::Coord &start,
-                            const PlannerBase::Coord &goal) {
+bool PlannerBase<Dim>::plan(const PlannerBase::Coord& start,
+                            const PlannerBase::Coord& goal) {
   if (planner_verbose_) {
     start.print("Start:");
     goal.print("Goal:");

@@ -137,7 +137,7 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     }
 
     // check the initial velocity direction
-    v0_norm = abs(v0_(axis));
+    v0_norm = fabs(v0_(axis));
     if (v0_(axis) > 0) {
       v0_dir = 1.0;
     } else {
@@ -147,7 +147,7 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     a0 = a0_(axis);
 
     // first, change the acceleration from a0 to -a_des_abs
-    if (abs(a0) > a_des_abs) {
+    if (fabs(a0) > a_des_abs) {
       ROS_WARN_STREAM(
           "[StoppingPolicy:] initial acceleration is "
           << a0 << ", which is larger than stopping policy max acceleration of "
@@ -164,9 +164,9 @@ PositionCommand::ConstPtr StoppingPolicy::update(
 
     // phase 1-3: increase |acceleration| -> const acc -> decrease |acc|
     // calculate time duration for each phase
-    t_phase1 = abs(-v0_dir * a_des_abs - a0) /
+    t_phase1 = fabs(-v0_dir * a_des_abs - a0) /
                j_des_abs;  // from a0 to -v0_dir * a_des_abs
-    t_phase3 = abs(0 - (-v0_dir * a_des_abs)) /
+    t_phase3 = fabs(0 - (-v0_dir * a_des_abs)) /
                j_des_abs;  // from -v0_dir *a_des_abs to 0
 
     // average acceleration for phase 1 and phase 3
@@ -174,7 +174,7 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     avg_acc_phase3 = (-v0_dir * a_des_abs + 0) / 2.0;
     // absolute change in velocity during phase 1 and phase 3
     total_deacc_abs =
-        abs((t_phase1 * avg_acc_phase1) + (t_phase3 * avg_acc_phase3));
+        fabs((t_phase1 * avg_acc_phase1) + (t_phase3 * avg_acc_phase3));
 
     // 3 possible cases:
     if ((-v0_dir * a0 > 0) && (pow(a0, 2) / (2 * j_des_abs) > v0_norm)) {
@@ -191,7 +191,7 @@ PositionCommand::ConstPtr StoppingPolicy::update(
           << j_des_abs);
       j_des_abs = pow(a0, 2) / (2 * v0_norm);
       ROS_WARN_STREAM("jerk is increased to: " << j_des_abs);
-      t_phase3 = abs(0 - a0) / j_des_abs;  // from a0 to 0
+      t_phase3 = fabs(0 - a0) / j_des_abs;  // from a0 to 0
     } else if (total_deacc_abs > v0_norm) {
       // Case 2: a_des_abs will not be reached, using geometric method to solve
       // this v_virtual is v0 + v_a0, where v_a0 is the change of v if
@@ -202,9 +202,9 @@ PositionCommand::ConstPtr StoppingPolicy::update(
       // => a_max_abs = sqrt(v_virtual * j_des_abs)
       // => a_max = -v0_dir * a_max_abs
       double a_max = -v0_dir * sqrt(v_virtual * j_des_abs);
-      t_phase1 = abs(a_max - a0) / j_des_abs;  // from a0 to a_max
+      t_phase1 = fabs(a_max - a0) / j_des_abs;  // from a0 to a_max
       t_phase2 = 0;  // no constant acceleration phase in this case
-      t_phase3 = abs(0 - a_max) / j_des_abs;  // from a_max to 0
+      t_phase3 = fabs(0 - a_max) / j_des_abs;  // from a_max to 0
     } else {
       // Case 2: a_des_abs will be reached, t_phase1 and t_phase3 will be as
       // calculated above, and t_phase2 will be duration of constant acc

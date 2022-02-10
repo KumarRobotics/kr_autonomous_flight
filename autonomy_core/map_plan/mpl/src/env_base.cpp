@@ -50,6 +50,10 @@ decimal_t EnvBase<Dim>::cal_heur(const WaypointD& state,
       // (t_xy + t_z) / 2 <= max(t_xy, t_z) <= actual_time_cost
       time_est *= 0.5;
       return w_ * time_est;
+
+      // original heuristic:
+      // return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>() /
+      //        v_max_;
     } else {
       printf("[Motion primitive planner:] max_v_xy or max_v_z is negative");
       return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>();

@@ -31,9 +31,15 @@ class EnvBase {
    */
   virtual decimal_t get_heur(const WaypointD& state) const;
 
-  /// calculate the cost from state to goal
+  /**
+   * @brief Heuristic function
+   * @param state current state coord
+   * @param goal goal state coord
+   * @param z_penalty penalty along z-direction, it should be >= 1.0
+   */
   virtual decimal_t cal_heur(const WaypointD& state,
-                             const WaypointD& goal) const;
+                             const WaypointD& goal,
+                             const double& z_penalty = 2.0) const;
 
   /// Replace the original cast function
   Veci<Dim> round(const Vecf<Dim>& vec, decimal_t res) const;

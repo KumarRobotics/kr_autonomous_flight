@@ -1,5 +1,7 @@
 #include "mpl_planner/env_base.h"
 
+#include <iostream>
+
 #include "mpl_basis/math.h"
 
 namespace MPL {
@@ -33,27 +35,25 @@ decimal_t EnvBase<Dim>::get_heur(const WaypointD& state) const {
 
 template <int Dim>
 decimal_t EnvBase<Dim>::cal_heur(const WaypointD& state,
-                                 const WaypointD& goal) const {
+                                 const WaypointD& goal,
+                                 const double& z_penalty) const {
   // the corresponding cost calculation is in cal_intrinsic_cost
   if (heur_ignore_dynamics_) {
-    if (v_max_ > 0 && v_max_z_ > 0) {
-      double t_xy = std::max(std::abs(state.pos[0] - goal.pos[0]),
-                             std::abs(state.pos[1] - goal.pos[1])) /
-                    v_max_;
-      double t_z = std::abs(state.pos[2] - goal.pos[2]) / v_max_z_;
-      // encouraging x and y direction search and penalizing z direction search
-      double z_penalty_factor = 3.0;  // this value should be > 1
-      // combine the two to take both xy and z direction cost into consideration
-      // decrease xy instead of increase tz avoid overestimating the time cost
-      double time_est = t_xy / z_penalty_factor + t_z;
-      // divide into half to guarantee that it never overestimates the time cost
-      // (t_xy + t_z) / 2 <= max(t_xy, t_z) <= actual_time_cost
-      time_est *= 0.5;
-      return w_ * time_est;
-
+    if (v_max_ > 0 && v_max_z_ > 0 && Dim == 3) {
       // original heuristic:
       // return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>() /
       //        v_max_;
+      const Vecf<Dim> dp = goal.pos - state.pos;
+      double t_xy_est = std::max(std::abs(dp[0]), std::abs(dp[1])) / v_max_;
+      double t_z_est = std::abs(dp[2]) / v_max_z_;
+      // combine the two to account for both xy and z direction cost, and
+      // speed up by penalizing z search, but can cause suboptimal trajectory
+      // TODO(xu:) alternatively, decrease x y time, but it makes search slow,
+      // a better way is to change time cost to treat xy and z differently
+      return w_ * t_xy_est + t_z_est * z_penalty;
+    } else if (v_max_ > 0) {
+      return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>() /
+             v_max_;
     } else {
       printf("[Motion primitive planner:] max_v_xy or max_v_z is negative");
       return w_ * (state.pos - goal.pos).template lpNorm<Eigen::Infinity>();

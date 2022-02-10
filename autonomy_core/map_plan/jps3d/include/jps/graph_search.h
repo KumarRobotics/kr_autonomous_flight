@@ -6,10 +6,11 @@
 #pragma once
 
 #include <boost/heap/d_ary_heap.hpp>  // boost::heap::d_ary_heap
-#include <limits>                     // std::numeric_limits
-#include <memory>                     // std::shared_ptr
-#include <unordered_map>              // std::unordered_map
-#include <vector>                     // std::vector
+#include <cmath>
+#include <limits>         // std::numeric_limits
+#include <memory>         // std::shared_ptr
+#include <unordered_map>  // std::unordered_map
+#include <vector>         // std::vector
 
 namespace JPS {
 
@@ -30,7 +31,8 @@ struct State;  // forward declaration
 /// State pointer
 using StatePtr = std::shared_ptr<State>;
 using priorityQueue =
-    boost::heap::d_ary_heap<StatePtr, boost::heap::mutable_<true>,
+    boost::heap::d_ary_heap<StatePtr,
+                            boost::heap::mutable_<true>,
                             boost::heap::arity<2>,
                             boost::heap::compare<CompareState<StatePtr>>>;
 
@@ -92,8 +94,8 @@ struct JPS2DNeib {
 
  private:
   void Neib(int dx, int dy, int norm1, int dev, int& tx, int& ty);
-  void FNeib(int dx, int dy, int norm1, int dev, int& fx, int& fy, int& nx,
-             int& ny);
+  void FNeib(
+      int dx, int dy, int norm1, int dev, int& fx, int& fy, int& nx, int& ny);
 };
 
 /// Search and prune neighbors for JPS 3D
@@ -122,10 +124,19 @@ struct JPS3DNeib {
   JPS3DNeib();
 
  private:
-  void Neib(int dx, int dy, int dz, int norm1, int dev, int& tx, int& ty,
-            int& tz);
-  void FNeib(int dx, int dy, int dz, int norm1, int dev, int& fx, int& fy,
-             int& fz, int& nx, int& ny, int& nz);
+  void Neib(
+      int dx, int dy, int dz, int norm1, int dev, int& tx, int& ty, int& tz);
+  void FNeib(int dx,
+             int dy,
+             int dz,
+             int norm1,
+             int dev,
+             int& fx,
+             int& fy,
+             int& fz,
+             int& nx,
+             int& ny,
+             int& nz);
 };
 
 /**
@@ -145,7 +156,10 @@ class GraphSearch {
    * @param eps weight of heuristic, optional, default as 1
    * @param verbose flag for printing debug info, optional, default as false
    */
-  GraphSearch(const char* cMap, int xDim, int yDim, double eps = 1,
+  GraphSearch(const char* cMap,
+              int xDim,
+              int yDim,
+              double eps = 1,
               bool verbose = false);
   /**
    * @brief 3D graph search constructor
@@ -158,7 +172,11 @@ class GraphSearch {
    * @param eps weight of heuristic, optional, default as 1
    * @param verbose flag for printing debug info, optional, default as False
    */
-  GraphSearch(const char* cMap, int xDim, int yDim, int zDim, double eps = 1,
+  GraphSearch(const char* cMap,
+              int xDim,
+              int yDim,
+              int zDim,
+              double eps = 1,
               bool verbose = false);
 
   /**
@@ -173,7 +191,11 @@ class GraphSearch {
    * @param maxExpand maximum number of expansion allowed, optional, default is
    * -1, means no limitation
    */
-  bool plan(int xStart, int yStart, int xGoal, int yGoal, bool useJps,
+  bool plan(int xStart,
+            int yStart,
+            int xGoal,
+            int yGoal,
+            bool useJps,
             int maxExpand = -1);
   /**
    * @brief start 3D planning thread
@@ -189,8 +211,14 @@ class GraphSearch {
    * @param maxExpand maximum number of expansion allowed, optional, default is
    * -1, means no limitation
    */
-  bool plan(int xStart, int yStart, int zStart, int xGoal, int yGoal, int zGoal,
-            bool useJps, int maxExpand = -1);
+  bool plan(int xStart,
+            int yStart,
+            int zStart,
+            int xGoal,
+            int yGoal,
+            int zGoal,
+            bool useJps,
+            int maxExpand = -1);
 
   /// Get the optimal path
   std::vector<StatePtr> getPath() const;
@@ -208,10 +236,12 @@ class GraphSearch {
   /// Main planning loop
   bool plan(StatePtr& currNode_ptr, int max_expand, int start_id, int goal_id);
   /// Get successor function for A*
-  void getSucc(const StatePtr& curr, std::vector<int>& succ_ids,
+  void getSucc(const StatePtr& curr,
+               std::vector<int>& succ_ids,
                std::vector<double>& succ_costs);
   /// Get successor function for JPS
-  void getJpsSucc(const StatePtr& curr, std::vector<int>& succ_ids,
+  void getJpsSucc(const StatePtr& curr,
+                  std::vector<int>& succ_ids,
                   std::vector<double>& succ_costs);
   /// Recover the optimal path
   std::vector<StatePtr> recoverPath(StatePtr node, int id);
@@ -244,7 +274,14 @@ class GraphSearch {
   /// 2D jump, return true iff finding the goal or a jump point
   bool jump(int x, int y, int dx, int dy, int& new_x, int& new_y);
   /// 3D jump, return true iff finding the goal or a jump point
-  bool jump(int x, int y, int z, int dx, int dy, int dz, int& new_x, int& new_y,
+  bool jump(int x,
+            int y,
+            int z,
+            int dx,
+            int dy,
+            int dz,
+            int& new_x,
+            int& new_y,
             int& new_z);
 
   /// Initialize 2D jps arrays

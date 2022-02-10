@@ -10,8 +10,10 @@
 #include <rviz/ogre_helpers/point_cloud.h>
 #include <rviz/properties/enum_property.h>
 #include <rviz/properties/float_property.h>
-#include <vector>
+
+#include <cmath>
 #include <memory>
+#include <vector>
 
 #include "./bound_visual.h"
 #include "./mesh_visual.h"
@@ -34,25 +36,25 @@ class MapDisplay
   void updateMeshHeight();
 
  protected:
-  void setMap(std::shared_ptr<MPL::VoxelMapUtil> &map_util,
-              const planning_ros_msgs::VoxelMap &msg);
-  void getMap(std::shared_ptr<MPL::VoxelMapUtil> &map_util,
-              planning_ros_msgs::VoxelMap &map);
+  void setMap(std::shared_ptr<MPL::VoxelMapUtil>& map_util,
+              const planning_ros_msgs::VoxelMap& msg);
+  void getMap(std::shared_ptr<MPL::VoxelMapUtil>& map_util,
+              planning_ros_msgs::VoxelMap& map);
 
   void onInitialize();
 
-  void processMessage(const planning_ros_msgs::VoxelMapConstPtr &map);
+  void processMessage(const planning_ros_msgs::VoxelMapConstPtr& map);
   void visualizeMessage(int state);
-  void visualizeMesh(const vec_Vec3f &pts, double res);
+  void visualizeMesh(const vec_Vec3f& pts, double res);
   vec_E<vec_Vec3f> getBound();
 
-  rviz::EnumProperty *state_property_;
-  rviz::FloatProperty *bound_scale_property_;
-  rviz::FloatProperty *mesh_height_property_;
-  rviz::ColorProperty *mesh_color_property_;
-  rviz::FloatProperty *mesh_alpha_property_;
+  rviz::EnumProperty* state_property_;
+  rviz::FloatProperty* bound_scale_property_;
+  rviz::FloatProperty* mesh_height_property_;
+  rviz::ColorProperty* mesh_color_property_;
+  rviz::FloatProperty* mesh_alpha_property_;
 
-  rviz::PointCloudCommon *point_cloud_common_;
+  rviz::PointCloudCommon* point_cloud_common_;
   std::shared_ptr<BoundVisual> visual_;
   std::vector<std::shared_ptr<MeshVisual>> visuals_mesh_;
   float mesh_height_;

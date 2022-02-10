@@ -43,8 +43,10 @@ class PlannerBase {
 
   /// Set max vel in each axis
   void setLPAstar(bool use_lpastar);
-  /// Set max vel in each axis
-  void setVmax(decimal_t v);
+  /// Set max vel in x and y axis
+  void setVxy(decimal_t v);
+  /// Set max vel in z axis
+  void setVz(decimal_t vz);
   /// Set max acc in each axis
   void setAmax(decimal_t a);
   /// Set max jerk in each axis
@@ -68,9 +70,10 @@ class PlannerBase {
   /// Set max number of expansion
   void setMaxNum(int num);
   /// Set U
-  void setU(const vec_E<VecDf> &U);
+  void setU(const vec_E<VecDf>& U);
   /// Set tolerance in geometric and dynamic spaces
-  void setTol(decimal_t tol_pos, decimal_t tol_vel = -1,
+  void setTol(decimal_t tol_pos,
+              decimal_t tol_vel = -1,
               decimal_t tol_acc = -1);
 
   /**
@@ -81,7 +84,7 @@ class PlannerBase {
    * The goal waypoint is the center of the goal region, the planner cannot find
    * the trajectory hits the exact goal state due to discretization
    */
-  bool plan(const Coord &start, const Coord &goal);
+  bool plan(const Coord& start, const Coord& goal);
 
  protected:
   /// Environment class

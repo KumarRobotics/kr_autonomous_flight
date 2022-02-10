@@ -186,13 +186,9 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   mp_planner_util_->setMapUtil(
       mp_map_util_);                  // Set collision checking function
   mp_planner_util_->setEpsilon(1.0);  // Set greedy param (default equal to 1)
-  if (v_max > vz_max) {
-    mp_planner_util_->setVmax(v_max);  // Set max velocity
-  } else {
-    mp_planner_util_->setVmax(vz_max);  // Set max velocity
-    ROS_WARN(
-        "vz_max >= vxy_max, this is not recommended, change the yaml file!");
-  }
+
+  mp_planner_util_->setVxy(v_max);  // Set max velocity along x and y
+  mp_planner_util_->setVz(vz_max);  // Set max velocity along z
 
   mp_planner_util_->setAmax(a_max);  // Set max acceleration
   mp_planner_util_->setJmax(j_max);  // Set max jerk

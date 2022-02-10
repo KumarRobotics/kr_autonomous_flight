@@ -13,10 +13,10 @@ LambdaSeg::LambdaSeg(const VirtualPoint &v1, const VirtualPoint &v2) {
 
   a = A.inverse() * b;
 
-  if (fabs(a(0)) < 1e-5) a(0) = 0;
-  if (fabs(a(1)) < 1e-5) a(1) = 0;
-  if (fabs(a(2)) < 1e-5) a(2) = 0;
-  if (fabs(a(3)) < 1e-5) a(3) = 0;
+  if (std::abs(a(0)) < 1e-5) a(0) = 0;
+  if (std::abs(a(1)) < 1e-5) a(1) = 0;
+  if (std::abs(a(2)) < 1e-5) a(2) = 0;
+  if (std::abs(a(3)) < 1e-5) a(3) = 0;
 
   ti = v1.t;
   tf = v2.t;

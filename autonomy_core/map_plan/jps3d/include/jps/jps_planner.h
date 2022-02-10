@@ -5,10 +5,11 @@
 
 #pragma once
 
+#include <cmath>
+
 #include "jps/data_type.h"
 #include "jps/graph_search.h"
 #include "jps/map_util.h"
-
 namespace JPS {
 
 class GraphSearch;
@@ -25,7 +26,7 @@ class JPSPlanner {
   JPSPlanner(bool verbose = false);
 
   /// Set map util for collistion checking
-  void setMapUtil(const std::shared_ptr<JPS::MapUtil<Dim>> &map_util);
+  void setMapUtil(const std::shared_ptr<JPS::MapUtil<Dim>>& map_util);
   /**
    * @brief Status of the planner
    *
@@ -39,13 +40,15 @@ class JPSPlanner {
   /// Get the raw path
   vec_Vecf<Dim> getRawPath();
   /// remove redundant points on the same line
-  vec_Vecf<Dim> removeLinePts(const vec_Vecf<Dim> &path);
+  vec_Vecf<Dim> removeLinePts(const vec_Vecf<Dim>& path);
   /// Remove some corner waypoints
-  vec_Vecf<Dim> removeCornerPts(const vec_Vecf<Dim> &path);
+  vec_Vecf<Dim> removeCornerPts(const vec_Vecf<Dim>& path);
   /// Must be called before run the planning thread
   void updateMap();
   /// Planning function
-  bool plan(const Vecf<Dim> &start, const Vecf<Dim> &goal, decimal_t eps = 1,
+  bool plan(const Vecf<Dim>& start,
+            const Vecf<Dim>& goal,
+            decimal_t eps = 1,
             bool use_jps = true);
   /// Get the nodes in open set
   vec_Vecf<Dim> getOpenSet() const;

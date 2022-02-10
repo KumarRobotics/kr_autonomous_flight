@@ -8,6 +8,7 @@
 #include <tf/transform_datatypes.h>
 
 #include <Eigen/Geometry>
+#include <cmath>
 
 /*
  * This controller is designed only to take the quad off the ground.
@@ -35,19 +36,19 @@ class TakeOffTracker : public kr_trackers_manager::Tracker {
  public:
   TakeOffTracker(void);
 
-  void Initialize(const ros::NodeHandle &nh) override;
-  bool Activate(const PositionCommand::ConstPtr &cmd) override;
+  void Initialize(const ros::NodeHandle& nh) override;
+  bool Activate(const PositionCommand::ConstPtr& cmd) override;
   void Deactivate(void) override;
 
   PositionCommand::ConstPtr update(
-      const nav_msgs::Odometry::ConstPtr &msg) override;
+      const nav_msgs::Odometry::ConstPtr& msg) override;
   uint8_t status() const override;
 
  private:
   void goal_callback();
-  void odomTocmd(const nav_msgs::Odometry &msg, PositionCommand &cmd);
-  void zeroGains(PositionCommand &cmd);
-  void halfGains(PositionCommand &cmd);
+  void odomTocmd(const nav_msgs::Odometry& msg, PositionCommand& cmd);
+  void zeroGains(PositionCommand& cmd);
+  void halfGains(PositionCommand& cmd);
 
   ros::Subscriber sub_goal_;
   bool pos_set_, goal_set_, goal_reached_, ramp_up_done_, failed_, overshot_;
@@ -81,7 +82,7 @@ TakeOffTracker::TakeOffTracker(void)
   ramp_up_done_ = false;
   failed_ = false;
 }
-void TakeOffTracker::zeroGains(PositionCommand &cmd) {
+void TakeOffTracker::zeroGains(PositionCommand& cmd) {
   cmd.kx[0] = 0;
   cmd.kx[1] = 0;
   cmd.kx[2] = 0;
@@ -89,13 +90,13 @@ void TakeOffTracker::zeroGains(PositionCommand &cmd) {
   cmd.kv[1] = 0;
   cmd.kv[2] = 0;
 }
-void TakeOffTracker::halfGains(PositionCommand &cmd) {
+void TakeOffTracker::halfGains(PositionCommand& cmd) {
   cmd.kx[0] *= 0.5;
   cmd.kx[1] *= 0.5;
   cmd.kx[2] *= 0.5;
 }
 
-void TakeOffTracker::Initialize(const ros::NodeHandle &nh) {
+void TakeOffTracker::Initialize(const ros::NodeHandle& nh) {
   nh.param("gains/pos/x", kx_[0], 2.5);
   nh.param("gains/pos/y", kx_[1], 2.5);
   nh.param("gains/pos/z", kx_[2], 5.0);
@@ -105,11 +106,13 @@ void TakeOffTracker::Initialize(const ros::NodeHandle &nh) {
 
   ros::NodeHandle priv_nh(nh, "take_off_tracker");
 
-  priv_nh.param("min_thrust", min_thrust_,
+  priv_nh.param("min_thrust",
+                min_thrust_,
                 -5.0);  // see top of file, in m/s/s. This number should be
                         // negative! If it is 0, the quad would be in hover
   priv_nh.param("max_thrust", max_thrust_, 5.0);  // see top of file, in m/s/s
-  priv_nh.param("thrust_rate", thrust_rate_,
+  priv_nh.param("thrust_rate",
+                thrust_rate_,
                 10.0);  // rate of change of thrust in ramp up (m/s/s/s)
   priv_nh.param("epsilon", epsilon_, 0.05);
 
@@ -126,7 +129,7 @@ void TakeOffTracker::Initialize(const ros::NodeHandle &nh) {
   as_->start();
 }
 
-bool TakeOffTracker::Activate(const PositionCommand::ConstPtr &cmd) {
+bool TakeOffTracker::Activate(const PositionCommand::ConstPtr& cmd) {
   ROS_INFO_STREAM("Activate with pos_set_ " << pos_set_);
 
   if (!params_ok) {
@@ -148,8 +151,8 @@ void TakeOffTracker::Deactivate(void) {
   failed_ = false;
 }
 // copies odom to position command
-void TakeOffTracker::odomTocmd(const nav_msgs::Odometry &msg,
-                               PositionCommand &cmd) {
+void TakeOffTracker::odomTocmd(const nav_msgs::Odometry& msg,
+                               PositionCommand& cmd) {
   cmd.position.x = msg.pose.pose.position.x;
   cmd.position.y = msg.pose.pose.position.y;
   cmd.position.z = msg.pose.pose.position.z;
@@ -172,8 +175,7 @@ void TakeOffTracker::odomTocmd(const nav_msgs::Odometry &msg,
 }
 
 PositionCommand::ConstPtr TakeOffTracker::update(
-    const nav_msgs::Odometry::ConstPtr &msg) {
-
+    const nav_msgs::Odometry::ConstPtr& msg) {
   pos_(0) = msg->pose.pose.position.x;
   pos_(1) = msg->pose.pose.position.y;
   pos_(2) = msg->pose.pose.position.z;

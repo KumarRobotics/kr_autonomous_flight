@@ -8,6 +8,7 @@
  
     <!-- those should be passed in from full_sim -->  
     <arg name="param_file" default=""/>
+    <arg name="sim_binary_name" default="forest.x86_64" />
     <arg name="x" default="40.0"/>
     <arg name="y" default="40.0"/>
     <arg name="z" default="2.0"/>
@@ -17,6 +18,7 @@
     <include file="$(find arl_unity_ros)/launch/simulator.launch">
         <arg name="param_file" value="$(arg param_file)" />
         <arg name="launch_unity" value="$(arg launch_unity)"/>
+        <arg name="sim_binary_name" value="$(arg sim_binary_name)"/>
     </include>
 
     <!-- spawns a quadrotor  -->

@@ -22,11 +22,11 @@ trajectory_planner:
   use_3d_local: false # use 3d planner
 
   use_3d_global: false 
-  z_cost_factor: 1 # global map z cost factor (cost_along_z = z_cost_factor * cost_along_x_or_y)
-  max_v_z: 1.0 # default 2.0
-  max_a_z: 2.0 # default 1.0
-  max_j_z: 2.0 # default 1.0
-  max_u_z: 2.0 # default 1.0
+  z_cost_factor: 1 # global map z cost factor, this also influences the vertical semi field of view of global planner into 45-degree / z_cost_factor  (cost_along_z = z_cost_factor * cost_along_x_or_y)
+  max_v_z: 1.5 # default 2.0
+  max_a_z: 3.0 # default 1.0
+  max_j_z: 3.0 # default 1.0
+  max_u_z: 3.0 # default 1.0
   tol_pos: 5.0 # distance tolerance for goal region, 0 means no tolerance, -1 means no limitation
   global_goal_tol_vel: 5.0 # tolerance of acceleration for goal region
   global_goal_tol_acc: -1 # tolerance of velocity for goal region
@@ -34,7 +34,7 @@ trajectory_planner:
   ndt: 1.0 # default 1
   max_num: -1 # maxmum number of expansion, -1 means no limitation
   heuristic_weight: 300.0 # the larger heuristic_weight, the more emphasis on min time and the less emphasis on min control effort
-  vertical_semi_fov: 0.392 # vertical semi field of view (in rad), used for 3D planning only
+  vertical_semi_fov: 0.523 # vertical semi field of view (in rad), used for 3D planning only
 
 stopping_policy:
   acc_xy_des: 4.0 #
@@ -45,8 +45,8 @@ stopping_policy:
 
 local_global_server:
   # local planning horizon will be from robot to the local voxel map boundary
-  waypoint_reach_threshold: 10.0 # distance threshold, within which intermidiate waypoint is regarded as reached 
-  final_goal_reach_threshold: 10.0 # within which final waypoint is regarded as reached, this should be smaller than waypoint_reach_threshold
+  waypoint_reach_xy_threshold: 20.0 # x-y distance threshold, within which intermidiate waypoint is regarded as reached 
+  final_goal_reach_xy_threshold: 10.0 # within which final waypoint is regarded as reached, this should be smaller than waypoint_reach_threshold
   close_to_final_dist: 5 # distance-to-goal threshold, within which the velocity and acceleration checking will be turned on, -1 means no velocity checking at all
   local_plan_timeout_duration: 1.0 # local planner timeout in seconds
   max_local_plan_trials: 1 # should be set as 1 since state machine is now able to try multiple times after planner failures

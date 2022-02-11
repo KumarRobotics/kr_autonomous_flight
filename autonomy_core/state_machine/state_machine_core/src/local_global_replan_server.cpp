@@ -160,9 +160,8 @@ void RePlanner::setup_replanner() {
         (dist_cmd_to_goal <= final_waypoint_threshold_)) {
       // exit replanning process if the final waypoint is reached
       ROS_WARN(
-          "Initial (and the only) waypoint is already close to "
-          "the robot "
-          "position, terminating the replanning process!");
+          "Initial (and the only) waypoint x and y positions are already close "
+          "to the robot, terminating the replanning process!");
       state_machine::ReplanResult success;
       success.status = state_machine::ReplanResult::SUCCESS;
       active_ = false;
@@ -502,14 +501,16 @@ void RePlanner::update_status() {
         // finished_replanning_ is set as true if this is the final waypoint
         finished_replanning_ = true;
         ROS_INFO_STREAM(
-            "Final waypoint reached! The distance threshold is set as: "
+            "Final waypoint reached according to x and y positions! The "
+            "distance threshold is set as: "
             << final_waypoint_threshold_ << " Total " << pose_goals_.size()
             << " waypoints received");
       } else if (cur_cb_waypoint_idx_ < (pose_goals_.size() - 1)) {
         // take the next waypoint if the intermidiate waypoint is reached
         cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
         ROS_INFO_STREAM(
-            "Intermidiate waypoint reached, continue to the next waypoint, "
+            "Intermidiate waypoint reached according to x and y positions, "
+            "continue to the next waypoint, "
             "whose index is: "
             << cur_cb_waypoint_idx_
             << "The distance threshold is set as:" << waypoint_threshold_);
@@ -690,7 +691,7 @@ void RePlanner::TransformGlobalGoal() {
   pose_goal_wrt_odom_ = pose_out.pose;
 
   // check if z-axis value is changed significantly, if yes, throw a warning
-  if (std::abs(pose_goal_wrt_odom_.position.z - pose_goal_.position.z) >= -1) {
+  if (std::abs(pose_goal_wrt_odom_.position.z - pose_goal_.position.z) >= 1) {
     ROS_WARN(
         "When transforming global goal, the goal can be tranformed outside "
         "your voxel map boundaries, if the drift is significant and the "
@@ -809,8 +810,9 @@ RePlanner::RePlanner() : nh_("~") {
   priv_nh.param("crop_radius", crop_radius_, 10.0);
   priv_nh.param("crop_radius_z", crop_radius_z_, 2.0);
   priv_nh.param("close_to_final_dist", close_to_final_dist_, 10.0);
-  priv_nh.param("final_goal_reach_threshold", final_waypoint_threshold_, 5.0f);
-  priv_nh.param("waypoint_reach_threshold", waypoint_threshold_, 10.0f);
+  priv_nh.param(
+      "final_goal_reach_xy_threshold", final_waypoint_threshold_, 5.0f);
+  priv_nh.param("waypoint_reach_xy_threshold", waypoint_threshold_, 10.0f);
   priv_nh.param("local_plan_timeout_duration", local_timeout_duration_, 1.0);
   priv_nh.param("max_local_plan_trials", max_local_trials_, 3);
   priv_nh.param("odom_frame", odom_frame_, std::string("odom"));

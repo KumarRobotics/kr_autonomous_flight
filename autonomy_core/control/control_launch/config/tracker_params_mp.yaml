@@ -16,13 +16,13 @@ trajectory_planner:
   debug: false # default false
   verbose: false # default false
   max_v: 3.0 # suggested for 2-D 9, for 3-D 3
-  max_a: 3.0 # suggested for 2-D 7, for 3-D 2
-  max_j: 1.0 # suggested for 2-D 3, for 3-D 2
-  max_u: 1.0 # suggested for 2-D 3, for 3-D 1, for each axis jerk increment choice is -max_u, 0, max_u
+  max_a: 4.0 # suggested for 2-D 7, for 3-D 2
+  max_j: 2.0 # suggested for 2-D 3, for 3-D 2
+  max_u: 2.0 # suggested for 2-D 3, for 3-D 1, for each axis jerk increment choice is -max_u, 0, max_u
   use_3d_local: false # use 3d planner
 
   use_3d_global: false 
-  z_cost_factor: 1 # global map z cost factor, this also influences the vertical semi field of view of global planner into 45-degree / z_cost_factor  (cost_along_z = z_cost_factor * cost_along_x_or_y)
+  z_cost_factor: 2 # global map z cost factor, this also influences the vertical semi field of view of global planner into 45-degree / z_cost_factor  (cost_along_z = z_cost_factor * cost_along_x_or_y)
   max_v_z: 1.5 # default 2.0
   max_a_z: 3.0 # default 1.0
   max_j_z: 3.0 # default 1.0
@@ -34,7 +34,7 @@ trajectory_planner:
   ndt: 1.0 # default 1
   max_num: -1 # maxmum number of expansion, -1 means no limitation
   heuristic_weight: 300.0 # the larger heuristic_weight, the more emphasis on min time and the less emphasis on min control effort
-  vertical_semi_fov: 0.523 # vertical semi field of view (in rad), used for 3D planning only
+  vertical_semi_fov: 0.61 # vertical semi field of view (in rad), used for 3D planning only, value should lie in (0, pi/2)
 
 stopping_policy:
   acc_xy_des: 4.0 #

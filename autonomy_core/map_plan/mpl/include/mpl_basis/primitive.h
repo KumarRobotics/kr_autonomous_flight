@@ -329,10 +329,10 @@ bool validate_vel_dir(const Primitive<Dim>& pr, decimal_t vfov) {
   // clip value to lie in -pi/2 ~ pi/2
   if (vfov > 1.57) {
     vfov = 1.57;
-    printf("given vertical field of view is incorrect (> pi/2)!!!");
+    printf("given vertical field of view is incorrect (> pi/2)!!!\n");
   } else if (vfov < -1.57) {
     vfov = -1.57;
-    printf("given vertical field of view is incorrect (< -pi/2)!!!");
+    printf("given vertical field of view is incorrect (< -pi/2)!!!\n");
   }
 
   // check max vertical velocity angle, compare with vfov

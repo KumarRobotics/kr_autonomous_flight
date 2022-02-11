@@ -13,7 +13,7 @@ JPSPlanner<Dim>::JPSPlanner(bool verbose) : planner_verbose_(verbose) {
 
 template <int Dim>
 void JPSPlanner<Dim>::setMapUtil(
-    const std::shared_ptr<JPS::MapUtil<Dim>> &map_util) {
+    const std::shared_ptr<JPS::MapUtil<Dim>>& map_util) {
   map_util_ = map_util;
 }
 
@@ -33,7 +33,7 @@ vec_Vecf<Dim> JPSPlanner<Dim>::getRawPath() {
 }
 
 template <int Dim>
-vec_Vecf<Dim> JPSPlanner<Dim>::removeCornerPts(const vec_Vecf<Dim> &path) {
+vec_Vecf<Dim> JPSPlanner<Dim>::removeCornerPts(const vec_Vecf<Dim>& path) {
   if (path.size() < 2) return path;
 
   // cut zigzag segment
@@ -76,7 +76,7 @@ vec_Vecf<Dim> JPSPlanner<Dim>::removeCornerPts(const vec_Vecf<Dim> &path) {
 }
 
 template <int Dim>
-vec_Vecf<Dim> JPSPlanner<Dim>::removeLinePts(const vec_Vecf<Dim> &path) {
+vec_Vecf<Dim> JPSPlanner<Dim>::removeLinePts(const vec_Vecf<Dim>& path) {
   if (path.size() < 3) return path;
 
   vec_Vecf<Dim> new_path;
@@ -98,7 +98,7 @@ template <int Dim>
 vec_Vecf<Dim> JPSPlanner<Dim>::getOpenSet() const {
   vec_Vecf<Dim> ps;
   const auto ss = graph_search_->getOpenSet();
-  for (const auto &it : ss) {
+  for (const auto& it : ss) {
     if (Dim == 3) {
       Veci<Dim> pn;
       pn << it->x, it->y, it->z;
@@ -113,7 +113,7 @@ template <int Dim>
 vec_Vecf<Dim> JPSPlanner<Dim>::getCloseSet() const {
   vec_Vecf<Dim> ps;
   const auto ss = graph_search_->getCloseSet();
-  for (const auto &it : ss) {
+  for (const auto& it : ss) {
     if (Dim == 3) {
       Veci<Dim> pn;
       pn << it->x, it->y, it->z;
@@ -128,7 +128,7 @@ template <int Dim>
 vec_Vecf<Dim> JPSPlanner<Dim>::getAllSet() const {
   vec_Vecf<Dim> ps;
   const auto ss = graph_search_->getAllSet();
-  for (const auto &it : ss) {
+  for (const auto& it : ss) {
     if (Dim == 3) {
       Veci<Dim> pn;
       pn << it->x, it->y, it->z;
@@ -164,8 +164,10 @@ void JPSPlanner<Dim>::updateMap() {
 }
 
 template <int Dim>
-bool JPSPlanner<Dim>::plan(const Vecf<Dim> &start, const Vecf<Dim> &goal,
-                           decimal_t eps, bool use_jps) {
+bool JPSPlanner<Dim>::plan(const Vecf<Dim>& start,
+                           const Vecf<Dim>& goal,
+                           decimal_t eps,
+                           bool use_jps) {
   if (planner_verbose_) {
     std::cout << "Start: " << start.transpose() << std::endl;
     std::cout << "Goal:  " << goal.transpose() << std::endl;
@@ -216,13 +218,18 @@ bool JPSPlanner<Dim>::plan(const Vecf<Dim> &start, const Vecf<Dim> &goal,
   if (Dim == 3) {
     graph_search_ = std::make_shared<JPS::GraphSearch>(
         cmap_.data(), dim(0), dim(1), dim(2), eps, planner_verbose_);
-    graph_search_->plan(start_int(0), start_int(1), start_int(2), goal_int(0),
-                        goal_int(1), goal_int(2), use_jps);
+    graph_search_->plan(start_int(0),
+                        start_int(1),
+                        start_int(2),
+                        goal_int(0),
+                        goal_int(1),
+                        goal_int(2),
+                        use_jps);
   } else {
     graph_search_ = std::make_shared<JPS::GraphSearch>(
         cmap_.data(), dim(0), dim(1), eps, planner_verbose_);
-    graph_search_->plan(start_int(0), start_int(1), goal_int(0), goal_int(1),
-                        use_jps);
+    graph_search_->plan(
+        start_int(0), start_int(1), goal_int(0), goal_int(1), use_jps);
   }
 
   const auto path = graph_search_->getPath();
@@ -237,7 +244,7 @@ bool JPSPlanner<Dim>::plan(const Vecf<Dim> &start, const Vecf<Dim> &goal,
 
   //**** raw path, s --> g
   vec_Vecf<Dim> ps;
-  for (const auto &it : path) {
+  for (const auto& it : path) {
     if (Dim == 3) {
       Veci<Dim> pn;
       pn << it->x, it->y, it->z;
@@ -249,9 +256,10 @@ bool JPSPlanner<Dim>::plan(const Vecf<Dim> &start, const Vecf<Dim> &goal,
   raw_path_ = ps;
   std::reverse(std::begin(raw_path_), std::end(raw_path_));
 
-  // Simplify the raw path
-  // path_ = removeLinePts(raw_path_);
-  // path_ = removeCornerPts(path_);
+  // Simplify (improve) the raw path
+  // TODO(xu:) this may void the effort made to limit field of view
+  path_ = removeLinePts(raw_path_);
+  path_ = removeCornerPts(path_);
   path_ = removeCornerPts(raw_path_);
   std::reverse(std::begin(path_), std::end(path_));
   path_ = removeCornerPts(path_);

@@ -1,18 +1,21 @@
 #include "jps/graph_search.h"
 
 #include <cmath>
+#include <iostream>
 
 namespace JPS {
 
-GraphSearch::GraphSearch(const char* cMap, int xDim, int yDim, double eps,
-                         bool verbose)
+GraphSearch::GraphSearch(
+    const char* cMap, int xDim, int yDim, double eps, bool verbose)
     : cMap_(cMap), xDim_(xDim), yDim_(yDim), eps_(eps), verbose_(verbose) {
   hm_.resize(xDim_ * yDim_);
   seen_.resize(xDim_ * yDim_, false);
 
+  // Set 3D neighbors
   for (int x = -1; x <= 1; x++) {
     for (int y = -1; y <= 1; y++) {
       if (x == 0 && y == 0) continue;
+      // ns_ is only used in A* (i.e. use_jps is set as false)
       ns_.push_back(std::vector<int>{x, y});
     }
   }
@@ -20,8 +23,8 @@ GraphSearch::GraphSearch(const char* cMap, int xDim, int yDim, double eps,
   jn2d_ = std::make_shared<JPS2DNeib>();
 }
 
-GraphSearch::GraphSearch(const char* cMap, int xDim, int yDim, int zDim,
-                         double eps, bool verbose)
+GraphSearch::GraphSearch(
+    const char* cMap, int xDim, int yDim, int zDim, double eps, bool verbose)
     : cMap_(cMap),
       xDim_(xDim),
       yDim_(yDim),
@@ -35,7 +38,13 @@ GraphSearch::GraphSearch(const char* cMap, int xDim, int yDim, int zDim,
   for (int x = -1; x <= 1; x++) {
     for (int y = -1; y <= 1; y++) {
       for (int z = -1; z <= 1; z++) {
-        if (x == 0 && y == 0 && z == 0) continue;
+        // if (x == 0 && y == 0 && z == 0) continue;
+
+        // IMPORTANT: remove all straight-up neighbors to limit the vertical
+        // field of view (LIDAR or depth camera has a limited vertical FOV)
+        // ns_ is only used in A* (i.e. use_jps is set as false)
+        if (x == 0 && y == 0) continue;
+
         ns_.push_back(std::vector<int>{x, y, z});
       }
     }
@@ -80,8 +89,8 @@ inline double GraphSearch::getHeur(int x, int y, int z) const {
                    (z - zGoal_) * (z - zGoal_));
 }
 
-bool GraphSearch::plan(int xStart, int yStart, int xGoal, int yGoal,
-                       bool useJps, int maxExpand) {
+bool GraphSearch::plan(
+    int xStart, int yStart, int xGoal, int yGoal, bool useJps, int maxExpand) {
   use_2d_ = true;
   pq_.clear();
   path_.clear();
@@ -105,8 +114,14 @@ bool GraphSearch::plan(int xStart, int yStart, int xGoal, int yGoal,
   return plan(currNode_ptr, maxExpand, start_id, goal_id);
 }
 
-bool GraphSearch::plan(int xStart, int yStart, int zStart, int xGoal, int yGoal,
-                       int zGoal, bool useJps, int maxExpand) {
+bool GraphSearch::plan(int xStart,
+                       int yStart,
+                       int zStart,
+                       int xGoal,
+                       int yGoal,
+                       int zGoal,
+                       bool useJps,
+                       int maxExpand) {
   use_2d_ = false;
   pq_.clear();
   path_.clear();
@@ -131,7 +146,9 @@ bool GraphSearch::plan(int xStart, int yStart, int zStart, int xGoal, int yGoal,
   return plan(currNode_ptr, maxExpand, start_id, goal_id);
 }
 
-bool GraphSearch::plan(StatePtr& currNode_ptr, int maxExpand, int start_id,
+bool GraphSearch::plan(StatePtr& currNode_ptr,
+                       int maxExpand,
+                       int start_id,
                        int goal_id) {
   // Insert start node
   currNode_ptr->heapkey = pq_.push(currNode_ptr);
@@ -229,7 +246,8 @@ std::vector<StatePtr> GraphSearch::recoverPath(StatePtr node, int start_id) {
   return path;
 }
 
-void GraphSearch::getSucc(const StatePtr& curr, std::vector<int>& succ_ids,
+void GraphSearch::getSucc(const StatePtr& curr,
+                          std::vector<int>& succ_ids,
                           std::vector<double>& succ_costs) {
   if (use_2d_) {
     for (const auto& d : ns_) {
@@ -257,8 +275,8 @@ void GraphSearch::getSucc(const StatePtr& curr, std::vector<int>& succ_ids,
       int new_id = coordToId(new_x, new_y, new_z);
       if (!seen_[new_id]) {
         seen_[new_id] = true;
-        hm_[new_id] = std::make_shared<State>(new_id, new_x, new_y, new_z, d[0],
-                                              d[1], d[2]);
+        hm_[new_id] = std::make_shared<State>(
+            new_id, new_x, new_y, new_z, d[0], d[1], d[2]);
         hm_[new_id]->h = getHeur(new_x, new_y, new_z);
       }
 
@@ -268,7 +286,8 @@ void GraphSearch::getSucc(const StatePtr& curr, std::vector<int>& succ_ids,
   }
 }
 
-void GraphSearch::getJpsSucc(const StatePtr& curr, std::vector<int>& succ_ids,
+void GraphSearch::getJpsSucc(const StatePtr& curr,
+                             std::vector<int>& succ_ids,
                              std::vector<double>& succ_costs) {
   if (use_2d_) {
     const int norm1 = std::abs(curr->dx) + std::abs(curr->dy);
@@ -319,6 +338,7 @@ void GraphSearch::getJpsSucc(const StatePtr& curr, std::vector<int>& succ_ids,
         dx = jn3d_->ns[id][0][dev];
         dy = jn3d_->ns[id][1][dev];
         dz = jn3d_->ns[id][2][dev];
+        if (dx == 0 && dy == 0) continue;
         if (!jump(curr->x, curr->y, curr->z, dx, dy, dz, new_x, new_y, new_z))
           continue;
       } else {
@@ -365,7 +385,11 @@ bool GraphSearch::jump(int x, int y, int dx, int dy, int& new_x, int& new_y) {
   int num_neib = jn2d_->nsz[norm1][0];
   for (int k = 0; k < num_neib - 1; ++k) {
     int new_new_x, new_new_y;
-    if (jump(new_x, new_y, jn2d_->ns[id][0][k], jn2d_->ns[id][1][k], new_new_x,
+    if (jump(new_x,
+             new_y,
+             jn2d_->ns[id][0][k],
+             jn2d_->ns[id][1][k],
+             new_new_x,
              new_new_y))
       return true;
   }
@@ -373,8 +397,15 @@ bool GraphSearch::jump(int x, int y, int dx, int dy, int& new_x, int& new_y) {
   return jump(new_x, new_y, dx, dy, new_x, new_y);
 }
 
-bool GraphSearch::jump(int x, int y, int z, int dx, int dy, int dz, int& new_x,
-                       int& new_y, int& new_z) {
+bool GraphSearch::jump(int x,
+                       int y,
+                       int z,
+                       int dx,
+                       int dy,
+                       int dz,
+                       int& new_x,
+                       int& new_y,
+                       int& new_z) {
   new_x = x + dx;
   new_y = y + dy;
   new_z = z + dz;
@@ -389,8 +420,15 @@ bool GraphSearch::jump(int x, int y, int z, int dx, int dy, int dz, int& new_x,
   int num_neib = jn3d_->nsz[norm1][0];
   for (int k = 0; k < num_neib - 1; ++k) {
     int new_new_x, new_new_y, new_new_z;
-    if (jump(new_x, new_y, new_z, jn3d_->ns[id][0][k], jn3d_->ns[id][1][k],
-             jn3d_->ns[id][2][k], new_new_x, new_new_y, new_new_z))
+    if (jump(new_x,
+             new_y,
+             new_z,
+             jn3d_->ns[id][0][k],
+             jn3d_->ns[id][1][k],
+             jn3d_->ns[id][2][k],
+             new_new_x,
+             new_new_y,
+             new_new_z))
       return true;
   }
 
@@ -407,8 +445,8 @@ inline bool GraphSearch::hasForced(int x, int y, int dx, int dy) {
   return false;
 }
 
-inline bool GraphSearch::hasForced(int x, int y, int z, int dx, int dy,
-                                   int dz) {
+inline bool GraphSearch::hasForced(
+    int x, int y, int z, int dx, int dy, int dz) {
   int norm1 = std::abs(dx) + std::abs(dy) + std::abs(dz);
   int id = (dx + 1) + 3 * (dy + 1) + 9 * (dz + 1);
   switch (norm1) {
@@ -480,8 +518,14 @@ JPS2DNeib::JPS2DNeib() {
       for (int dev = 0; dev < nsz[norm1][0]; ++dev)
         Neib(dx, dy, norm1, dev, ns[id][0][dev], ns[id][1][dev]);
       for (int dev = 0; dev < nsz[norm1][1]; ++dev) {
-        FNeib(dx, dy, norm1, dev, f1[id][0][dev], f1[id][1][dev],
-              f2[id][0][dev], f2[id][1][dev]);
+        FNeib(dx,
+              dy,
+              norm1,
+              dev,
+              f1[id][0][dev],
+              f1[id][1][dev],
+              f2[id][0][dev],
+              f2[id][1][dev]);
       }
       id++;
     }
@@ -559,8 +603,8 @@ void JPS2DNeib::Neib(int dx, int dy, int norm1, int dev, int& tx, int& ty) {
   }
 }
 
-void JPS2DNeib::FNeib(int dx, int dy, int norm1, int dev, int& fx, int& fy,
-                      int& nx, int& ny) {
+void JPS2DNeib::FNeib(
+    int dx, int dy, int norm1, int dev, int& fx, int& fy, int& nx, int& ny) {
   switch (norm1) {
     case 1:
       switch (dev) {
@@ -607,11 +651,26 @@ JPS3DNeib::JPS3DNeib() {
       for (int dx = -1; dx <= 1; ++dx) {
         int norm1 = std::abs(dx) + std::abs(dy) + std::abs(dz);
         for (int dev = 0; dev < nsz[norm1][0]; ++dev)
-          Neib(dx, dy, dz, norm1, dev, ns[id][0][dev], ns[id][1][dev],
+          Neib(dx,
+               dy,
+               dz,
+               norm1,
+               dev,
+               ns[id][0][dev],
+               ns[id][1][dev],
                ns[id][2][dev]);
         for (int dev = 0; dev < nsz[norm1][1]; ++dev) {
-          FNeib(dx, dy, dz, norm1, dev, f1[id][0][dev], f1[id][1][dev],
-                f1[id][2][dev], f2[id][0][dev], f2[id][1][dev], f2[id][2][dev]);
+          FNeib(dx,
+                dy,
+                dz,
+                norm1,
+                dev,
+                f1[id][0][dev],
+                f1[id][1][dev],
+                f1[id][2][dev],
+                f2[id][0][dev],
+                f2[id][1][dev],
+                f2[id][2][dev]);
         }
         id++;
       }
@@ -619,8 +678,9 @@ JPS3DNeib::JPS3DNeib() {
   }
 }
 
-void JPS3DNeib::Neib(int dx, int dy, int dz, int norm1, int dev, int& tx,
-                     int& ty, int& tz) {
+// assigning values to ns
+void JPS3DNeib::Neib(
+    int dx, int dy, int dz, int norm1, int dev, int& tx, int& ty, int& tz) {
   switch (norm1) {
     case 0:
       switch (dev) {
@@ -833,8 +893,17 @@ void JPS3DNeib::Neib(int dx, int dy, int dz, int norm1, int dev, int& tx,
   }
 }
 
-void JPS3DNeib::FNeib(int dx, int dy, int dz, int norm1, int dev, int& fx,
-                      int& fy, int& fz, int& nx, int& ny, int& nz) {
+void JPS3DNeib::FNeib(int dx,
+                      int dy,
+                      int dz,
+                      int norm1,
+                      int dev,
+                      int& fx,
+                      int& fy,
+                      int& fz,
+                      int& nx,
+                      int& ny,
+                      int& nz) {
   switch (norm1) {
     case 1:
       switch (dev) {

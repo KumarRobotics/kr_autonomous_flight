@@ -93,6 +93,7 @@ struct JPS2DNeib {
   JPS2DNeib();
 
  private:
+  // assigning values to ns
   void Neib(int dx, int dy, int norm1, int dev, int& tx, int& ty);
   void FNeib(
       int dx, int dy, int norm1, int dev, int& fx, int& fy, int& nx, int& ny);
@@ -124,6 +125,7 @@ struct JPS3DNeib {
   JPS3DNeib();
 
  private:
+  // assigning values to ns
   void Neib(
       int dx, int dy, int dz, int norm1, int dev, int& tx, int& ty, int& tz);
   void FNeib(int dx,
@@ -295,7 +297,7 @@ class GraphSearch {
   const char val_free_ = 0;
   int xGoal_, yGoal_, zGoal_;
   bool use_2d_;
-  bool use_jps_ = false;
+  bool use_jps_ = true;
 
   priorityQueue pq_;
   std::vector<StatePtr> hm_;

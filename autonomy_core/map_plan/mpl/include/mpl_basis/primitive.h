@@ -5,7 +5,9 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cmath>
+#include <iostream>
 
 #include "mpl_basis/data_type.h"
 #include "mpl_basis/waypoint.h"
@@ -326,14 +328,8 @@ bool validate_vel_dir(const Primitive<Dim>& pr, decimal_t vfov) {
     return true;
   }
 
-  // clip value to lie in -pi/2 ~ pi/2
-  if (vfov > 1.57) {
-    vfov = 1.57;
-    printf("given vertical field of view is incorrect (> pi/2)!!!\n");
-  } else if (vfov < -1.57) {
-    vfov = -1.57;
-    printf("given vertical field of view is incorrect (< -pi/2)!!!\n");
-  }
+  // clip value to lie in 0 ~ pi/2
+  vfov = std::clamp(vfov, 0, 1.57);
 
   // check max vertical velocity angle, compare with vfov
   decimal_t vx_max, vy_max, vz_max;

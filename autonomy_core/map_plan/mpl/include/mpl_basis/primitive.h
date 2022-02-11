@@ -325,6 +325,16 @@ bool validate_vel_dir(const Primitive<Dim>& pr, decimal_t vfov) {
   if ((vfov <= 0) || (Dim < 3)) {
     return true;
   }
+
+  // clip value to lie in -pi/2 ~ pi/2
+  if (vfov > 1.57) {
+    vfov = 1.57;
+    printf("given vertical field of view is incorrect (> pi/2)!!!");
+  } else if (vfov < -1.57) {
+    vfov = -1.57;
+    printf("given vertical field of view is incorrect (< -pi/2)!!!");
+  }
+
   // check max vertical velocity angle, compare with vfov
   decimal_t vx_max, vy_max, vz_max;
   vx_max = std::abs(pr.max_vel(0));
@@ -332,7 +342,7 @@ bool validate_vel_dir(const Primitive<Dim>& pr, decimal_t vfov) {
   vz_max = std::abs(pr.max_vel(2));
 
   decimal_t v_horizontal = sqrt(pow(vx_max, 2) + pow(vy_max, 2));
-  if ((vz_max / v_horizontal) <= tan(vfov)) {
+  if ((vz_max / v_horizontal) <= std::tan(vfov)) {
     return true;
   } else {
     return false;

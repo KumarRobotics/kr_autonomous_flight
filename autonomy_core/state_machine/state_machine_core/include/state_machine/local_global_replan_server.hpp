@@ -197,7 +197,7 @@ class RePlanner {
    * @param d length of the cropped path
    *
    */
-  vec_Vec3f PathCrop(const vec_Vec3f& path);
+  vec_Vec3f PathCropIntersect(const vec_Vec3f& path);
 
   /**
    * @brief Crop global path for local planner with a fixed distance
@@ -205,9 +205,9 @@ class RePlanner {
    * @param d length of the cropped path
    *
    */
-  vec_Vec3f PathCrop(const vec_Vec3f& path,
-                     double crop_dist_xyz,
-                     double crop_dist_z);
+  vec_Vec3f PathCropDist(const vec_Vec3f& path,
+                         double crop_dist_xyz,
+                         double crop_dist_z);
 
   /**
    * @brief Check if cropped path reaches the end of original path
@@ -222,7 +222,8 @@ class RePlanner {
   vec_Vec3f TransformGlobalPath(const vec_Vec3f& path_original);
 
   /**
-   * @brief transform global path from map frame to odom frame
+   * @brief transform global path from map frame to odom frame, this is the key
+   * step in two reference frame system setup
    */
   void TransformGlobalGoal();
 

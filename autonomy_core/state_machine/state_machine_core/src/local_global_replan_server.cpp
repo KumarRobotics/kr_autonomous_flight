@@ -214,8 +214,10 @@ void RePlanner::setup_replanner() {
 
   //  Initial plan step 2: Crop global path to get local goal
   //  #################################################################################
+  // transform global path only for visualization
   vec_Vec3f global_path_wrt_map = TransformGlobalPath(global_path_);
-  vec_Vec3f path_cropped_wrt_odom = PathCrop(global_path_);
+  // local goal will be generated using intersection
+  vec_Vec3f path_cropped_wrt_odom = PathCropIntersect(global_path_);
 
   if (path_cropped_wrt_odom.size() == 0) {
     ROS_ERROR("Path crop failed!");
@@ -382,7 +384,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
   //  #################################################################################
 
   // ROS_WARN_STREAM("++++ total_crop_dist = " << crop_dist);
-  vec_Vec3f path_cropped_wrt_odom = PathCrop(global_path_);
+  vec_Vec3f path_cropped_wrt_odom = PathCropIntersect(global_path_);
   if (path_cropped_wrt_odom.size() == 0) {
     ROS_ERROR("Path crop failed!");
     AbortReplan();
@@ -563,7 +565,7 @@ void RePlanner::update_status() {
   }
 }
 
-vec_Vec3f RePlanner::PathCrop(const vec_Vec3f& path) {
+vec_Vec3f RePlanner::PathCropIntersect(const vec_Vec3f& path) {
   if (path.size() < 2) {
     ROS_WARN("global path has <= 1 waypoints. Check!");
     // return empty
@@ -603,11 +605,11 @@ vec_Vec3f RePlanner::PathCrop(const vec_Vec3f& path) {
 
   // add path segments until the intersection is found
   Vec3f intersect_pt;
-  bool intesected;
+  bool intersected;
   for (unsigned int i = 1; i < path.size(); i++) {
-    intesected = state_machine::IntersectLineBox(
+    intersected = state_machine::IntersectLineBox(
         map_lower, map_upper, path[i - 1], path[i], &intersect_pt);
-    if (intesected) {
+    if (intersected) {
       // intersects, add the intersection
       cropped_path.push_back(intersect_pt);
       break;
@@ -686,15 +688,27 @@ void RePlanner::TransformGlobalGoal() {
   pose_in.pose = pose_goal_;
   tf2::doTransform(pose_in, pose_out, transformStamped);
   pose_goal_wrt_odom_ = pose_out.pose;
-  pose_goal_wrt_odom_.position.z = pose_goal_.position.z;
-  ROS_INFO_THROTTLE(3,
-                    "when transforming global goal, keeping z-axis value the "
-                    "same to guaranteed it's still within the voxel map");
+
+  // check if z-axis value is changed significantly, if yes, throw a warning
+  if (std::abs(pose_goal_wrt_odom_.position.z - pose_goal_.position.z) >= -1) {
+    ROS_WARN(
+        "When transforming global goal, the goal can be tranformed outside "
+        "your voxel map boundaries, if the drift is significant and the "
+        "waypoints are far away (especially for z axis boundaries).");
+  }
+
+  // TODO(xu:) maybe we should replace this with some constraints to always keep
+  // the goal position within the boundaries (clip its values)
+
+  // when transforming global goal, keeping z-axis value the same to guaranteed
+  // it's still within the voxel map
+
+  // pose_goal_wrt_odom_.position.z = pose_goal_.position.z;
 }
 
-vec_Vec3f RePlanner::PathCrop(const vec_Vec3f& path,
-                              double crop_dist_xyz,
-                              double crop_dist_z) {
+vec_Vec3f RePlanner::PathCropDist(const vec_Vec3f& path,
+                                  double crop_dist_xyz,
+                                  double crop_dist_z) {
   // return nonempty
   // precondition
   if (path.size() < 2 || crop_dist_xyz < 0 || crop_dist_z < 0) {

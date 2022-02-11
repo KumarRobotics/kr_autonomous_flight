@@ -13,15 +13,15 @@ global:
   max_raycast_range: 50.0
   dilate_xy: true
   dilate_z: false
-  decay_times_to_empty: 10 # times of decay to empty, std::ceil((float)(val_occ - val_even) / (float)decay_times_to_empty), 0 means no decay
+  decay_times_to_empty: 30 # number of times of decay to empty, 0 means no decay, the noisier your state estimator is, the smaller this value should be
 
 local: # local map range z and center_z will be the same as storage map
   # local planning horizon will be from robot to the local voxel map boundary
   range_x: 40.0
   range_y: 40.0
-  range_z: 12.0
+  range_z: 14.0 # slightly larger than global map range z to handle overshoot outside of local map boundaries when stopping policy is called in 3D planning 
   resolution: 0.5
   max_raycast_range: 30.0
-  decay_times_to_empty: 10 # number of times of decay to empty, 0 means no decay
+  decay_times_to_empty: 30 # number of times of decay to empty, 0 means no decay, the noisier your state estimator is, the smaller this value should be
 
 

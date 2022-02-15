@@ -38,12 +38,10 @@ GraphSearch::GraphSearch(
   for (int x = -1; x <= 1; x++) {
     for (int y = -1; y <= 1; y++) {
       for (int z = -1; z <= 1; z++) {
-        // if (x == 0 && y == 0 && z == 0) continue;
-
         // IMPORTANT: remove all straight-up neighbors to limit the vertical
         // field of view (LIDAR or depth camera has a limited vertical FOV)
         // ns_ is only used in A* (i.e. use_jps is set as false)
-        if (x == 0 && y == 0) continue;
+        if (x == 0 && y == 0 && (limit_3d_fov_ || z == 0)) continue;
 
         ns_.push_back(std::vector<int>{x, y, z});
       }
@@ -338,7 +336,11 @@ void GraphSearch::getJpsSucc(const StatePtr& curr,
         dx = jn3d_->ns[id][0][dev];
         dy = jn3d_->ns[id][1][dev];
         dz = jn3d_->ns[id][2][dev];
-        if (dx == 0 && dy == 0) continue;
+
+        // IMPORTANT: remove all straight-up neighbors to limit the vertical
+        // field of view (LIDAR or depth camera has a limited vertical FOV)
+        if (limit_3d_fov_ && dx == 0 && dy == 0) continue;
+
         if (!jump(curr->x, curr->y, curr->z, dx, dy, dz, new_x, new_y, new_z))
           continue;
       } else {

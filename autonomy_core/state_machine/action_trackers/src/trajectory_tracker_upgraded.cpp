@@ -122,7 +122,7 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
   bool yaw_alignment_initialized_ = false;
   bool alignment_ongoing_ = false;
   double yaw_align_dt_ =
-      0.3;  // derive yaw alignment direction every yaw_align_dt_ seconds
+      1.5;  // derive yaw alignment direction every yaw_align_dt_ seconds
   double last_yaw_align_x_ = 0.0;
   double last_yaw_align_y_ = 0.0;
   double yaw_des_ = 0.0;

@@ -308,6 +308,10 @@ class GraphSearch {
   std::vector<std::vector<int>> ns_;
   std::shared_ptr<JPS2DNeib> jn2d_;
   std::shared_ptr<JPS3DNeib> jn3d_;
+
+  // remove all straight-up neighbors tolimit the vertical field of view (LIDAR
+  // or depth camera has a limited vertical FOV)
+  bool limit_3d_fov_ = false;
 };
 
 }  // namespace JPS

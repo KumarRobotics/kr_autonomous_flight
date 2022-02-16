@@ -27,7 +27,7 @@ If you use this stack in your work, please cite:
 ```
 @misc{liu2022largescale,
       title={Large-scale Autonomous Flight with Real-time Semantic SLAM under Dense Forest Canopy}, 
-      author={Xu Liu and Guilherme V. Nardari and Fernando Cladera Ojeda and Yuezhan Tao and Alex Zhou and Thomas Donnelly and Chao Qu and Steven W. Chen and Roseli A. F. Romero and Camillo J. Taylor and Vijay Kumar},
+      author={Xu Liu, Guilherme V. Nardari, Fernando Cladera Ojeda, Yuezhan Tao, Alex Zhou, Thomas Donnelly, Chao Qu, Steven W. Chen, Roseli A. F. Romero, Camillo J. Taylor, Vijay Kumar},
       year={2022},
       eprint={2109.06479},
       archivePrefix={arXiv},

@@ -2,23 +2,20 @@ repositories:
   
   msckf_vio:
     type: git
-    url: git@github.com:KumarRobotics/msckf_vio.git
+    url: http://github.com/KumarRobotics/msckf_vio.git
     version: master
 
   kr_mav_control:
     type: git
-    url: git@github.com:KumarRobotics/kr_mav_control.git
+    url: http://github.com/KumarRobotics/kr_mav_control.git
     version: master
 
   mrsl_quadrotor:
     type: git
-    url: git@github.com:KumarRobotics/mrsl_quadrotor.git
+    url: http://github.com/KumarRobotics/mrsl_quadrotor.git
     version: master 
 
   ouster_example:
     type: git
-    url: git@github.com:XuRobotics/ouster_example.git
+    url: http://github.com/XuRobotics/ouster_example.git
     version: os-sim
-
-  
-    

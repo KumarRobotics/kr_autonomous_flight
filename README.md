@@ -1,22 +1,22 @@
 ![alt text](https://github.com/KumarRobotics/kr_autonomous_flight/blob/master/docs/Falcon4.jpg?raw=true)
 
-This is the autonomous flight code stack used at KumarRobotics, providing a complete solution for GPS-denied quadcopter autonomy. We have tested our stack in multiple scenarios, including urban and rural settings (orchards, forests).
+This is the autonomous flight code stack used at KumarRobotics, providing a complete solution for GPS-denied quadcopter autonomy. It has been tested extensively in challenging urban and rural (under forest canopy) environments.
 
 ![Docker Build Base](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-base.yaml/badge.svg)
-![Docker Build Calibration](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-calibration.yaml/badge.svg)
 ![Docker Build Client](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-client.yaml/badge.svg)
 ![Docker Build Control](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-control.yaml/badge.svg)
 ![Docker Build Estimation](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-estimation.yaml/badge.svg)
 ![Docker Build Map_plan](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-map-plan.yaml/badge.svg)
 ![Docker Build State_machine](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-state-machine.yaml/badge.svg)
 
+
+## Documentation and Instructions
+**Please refer to [the Wiki](https://github.com/KumarRobotics/kr_autonomous_flight/wiki) for detailed instructions about how to use this code.**
+
 ## Videos
 [Large scale flight in forests (3-min video-only)](https://www.youtube.com/watch?v=Ad3ANMX8gd4)
 
 [Large scale flight in forests (5-min with voice-over)](https://www.youtube.com/watch?v=kbyNrRoT9zo)
-
-## Documentation and Instructions
-Please refer to [the Wiki](https://github.com/KumarRobotics/kr_autonomous_flight/wiki) for detailed instructions about how to use this code.
 
 ## Contributing
 Please do not hesitate to open a PR on Github.

@@ -1,3 +1,9 @@
+# vcstool downloaded repos
+kr_mav_control/
+mrsl_quadrotor/
+msckf_vio/
+ouster_example/
+
 #===========
 # C++
 # ===========

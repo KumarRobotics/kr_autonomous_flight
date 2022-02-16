@@ -11,7 +11,8 @@ This is the autonomous flight code stack used at KumarRobotics, providing a comp
 ![Docker Build State_machine](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-state-machine.yaml/badge.svg)
 
 ## Videos
-[Large scale flight in forests](https://www.youtube.com/watch?v=Ad3ANMX8gd4)
+[Large scale flight in forests (3-min video-only)](https://www.youtube.com/watch?v=Ad3ANMX8gd4)
+[Large scale flight in forests (5-min with voice-over)](https://www.youtube.com/watch?v=kbyNrRoT9zo)
 
 ## Documentation and Instructions
 Please refer to [the Wiki](https://github.com/KumarRobotics/kr_autonomous_flight/wiki) for detailed instructions about how to use this code.

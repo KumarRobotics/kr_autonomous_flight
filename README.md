@@ -1,4 +1,4 @@
-![alt text](https://github.com/KumarRobotics/kr_autonomous_flight/blob/new_readme/docs/Falcon4.jpg?raw=true)
+![alt text](https://github.com/KumarRobotics/kr_autonomous_flight/blob/master/docs/Falcon4.jpg?raw=true)
 
 This is the autonomous flight code stack used at KumarRobotics, providing a complete solution for GPS-denied quadcopter autonomy. We have tested our stack in multiple scenarios, including urban and rural settings (orchards, forests).
 

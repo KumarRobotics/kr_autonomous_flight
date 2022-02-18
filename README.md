@@ -54,5 +54,5 @@ If you use this stack in your work, please cite:
 ```
 ## License
 
-This code is released using the Penn Software KR\_AUTONOMOUS\_FLIGHT licence.
+This code is released using the Penn Software Licence.
 Please refer to `LICENSE.txt` for details.

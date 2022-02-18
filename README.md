@@ -9,11 +9,11 @@ This is the autonomous flight code stack used at KumarRobotics, providing a comp
 ![Docker Build Map_plan](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-map-plan.yaml/badge.svg)
 ![Docker Build State_machine](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-state-machine.yaml/badge.svg)
 
-## High-level diagram of the code stack
+## High-level Code Structure 
 ![alt text](https://github.com/KumarRobotics/kr_autonomous_flight/blob/master/docs/autonomy_stack_pipeline.png)
 
 ## Documentation and Instructions
-**Please refer to [the Wiki](https://github.com/KumarRobotics/kr_autonomous_flight/wiki) for detailed instructions about how to use this code.**
+Please refer to [the Wiki](https://github.com/KumarRobotics/kr_autonomous_flight/wiki) for detailed instructions about how to use this code.
 
 ## Videos
 [Real-world experiments on large-scale autonomous flight and semantic SLAM in forests (3-min video-only)](https://www.youtube.com/watch?v=Ad3ANMX8gd4)

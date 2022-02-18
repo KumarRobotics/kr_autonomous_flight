@@ -1,4 +1,4 @@
-![alt text](https://github.com/KumarRobotics/kr_autonomous_flight/blob/master/docs/Falcon4.jpg?raw=true)
+![alt text](https://github.com/KumarRobotics/kr_autonomous_flight/blob/master/docs/falcon4-compressed.jpg)
 
 This is the autonomous flight code stack used at KumarRobotics, providing a complete solution for GPS-denied quadcopter autonomy. It has been tested extensively in challenging urban and rural (under forest canopy) environments.
 
@@ -12,6 +12,9 @@ This is the autonomous flight code stack used at KumarRobotics, providing a comp
 
 ## Documentation and Instructions
 **Please refer to [the Wiki](https://github.com/KumarRobotics/kr_autonomous_flight/wiki) for detailed instructions about how to use this code.**
+
+## High-level diagram of the code stack
+![alt text](https://github.com/KumarRobotics/kr_autonomous_flight/blob/master/docs/autonomy_stack_pipeline.png)
 
 ## Videos
 [Real-world experiments on large-scale autonomous flight and semantic SLAM in forests (3-min video-only)](https://www.youtube.com/watch?v=Ad3ANMX8gd4)

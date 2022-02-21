@@ -1,24 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
 
+  <!-- robot name -->
   <arg name="robot" default="quadrotor" />  
-  <arg name="robot_base_link" default="$(arg robot)/base_link"/>
+  <!-- robot base-link name -->
+  <arg name="robot_base_link" default="$(arg robot)/base_link"/> 
+  <!-- lidar's frame name in the tf tree -->
   <arg name="lidar_frame" default="os1_lidar"/>
-
+  <!-- mass of the robot -->
   <arg name="mass" default="1.83" /> 
+  <!-- point cloud topic name -->
   <arg name="lidar_cloud_topic" default="/falcon4/os1_cloud_node/points" />
-  <arg name="gt_odom" default="ground_truth/odom"/>  
+  <!-- robot odometry topic name -->
+  <arg name="gt_odom" default="ground_truth/odom"/> 
+  <!-- use dispersion based motion planning algorithm (only for internal use) --> 
   <arg name="min_dispersion_planner" default="false" />
-  <!-- If use onboard sensing, set it to be true and set odom to be ukf_odom /> -->
+  <!-- if use onboard sensing, set it to be true and set odom to be ukf_odom /> -->
   <arg name="onboard_sensing" default="false"/>
+  
 
+  <!-- launch the Gazebo simulator --> 
   <arg name="launch_sim" default="true"/>
-  <arg name="world_model" default="forest1"/>
-  <arg name="x" default="-10"/>
-  <arg name="y" default="-10"/>
+  <!-- robot takeoff height /> -->
+  <arg name="takeoff_height" default="1.0"/>
+  <!-- robot initial spawn positions -->
+  <arg name="x" default="1"/>
+  <arg name="y" default="1"/>
   <arg name="z" default="1.0"/>
   <arg name="yaw" default="-0.0"/>
+  <!-- control gains config file -->
   <arg name="gains_file" default="$(find gazebo_utils)/config/falcon4_os1_so3_gains.yaml"/>
+  <!-- several example world, check out mrsl_quadrotor/mrsl_quadrotor_description/worlds for all examples --> 
+  <!-- example 1: small forest --> 
+  <arg name="world_model" default="forest0"/>
+  <!-- example 2: large forest --> 
+  <!-- <arg name="world_model" default="forest_Large"/> -->
+  <!-- example 3: simple pillars --> 
+  <!-- <arg name="world_model" default="pillars"/> -->
 
   <include if="$(arg launch_sim)"
     file="$(find gazebo_utils)/launch/simulation.launch">
@@ -73,7 +91,7 @@
     <arg name="lidar_cloud_topic" value="$(arg lidar_cloud_topic)" />
     <arg name="mass" value="$(arg mass)" />
     <arg name="min_dispersion_planner" value="$(arg min_dispersion_planner)" />
-    <arg name="takeoff_height" value="3" />
+    <arg name="takeoff_height" value="$(arg takeoff_height)" />
     <arg name="gains_file" value="$(arg gains_file)"/>
   </include>
 

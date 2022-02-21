@@ -75,8 +75,8 @@ class QuadrotorSafety(Plugin):
         self._widget.motors_on_push_button.pressed.connect(self._on_motors_on_pressed_empty)
         self._widget.motors_off_push_button.pressed.connect(self._on_motors_off_pressed_empty)
         self._widget.takeoff_push_button.pressed.connect(self._on_takeoff_pressed_empty)
-        self._widget.landhere_push_button.pressed.connect(self._on_landhere_pressed_empty)
-        self._widget.short_push_button.pressed.connect(self.short_range_pressed)
+        # self._widget.landhere_push_button.pressed.connect(self._on_landhere_pressed_empty)
+        # self._widget.short_push_button.pressed.connect(self.short_range_pressed)
 
     def odom_cb(self, msg):
         if self.odom_count % 10 == 0:
@@ -148,11 +148,11 @@ class QuadrotorSafety(Plugin):
     def _on_takeoff_pressed_empty(self):
         self.publish_string("takeoff")
 
-    def _on_landhere_pressed_empty(self):
-        self.publish_string("land_here")
+    # def _on_landhere_pressed_empty(self):
+    #     self.publish_string("land_here")
 
-    def short_range_pressed(self):
-        self.publish_string("short_range")
+    # def short_range_pressed(self):
+    #     self.publish_string("short_range")
 
     def _unregister_publisher(self):
         if self._publisher is not None:

@@ -5,7 +5,7 @@
      Quadrotor plugins for RViz.
   </description>
   <maintainer email="tdineshd@gmail.com">Dinesh Thakur</maintainer>
-  <license>Penn Software License</license>
+  <license>BSD</license>
 
   <author>Dinesh Thakur</author>
 

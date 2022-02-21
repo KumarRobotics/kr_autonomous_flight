@@ -1,6 +1,6 @@
 COPYRIGHT AND PERMISSION NOTICE
 Penn Software KR_AUTONOMOUS_FLIGHT
-Copyright (C) 2021 The Trustees of the University of Pennsylvania
+Copyright (C) 2022 The Trustees of the University of Pennsylvania
 All rights reserved.
 
 The Trustees of the University of Pennsylvania (“Penn”) and Kartik Mohta, Xu Liu, Sikang Liu, Chao Qu, Fernando Cladera Ojeda, Steven W. Chen, Dinesh Thakur, Yuezhan Tao, Ke Sun, Guilherme V. Nardari, Bernd Pfrommer, Laura Jarin-Lipschitz, Michael Watterson, Anurag Makineni, Justin Thomas the developers (“Developer”) of Penn Software KR_AUTONOMOUS_FLIGHT (“Software”) give recipient (“Recipient”) and Recipient’s Institution (“Institution”) permission to use, copy, and modify the software in source and binary forms, with or without modification for non-profit research purposes only provided that the following conditions are met:

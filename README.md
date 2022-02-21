@@ -13,7 +13,7 @@ This is the autonomous flight code stack used at KumarRobotics, providing a comp
 ![alt text](https://github.com/KumarRobotics/kr_autonomous_flight/blob/master/docs/autonomy_stack_pipeline.png)
 
 ## Documentation and Instructions
-Please refer to [the Wiki](https://github.com/KumarRobotics/kr_autonomous_flight/wiki) for detailed instructions about how to use this code.
+Please refer to [our Wiki page](https://github.com/KumarRobotics/kr_autonomous_flight/wiki) for detailed instructions about how to use this code.
 
 ## Videos
 [Real-world experiments on large-scale autonomous flight and semantic SLAM in forests (3-min video-only)](https://www.youtube.com/watch?v=Ad3ANMX8gd4)
@@ -54,5 +54,5 @@ If you use this stack in your work, please cite:
 ```
 ## License
 
-This code is released using the Penn Software KR\_AUTONOMOUS\_FLIGHT licence.
+This code is released using the Penn Software Licence.
 Please refer to `LICENSE.txt` for details.

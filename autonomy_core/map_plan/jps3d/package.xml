@@ -5,7 +5,7 @@
   <description>The jps3d package</description>
   <maintainer email="sikang@seas.upenn.edu">sikang</maintainer>
 
-  <license>Penn Software License</license>
+  <license>BSD-3-Clause</license>
   <buildtool_depend>catkin</buildtool_depend>
 
   <export>

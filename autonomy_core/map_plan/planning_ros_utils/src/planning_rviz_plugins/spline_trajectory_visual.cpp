@@ -1,4 +1,6 @@
 // Copyright 2016 Michael Watterson
+// NOTE: The parameterization for the polynomial expected is s \in [0,1]
+// Time duration dt is used to evaluate polynomial p(t/dt) for t \in [0,dt]
 
 #include "spline_trajectory_visual.h"  // NOLINT()
 
@@ -11,7 +13,7 @@ namespace planning_rviz_plugins {
 
 // BEGIN_TUTORIAL
 SplineTrajectoryVisual::SplineTrajectoryVisual(
-    Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node) {
+    Ogre::SceneManager *scene_manager, Ogre::SceneNode *parent_node) {
   scene_manager_ = scene_manager;
 
   // Ogre::SceneNode s form a tree, with each node storing the
@@ -39,7 +41,7 @@ SplineTrajectoryVisual::~SplineTrajectoryVisual() {
 }
 
 // make visualization robust to arbitrary length vectors
-Ogre::Vector3 SplineTrajectoryVisual::vecFromVecD(const Eigen::VectorXd& vec) {
+Ogre::Vector3 SplineTrajectoryVisual::vecFromVecD(const Eigen::VectorXd &vec) {
   Ogre::Vector3 vecr;
   if (vec.rows() == 0)
     vecr = Ogre::Vector3(0.0, 0.0, 0.0);
@@ -53,8 +55,7 @@ Ogre::Vector3 SplineTrajectoryVisual::vecFromVecD(const Eigen::VectorXd& vec) {
 }
 
 void SplineTrajectoryVisual::resetTrajPoints(int traj_points,
-                                             int tangent_points,
-                                             bool use_v,
+                                             int tangent_points, bool use_v,
                                              bool use_a) {
   num_traj_points_ = traj_points;
   num_vel_points_ = tangent_points;
@@ -192,32 +193,32 @@ void SplineTrajectoryVisual::setCurve() {
 }
 
 void SplineTrajectoryVisual::setMessage(
-    const planning_ros_msgs::SplineTrajectory::ConstPtr& msg) {
+    const planning_ros_msgs::SplineTrajectory::ConstPtr &msg) {
   // traj_.reset(my_ptr);
   traj_ = msg;
   setCurve();
 }
 
 // Position and orientation are passed through to the SceneNode.
-void SplineTrajectoryVisual::setFramePosition(const Ogre::Vector3& position) {
+void SplineTrajectoryVisual::setFramePosition(const Ogre::Vector3 &position) {
   frame_node_->setPosition(position);
 }
 
 void SplineTrajectoryVisual::setFrameOrientation(
-    const Ogre::Quaternion& orientation) {
+    const Ogre::Quaternion &orientation) {
   frame_node_->setOrientation(orientation);
 }
 
 // Color is passed through to the Arrow object.
 void SplineTrajectoryVisual::setColor(float r, float g, float b, float a) {
-  for (auto& line : trajectory_lines_) line->setColor(r, g, b, a);
-  for (auto& ball : trajectory_balls_) ball->setColor(r, g, b, a);
+  for (auto &line : trajectory_lines_) line->setColor(r, g, b, a);
+  for (auto &ball : trajectory_balls_) ball->setColor(r, g, b, a);
 }
 void SplineTrajectoryVisual::setColorV(float r, float g, float b, float a) {
-  for (auto& line : vel_arrows_) line->setColor(r, g, b, a);
+  for (auto &line : vel_arrows_) line->setColor(r, g, b, a);
 }
 void SplineTrajectoryVisual::setColorA(float r, float g, float b, float a) {
-  for (auto& line : acc_arrows_) line->setColor(r, g, b, a);
+  for (auto &line : acc_arrows_) line->setColor(r, g, b, a);
 }
 void SplineTrajectoryVisual::setScale(float thick) {
   thickness_ = thick;
@@ -227,10 +228,10 @@ void SplineTrajectoryVisual::setScale(float thick) {
   //    for (auto& line : trajectory_lines_) line->setScale(scale);
   // dont do this, it doesn't work
 }
-void SplineTrajectoryVisual::setShapeFromPosePair(const Ogre::Vector3& p0,
-                                                  const Ogre::Vector3& p1,
+void SplineTrajectoryVisual::setShapeFromPosePair(const Ogre::Vector3 &p0,
+                                                  const Ogre::Vector3 &p1,
                                                   double scale,
-                                                  rviz::Shape* shape) {
+                                                  rviz::Shape *shape) {
   Ogre::Vector3 n = p1 - p0;
 
   Ogre::Quaternion quat;
@@ -260,10 +261,10 @@ void SplineTrajectoryVisual::setShapeFromPosePair(const Ogre::Vector3& p0,
   shape->setPosition(pc);
   shape->setOrientation(quat);
 }
-void SplineTrajectoryVisual::setShapeFromPosePair(const Ogre::Vector3& p0,
-                                                  const Ogre::Vector3& p1,
+void SplineTrajectoryVisual::setShapeFromPosePair(const Ogre::Vector3 &p0,
+                                                  const Ogre::Vector3 &p1,
                                                   double scale,
-                                                  rviz::Arrow* shape) {
+                                                  rviz::Arrow *shape) {
   Ogre::Vector3 n = p1 - p0;
 
   shape->set(n.length(), scale, 0.25 * n.length(), 3.0 * scale);
@@ -284,9 +285,9 @@ Eigen::VectorXd SplineTrajectoryVisual::evaluate(double t,
     for (auto poly : spline.segs) {
       result(dim) = poly.coeffs[0];
 
-      if (t < dt + poly.dt) {
+      if (t < dt + poly.dt || poly == spline.segs.back()) {
         for (int j = 1; j < poly.coeffs.size(); j++) {
-          result(dim) += poly.coeffs[j] * std::pow(t - dt, j);
+          result(dim) += poly.coeffs[j] * std::pow((t - dt) / poly.dt, j);
         }
         break;
       }

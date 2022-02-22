@@ -432,7 +432,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Execute waypoints</string>
+        <string>Execute Waypoint Mission</string>
        </property>
       </widget>
      </item>

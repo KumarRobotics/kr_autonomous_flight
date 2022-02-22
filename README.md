@@ -50,7 +50,6 @@ If you use this stack in your work, please cite:
   year={2018},
   publisher={Wiley Online Library}
 }
-
 ```
 ## License
 

@@ -31,7 +31,7 @@ If you use this stack in your work, please cite:
 ```
 @inproceedings{liu2022large,
 title={Large-scale Autonomous Flight with Real-time Semantic SLAM under Dense Forest Canopy},
-author={Liu, Xu and Nardari, Guilherme V and Ojeda, Fernando Cladera and Tao, Yuezhan and Zhou, Alex and Donnelly, Thomas and Qu, Chao and Chen, Steven W and Romero, Roseli AF and Taylor, Camillo J and others},
+author={Liu, Xu and Nardari, Guilherme V and Ojeda, Fernando Cladera and Tao, Yuezhan and Zhou, Alex and Donnelly, Thomas and Qu, Chao and Chen, Steven W and Romero, Roseli AF and Taylor, Camillo J and Kumar, Vijay},
 journal={IEEE Robotics and Automation Letters (RA-L)},
 year={2022}
 }

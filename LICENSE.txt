@@ -17,8 +17,7 @@ The Trustees of the University of Pennsylvania (“Penn”) and Kartik Mohta, Xu
 4) Recipient and Institution shall not distribute Software or Modifications to any third parties without the prior written approval of Penn.
 
 
-5) Recipient will provide the Developer with feedback on the use of the Software and Modifications, if any, in their research.  The Developers and Penn are permitted to use any information Recipient provides in making changes to the Software. All feedback, bug reports and technical questions shall be sent to: liuxu@seas.upenn.edu
-fclad@seas.upenn.edu
+5) Recipient will provide the Developer with feedback on the use of the Software and Modifications, if any, in their research. The Developers and Penn are permitted to use any information Recipient provides in making changes to the Software. All feedback, bug reports and technical questions shall be sent to: liuxu@seas.upenn.edu (Xu Liu), fclad@seas.upenn.edu (Fernando Cladera Ojeda)
 
 
 6) Recipient acknowledges that the Developers, Penn and its licensees may develop modifications to Software that may be substantially similar to Recipient’s modifications of Software, and that the Developers, Penn and its licensees shall not be constrained in any way by Recipient in Penn’s or its licensees’ use or management of such modifications. Recipient acknowledges the right of the Developers and Penn to prepare and publish modifications to Software that may be substantially similar or functionally equivalent to your modifications and improvements, and if Recipient or Institution obtains patent protection for any modification or improvement to Software, Recipient and Institution agree not to allege or enjoin infringement of their patent by the Developers, Penn or any of Penn’s licensees obtaining modifications or improvements to Software from the Penn or the Developers.

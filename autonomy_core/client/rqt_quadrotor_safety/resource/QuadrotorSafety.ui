@@ -394,7 +394,7 @@
        </property>
       </widget>
      </item>
-     <item row="27" column="2" colspan="5">
+     <item row="27" column="2" colspan="3">
       <widget class="QPushButton" name="takeoff_push_button">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
@@ -415,6 +415,24 @@
        </property>
        <property name="text">
         <string>Take Off</string>
+       </property>
+      </widget>
+     </item>
+     <item row="27" column="5" colspan="2">
+      <widget class="QPushButton" name="execute_waypoints_push_button">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Execute waypoints</string>
        </property>
       </widget>
      </item>

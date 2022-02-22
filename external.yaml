@@ -19,3 +19,8 @@ repositories:
     type: git
     url: http://github.com/XuRobotics/ouster_example.git
     version: os-sim
+
+  waypoint_navigation_plugin:
+    type: git
+    url: https://github.com/KumarRobotics/waypoint_navigation_plugin.git
+    version: devel_yaml

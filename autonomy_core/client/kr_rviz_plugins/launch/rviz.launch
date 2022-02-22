@@ -1,8 +1,0 @@
-<launch>
-
-  <node pkg="rviz" type="rviz" name="kr_rviz_plugins"
-    args="-d $(find kr_rviz_plugins)/launch/kr_rviz_plugins.rviz"
-    output="screen">
-  </node>
-
-</launch>

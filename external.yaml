@@ -23,4 +23,4 @@ repositories:
   waypoint_navigation_plugin:
     type: git
     url: https://github.com/KumarRobotics/waypoint_navigation_plugin.git
-    version: devel_yaml
+    version: master

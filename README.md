@@ -29,13 +29,11 @@ Please do not hesitate to open a PR on Github.
 If you use this stack in your work, please cite:
 
 ```
-@misc{liu2022largescale,
-      title={Large-scale Autonomous Flight with Real-time Semantic SLAM under Dense Forest Canopy}, 
-      author={Xu Liu, Guilherme V. Nardari, Fernando Cladera Ojeda, Yuezhan Tao, Alex Zhou, Thomas Donnelly, Chao Qu, Steven W. Chen, Roseli A. F. Romero, Camillo J. Taylor, Vijay Kumar},
-      year={2022},
-      eprint={2109.06479},
-      archivePrefix={arXiv},
-      primaryClass={cs.RO}
+@inproceedings{liu2022large,
+title={Large-scale Autonomous Flight with Real-time Semantic SLAM under Dense Forest Canopy},
+author={Liu, Xu and Nardari, Guilherme V and Ojeda, Fernando Cladera and Tao, Yuezhan and Zhou, Alex and Donnelly, Thomas and Qu, Chao and Chen, Steven W and Romero, Roseli AF and Taylor, Camillo J and others},
+journal={IEEE Robotics and Automation Letters (RA-L)},
+year={2022}
 }
 ```
 

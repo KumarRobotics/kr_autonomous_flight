@@ -2,8 +2,8 @@ FROM kumarrobotics/autonomy:state_machine
 
 RUN apt update \
     && apt install -y \
-    ros-melodic-gazebo-ros \
-    ros-melodic-hector-gazebo
+    ros-noetic-gazebo-ros \
+    ros-noetic-hector-gazebo
 
 RUN mkdir -p /root/sim_ws/src
 WORKDIR /root/sim_ws

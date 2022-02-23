@@ -1,5 +1,5 @@
 repositories:
-  
+
   msckf_vio:
     type: git
     url: http://github.com/KumarRobotics/msckf_vio.git
@@ -13,7 +13,7 @@ repositories:
   mrsl_quadrotor:
     type: git
     url: http://github.com/KumarRobotics/mrsl_quadrotor.git
-    version: master 
+    version: master
 
   ouster_example:
     type: git

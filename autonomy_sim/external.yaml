@@ -1,15 +1,10 @@
 repositories:
   mrsl_quadrotor:
     type: git
-    url: http://github.com/KumarRobotics/mrsl_quadrotor.git
+    url: https://github.com/KumarRobotics/mrsl_quadrotor
     version: master
 
   ouster_example:
     type: git
     url: http://github.com/wilselby/ouster_example.git
-    version: master
-
-  hector_gazebo:
-    type: git
-    url: http://github.com/tu-darmstadt-ros-pkg/hector_gazebo.git
     version: master

@@ -24,7 +24,9 @@ Please refer to [our Wiki page](https://github.com/KumarRobotics/kr_autonomous_f
 [Simulation experiments on fast autonomous flight in urban and rural environments](https://www.youtube.com/watch?v=l1esgtJ4C6s)
 
 ## Contributing
-Please do not hesitate to open a PR on Github.
+Report issues: Open an [issue](https://github.com/KumarRobotics/kr_autonomous_flight/issues) on Github.
+
+Merge code changes: Open a [pull request](https://github.com/KumarRobotics/kr_autonomous_flight/pulls) on Github.
 
 ## Citation
 If you use this stack in your work, please cite:

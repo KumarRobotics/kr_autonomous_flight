@@ -26,7 +26,8 @@
     <arg name="output_odom" default="ukf_odom"/>
 	<arg name="robot_frame_id" default="$(arg robot)"/>
 	<arg name="vio_imu_frame_id" default="$(arg robot)/stereo_rig_imu"/>
-	<arg name="calibration_file" default="$(find estimation_launch)/config/msckf_calib_simulation.yaml"/>
+	<arg name="calibration_file" default="msckf_calib.yaml"/>
+	<!-- <arg name="calibration_file" default="$(find estimation_launch)/config/msckf_calib_simulation.yaml"/> -->
 	<!-- This should be set true for simulation -->
 	<arg name="publish_body_camera_tf" default="true"/>
 	<!-- This should be set false for simulation -->

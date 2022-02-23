@@ -1,5 +1,9 @@
 FROM kumarrobotics/autonomy:map_plan
 
+RUN apt-get update \
+    && apt-get install -y \
+    python3-yaml
+
 RUN mkdir -p /root/state_machine_ws/src 
 WORKDIR /root/state_machine_ws
 COPY autonomy_core/state_machine/ src/

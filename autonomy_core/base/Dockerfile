@@ -15,6 +15,7 @@ RUN apt-get update \
     net-tools \
     iputils-ping \
     tmux \
+    python3-pip \
     && apt-get clean
 
 RUN export DEBIAN_FRONTEND=noninteractive \

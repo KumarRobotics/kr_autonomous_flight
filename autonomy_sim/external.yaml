@@ -6,5 +6,11 @@ repositories:
 
   ouster_example:
     type: git
-    url: http://github.com/wilselby/ouster_example.git
+    url: http://github.com/XuRobotics/ouster_example.git
+    version: os-sim
+
+# TODO: use compose to avoid getting this here
+  waypoint_navigation_plugin:
+    type: git
+    url: https://github.com/KumarRobotics/waypoint_navigation_plugin.git
     version: master

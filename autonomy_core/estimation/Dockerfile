@@ -1,7 +1,7 @@
 FROM kumarrobotics/autonomy:base
 
-RUN apt update \
-    && apt install -y \
+RUN apt-get update \
+    && apt-get install -y \
     ros-melodic-random-numbers \
     libsuitesparse-dev
 

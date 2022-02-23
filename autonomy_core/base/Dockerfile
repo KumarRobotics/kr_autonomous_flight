@@ -1,7 +1,7 @@
 FROM nvidia/cudagl:10.2-base-ubuntu18.04
 
-RUN apt update \
-    && apt install -y \
+RUN apt-get update \
+    && apt-get install -y \
     build-essential \
     cmake \
     cppcheck \
@@ -15,19 +15,19 @@ RUN apt update \
     net-tools \
     iputils-ping \
     tmux \
-    && apt clean
+    && apt-get clean
 
 RUN export DEBIAN_FRONTEND=noninteractive \
-    && sudo apt update \
-    && sudo -E apt install -y tzdata \
+    && sudo apt-get update \
+    && sudo -E apt-get install -y tzdata curl \
     && sudo ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime \
     && sudo dpkg-reconfigure --frontend noninteractive tzdata \
-    && sudo apt clean
+    && sudo apt-get clean
 
 RUN sudo /bin/sh -c 'echo "deb [trusted=yes] http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list' \
-    sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654 \
-    && sudo apt update \
-    && sudo apt install -y \
+    && curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -  \
+    && sudo apt-get update \
+    && sudo apt-get install -y \
     python-catkin-tools \
     python-rosdep \
     python-rosinstall \
@@ -38,7 +38,6 @@ RUN sudo /bin/sh -c 'echo "deb [trusted=yes] http://packages.ros.org/ros/ubuntu 
     ros-melodic-pcl-ros \
     ros-melodic-tf2-geometry-msgs \
     && sudo rosdep init \
-    && sudo apt clean \
     && rosdep update
 
 COPY autonomy_core/base/docker/entrypoint.sh /entrypoint.sh

@@ -1,7 +1,7 @@
 FROM kumarrobotics/autonomy:control
 
-RUN apt update \
-    && apt install -y \
+RUN apt-get update \
+    && apt-get install -y \
     ros-melodic-image-pipeline \
     ros-melodic-image-geometry \
     libqt5widgets5 \

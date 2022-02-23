@@ -8,6 +8,7 @@ This is the autonomous flight code stack used at KumarRobotics, providing a comp
 ![Docker Build Estimation](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-estimation.yaml/badge.svg)
 ![Docker Build Map_plan](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-map-plan.yaml/badge.svg)
 ![Docker Build State_machine](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-state-machine.yaml/badge.svg)
+![Docker Build Sim](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-sim.yaml/badge.svg)
 
 ## High-level Code Structure 
 ![alt text](https://github.com/KumarRobotics/kr_autonomous_flight/blob/master/docs/autonomy_stack_pipeline.png)

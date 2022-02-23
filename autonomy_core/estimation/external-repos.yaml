@@ -2,4 +2,4 @@ repositories:
   msckf_vio:
     type: git
     url: https://github.com/KumarRobotics/msckf_vio
-    version: e3a39a95b57da376924aa22b46637b60f68f504c
+    version: master

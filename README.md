@@ -17,9 +17,9 @@ This is the autonomous flight code stack used at KumarRobotics, providing a comp
 Please refer to [our Wiki page](https://github.com/KumarRobotics/kr_autonomous_flight/wiki) for detailed instructions about how to use this code.
 
 ## Videos
-[Real-world experiments on large-scale autonomous flight and semantic SLAM in forests (3-min video-only)](https://www.youtube.com/watch?v=Ad3ANMX8gd4)
+Real-world experiments on large-scale autonomous flight and semantic SLAM in forests: [3-min video-only version](https://www.youtube.com/watch?v=Ad3ANMX8gd4) and [5-min voice-over version](https://www.youtube.com/watch?v=kbyNrRoT9zo)
 
-[Real-world experiments on large-scale autonomous flight and semantic SLAM in forests (5-min with voice-over)](https://www.youtube.com/watch?v=kbyNrRoT9zo)
+[Experiments in fast, autonomous, GPS-Denied quadrotor flight](https://m.youtube.com/watch?v=6eeetSVHXPk)
 
 [Simulation experiments on fast autonomous flight in urban and rural environments](https://www.youtube.com/watch?v=l1esgtJ4C6s)
 

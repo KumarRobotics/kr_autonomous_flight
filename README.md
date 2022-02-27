@@ -55,7 +55,7 @@ year={2022}
 ## Acknowledgement 
 This is a multi-year project, we greatefully acknowledge contributions from our crrent members and lab alumni who have contributed to this, which include (also appear in LICENSE.txt):
 
-Kartik Mohta, Xu Liu, Sikang Liu, Fernando Cladera Ojeda, Chao Qu, Michael Watterson, Dinesh Thakur, Ke Sun, Steven W. Chen, Bernd Pfrommer, Laura Jarin-Lipschitz, Yuezhan Tao, Guilherme V. Nardari, Anurag Makineni, Justin Thomas
+Kartik Mohta, Xu Liu, Sikang Liu, Fernando Cladera Ojeda, Chao Qu, Michael Watterson, Dinesh Thakur, Ke Sun, Steven W. Chen, Bernd Pfrommer, Yuezhan Tao, Laura Jarin-Lipschitz, Anurag Makineni, Justin Thomas, Guilherme V. Nardari
 
 We also thanks our funding agencies, as listed here: https://www.kumarrobotics.org.
 

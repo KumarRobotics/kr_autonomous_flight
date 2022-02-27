@@ -53,11 +53,11 @@ year={2022}
 }
 ```
 ## Acknowledgement 
-This is a multi-year project, we greatefully acknowledge contributions from our crrent members and lab alumni who have contributed to this, which include (also appear in LICENSE.txt):
+This is a multi-year project. We gratefully acknowledge contributions from our current members and lab alumni, which include:
 
-Kartik Mohta, Xu Liu, Sikang Liu, Fernando Cladera Ojeda, Chao Qu, Michael Watterson, Dinesh Thakur, Ke Sun, Steven W. Chen, Bernd Pfrommer, Yuezhan Tao, Laura Jarin-Lipschitz, Anurag Makineni, Justin Thomas, Guilherme V. Nardari
+[Kartik Mohta](https://github.com/kartikmohta), [Xu Liu](https://scholar.google.com/citations?user=dSIEUlEAAAAJ), [Sikang Liu](https://github.com/sikang), [Fernando Cladera Ojeda](https://github.com/fcladera), [Chao Qu](https://github.com/versatran01), [Michael Watterson](https://github.com/mwatterson), [Dinesh Thakur](https://github.com/tdinesh), [Ke Sun](https://github.com/ke-sun), [Steven W. Chen](https://github.com/chenste), [Bernd Pfrommer](https://github.com/berndpfrommer), [Yuezhan Tao](https://github.com/tyuezhan), [Laura Jarin-Lipschitz](https://github.com/ljarin), [Anurag Makineni](https://github.com/anuragmakineni), [Justin Thomas](https://github.com/justinthomas), [Guilherme V. Nardari](https://github.com/gnardari).
 
-We also thanks our funding agencies, as listed here: https://www.kumarrobotics.org.
+We also thank our [funding agencies](https://www.kumarrobotics.org/research/).
 
 ## License
 

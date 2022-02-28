@@ -30,16 +30,6 @@ Merge code changes: Open a [pull request](https://github.com/KumarRobotics/kr_au
 
 ## Citation
 If you use this stack in your work, please cite:
-
-```
-@inproceedings{liu2022large,
-title={Large-scale Autonomous Flight with Real-time Semantic SLAM under Dense Forest Canopy},
-author={Liu, Xu and Nardari, Guilherme V and Ojeda, Fernando Cladera and Tao, Yuezhan and Zhou, Alex and Donnelly, Thomas and Qu, Chao and Chen, Steven W and Romero, Roseli AF and Taylor, Camillo J and Kumar, Vijay},
-journal={IEEE Robotics and Automation Letters (RA-L)},
-year={2022}
-}
-```
-
 ```
 @article{mohta2018fast,
   title={Fast, autonomous flight in GPS-denied and cluttered environments},
@@ -52,14 +42,18 @@ year={2022}
   publisher={Wiley Online Library}
 }
 ```
+
+```
+@inproceedings{liu2022large,
+title={Large-scale Autonomous Flight with Real-time Semantic SLAM under Dense Forest Canopy},
+author={Liu, Xu and Nardari, Guilherme V and Ojeda, Fernando Cladera and Tao, Yuezhan and Zhou, Alex and Donnelly, Thomas and Qu, Chao and Chen, Steven W and Romero, Roseli AF and Taylor, Camillo J and Kumar, Vijay},
+journal={IEEE Robotics and Automation Letters (RA-L)},
+year={2022}
+}
+```
+
 ## Acknowledgement 
-This is a multi-year project. We gratefully acknowledge contributions from our current members and lab alumni, which include:
-
-2012-2018: [Kartik Mohta](https://github.com/kartikmohta), [Sikang Liu](https://github.com/sikang), [Michael Watterson](https://github.com/mwatterson), [Chao Qu](https://github.com/versatran01), [Ke Sun](https://github.com/ke-sun), [Dinesh Thakur](https://github.com/tdinesh), [Bernd Pfrommer](https://github.com/berndpfrommer), [Justin Thomas](https://github.com/justinthomas), [Anurag Makineni](https://github.com/anuragmakineni).
-
-2019-present: [Xu Liu](https://scholar.google.com/citations?user=dSIEUlEAAAAJ), [Fernando Cladera Ojeda](https://github.com/fcladera),  [Chao Qu](https://github.com/versatran01), [Dinesh Thakur](https://github.com/tdinesh), [Steven W. Chen](https://github.com/chenste), [Yuezhan Tao](https://github.com/tyuezhan), [Laura Jarin-Lipschitz](https://github.com/ljarin), [Guilherme V. Nardari](https://github.com/gnardari).
-
-We also thank our [funding agencies](https://www.kumarrobotics.org/research/).
+This is a multi-year project. We gratefully acknowledge contributions from our current members and lab alumni.  The contributors can be found in the listed papers listed above. In addition, [Dinesh Thakur](https://github.com/tdinesh), [Bernd Pfrommer](https://github.com/berndpfrommer), [Laura Jarin-Lipschitz](https://github.com/ljarin), [Justin Thomas](https://github.com/justinthomas) also contributed to this work. We also thank our [funding agencies](https://www.kumarrobotics.org/research/).
 
 ## License
 

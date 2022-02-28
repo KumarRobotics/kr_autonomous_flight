@@ -55,7 +55,9 @@ year={2022}
 ## Acknowledgement 
 This is a multi-year project. We gratefully acknowledge contributions from our current members and lab alumni, which include:
 
-[Kartik Mohta](https://github.com/kartikmohta), [Xu Liu](https://scholar.google.com/citations?user=dSIEUlEAAAAJ), [Sikang Liu](https://github.com/sikang), [Fernando Cladera Ojeda](https://github.com/fcladera), [Chao Qu](https://github.com/versatran01), [Michael Watterson](https://github.com/mwatterson), [Dinesh Thakur](https://github.com/tdinesh), [Ke Sun](https://github.com/ke-sun), [Steven W. Chen](https://github.com/chenste), [Bernd Pfrommer](https://github.com/berndpfrommer), [Yuezhan Tao](https://github.com/tyuezhan), [Laura Jarin-Lipschitz](https://github.com/ljarin), [Anurag Makineni](https://github.com/anuragmakineni), [Justin Thomas](https://github.com/justinthomas), [Guilherme V. Nardari](https://github.com/gnardari).
+2012-2018: [Kartik Mohta](https://github.com/kartikmohta), [Sikang Liu](https://github.com/sikang), [Michael Watterson](https://github.com/mwatterson), [Chao Qu](https://github.com/versatran01), [Ke Sun](https://github.com/ke-sun), [Dinesh Thakur](https://github.com/tdinesh), [Bernd Pfrommer](https://github.com/berndpfrommer), [Justin Thomas](https://github.com/justinthomas), [Anurag Makineni](https://github.com/anuragmakineni).
+
+2019-present: [Xu Liu](https://scholar.google.com/citations?user=dSIEUlEAAAAJ), [Fernando Cladera Ojeda](https://github.com/fcladera),  [Chao Qu](https://github.com/versatran01), [Dinesh Thakur](https://github.com/tdinesh), [Steven W. Chen](https://github.com/chenste), [Yuezhan Tao](https://github.com/tyuezhan), [Laura Jarin-Lipschitz](https://github.com/ljarin), [Guilherme V. Nardari](https://github.com/gnardari).
 
 We also thank our [funding agencies](https://www.kumarrobotics.org/research/).
 

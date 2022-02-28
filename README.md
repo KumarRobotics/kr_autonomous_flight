@@ -17,11 +17,11 @@ This is the autonomous flight code stack used at KumarRobotics, providing a comp
 Please refer to [our Wiki page](https://github.com/KumarRobotics/kr_autonomous_flight/wiki) for detailed instructions about how to use this code.
 
 ## Videos
-Real-world experiments on large-scale autonomous flight and semantic SLAM in forests: [3-min video-only version](https://www.youtube.com/watch?v=Ad3ANMX8gd4) and [5-min voice-over version](https://www.youtube.com/watch?v=kbyNrRoT9zo)
+[Real-world experiments in large-scale autonomous flight with real-time semantic SLAM in forests](https://www.youtube.com/watch?v=Ad3ANMX8gd4)
 
-[Experiments in fast, autonomous, GPS-Denied quadrotor flight](https://m.youtube.com/watch?v=6eeetSVHXPk)
+[Real-world experiments in fast, autonomous, GPS-Denied quadrotor flight](https://m.youtube.com/watch?v=6eeetSVHXPk)
 
-[Simulation experiments on fast autonomous flight in urban and rural environments](https://www.youtube.com/watch?v=l1esgtJ4C6s)
+[Simulation experiments in fast, autonomous flight in urban and rural environments](https://www.youtube.com/watch?v=l1esgtJ4C6s)
 
 ## Contributing
 Report issues: Open an [issue](https://github.com/KumarRobotics/kr_autonomous_flight/issues) on Github.
@@ -30,16 +30,6 @@ Merge code changes: Open a [pull request](https://github.com/KumarRobotics/kr_au
 
 ## Citation
 If you use this stack in your work, please cite:
-
-```
-@inproceedings{liu2022large,
-title={Large-scale Autonomous Flight with Real-time Semantic SLAM under Dense Forest Canopy},
-author={Liu, Xu and Nardari, Guilherme V and Ojeda, Fernando Cladera and Tao, Yuezhan and Zhou, Alex and Donnelly, Thomas and Qu, Chao and Chen, Steven W and Romero, Roseli AF and Taylor, Camillo J and Kumar, Vijay},
-journal={IEEE Robotics and Automation Letters (RA-L)},
-year={2022}
-}
-```
-
 ```
 @article{mohta2018fast,
   title={Fast, autonomous flight in GPS-denied and cluttered environments},
@@ -52,12 +42,29 @@ year={2022}
   publisher={Wiley Online Library}
 }
 ```
+
+```
+@inproceedings{mohta2018experiments,
+  title={Experiments in fast, autonomous, gps-denied quadrotor flight},
+  author={Mohta, Kartik and Sun, Ke and Liu, Sikang and Watterson, Michael and Pfrommer, Bernd and Svacha, James and Mulgaonkar, Yash and Taylor, Camillo Jose and Kumar, Vijay},
+  booktitle={2018 IEEE International Conference on Robotics and Automation (ICRA)},
+  pages={7832--7839},
+  year={2018},
+  organization={IEEE}
+}
+```
+
+```
+@inproceedings{liu2022large,
+title={Large-scale Autonomous Flight with Real-time Semantic SLAM under Dense Forest Canopy},
+author={Liu, Xu and Nardari, Guilherme V and Ojeda, Fernando Cladera and Tao, Yuezhan and Zhou, Alex and Donnelly, Thomas and Qu, Chao and Chen, Steven W and Romero, Roseli AF and Taylor, Camillo J and Kumar, Vijay},
+journal={IEEE Robotics and Automation Letters (RA-L)},
+year={2022}
+}
+```
+
 ## Acknowledgement 
-This is a multi-year project. We gratefully acknowledge contributions from our current members and lab alumni, which include:
-
-[Kartik Mohta](https://github.com/kartikmohta), [Xu Liu](https://scholar.google.com/citations?user=dSIEUlEAAAAJ), [Sikang Liu](https://github.com/sikang), [Fernando Cladera Ojeda](https://github.com/fcladera), [Chao Qu](https://github.com/versatran01), [Michael Watterson](https://github.com/mwatterson), [Dinesh Thakur](https://github.com/tdinesh), [Ke Sun](https://github.com/ke-sun), [Steven W. Chen](https://github.com/chenste), [Bernd Pfrommer](https://github.com/berndpfrommer), [Yuezhan Tao](https://github.com/tyuezhan), [Laura Jarin-Lipschitz](https://github.com/ljarin), [Anurag Makineni](https://github.com/anuragmakineni), [Justin Thomas](https://github.com/justinthomas), [Guilherme V. Nardari](https://github.com/gnardari).
-
-We also thank our [funding agencies](https://www.kumarrobotics.org/research/).
+This is a multi-year project. We gratefully acknowledge contributions from our current members and lab alumni. The contributors can be found in the papers listed above. In addition, [Dinesh Thakur](https://github.com/tdinesh), [Laura Jarin-Lipschitz](https://github.com/ljarin), [Justin Thomas](https://github.com/justinthomas) also contributed to this work. We also thank our [funding agencies](https://www.kumarrobotics.org/research/).
 
 ## License
 

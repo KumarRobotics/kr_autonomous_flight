@@ -44,6 +44,17 @@ If you use this stack in your work, please cite:
 ```
 
 ```
+@inproceedings{mohta2018experiments,
+  title={Experiments in fast, autonomous, gps-denied quadrotor flight},
+  author={Mohta, Kartik and Sun, Ke and Liu, Sikang and Watterson, Michael and Pfrommer, Bernd and Svacha, James and Mulgaonkar, Yash and Taylor, Camillo Jose and Kumar, Vijay},
+  booktitle={2018 IEEE International Conference on Robotics and Automation (ICRA)},
+  pages={7832--7839},
+  year={2018},
+  organization={IEEE}
+}
+```
+
+```
 @inproceedings{liu2022large,
 title={Large-scale Autonomous Flight with Real-time Semantic SLAM under Dense Forest Canopy},
 author={Liu, Xu and Nardari, Guilherme V and Ojeda, Fernando Cladera and Tao, Yuezhan and Zhou, Alex and Donnelly, Thomas and Qu, Chao and Chen, Steven W and Romero, Roseli AF and Taylor, Camillo J and Kumar, Vijay},
@@ -53,7 +64,7 @@ year={2022}
 ```
 
 ## Acknowledgement 
-This is a multi-year project. We gratefully acknowledge contributions from our current members and lab alumni.  The contributors can be found in the listed papers listed above. In addition, [Dinesh Thakur](https://github.com/tdinesh), [Bernd Pfrommer](https://github.com/berndpfrommer), [Laura Jarin-Lipschitz](https://github.com/ljarin), [Justin Thomas](https://github.com/justinthomas) also contributed to this work. We also thank our [funding agencies](https://www.kumarrobotics.org/research/).
+This is a multi-year project. We gratefully acknowledge contributions from our current members and lab alumni. The contributors can be found in the papers listed above. In addition, [Dinesh Thakur](https://github.com/tdinesh), [Laura Jarin-Lipschitz](https://github.com/ljarin), [Justin Thomas](https://github.com/justinthomas) also contributed to this work. We also thank our [funding agencies](https://www.kumarrobotics.org/research/).
 
 ## License
 

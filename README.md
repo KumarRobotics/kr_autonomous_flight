@@ -64,7 +64,7 @@ year={2022}
 ```
 
 ## Acknowledgement 
-This is a multi-year project. We gratefully acknowledge contributions from our current members and lab alumni. The contributors can be found in the papers listed above. In addition, [Dinesh Thakur](https://github.com/tdinesh), [Laura Jarin-Lipschitz](https://github.com/ljarin), [Justin Thomas](https://github.com/justinthomas) also contributed to this work. We also thank our [funding agencies](https://www.kumarrobotics.org/research/).
+This is a multi-year project. We gratefully acknowledge contributions from our current members and lab alumni. The contributors can be found in the papers listed above. In addition, [Laura Jarin-Lipschitz](https://github.com/ljarin), [Justin Thomas](https://github.com/justinthomas) also contributed to this work. We also thank our [funding agencies](https://www.kumarrobotics.org/research/).
 
 ## License
 

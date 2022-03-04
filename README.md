@@ -33,13 +33,13 @@ If you use this stack in your work, please cite:
 ```
 
 @article{mohta2018fast,
-  title = {Fast, autonomous flight in GPS-denied and cluttered environments},
-  author = {Mohta, Kartik and Watterson, Michael and Mulgaonkar, Yash and Liu, Sikang and Qu, Chao and Makineni, Anurag and Saulnier, Kelsey and Sun, Ke and Zhu, Alex and Delmerico, Jeffrey and Thakur, Dinesh and Karydis, Konstantinos and Atanasov, Nikolay and Loianno, Giuseppe and Scaramuzza, Davide and Daniilidis, Kostas and Taylor, Camillo Jose and Kumar, Vijay},
-  journal = {Journal of Field Robotics},
-  volume = {35},
-  number = {1},
-  pages = {101--120},
-  year = {2018}
+  title={Fast, autonomous flight in GPS-denied and cluttered environments},
+  author={Mohta, Kartik and Watterson, Michael and Mulgaonkar, Yash and Liu, Sikang and Qu, Chao and Makineni, Anurag and Saulnier, Kelsey and Sun, Ke and Zhu, Alex and Delmerico, Jeffrey and Thakur, Dinesh and Karydis, Konstantinos and Atanasov, Nikolay and Loianno, Giuseppe and Scaramuzza, Davide and Daniilidis, Kostas and Taylor, Camillo Jose and Kumar, Vijay},
+  journal={Journal of Field Robotics},
+  volume={35},
+  number={1},
+  pages={101--120},
+  year={2018}
 }
 ```
 

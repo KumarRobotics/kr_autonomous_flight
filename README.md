@@ -29,7 +29,7 @@ Report issues: Open an [issue](https://github.com/KumarRobotics/kr_autonomous_fl
 Merge code changes: Open a [pull request](https://github.com/KumarRobotics/kr_autonomous_flight/pulls) on Github.
 
 ## Citation
-If you use this stack in your work, please cite:
+If you use our code in your work, please cite:
 ```
 
 @article{mohta2018fast,

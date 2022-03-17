@@ -25,7 +25,7 @@
     <include file="$(find dcist_utils)/launch/sim/quadrotor.launch">
         <arg name="use_enhanced_yaml" value="true"/> 
 	    <arg name="robot" value="$(arg robot)"/>
-        <arg name="description" value="$(find dcist_utils)/config/emu_stereo_rgbd_360_FOV.yaml"/>
+        <arg name="description" value="$(find dcist_utils)/config/emu_stereo_rgbd_360_FOV_downward_4k_cam.yaml"/>
         <arg name="x" value="$(arg x)"/>
         <arg name="y" value="$(arg y)"/>
         <arg name="z" value="$(arg z)"/>

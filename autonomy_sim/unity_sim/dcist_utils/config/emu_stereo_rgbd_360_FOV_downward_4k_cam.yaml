@@ -1,0 +1,171 @@
+$(arg robot):
+    type: Quadrotor
+    position: {x: $(arg x), y: $(arg y), z: $(arg z)}
+    orientation: {r: 0, p: 0, y: 0}
+    sensors:
+        cam_left: 
+            topic: cam_left/image_raw
+            type: RGBCamera
+            position: {x: 0.1, y: 0.1, z: 0.0}
+            orientation: {r: 0, p: 0, y: 0}
+            configure:
+              width: $(arg cam_width) 
+              height: $(arg cam_height)
+              farClipPlane: 60
+              targetFrameRate: $(arg stereo_frame_rate)
+            features:
+              detection:
+                 type: ObjectDetection
+                 topic: cam_left/detection
+              semantic_camera:
+                 topic: cam_left/semantic_image
+                 type: SemanticCamera
+                 configure:
+                   width: $(arg semantic_width) 
+                   height: $(arg semantic_height)
+                   farClipPlane: 15
+                   targetFrameRate: $(arg stereo_frame_rate)
+        cam_right: 
+            topic: cam_right/image_raw
+            type: RGBCamera
+            position: {x: 0.1, y: -0.1, z: 0.0}
+            orientation: {r: 0, p: 0, y: 0}
+            configure:
+              width: $(arg cam_width) 
+              height: $(arg cam_height)
+              farClipPlane: 60
+              targetFrameRate: $(arg stereo_frame_rate)
+            features:
+              detection:
+                 type: ObjectDetection
+                 topic: cam_right/detection
+              semantic_camera:
+                 topic: cam_right/semantic_image
+                 type: SemanticCamera
+                 configure:
+                   width: $(arg semantic_width) 
+                   height: $(arg semantic_height)
+                   farClipPlane: 15
+                   targetFrameRate: $(arg stereo_frame_rate)
+        DepthCamera1: 
+            topic: DepthCamera1/image_raw
+            type: DepthCamera
+            position: {x: 0.0, y: 0.0, z: 0.0}
+            orientation: {r: 0, p: 0, y: 0}
+            configure:
+                width: $(arg depth_width) 
+                height: $(arg depth_height)
+                farClipPlane: $(arg depth_range)
+                targetFrameRate: $(arg depth_frame_rate)
+                fieldOfView: 90
+            features:
+              semantic_camera:
+                 topic: DepthCamera1/semantic_image
+                 type: SemanticCamera
+                 configure:
+                      width: $(arg depth_width)
+                      height: $(arg depth_height)
+                      farClipPlane: $(arg semantic_range)
+                      targetFrameRate: $(arg depth_frame_rate)
+                      fieldOfView: 90
+        DepthCamera2: 
+            topic: DepthCamera2/image_raw
+            type: DepthCamera
+            position: {x: 0.0, y: 0.0, z: 0.0}
+            orientation: {r: 0, p: 0, y: 1.57079632679}
+            configure:
+                width: $(arg depth_width) 
+                height: $(arg depth_height)
+                farClipPlane: $(arg depth_range)
+                targetFrameRate: $(arg depth_frame_rate)
+                fieldOfView: 90
+            features:
+              semantic_camera:
+                 topic: DepthCamera2/semantic_image
+                 type: SemanticCamera
+                 configure:
+                      width: $(arg depth_width)
+                      height: $(arg depth_height)
+                      farClipPlane: $(arg semantic_range)
+                      targetFrameRate: $(arg depth_frame_rate)
+                      fieldOfView: 90
+            
+        DepthCamera3: 
+            topic: DepthCamera3/image_raw
+            type: DepthCamera
+            position: {x: 0.0, y: 0.0, z: 0.0}
+            orientation: {r: 0, p: 0, y: 3.1416}
+            configure:
+                width: $(arg depth_width) 
+                height: $(arg depth_height)
+                farClipPlane: $(arg depth_range)
+                targetFrameRate: $(arg depth_frame_rate)
+                fieldOfView: 90
+            features:
+              semantic_camera:
+                 topic: DepthCamera3/semantic_image
+                 type: SemanticCamera
+                 configure:
+                      width: $(arg depth_width)
+                      height: $(arg depth_height)
+                      farClipPlane: $(arg semantic_range)
+                      targetFrameRate: $(arg depth_frame_rate)
+                      fieldOfView: 90
+        DepthCamera4: 
+            topic: DepthCamera4/image_raw
+            type: DepthCamera
+            position: {x: 0.0, y: 0.0, z: 0.0}
+            orientation: {r: 0, p: 0, y: -1.57079632679}
+            configure:
+                width: $(arg depth_width) 
+                height: $(arg depth_height)
+                farClipPlane: $(arg depth_range)
+                targetFrameRate: $(arg depth_frame_rate)
+                fieldOfView: 90
+            features:
+              semantic_camera:
+                 topic: DepthCamera4/semantic_image
+                 type: SemanticCamera
+                 configure:
+                      width: $(arg depth_width)
+                      height: $(arg depth_height)
+                      farClipPlane: $(arg semantic_range)
+                      targetFrameRate: $(arg depth_frame_rate)
+                      fieldOfView: 90
+        DepthCameraDownward: 
+            topic: DepthCameraDownward/image_raw
+            type: DepthCamera
+            position: {x: 0.0, y: 0.0, z: 40.0}
+            orientation: {r: 0, p: 1.57079632679, y: 0}
+            configure:
+                width: 3840
+                height: 2160
+                farClipPlane: 60
+                targetFrameRate: 0.5
+                fieldOfView: 90
+            features:
+              semantic_camera:
+                 topic: DepthCameraDownward/semantic_image
+                 type: SemanticCamera
+                 configure:
+                      width: 3840
+                      height: 2160
+                      farClipPlane: 60
+                      targetFrameRate: 0.5
+                      fieldOfView: 90
+        lidar:
+            topic: lidar_real_sparse
+            type: Lidar3D
+            position: {x: 0, y: 0, z: 0.05}
+            orientation: {r: 0, p: 0, y: 0}
+            configure:
+                verticalBeams: 16
+                horizontalBeams: 16
+                minVerticalAngle: -30.0
+                maxVerticalAngle: 30.0
+                maxRange: 1.0
+        imu:
+            topic: imu
+            type: Imu
+            position: {x: 0, y: 0, z: 0}
+            orientation: {r: 0, p: 0, y: 0}

@@ -2,12 +2,13 @@ import ruamel.yaml
 import copy
 
 # TODO: maybe make those as input args
-folder_name = "../config/"
-input_fname = 'input.yaml'
-output_fname = 'output.yaml'
+in_folder_name = "/home/dcist/multicam_calibration/calib/example/"
+out_folder_name = "../config/"
+input_fname = 'ovc-latest.yaml'
+output_fname = 'msckf_calib.yaml'
 output_calib = None
 
-with open(folder_name + input_fname, 'r') as file:
+with open(in_folder_name + input_fname, 'r') as file:
 
     loaded_calib = ruamel.yaml.safe_load(file)
     output_calib = copy.deepcopy(loaded_calib)
@@ -35,5 +36,5 @@ with open(folder_name + input_fname, 'r') as file:
             output_calib['cam0']['T_cam_imu'][i].append(',')
             output_calib['cam1']['T_cn_cnm1'][i].append(',')
 
-with open(folder_name + output_fname, 'w') as file:
+with open(out_folder_name + output_fname, 'w') as file:
         ruamel.yaml.safe_dump(output_calib, file)

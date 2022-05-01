@@ -1,5 +1,7 @@
 FROM nvidia/cudagl:11.4.2-base-ubuntu20.04
 
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub
+
 #Run the frontend first so it doesn't throw an error later
 RUN export DEBIAN_FRONTEND=noninteractive \
  && apt-get update \

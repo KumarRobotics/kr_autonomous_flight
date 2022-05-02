@@ -8,7 +8,7 @@ jobs:
     - uses: actions/checkout@v1
     - uses: reviewdog/action-shellcheck@master
       with:
-        github_token: ${{ secrets.kr_autonomous_flight_TOKEN_REVIEWDOG }}
+        github_token: ${{ secrets.KR_AUTONOMOUS_FLIGHT_TOKEN_REVIEWDOG }}
         reporter: github-pr-check
         exclude: |
           ./.git/*

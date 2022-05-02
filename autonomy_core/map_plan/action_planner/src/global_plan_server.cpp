@@ -293,7 +293,10 @@ planning_ros_msgs::VoxelMap GlobalPlanServer::clear_map_position(
   planning_ros_msgs::VoxelMap global_map_cleared;
   global_map_cleared = global_map_original;
 
-  int8_t val_free = 0;
+  planning_ros_msgs::VoxelMap voxel_map;
+
+  // Replaced with corresponding parameter value from VoxelMsg.msg
+  int8_t val_free = voxel_map.val_free;
   ROS_WARN_ONCE("Value free is set as %d", val_free);
   double robot_r = 1.0;
   int robot_r_n = std::ceil(robot_r / global_map_cleared.resolution);

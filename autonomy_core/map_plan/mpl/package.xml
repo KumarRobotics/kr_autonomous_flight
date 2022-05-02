@@ -8,6 +8,8 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
+  <depend>planning_ros_msgs</depend>
+
   <!-- The export tag contains other, unspecified, tags -->
   <export>
   </export>

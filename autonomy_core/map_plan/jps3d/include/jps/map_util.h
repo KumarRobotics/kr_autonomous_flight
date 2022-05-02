@@ -5,6 +5,7 @@
 #pragma once
 
 #include "jps/data_type.h"
+#include <planning_ros_msgs/VoxelMap.h>
 
 namespace JPS {
 
@@ -100,6 +101,8 @@ class MapUtil {
   /// Map entity
   Tmap map_;
 
+  planning_ros_msgs::VoxelMap voxel_map;
+
  protected:
   /// Resolution
   decimal_t res_;
@@ -108,11 +111,14 @@ class MapUtil {
   /// Dimension, int type
   Veci<Dim> dim_;
   /// Assume occupied cell has value 100
-  int8_t val_occ = 100;
+  // Now replaced with parameter value from VoxelMap.msg
+  int8_t val_occ = voxel_map.val_occ;
   /// Assume free cell has value 0
-  int8_t val_free = 0;
+  // Now replaced with parameter value from VoxelMap.msg
+  int8_t val_free = voxel_map.val_free;
   /// Assume unknown cell has value -1
-  int8_t val_unknown = -1;
+  // Now replaced with parameter value from VoxelMap.msg
+  int8_t val_unknown = voxel_map.val_unknown;
 };
 
 typedef MapUtil<2> OccMapUtil;

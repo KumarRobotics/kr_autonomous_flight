@@ -155,15 +155,21 @@ class VoxelMapper {
   /// Inflated map object, it is a 3D array
   boost::multi_array<int8_t, 3> inflated_map_;
 
+  planning_ros_msgs::VoxelMap voxel_map;
+
   /// Value free
-  int8_t val_free = 0;
+  // Now replaced with parameter value from VoxelMap.msg
+  int8_t val_free = voxel_map.val_free;
   /// Value occupied
-  int8_t val_occ = 100;  // DON'T CHANGE THIS! This value is hard-coded in the
+  // Now replaced with parameter value from VoxelMap.msg
+  int8_t val_occ = voxel_map.val_occ;  // DON'T CHANGE THIS! This value is hard-coded in the
                          // planner. (TODO: remove the hard coding in planner)
   /// Value unknown
-  int8_t val_unknown = -1;
+  // Now replaced with parameter value from VoxelMap.msg
+  int8_t val_unknown = voxel_map.val_unknown;
   /// Value even
-  int8_t val_even = 50;
+  // Now replaced with parameter value from VoxelMap.msg
+  int8_t val_even = voxel_map.val_even;
   /// Value decay (voxels will disappear if unobserved for (val_occ - val_even)
   /// / val_decay times)
   int decay_times_to_empty;
@@ -172,10 +178,12 @@ class VoxelMapper {
   // be careful of overflow (should always be within -128 and 128 range)
   // Add val_add to the voxel whenever a point lies in it. Voxel will be
   // occupied after (val_occ - val_free) / val_add times of such addition.
-  int8_t val_add = 20;  // should always be less than 27 to avoid overflow
+  // Now replaced with parameter value from VoxelMap.msg
+  int8_t val_add = voxel_map.val_add;  // should always be less than 27 to avoid overflow
                         // (should always be within -128 and 128 range)
   /// Default map value
-  int8_t val_default = 0;
+  // Now replaced with parameter value from VoxelMap.msg
+  int8_t val_default = voxel_map.val_default;
 };
 
 }  // namespace mapper

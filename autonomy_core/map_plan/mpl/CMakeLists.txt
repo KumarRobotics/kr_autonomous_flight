@@ -3,13 +3,15 @@ project(motion_primitive_library)
 
 set(CMAKE_CXX_STANDARD 17)
 
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED
+              COMPONENTS planning_ros_msgs)
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
+  CATKIN_DEPENDS planning_ros_msgs
   DEPENDS EIGEN3)
 
 add_library(
@@ -26,5 +28,5 @@ add_library(
   src/planner_base.cpp
   src/state_space.cpp
   src/graph_search.cpp)
-target_include_directories(${PROJECT_NAME} PUBLIC include)
+target_include_directories(${PROJECT_NAME} PUBLIC include ${catkin_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen Boost::boost)

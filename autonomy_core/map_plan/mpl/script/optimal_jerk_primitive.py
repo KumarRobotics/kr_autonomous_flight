@@ -1,4 +1,4 @@
-from sympy import *
+from sympy import Symbol, Matrix, simplify, diff
 
 dp = Symbol('dp')#dp = pf -p0
 
@@ -22,5 +22,5 @@ d3 = d[2]
 C = T**5/20*d5*d5 + T**3/3*d4*d4+T*d3*d3+T**4/4*d4*d5+T**3/3*d3*d5+T*T*d3*d4
 C = simplify(C)
 
-print "C = ", C
-print "C' = ", diff(C, T, 1)
+print("C = ", C)
+print("C' = ", diff(C, T, 1))

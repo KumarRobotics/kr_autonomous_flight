@@ -1,4 +1,4 @@
-from sympy import *
+from sympy import Symbol, Matrix, simplify, diff
 
 dp = Symbol('dp')#dp = pf -p0
 
@@ -15,11 +15,11 @@ d = simplify(A*b)
 d3 = d[0]
 d2 = d[1]
 
-print d3
-print d2
+print(d3)
+print(d2)
 
 C = T**3/3*d3*d3 + T*d2*d2+d3*d2*T**2
 C = simplify(C)
 
-print "C = ", C
-print "C' = ", diff(C, T, 1)
+print("C = ", C)
+print("C' = ", diff(C, T, 1))

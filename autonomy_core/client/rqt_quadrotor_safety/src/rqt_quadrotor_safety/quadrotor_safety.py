@@ -3,31 +3,24 @@
 from __future__ import print_function, division
 
 import os
+from math import log10, floor
 import rospkg
 
-from geometry_msgs.msg import Pose, Vector3, PoseStamped
 import rospy
 from python_qt_binding import loadUi
-from math import log10, floor
 
 try:
     # PyQt4
-    from python_qt_binding.QtGui import QWidget, QFileDialog
+    from python_qt_binding.QtGui import QWidget
 except ImportError:
     # PyQt5
-    from python_qt_binding.QtWidgets import QWidget, QFileDialog
+    from python_qt_binding.QtWidgets import QWidget
 from rqt_gui_py.plugin import Plugin
 
 import std_msgs.msg
 import planning_ros_msgs.msg as MHL
-from std_srvs.srv import Empty
-from std_srvs.srv import Trigger
-import mavros_msgs.srv as MR
-import nav_msgs.msg as NM
-import sensor_msgs.msg as SMS
 from nav_msgs.msg import Odometry
 import kr_mav_msgs.msg as QM
-import rosbag
 import numpy as np
 
 from tf.transformations import euler_from_quaternion
@@ -59,7 +52,7 @@ class QuadrotorSafety(Plugin):
         self._widget.setObjectName("QuadrotorSafetyUi")
         if context.serial_number() > 1:
             self._widget.setWindowTitle(
-                self._widget.windowTitle() + (" (%d)" % context.serial_number())
+                f"{self._widget.windowTitle()} ({context.serial_number()})"
             )
         context.add_widget(self._widget)
 
@@ -111,9 +104,6 @@ class QuadrotorSafety(Plugin):
             acc_x = np.round(msg.acceleration.x, 4)
             acc_y = np.round(msg.acceleration.y, 4)
             acc_z = np.round(msg.acceleration.z, 4)
-            jerk_x = np.round(msg.jerk.x, 4)
-            jerk_y = np.round(msg.jerk.y, 4)
-            jerk_z = np.round(msg.jerk.z, 4)
             yaw = np.round(msg.yaw, 4)
             yaw_dot = np.round(msg.yaw_dot, 4)
 
@@ -156,7 +146,7 @@ class QuadrotorSafety(Plugin):
     #     self.publish_string("short_range")
 
     def execute_waypoints_pressed(self):
-        self.publish_string("waypoints") 
+        self.publish_string("waypoints")
 
     def _unregister_publisher(self):
         if self._publisher is not None:

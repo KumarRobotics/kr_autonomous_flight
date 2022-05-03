@@ -3,7 +3,6 @@ from __future__ import division
 from __future__ import print_function
 
 import geometry_msgs.msg as GM
-import nav_msgs.msg as NM
 import tf
 import rospy
 import numpy
@@ -45,7 +44,11 @@ def transform_inverse(msg):
 
 
 def pose_err(p1, p2):  # assume quaternions are only rotation about z
-    # err = numpy.power(p1.position.x - p2.position.x, 2.0) + numpy.power(p1.position.y - p2.position.y, 2.0) + numpy.power(p1.position.z - p2.position.z, 2.0) + numpy.power(numpy.abs(p1.orientation.w) - numpy.abs(p2.orientation.w), 2.0)
+    # err = numpy.power(p1.position.x - p2.position.x, 2.0) +
+    # numpy.power(p1.position.y - p2.position.y, 2.0) +
+    # numpy.power(p1.position.z - p2.position.z, 2.0) +
+    # numpy.power(numpy.abs(p1.orientation.w) -
+    # numpy.abs(p2.orientation.w), 2.0)
     err = numpy.power(p1.position.x - p2.position.x, 2.0) + numpy.power(
         p1.position.y - p2.position.y, 2.0
     )

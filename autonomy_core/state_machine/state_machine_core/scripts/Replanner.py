@@ -4,12 +4,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import copy
+
 import smach
 import smach_ros
-import state_machine.msg as SM
-from Utils import *
 from MainStates import TrackerTransition
-import copy
+import state_machine.msg as SM
 
 
 # Yaw-related classes (CheckYaw AlignYaw YawSearch) removed (exist in kr_autonomous_flight repo before 8/16/2020).
@@ -19,7 +19,7 @@ class StoppingPolicyDone(smach.State):
         smach.State.__init__(self, outcomes=["done"])
         self.quad_monitor = quad_monitor
 
-    def execute(self, userdata):
+    def execute(self, _userdata):
         return "done"
 
 class CheckRePlan(smach.State):
@@ -36,7 +36,7 @@ class CheckRePlan(smach.State):
         )
         self.quad_monitor = quad_monitor
 
-    def execute(self, userdata):
+    def execute(self, _userdata):
         if self.quad_monitor.abort:
             return "abort"
         if self.quad_monitor.replan_status is None:
@@ -45,25 +45,25 @@ class CheckRePlan(smach.State):
 
 
 class RePlan(smach_ros.SimpleActionState):
-    def goal_cb(self, userdata, goal):
+    def goal_cb(self, _userdata, goal):
         # rospy.logerr(type(goal.p_init))
-        goal.p_init = copy.deepcopy(self.quad_monitor.get_curr_poseC()) 
+        goal.p_init = copy.deepcopy(self.quad_monitor.get_curr_poseC())
         goal.p_final = copy.deepcopy(self.quad_monitor.pose_goal)
         if self.quad_monitor.avoid is None:
-          goal.avoid_obstacles = True # default avoid obstacle
+            goal.avoid_obstacles = True # default avoid obstacle
         else:
-          goal.avoid_obstacles = self.quad_monitor.avoid
-          
+            goal.avoid_obstacles = self.quad_monitor.avoid
+
         if self.quad_monitor.pose_goals is not None:
             goal.p_finals = self.quad_monitor.pose_goals
-        
+
         goal.continue_mission = self.quad_monitor.continue_mission
 
         goal.replan_rate = self.quad_monitor.replan_rate
         self.quad_monitor.replan_status = None
 
 
-    def result_cb(self, userdata, status, result):
+    def result_cb(self, _userdata, status, result):
         if result.status == 0:
             self.quad_monitor.replan_status = "success"
             self.quad_monitor.abort = False
@@ -98,7 +98,6 @@ class REPLANNER(smach.StateMachine):
 
     def __init__(self, quad_monitor):
         smach.StateMachine.__init__(self, outcomes=["succeeded", "failed"])
-        safe = True
         self.quad_monitor = quad_monitor
         with self:
             smach.StateMachine.add('TrajTransitionMP', TrackerTransition("trackers_manager/transition","action_trackers/ActionTrajectoryTracker", quad_monitor),
@@ -145,7 +144,7 @@ class REPLANNER(smach.StateMachine):
                 transitions={"done": "succeeded"},
             )
 
-            
+
             # If failed, exit replanner with "failed" outcome
             smach.StateMachine.add(
                 "StoppingPolicyFailed",
@@ -163,4 +162,3 @@ class REPLANNER(smach.StateMachine):
                 StoppingPolicyDone(quad_monitor),
                 transitions={"done": "failed"},
             )
-

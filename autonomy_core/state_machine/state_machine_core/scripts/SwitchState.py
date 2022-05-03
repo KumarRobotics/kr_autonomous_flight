@@ -2,16 +2,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import threading
+
 import roslib
+import smach
+import rospy
+import nav_msgs.msg as NM
 
 roslib.load_manifest("smach_ros")
-import rospy
-import std_msgs.msg as msgs
-import nav_msgs.msg as NM
-import threading
-import traceback
-
-import smach
 
 __all__ = ["SwitchState"]
 

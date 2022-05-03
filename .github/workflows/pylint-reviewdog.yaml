@@ -1,0 +1,14 @@
+name: pylint-reviewdog
+on: [pull_request]
+
+jobs:
+ pylint:
+  name: runner / pylint
+  runs-on: ubuntu-latest
+  steps:
+   - uses: actions/checkout@v2
+   - uses: dciborow/action-pylint@0.0.4
+     with:
+       github_token: ${{ secrets.KR_AUTONOMOUS_FLIGHT_TOKEN_REVIEWDOG }}
+       reporter: github-pr-check
+       level: error

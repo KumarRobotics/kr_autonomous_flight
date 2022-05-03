@@ -256,7 +256,7 @@ def main():
     # Request the container to preempt
     sm_with_monitor.request_preempt()
 
-    smach_thread.join()
+    smach_thread.wait()
 
 
 if __name__ == "__main__":

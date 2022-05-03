@@ -136,7 +136,7 @@ class ArmDisarmMavros(smach.State):
         try:
             arm = rospy.ServiceProxy(self.service, MR.CommandBool)
             arm(self.value)
-        except Exception as e:
+        except rospy.ServiceException as e:
             rospy.logerr(f"Error thrown while trying to arm motors {str(self.value)}: {e}")
             return "succeeded"
         return "succeeded"
@@ -156,7 +156,7 @@ class PublishBoolMsgState(smach.State):
     def execute(self, _userdata):
         try:
             self.pub.publish(self.msg)
-        except Exception as e:
+        except rospy.ServiceException as e:
             rospy.logerr(f"Error thrown while executing condition callback {str(self._cond_cb)}: {e}")
             return "failed"
         return "succeeded"
@@ -169,7 +169,7 @@ class TrackerTransition(smach_ros.ServiceState):
         try:
             self.prox(self.req)
             return "succeeded"
-        except Exception as e:
+        except rospy.ServiceException as e:
             rospy.logerr(
                 f"Error thrown while executing condition callback {str(self.execute)}: {e}"
             )
@@ -210,7 +210,7 @@ class SetHomeHere(smach.State):
     def execute(self, _userdata):
         try:
             self.quad_tracker.set_home_from_air()
-        except Exception as e:
+        except rospy.ServiceException as e:
             rospy.logerr(f"Error thrown while executing set home here {e}")
             return "failed"
         return "succeeded"

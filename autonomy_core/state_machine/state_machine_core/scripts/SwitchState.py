@@ -18,14 +18,12 @@ class SwitchState(smach.State):
     """A state that will check a given ROS topic with type std_msgs/String and prescribed transitions trans
     """
 
-    def __init__(
-        self, topic, topic_type, trans, quad_monitor, input_keys=[], output_keys=["transition_data"]
-    ):
+    def __init__(self, topic, topic_type, trans, quad_monitor):
         smach.State.__init__(
             self,
             outcomes=trans + ["invalid", "preempted"],
-            input_keys=input_keys,
-            output_keys=output_keys,
+            input_keys=[],
+            output_keys=["transition_data"],
         )
 
         self._topic = topic
@@ -34,6 +32,9 @@ class SwitchState(smach.State):
 
         self._trigger_event = threading.Event()
         self.quad_monitor = quad_monitor
+        self._sub = None
+        self.valid = None
+        self.next_state = None
 
     def execute(self, ud):
         # If preempted before even getting a chance, give up.

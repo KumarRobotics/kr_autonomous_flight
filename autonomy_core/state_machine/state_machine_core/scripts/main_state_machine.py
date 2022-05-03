@@ -4,17 +4,17 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from multiprocessing.pool import ThreadPool
 import rospy
 import smach
 import smach_ros
 import planning_ros_msgs.msg as MHL
 
-from MainStates import GetWaypoints, RetryWaypoints, WaitState, ArmDisarmMavros, PublishBoolMsgState, TrackerTransition, TakingOff, SetHomeHere, Landing 
+from MainStates import GetWaypoints, RetryWaypoints, WaitState, ArmDisarmMavros, PublishBoolMsgState, TrackerTransition, TakingOff, SetHomeHere, Landing
 from SwitchState import SwitchState
 
 from QuadTracker import QuadTracker
 import Replanner
-from multiprocessing.pool import ThreadPool
 
 # state naming conventions
 # UPPER_CASE - state machines or states which are state machines
@@ -47,7 +47,7 @@ def main():
     quad_tracker.avoid = True  # obstacle avoidance in planner
 
     # Seconds to wait for the stopping policy to finish, should be large enough so that the robot fully stops
-    # THIS IS VERY SAFETY CRITICAL! DO NOT CHANGE UNLESS YOU ARE SURE!      
+    # THIS IS VERY SAFETY CRITICAL! DO NOT CHANGE UNLESS YOU ARE SURE!
     # TODO(xu:) get feedback from stopping policy, instead of hard-coding a wait time
     wait_for_stop = 5.0
 
@@ -232,7 +232,7 @@ def main():
                                    'multi': 'ExecuteMotionPrimitive',
                                    'failed': 'Hover'
                                })
-        
+
 
     # Create and start the introspection server
     sis = smach_ros.IntrospectionServer("introspection_server", sm, "/SM_ROOT")

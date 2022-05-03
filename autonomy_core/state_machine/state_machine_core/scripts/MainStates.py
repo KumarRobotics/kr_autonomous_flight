@@ -5,18 +5,12 @@ from __future__ import print_function
 import rospy
 import smach
 import smach_ros
-import std_srvs.srv as srvs
 import std_msgs.msg as msgs
 import kr_tracker_msgs.srv as TM
-import action_trackers.msg as AT
-import mavros_msgs.msg as MR
-import nav_msgs.msg as NM
 import mavros_msgs.srv as MR
 import mavros_msgs.msg as MRM
 import geometry_msgs.msg as GM
-import planning_ros_msgs.msg as PM
-import copy
-import numpy as np
+import action_trackers.msg as AT
 
 
 # Waits for offbaord signal. then takes off
@@ -31,7 +25,7 @@ class WaitForOffboard(smach.State):
         self.quad_monitor = quad_monitor
         self.timeout = 100
 
-    def execute(self, userdata):
+    def execute(self, _userdata):
         self.timeout = 100
         r = rospy.Rate(10)
         while True:
@@ -54,15 +48,19 @@ class GetWaypoints(smach.State):
         self.quad_monitor = quad_monitor
         self.reset_pub = rospy.Publisher("reset", GM.PoseStamped, queue_size=10)
 
-    def execute(self, userdata):
+    def execute(self, _userdata):
         if self.quad_monitor.waypoints is None or len(self.quad_monitor.waypoints.poses) == 0:
             rospy.logerr("Failed to get waypoints")
             return "failed"
 
         # record all waypoints
-        self.quad_monitor.pose_goals = [it.pose for it in self.quad_monitor.waypoints.poses] # will be feed into goal.p_finals later in RePlan class       
-        # record the last waypoint to check whether the robot has finished all waypoints when replanning
-        self.quad_monitor.pose_goal = self.quad_monitor.waypoints.poses[-1].pose #  will be feed into goal.p_final later in RePlan class
+        # will be feed into goal.p_finals later in RePlan class
+        self.quad_monitor.pose_goals = [it.pose for it in
+                self.quad_monitor.waypoints.poses]
+        # record the last waypoint to check whether the robot has finished all waypoints
+        # when replanning
+        #  will be feed into goal.p_final later in RePlan class
+        self.quad_monitor.pose_goal = self.quad_monitor.waypoints.poses[-1].pose
         # this informs the replanner to starting a new mission
         self.quad_monitor.continue_mission = False # will be feed into goal.continue_mission later in RePlan class
 
@@ -72,7 +70,7 @@ class GetWaypoints(smach.State):
         self.reset_pub.publish(ps)
 
         if len(self.quad_monitor.waypoints.poses) > 1:
-            rospy.loginfo("Multiple waypoints: {}".format(len(self.quad_monitor.waypoints.poses)))
+            rospy.loginfo(f"Multiple waypoints: {len(self.quad_monitor.waypoints.poses)}")
             return "multi"
 
         return "succeeded"
@@ -88,21 +86,20 @@ class RetryWaypoints(smach.State):
         self.reset_pub = rospy.Publisher("reset", GM.PoseStamped, queue_size=10)
         self.num_trials = 1
         self.max_trials = quad_monitor.max_replan_trials
-        # THIS IS VERY SAFETY CRITICAL! DO NOT CHANGE UNLESS YOU ARE SURE!    
-        self.wait_for_stop = wait_for_stop 
-    
-    def execute(self, userdata):
+        # THIS IS VERY SAFETY CRITICAL! DO NOT CHANGE UNLESS YOU ARE SURE!
+        self.wait_for_stop = wait_for_stop
+
+    def execute(self, _userdata):
         # print self.quad_monitor.waypoints
         print("[state_machine:] waiting for stopping policy to finish, wait time is: ", self.wait_for_stop, " seconds. Change this param in main_state_machine.py if needed.\n")
         rospy.sleep(self.wait_for_stop)
         print("[state_machine:] retrying waypoints! Have tried ", self.num_trials, " times up till now. max_trials is set as ", self.max_trials, "\n")
-        
+
         if self.num_trials >= self.max_trials:
             print("[state_machine:] current number of trials >= max_trials, which is ", self.max_trials, " aborting the mission!")
             return "failed"
-        else:
-            self.num_trials += 1
-       
+        self.num_trials += 1
+
         # this informs the replanner to continue to finish waypoints in existing mission instead of starting a new mission
         self.quad_monitor.continue_mission = True # will be feed into goal.continue_mission later in RePlan class
         ps = GM.PoseStamped()
@@ -119,7 +116,7 @@ class WaitState(smach.State):
         smach.State.__init__(self, outcomes=["done"])
         self.time = time
 
-    def execute(self, userdata):
+    def execute(self, _userdata):
         rospy.sleep(self.time)
         if self.preempt_requested():
             self.service_preempt()
@@ -133,14 +130,14 @@ class ArmDisarmMavros(smach.State):
         self.value = value
         # setup internal msgs
 
-    def execute(self, userdata):
+    def execute(self, _userdata):
         # rospy.wait_for_service(self.service)
 
         try:
             arm = rospy.ServiceProxy(self.service, MR.CommandBool)
             arm(self.value)
         except Exception as e:
-            rospy.logerr("Error thrown while trying to arm motors %s: %s" % (str(self.value), e))
+            rospy.logerr(f"Error thrown while trying to arm motors {str(self.value)}: {e}")
             return "succeeded"
         return "succeeded"
 
@@ -156,19 +153,17 @@ class PublishBoolMsgState(smach.State):
         msg.data = value
         self.msg = msg
 
-    def execute(self, userdata):
+    def execute(self, _userdata):
         try:
             self.pub.publish(self.msg)
         except Exception as e:
-            rospy.logerr(
-                "Error thrown while executing condition callback %s: %s" % (str(self._cond_cb), e)
-            )
+            rospy.logerr(f"Error thrown while executing condition callback {str(self._cond_cb)}: {e}")
             return "failed"
         return "succeeded"
 
 
 class TrackerTransition(smach_ros.ServiceState):
-    def execute(self, userdata):
+    def execute(self, _userdata):
 
         rospy.wait_for_service(self.service_name)
         try:
@@ -176,13 +171,12 @@ class TrackerTransition(smach_ros.ServiceState):
             return "succeeded"
         except Exception as e:
             rospy.logerr(
-                "Error thrown while executing condition callback %s: %s" % (str(self.execute), e)
+                f"Error thrown while executing condition callback {str(self.execute)}: {e}"
             )
             return "aborted"
 
-    """Wraps service state with a tracker transition"""
-
     def __init__(self, service, tracker, quad_monitor, safety_critical=False):
+        """Wraps service state with a tracker transition"""
         self.quad_monitor = quad_monitor
         self.safety_critical = safety_critical
         smach.State.__init__(self, outcomes=["succeeded", "aborted", "preempted"])
@@ -196,7 +190,7 @@ class TrackerTransition(smach_ros.ServiceState):
 class TakingOff(smach_ros.SimpleActionState):
     """docstring for TakeOff"""
 
-    def goal_cb(self, userdata, goal):
+    def goal_cb(self, _userdata, goal):
         # need to generate goal at run time
         goal.height = self.quad_tracker.takeoff_height
         return goal
@@ -213,11 +207,11 @@ class SetHomeHere(smach.State):
         smach.State.__init__(self, outcomes=["succeeded", "failed"])
         self.quad_tracker = quad_tracker
 
-    def execute(self, userdata):
+    def execute(self, _userdata):
         try:
             self.quad_tracker.set_home_from_air()
         except Exception as e:
-            rospy.logerr("Error thrown while executing set home here %s" % e)
+            rospy.logerr(f"Error thrown while executing set home here {e}")
             return "failed"
         return "succeeded"
 
@@ -225,7 +219,7 @@ class SetHomeHere(smach.State):
 class Landing(smach_ros.SimpleActionState):
     """docstring for Landing"""
 
-    def goal_cb(self, userdata, goal):
+    def goal_cb(self, _userdata, goal):
         # need to generate goal at run time
         # goal.goal = self.quad_tracker.get_ground_msg()
         return goal

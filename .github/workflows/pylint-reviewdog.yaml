@@ -12,3 +12,4 @@ jobs:
        github_token: ${{ secrets.KR_AUTONOMOUS_FLIGHT_TOKEN_REVIEWDOG }}
        reporter: github-pr-check
        level: error
+       pylint_rc: '.pylintrc-reviewdog'

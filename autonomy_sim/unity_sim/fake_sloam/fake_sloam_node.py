@@ -4,11 +4,9 @@
 #author			:Xu Liu
 #date			:2020-09-09
 #python_version	:
-import time
 
 import tf
 import rospy
-import struct
 from scipy.spatial.transform import Rotation as R
 from visualization_msgs.msg import MarkerArray, Marker
 from sensor_msgs.msg import PointCloud2, PointField
@@ -42,6 +40,7 @@ class FakeSloamNode:
         self.quat_world_map = []
         self.H_world_map = np.eye(4)
         self.H_world_map_rot = np.eye(3)
+        self.quat_world_robot = None
 
     def odom_cb(self, odom_msg):
         # if transform from world to map has not been initialized yet
@@ -63,62 +62,61 @@ class FakeSloamNode:
                 return
         if (rospy.get_time() - self.prev_time) <= self.publish_interval:
             return
-        else:
-            self.prev_time = rospy.get_time()
+        self.prev_time = rospy.get_time()
 
-            robot_position_odom = odom_msg.pose.pose.position
-            robot_orientation_odom = odom_msg.pose.pose.orientation
-            r_robot_map = R.from_quat([robot_orientation_odom.x, robot_orientation_odom.y, robot_orientation_odom.z, robot_orientation_odom.w])
-            H_robot_map_rot = r_robot_map.as_matrix()
-            r_world_robot = R.from_matrix(H_robot_map_rot.T @ self.H_world_map_rot)
-            self.quat_world_robot = r_world_robot.as_quat()
-            H_robot_map_trans = np.array([robot_position_odom.x, robot_position_odom.y, robot_position_odom.z])
-            H_map_robot = np.zeros((4,4))
-            # transformation matrix from map to robot
-            H_map_robot[:3, :3] = H_robot_map_rot.T
-            H_map_robot[:3,3] = - (H_robot_map_rot.T).dot(H_robot_map_trans)
-            H_map_robot[3,3] = 1
-            # transformation matrix from world to robot
-            H_world_robot = H_map_robot @ self.H_world_map
-            robot_position_world = - ((H_world_robot[:3, :3]).T).dot(H_world_robot[:3,3])
+        robot_position_odom = odom_msg.pose.pose.position
+        robot_orientation_odom = odom_msg.pose.pose.orientation
+        r_robot_map = R.from_quat([robot_orientation_odom.x, robot_orientation_odom.y, robot_orientation_odom.z, robot_orientation_odom.w])
+        H_robot_map_rot = r_robot_map.as_matrix()
+        r_world_robot = R.from_matrix(H_robot_map_rot.T @ self.H_world_map_rot)
+        self.quat_world_robot = r_world_robot.as_quat()
+        H_robot_map_trans = np.array([robot_position_odom.x, robot_position_odom.y, robot_position_odom.z])
+        H_map_robot = np.zeros((4,4))
+        # transformation matrix from map to robot
+        H_map_robot[:3, :3] = H_robot_map_rot.T
+        H_map_robot[:3,3] = - (H_robot_map_rot.T).dot(H_robot_map_trans)
+        H_map_robot[3,3] = 1
+        # transformation matrix from world to robot
+        H_world_robot = H_map_robot @ self.H_world_map
+        robot_position_world = - ((H_world_robot[:3, :3]).T).dot(H_world_robot[:3,3])
 
 
-            diff = self.tree_data - np.array([robot_position_world[0], robot_position_world[1]])
-            diff_norm = np.linalg.norm(diff, axis = 1)
-            within_ran_idx = diff_norm < self.perception_range
-            trees_world_xy = self.tree_data[within_ran_idx, :]
-            trees_world_xyz = np.zeros((trees_world_xy.shape[0], 3))
-            z_coord = 5
-            z_coords = z_coord * np.ones(trees_world_xy.shape[0])
-            trees_world_xyz[:,:2] = trees_world_xy
-            trees_world_xyz[:,2] = z_coords
-            # convert to homogeneous representation
-            trees_world_xyz_homo = np.ones((trees_world_xy.shape[0], 4))
-            trees_world_xyz_homo[:,:3] = trees_world_xyz
-            trees_robot_frame_homo = (H_world_robot @ trees_world_xyz_homo.T).T
-            trees_robot_frame = trees_robot_frame_homo[:,:3]
+        diff = self.tree_data - np.array([robot_position_world[0], robot_position_world[1]])
+        diff_norm = np.linalg.norm(diff, axis = 1)
+        within_ran_idx = diff_norm < self.perception_range
+        trees_world_xy = self.tree_data[within_ran_idx, :]
+        trees_world_xyz = np.zeros((trees_world_xy.shape[0], 3))
+        z_coord = 5
+        z_coords = z_coord * np.ones(trees_world_xy.shape[0])
+        trees_world_xyz[:,:2] = trees_world_xy
+        trees_world_xyz[:,2] = z_coords
+        # convert to homogeneous representation
+        trees_world_xyz_homo = np.ones((trees_world_xy.shape[0], 4))
+        trees_world_xyz_homo[:,:3] = trees_world_xyz
+        trees_robot_frame_homo = (H_world_robot @ trees_world_xyz_homo.T).T
+        trees_robot_frame = trees_robot_frame_homo[:,:3]
 
-            points = []
-            for row in trees_robot_frame:
-                x = row[0]
-                y = row[1]
-                z = row[2]
-                intensity = 0.0
-                pt = [x, y, z, intensity]
-                points.append(pt)
+        points = []
+        for row in trees_robot_frame:
+            x = row[0]
+            y = row[1]
+            z = row[2]
+            intensity = 0.0
+            pt = [x, y, z, intensity]
+            points.append(pt)
 
-            fields = [PointField('x', 0, PointField.FLOAT32, 1),
-                      PointField('y', 4, PointField.FLOAT32, 1),
-                      PointField('z', 8, PointField.FLOAT32, 1),
-                      PointField('intensity', 12, PointField.FLOAT32, 1),
-                      ]
-            header = Header()
-            header.stamp = odom_msg.header.stamp
-            header.frame_id = self.robot_frame_id
-            pc2 = point_cloud2.create_cloud(header, fields, points)
-            self.publish_tree_markers(trees_robot_frame, header)
-            self.tree_pub.publish(pc2)
-            print('tree points published, total number of trees are: ', trees_robot_frame.shape[0])
+        fields = [PointField('x', 0, PointField.FLOAT32, 1),
+                  PointField('y', 4, PointField.FLOAT32, 1),
+                  PointField('z', 8, PointField.FLOAT32, 1),
+                  PointField('intensity', 12, PointField.FLOAT32, 1),
+                  ]
+        header = Header()
+        header.stamp = odom_msg.header.stamp
+        header.frame_id = self.robot_frame_id
+        pc2 = point_cloud2.create_cloud(header, fields, points)
+        self.publish_tree_markers(trees_robot_frame, header)
+        self.tree_pub.publish(pc2)
+        print('tree points published, total number of trees are: ', trees_robot_frame.shape[0])
 
     def publish_tree_markers(self, trees, header):
         tree_markers = MarkerArray()
@@ -154,6 +152,6 @@ class FakeSloamNode:
 
 if __name__ == '__main__':
     rospy.init_node('fake_sloam_node', anonymous=False)
-    input_fname = '/home/sam/LRS-SLAM/simulator_data_process/treeposition_nn_radius_5.txt'
-    my_node = FakeSloamNode(input_fname)
+    input_fnamex = '/home/sam/LRS-SLAM/simulator_data_process/treeposition_nn_radius_5.txt'
+    my_node = FakeSloamNode(input_fnamex)
     rospy.spin()

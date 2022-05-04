@@ -125,6 +125,12 @@ class RePlanner {
   // subscribe to global path
   ros::Subscriber global_path_sub_;
 
+  // map update frequency sanity check
+  double local_map_last_timestamp_ = -1.0;
+  double avg_map_frequency_ = -1.0;
+  int map_counter_ = 0;
+  double total_map_time_ = -1;
+
   // local-global framework related params
   double local_replan_rate_;  // should be set in the goal sent from the
                               // state_machine

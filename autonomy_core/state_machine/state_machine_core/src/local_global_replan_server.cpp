@@ -54,7 +54,61 @@ void RePlanner::CmdCb(const kr_mav_msgs::PositionCommand& cmd) {
 
 // map callback, update local_map_
 void RePlanner::LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
-  ROS_WARN_ONCE("Got the local voxel map!");
+  if (map_counter_ == 0) {
+    ROS_WARN("Got the first local voxel map!");
+    // reset the local_map_last_timestamp_
+    local_map_last_timestamp_ = ros::Time::now().toSec();
+    total_map_time_ = 0;
+  } else {
+    double current_time = ros::Time::now().toSec();
+    double time_duration = current_time - local_map_last_timestamp_;
+    total_map_time_ += time_duration;
+    double avg_time_per_map = total_map_time_ / map_counter_;
+    avg_map_frequency_ = 1.0 / avg_time_per_map;
+    // update last timestamp
+    local_map_last_timestamp_ = current_time;
+    // check frequency jumps
+    double current_map_frequency = 1.0 / time_duration;
+    // tolerance in update rate changes
+    double percent_tol = 0.8;
+
+    // only check if the duration is more than 0.1, if less, it means the map is
+    // updated at more than 10Hz, no need to check
+    if (time_duration > 0.1) {
+      if (current_map_frequency > (1 + percent_tol) * avg_map_frequency_) {
+        ROS_WARN_STREAM(
+            "Local map rate unstable and sharply increased! Probably due to "
+            "LIDAR packets "
+            "loss or computation, check "
+            "(1) LIDAR connection, and (2) computation headroom!");
+        ROS_WARN_STREAM("Average update rate was: "
+                        << avg_map_frequency_
+                        << " Hz, most recent update rate is: "
+                        << current_map_frequency << " Hz");
+        // abort replan and trigger stopping policy
+        // AbortReplan();
+      } else if (current_map_frequency <
+                 (1 - percent_tol) * avg_map_frequency_) {
+        ROS_ERROR("Local map rate sharply dropped! Stopping policy triggered!");
+        ROS_ERROR("Local map rate sharply dropped! Stopping policy triggered!");
+        ROS_ERROR(
+            "Probably due to LIDAR packets loss or computation, check "
+            "(1) LIDAR connection, and (2) computation headroom!");
+        ROS_ERROR_STREAM("Average update rate was: "
+                         << avg_map_frequency_
+                         << " Hz, most recent update rate is: "
+                         << current_map_frequency << " Hz");
+        // abort replan and trigger stopping policy
+        AbortReplan();
+      } else {
+        ROS_INFO_STREAM(
+            "Local map updated rate is stable, most recent update frequency "
+            "is: "
+            << current_map_frequency << " Hz");
+      }
+    }
+  }
+  map_counter_++;
   local_map_ptr_ = msg;
 }
 
@@ -119,6 +173,23 @@ void RePlanner::ReplanGoalCb() {
 }
 
 void RePlanner::setup_replanner() {
+  // check if local map is updated, if not, abort the mission
+  // TODO(xu:) load this from param
+  double local_map_min_rate = 0.5;
+  double local_map_time_elapsed =
+      ros::Time::now().toSec() - local_map_last_timestamp_;
+  if ((map_counter_ >= 1) &&
+      (local_map_time_elapsed) > 1.0 / local_map_min_rate) {
+    ROS_ERROR_STREAM("Local map has not been updated for"
+                     << local_map_time_elapsed
+                     << " seconds! Stopping policy triggered!");
+    ROS_ERROR(
+        "Probably due to LIDAR packets loss or computation, check "
+        "(1) LIDAR connection, and (2) computation headroom!");
+    // abort replan and trigger stopping policy
+    AbortReplan();
+  }
+
   if (!do_setup_ || active_) {
     return;
   }
@@ -325,6 +396,23 @@ void RePlanner::RunTrajectory() {
 }
 
 bool RePlanner::PlanTrajectory(int horizon) {
+  // check if local map is updated, if not, abort the mission
+  // TODO(xu:) load this from param
+  double local_map_min_rate = 0.5;
+  double local_map_time_elapsed =
+      ros::Time::now().toSec() - local_map_last_timestamp_;
+  if ((map_counter_ >= 1) &&
+      (local_map_time_elapsed) > 1.0 / local_map_min_rate) {
+    ROS_ERROR_STREAM("Local map has not been updated for"
+                     << local_map_time_elapsed
+                     << " seconds! Stopping policy triggered!");
+    ROS_ERROR(
+        "Probably due to LIDAR packets loss or computation, check "
+        "(1) LIDAR connection, and (2) computation headroom!");
+    // abort replan and trigger stopping policy
+    AbortReplan();
+  }
+
   // horizon = 1 + (current_plan_epoch - last_plan_epoch),
   // where duration of one epoch is execution_time, which is 1.0/replan_rate
   if (horizon > max_horizon_) {

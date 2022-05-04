@@ -101,10 +101,11 @@ void RePlanner::LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
         // abort replan and trigger stopping policy
         AbortReplan();
       } else {
-        ROS_INFO_STREAM(
+        ROS_INFO_STREAM_THROTTLE(
+            1,
             "Local map updated rate is stable, most recent update frequency "
             "is: "
-            << current_map_frequency << " Hz");
+                << current_map_frequency << " Hz");
       }
     }
   }
@@ -955,7 +956,7 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "replanner");
   ros::NodeHandle nh;
   RePlanner replanner;
-  ros::Rate r(5);  // Should be at least at the rate of local_replan_rate_!
+  ros::Rate r(30);  // Should be at least at the rate of local_replan_rate_!
   while (nh.ok()) {
     r.sleep();
     replanner.setup_replanner();  // this function will only run AFTER the

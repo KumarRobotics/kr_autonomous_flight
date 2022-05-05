@@ -12,9 +12,11 @@ geometry_msgs/Point dim
 int8[] data
 
 # Parameters for the occupancy condition of the current map
+# Be careful of overflow (should always be within -128 and 128 range)
 int8 val_occ = 100
 int8 val_even = 50
 int8 val_unknown = -1
 int8 val_free = 0
+# Add val_add to the voxel whenever a point lies in it
 int8 val_add = 20
 int8 val_default = 0

@@ -70,7 +70,7 @@ void RePlanner::LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
     // check frequency jumps
     double current_map_frequency = 1.0 / time_duration;
     // tolerance in update rate changes
-    double percent_tol = 0.8;
+    double percent_tol = 0.95;
 
     // only check if the duration is more than 0.1, if less, it means the map is
     // updated at more than 10Hz, no need to check

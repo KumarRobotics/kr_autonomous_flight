@@ -24,8 +24,11 @@ class VoxelMapper {
    * @param decay_times_to_empty number of times of decay for an occupied voxel
    * to be decayed into empty cell, 0 means no decay
    */
-  VoxelMapper(const Eigen::Vector3d& origin, const Eigen::Vector3d& dim,
-              double res, int8_t val = 0, int decay_times_to_empty = 0);
+  VoxelMapper(const Eigen::Vector3d& origin,
+              const Eigen::Vector3d& dim,
+              double res,
+              int8_t val = 0,
+              int decay_times_to_empty = 0);
 
   /// Set all voxels as unknown
   void setMapUnknown();
@@ -100,8 +103,10 @@ class VoxelMapper {
    *
    * return the new added occupied cells
    */
-  void addCloud(const vec_Vec3d& pts, const Eigen::Affine3d& TF,
-                const vec_Vec3i& ns, bool ray_trace = false,
+  void addCloud(const vec_Vec3d& pts,
+                const Eigen::Affine3d& TF,
+                const vec_Vec3i& ns,
+                bool ray_trace = false,
                 double max_range = 10);
 
   /**
@@ -115,8 +120,12 @@ class VoxelMapper {
    *
    * return the new added occupied cells
    */
-  void addCloud2D(const vec_Vec3d& pts, const Eigen::Affine3d& TF,
-                  const vec_Vec3i& ns, bool ray_trace, double uh, double lh,
+  void addCloud2D(const vec_Vec3d& pts,
+                  const Eigen::Affine3d& TF,
+                  const vec_Vec3i& ns,
+                  bool ray_trace,
+                  double uh,
+                  double lh,
                   double max_range);
 
   /// Free voxels
@@ -162,8 +171,8 @@ class VoxelMapper {
   int8_t val_free = voxel_map.val_free;
   /// Value occupied
   // Now replaced with parameter value from VoxelMap.msg
-  int8_t val_occ = voxel_map.val_occ;  // DON'T CHANGE THIS! This value is hard-coded in the
-                         // planner. (TODO: remove the hard coding in planner)
+  int8_t val_occ = voxel_map.val_occ;
+
   /// Value unknown
   // Now replaced with parameter value from VoxelMap.msg
   int8_t val_unknown = voxel_map.val_unknown;
@@ -176,11 +185,11 @@ class VoxelMapper {
   int8_t val_decay;
 
   // be careful of overflow (should always be within -128 and 128 range)
-  // Add val_add to the voxel whenever a point lies in it. Voxel will be
-  // occupied after (val_occ - val_free) / val_add times of such addition.
+  // Add val_add to the voxel whenever a point lies in it.
   // Now replaced with parameter value from VoxelMap.msg
-  int8_t val_add = voxel_map.val_add;  // should always be less than 27 to avoid overflow
-                        // (should always be within -128 and 128 range)
+  int8_t val_add =
+      voxel_map.val_add;  // should always be less than 27 to avoid overflow
+                          // (should always be within -128 and 128 range)
   /// Default map value
   // Now replaced with parameter value from VoxelMap.msg
   int8_t val_default = voxel_map.val_default;

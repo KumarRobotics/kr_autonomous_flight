@@ -59,7 +59,8 @@ class RePlan(smach_ros.SimpleActionState):
 
         goal.continue_mission = self.quad_monitor.continue_mission
 
-        goal.replan_rate = self.quad_monitor.replan_rate
+        goal.local_replan_rate = self.quad_monitor.local_replan_rate
+        goal.global_replan_rate_factor = self.quad_monitor.global_replan_rate_factor
         self.quad_monitor.replan_status = None
 
 

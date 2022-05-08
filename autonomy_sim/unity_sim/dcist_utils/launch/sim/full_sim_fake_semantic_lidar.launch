@@ -17,15 +17,15 @@
   <arg name="odom" value="/unity_command/ground_truth/$(arg robot)/odom" unless="$(arg onboard_sensing)"/>
   <arg name="odom" value="ukf_odom" if="$(arg onboard_sensing)"/>
 
-  <!-- <arg name="sim_binary_name" default="forest.x86_64" /> -->
-  <arg name="sim_binary_name" default="arl-unity-robotics.x86_64" />
+  <arg name="sim_binary_name" default="forest.x86_64" />
+  <!-- <arg name="sim_binary_name" default="arl-unity-robotics.x86_64" /> -->
 
   <!-- Choose the environment -->
   <!-- <arg name="param_file" value="$(find arl_unity_ros)/config/polypixel.yaml"/> -->
   <!-- <arg name="param_file" default="$(find arl_unity_ros)/config/overpasscity.yaml"/> -->
   <!-- <arg name="param_file" default="$(find arl_unity_ros)/config/floodedgrounds.yaml"/> -->
-  <arg name="param_file" default="$(find arl_unity_ros)/config/basic_environment.yaml"/>
-  <!-- <arg name="param_file" default="$(find dcist_utils)/config/forest.yaml"/> -->
+  <!-- <arg name="param_file" default="$(find arl_unity_ros)/config/basic_environment.yaml"/> -->
+  <arg name="param_file" default="$(find dcist_utils)/config/forest.yaml"/>
 
   <!-- x corresponds to z in Unity simulator, y corresponds to -x, z corresponds to y -->
   <arg name="x" default="0"/>

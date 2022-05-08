@@ -32,9 +32,8 @@
 class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
  public:
   // Initialize, Activate, Deactivate, update functions are all called by
-  // trackers_manager.cpp Goal will have information about trajectory
-  // (goal->traj), epoch (goal->epoch), replan_rate (goal->replan_rate) and
-  // bloack (goal->block)
+  // trackers_manager.cpp Goal will have information about trajectory, epoch,
+  // local and global replan rate, etc.
 
   /**
    * @brief initialize tracker
@@ -545,14 +544,14 @@ void ActionTrajectoryTracker::trajCB() {
   next_trajectory_.push_back(sp);
   prempted = false;
   // ROS_ERROR_STREAM("Done Callback with epoch " << goal->epoch);
-  if (goal->replan_rate > 0 && goal->epoch <= 0) {
+  if (goal->local_replan_rate > 0 && goal->epoch <= 0) {
     ROS_ERROR("Replan rate and epoch must both be set! Rejecting Trajectory");
     return;
   }
 
   // change mode to either replanning or normal
-  if (goal->replan_rate > 0) {
-    execution_time = 1.0 / goal->replan_rate;
+  if (goal->local_replan_rate > 0) {
+    execution_time = 1.0 / goal->local_replan_rate;
     // replanning mode will have non-zero traj_epoch (goal->epoch)
     traj_epoch.push_back(goal->epoch);
   } else {

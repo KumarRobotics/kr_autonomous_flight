@@ -89,8 +89,8 @@ class RePlanner {
   std::string map_frame_;   // map frame
   std::string odom_frame_;  // odom frame
 
-  // // local cropped path pub for visualization
-  // ros::Publisher cropped_path_pub_;
+  // local cropped path pub for visualization
+  ros::Publisher cropped_path_pub_;
 
   // transformed global path pub for visualization
   ros::Publisher global_path_wrt_map_pub_;
@@ -118,7 +118,7 @@ class RePlanner {
   planning_ros_msgs::VoxelMapConstPtr local_map_ptr_;
 
   // epoch is to record how many steps have been executed, the duration of one
-  // epoch is the execution time, which is 1.0/replan_rate
+  // epoch is the execution time, which is 1.0/local_replan_rate_
   int last_plan_epoch_;
   ros::Subscriber epoch_sub_;
 
@@ -131,9 +131,11 @@ class RePlanner {
   int map_counter_ = 0;
   double total_map_time_ = -1;
 
-  // local-global framework related params
-  double local_replan_rate_;  // should be set in the goal sent from the
-                              // state_machine
+  // local-global framework related params, which should be set in the goal sent
+  // from the state_machine
+  double local_replan_rate_;
+  int global_replan_rate_factor_;
+
   vec_Vec3f global_path_;  // recorder of path planned by global action server
   double local_timeout_duration_;  // local planner timeout duration
   Vec3f prev_start_pos_;  // replanning records: previous replanning start
@@ -200,13 +202,18 @@ class RePlanner {
    * @brief Crop global path for local planner by intersecting it with local map
    * boundaries
    * @param path original path to crop
-   * @param d length of the cropped path
+   * @return cropped path, which has at least 2 waypoints, the first element
+   * will be the global path start, and the last element will be the
+   * intersection between the global map and local voxel map (which is to be
+   * used as local goal). The other waypoints are global path's waypoints that
+   * lie between the global path's start and the intersection
    *
    */
   vec_Vec3f PathCropIntersect(const vec_Vec3f& path);
 
   /**
    * @brief Crop global path for local planner with a fixed distance
+   * (note: this is not actively used in our stack at the moment)
    * @param path original path to crop
    * @param d length of the cropped path
    *

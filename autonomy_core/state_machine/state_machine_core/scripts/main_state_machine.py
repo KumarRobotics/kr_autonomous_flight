@@ -26,12 +26,19 @@ def main():
 
     rospy.init_node("smach_state_machine")
 
-    # replan_rate parameter should be set in the ros parameter YAML file under the state_machine field
-    if rospy.has_param("~state_machine/replan_rate"):
-        replan_rate = rospy.get_param("~state_machine/replan_rate")
-        print("[State machine:] Setting replan_rate as:", replan_rate)
+    # local_replan_rate parameter should be set in the ros parameter YAML file under the state_machine field
+    if rospy.has_param("~state_machine/local_replan_rate"):
+        local_replan_rate = rospy.get_param("~state_machine/local_replan_rate")
+        print("[State machine:] Setting local_replan_rate as:", local_replan_rate)
     else:
-        raise Exception("[State machine:] state_machine/replan_rate is not set in the ros param YAML file!")
+        raise Exception("[State machine:] state_machine/local_replan_rate is not set in the ros param YAML file!")
+
+    # global_replan_rate_factor parameter should be set in the ros parameter YAML file under the state_machine field
+    if rospy.has_param("~state_machine/global_replan_rate_factor"):
+        global_replan_rate_factor = rospy.get_param("~state_machine/global_replan_rate_factor")
+        print("[State machine:] Setting global_replan_rate_factor as:", global_replan_rate_factor)
+    else:
+        raise Exception("[State machine:] state_machine/global_replan_rate_factor is not set in the ros param YAML file!")
 
     # max_replan_trials parameter should be set in the ros parameter YAML file under the state_machine field
     if rospy.has_param("~state_machine/max_replan_trials"):
@@ -42,7 +49,8 @@ def main():
 
     # Create holder for tracker object
     quad_tracker = QuadTracker(rospy.names.get_namespace() + "abort")
-    quad_tracker.replan_rate = replan_rate
+    quad_tracker.local_replan_rate = local_replan_rate
+    quad_tracker.global_replan_rate_factor = global_replan_rate_factor
     quad_tracker.max_replan_trials = max_replan_trials
     quad_tracker.avoid = True  # obstacle avoidance in planner
 

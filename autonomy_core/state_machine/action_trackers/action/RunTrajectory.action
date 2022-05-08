@@ -1,7 +1,8 @@
 # Action goal
 planning_ros_msgs/SplineTrajectory traj
 int64 epoch
-float32 replan_rate
+float32 local_replan_rate
+int16 global_replan_rate_factor
 bool block # will not return until traj is complete (cannot be used with replanning)
 ---
 # Action result

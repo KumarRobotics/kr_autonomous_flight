@@ -41,8 +41,9 @@ class QuadTracker:
         self.waypoints = None
         # self.trajectory = None
         self.pose_goal = None
-        # replan rate, calling local planner every (1/replan_rate) seconds
-        self.replan_rate = None
+        # replan rate, calling local planner every (1/local_replan_rate) seconds
+        self.local_replan_rate = None
+        self.global_replan_rate_factor = None
         self.replan_status = None
         self.reset_server = True
         self.v_des = 100

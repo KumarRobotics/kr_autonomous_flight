@@ -29,7 +29,7 @@ void RePlanner::EpochCb(const std_msgs::Int64& msg) {
       // msg.data = current_epoch_ + int(std::floor(duration/execution_time)),
       // where duration = (t_now - started_).toSec() horizon = 1 +
       // (current_plan_epoch - last_plan_epoch). Duration of one epoch is
-      // execution_time, which is 1.0/replan_rate
+      // execution_time, which is 1.0/local_replan_rate
       horizon = msg.data - last_plan_epoch_ + 1;
     }
     epoch_old = msg.data;  // keep a record of last epoch
@@ -118,9 +118,13 @@ void RePlanner::ReplanGoalCb() {
   // accept new goal (ref:
   // http://docs.ros.org/en/jade/api/actionlib/html/classactionlib_1_1SimpleActionServer.html#a4964ef9e28f5620e87909c41f0458ecb)
   auto goal = replan_server_->acceptNewGoal();
-  local_replan_rate_ =
-      goal->replan_rate;  // set local planner replan_rate to be the same as
-                          // specified in goal (assigned in state machine)
+
+  // set local planner local_replan_rate to be the same as specified in goal
+  // (assigned in state machine)
+  local_replan_rate_ = goal->local_replan_rate;
+
+  // set global planner replan rate (global_replan_rate_factor >= 1)
+  global_replan_rate_factor_ = goal->global_replan_rate_factor;
 
   if (goal->continue_mission) {
     // this means continuing with previous mission
@@ -379,7 +383,7 @@ void RePlanner::RunTrajectory() {
   rungoal.traj =
       traj_opt::SplineTrajectoryFromTrajData(last_traj_->serialize());
   rungoal.epoch = last_plan_epoch_;
-  rungoal.replan_rate = local_replan_rate_;
+  rungoal.local_replan_rate = local_replan_rate_;
 
   // call the trajectory tracker
   run_client_->sendGoal(rungoal);
@@ -415,7 +419,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
   }
 
   // horizon = 1 + (current_plan_epoch - last_plan_epoch),
-  // where duration of one epoch is execution_time, which is 1.0/replan_rate
+  // where duration of one epoch is execution_time, i.e., 1.0/local_replan_rate
   if (horizon > max_horizon_) {
     ROS_ERROR(
         "Planning horizon is larger than max_horizon_, aborting the mission!");
@@ -457,15 +461,23 @@ bool RePlanner::PlanTrajectory(int horizon) {
   // Replan step 1: Global plan
   // ########################################################################################################
   // send goal to global plan server to replan (new goal will preempt old goals)
-  if ((global_plan_counter_ % 2) == 0) {
+  if (global_replan_rate_factor_ > 1) {
+    // calling global replan slower than calling local replan
+    ROS_INFO_STREAM("local replan rate is " << global_replan_rate_factor_
+                                            << "x global replan rate");
+    if ((global_plan_counter_ % global_replan_rate_factor_) == 0) {
+      global_plan_client_->sendGoal(global_tpgoal);
+      // this is just for visualization purposes
+      vec_Vec3f global_path_wrt_map = TransformGlobalPath(global_path_);
+    }
+    global_plan_counter_++;
+  } else {
+    // calling global replan at the same rate as calling local replan
     global_plan_client_->sendGoal(global_tpgoal);
-    ROS_INFO_THROTTLE(2,
-                      "global replan called at half of the "
-                      "frequency of local replan");
     // this is just for visualization purposes
     vec_Vec3f global_path_wrt_map = TransformGlobalPath(global_path_);
   }
-  global_plan_counter_++;
+
   prev_start_pos_ = start_pos;  // keep updating prev_start_pos_
 
   //  Replan step 2: Crop global path to get local goal
@@ -573,9 +585,7 @@ void RePlanner::update_status() {
 
     // evaluate traj at 1.0/local_replan_rate_, output recorded to pos_finaln,
     // refer to msg_traj.cpp.
-    last_traj_->evaluate(1.0 / local_replan_rate_,
-                         0,
-                         pos_finaln);  // TODO(mike) {fix this}.
+    last_traj_->evaluate(1.0 / local_replan_rate_, 0, pos_finaln);
 
     pos_final = state_machine::Make4d(pos_finaln);
     pos_final(2) = 0;
@@ -657,7 +667,7 @@ void RePlanner::update_status() {
 
 vec_Vec3f RePlanner::PathCropIntersect(const vec_Vec3f& path) {
   if (path.size() < 2) {
-    ROS_WARN("global path has <= 1 waypoints. Check!");
+    ROS_ERROR("global path has <= 1 waypoints. Check!");
     // return empty
     return vec_Vec3f{};
   }
@@ -678,12 +688,20 @@ vec_Vec3f RePlanner::PathCropIntersect(const vec_Vec3f& path) {
   Vec3f map_lower = Vec3f{lower_x, lower_y, lower_z};
   Vec3f map_upper = Vec3f{upper_x, upper_y, upper_z};
 
-  bool start_in_box =
+  bool start_in_local_map =
       state_machine::CheckPointInBox(map_lower, map_upper, path[0]);
-  if (!start_in_box) {
-    ROS_ERROR("global path start is outside local voxel map. Check!");
+  if (!start_in_local_map) {
+    ROS_INFO(
+        "Global path start is outside local voxel map. This can be (1) global "
+        "replan rate is set to be low (if so, just ignore this message), (2) "
+        "computation burden is high, (3) global map is too cluttered so that "
+        "no feasible global path can be found after multiple trails!");
+    ROS_INFO(
+        "The replanner still works, multiple intersections (between the global "
+        "path and the local voxel map) may be found, and it will ignore the "
+        "1st intersection and choose the 2nd intersection (if exists).");
     // return empty
-    return vec_Vec3f{};
+    // return vec_Vec3f{};
   }
 
   // the end of cropped path will be at the intersection between global path and
@@ -696,24 +714,57 @@ vec_Vec3f RePlanner::PathCropIntersect(const vec_Vec3f& path) {
   // add path segments until the intersection is found
   Vec3f intersect_pt;
   bool intersected;
+  bool is_first_intersection = true;
   for (unsigned int i = 1; i < path.size(); i++) {
     intersected = state_machine::IntersectLineBox(
         map_lower, map_upper, path[i - 1], path[i], &intersect_pt);
     if (intersected) {
-      // intersects, add the intersection
-      cropped_path.push_back(intersect_pt);
-      break;
+      if (start_in_local_map) {
+        // intersects and start_in_local_map, add the intersection as the last
+        // point on cropped path
+        cropped_path.push_back(intersect_pt);
+        break;
+      } else {
+        // intersects but start is not in local voxel map, ignore the 1st
+        // intersection and use the 2nd intersection
+        if (is_first_intersection) {
+          ROS_INFO("Ignoring the first intersection...");
+          is_first_intersection = false;
+        } else {
+          cropped_path.push_back(intersect_pt);
+          ROS_INFO(
+              "The second intersection is found, now using it as local goal!");
+          break;
+        }
+      }
     } else {
       // does not intersect, add the end current segment to cropped path
       cropped_path.push_back(path[i]);
+      if (i == path.size() - 1) {
+        ROS_INFO(
+            "Global goal is inside local voxel map, directly using it as local "
+            "goal!");
+      }
     }
   }
 
-  // // publish for visualization
-  // planning_ros_msgs::Path local_path_msg_ = path_to_ros(cropped_path);
-  // local_path_msg_.header.frame_id = map_frame_;
-  // cropped_path_pub_.publish(local_path_msg_);
+  // publish for visualization
+  planning_ros_msgs::Path local_path_msg_ = path_to_ros(cropped_path);
+  local_path_msg_.header.frame_id = map_frame_;
+  cropped_path_pub_.publish(local_path_msg_);
 
+  // sanity check, cropped_path has to have at least 2 points, otherwise it
+  // means that only the start of global path is included, which is not valid
+  if (cropped_path.size() < 2) {
+    ROS_ERROR(
+        "Cropped path only has 1 point, this happens only if the start is not "
+        "in the voxel map AND no intersection is found between the "
+        "global path and local voxel map!!");
+    // return empty
+    return vec_Vec3f{};
+  }
+
+  // cropped path is valid and the last element will be used as local goal
   return cropped_path;
 }
 
@@ -888,9 +939,8 @@ RePlanner::RePlanner() : nh_("~") {
   time_pub2 = priv_nh.advertise<sensor_msgs::Temperature>(
       "/timing/replanner/local_replan", 1);
 
-  // cropped_path_pub_ =
-  //     priv_nh.advertise<planning_ros_msgs::Path>("cropped_local_path", 1,
-  //     true);
+  cropped_path_pub_ =
+      priv_nh.advertise<planning_ros_msgs::Path>("cropped_local_path", 1, true);
 
   global_path_wrt_map_pub_ = priv_nh.advertise<planning_ros_msgs::Path>(
       "global_path_wrt_map", 1, true);
@@ -956,7 +1006,7 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "replanner");
   ros::NodeHandle nh;
   RePlanner replanner;
-  ros::Rate r(30);  // Should be at least at the rate of local_replan_rate_!
+  ros::Rate r(20);  // Should > max(local_replan_rate_, local_map_rate)
   while (nh.ok()) {
     r.sleep();
     replanner.setup_replanner();  // this function will only run AFTER the

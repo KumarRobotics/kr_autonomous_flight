@@ -243,7 +243,7 @@ void LocalPlanServer::process_result(const MPL::Trajectory3D& traj,
     traj_opt::TrajRosBridge::publish_msg(result_->traj);
 
     // execution_time (set in replanner)
-    // equals 1.0/replan_rate
+    // equals 1.0/local_replan_rate
     double endt = goal_->execution_time.toSec();
 
     // evaluate trajectory for 5 steps, each step duration equals
@@ -288,7 +288,7 @@ void LocalPlanServer::process_result(const MPL::Trajectory3D& traj,
     }
     result_->execution_time =
         goal_->execution_time;  // execution_time (set in replanner)
-                                // equals 1.0/replan_rate
+                                // equals 1.0/local_replan_rate
     result_->epoch = goal_->epoch;
     MPL::Waypoint3D pt = traj.evaluate(traj.getTotalTime());
     result_->traj_end.position.x = pt.pos(0);

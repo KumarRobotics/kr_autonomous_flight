@@ -2,7 +2,8 @@
 geometry_msgs/Pose p_init
 geometry_msgs/Pose[] p_finals # a list of waypoints, if empty, will use single goal (i.e. p_final)
 geometry_msgs/Pose p_final # the last waypoint,used to check whether the robot has finished all waypoints when replanning
-float64 replan_rate 
+float32 local_replan_rate
+int16 global_replan_rate_factor
 bool continue_mission # continue to finish waypoints in existing mission instead of starting a new mission
 bool reset
 bool avoid_obstacles

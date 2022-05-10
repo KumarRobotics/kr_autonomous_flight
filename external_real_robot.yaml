@@ -7,5 +7,5 @@ repositories:
 
   ouster_decoder:
     type: git
-    url: http://github.com/XuRobotics/ouster_decoder.git
+    url: http://github.com/KumarRobotics/ouster_decoder.git
     version: main

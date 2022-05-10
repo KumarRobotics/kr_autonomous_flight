@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+  <arg name="robot" default="quadrotor"/>
+  <arg name="sensor_hostname" default="192.168.100.12" doc="hostname or IP in dotted decimal form of the sensor"/>
+  <arg name="udp_dest" default="192.168.100.1" doc="hostname or IP where the sensor will send data packets"/>
+  <arg name="lidar_port" default="7502" doc="port to which the sensor should send lidar data"/>
+  <arg name="imu_port" default="7503" doc="port to which the sensor should send imu data"/>
+  <arg name="replay" default="false" doc="do not connect to a sensor; expect /os_node/{lidar,imu}_packets from replay"/>
+  <arg name="lidar_mode" default="1024x10" doc="resolution and rate: either 512x10, 512x20, 1024x10, 1024x20, or 2048x10"/>
+  <arg name="timestamp_mode" default="" doc="method used to timestamp measurements: TIME_FROM_INTERNAL_OSC, TIME_FROM_SYNC_PULSE_IN, TIME_FROM_PTP_1588"/>
+  <arg name="metadata" default="ouster_metadata.json" doc="override default metadata file for replays"/>
+  <arg name="viz" default="false" doc="whether to run a rviz"/>
+  <arg name="rviz_config" default="-d $(find ouster_ros)/viz.rviz" doc="optional rviz config file"/>
+  <arg name="tf_prefix" default="" doc="namespace for tf transforms"/>
+
+  <node pkg="ouster_decoder" name="os_node" type="ouster_driver" output="screen" required="true">
+    <param name="~/lidar_mode" type="string" value="$(arg lidar_mode)"/>
+    <param name="~/timestamp_mode" type="string" value="$(arg timestamp_mode)"/>
+    <param name="~/replay" value="$(arg replay)"/>
+    <param name="~/sensor_hostname" value="$(arg sensor_hostname)"/>
+    <param name="~/udp_dest" value="$(arg udp_dest)"/>
+    <param name="~/lidar_port" value="$(arg lidar_port)"/>
+    <param name="~/imu_port" value="$(arg imu_port)"/>
+    <param name="~/metadata" value="$(arg metadata)"/>
+  </node>
+
+  <include file="$(find ouster_decoder)/launch/decoder.launch">
+    <arg name="lidar_ns" value="$(arg robot)"/>
+  </include>
+</launch>
+

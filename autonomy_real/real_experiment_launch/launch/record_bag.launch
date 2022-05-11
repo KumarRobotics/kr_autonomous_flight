@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-  <arg name="dir" default="/home/dcist/bags/falcon_forest"/>
+  <arg name="dir" default="/home/dcist/bags/falcon_pennovation"/>
   <node pkg="rosbag" type="record" name="recorder" args="
   -o $(arg dir)
   /quadrotor/vio/odom
@@ -19,6 +19,7 @@
   /ublox/fix_velocity
   /os_node/imu_packets
   /os_node/lidar_packets
+  /os_node/metadata
   /ovc/left/camera_info
   /ovc/left/image_raw
   /ovc/right/camera_info

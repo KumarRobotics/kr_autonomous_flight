@@ -615,6 +615,21 @@ void RePlanner::update_status() {
             << "The distance threshold is set as:" << waypoint_threshold_);
         pose_goal_ = pose_goals_[cur_cb_waypoint_idx_];
         TransformGlobalGoal();
+
+        /////////////////////////////////////////////////////////////////////
+        // TODO(xu:) remove this after we are done with demo, have the quad
+        // stop after reaching the waypoint for safety pilot to better react
+        ROS_INFO("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+        ROS_INFO("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+        ROS_INFO("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+        ROS_INFO(
+            "(REMOVE AFTER DEMO:) Waypoint reached! Now aborting replan and "
+            "calling stopping policy before restart with the next waypoint!");
+        ROS_INFO(
+            "(REMOVE AFTER DEMO:) Waypoint reached! Now aborting replan and "
+            "calling stopping policy before restart with the next waypoint!");
+        AbortReplan();
+        /////////////////////////////////////////////////////////////////////
       }
     };
   }

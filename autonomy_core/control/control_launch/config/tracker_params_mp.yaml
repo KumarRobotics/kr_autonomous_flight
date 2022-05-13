@@ -15,9 +15,9 @@ trajectory_tracker:
 trajectory_planner:
   debug: false # debug mode, default false
   verbose: false # verbose mode, default false
-  max_v: 3.0 # x-y-direction maximum velocity,recommended value: for 2-D 9, for 3-D 3
+  max_v: 4.0 # x-y-direction maximum velocity,recommended value: for 2-D 9, for 3-D 3
   max_a: 4.0 # x-y-direction maximum acceleration, recommended value: for 2-D 7, for 3-D 2
-  max_j: 2.0 # x-y-direction maximum jerk, recommended value: for 2-D 3, for 3-D 2
+  max_j: 4.0 # x-y-direction maximum jerk, recommended value: for 2-D 3, for 3-D 2
   max_u: 2.0 # x-y-direction control inputs increase / decrease step, must be smaller than max_j, recommended value: for 2-D 3, for 3-D 1, for each axis jerk increment choice is -max_u, 0, max_u
   use_3d_local: false # local planner operates in 3D (true) or 2D (false)
 
@@ -28,7 +28,7 @@ trajectory_planner:
   max_a_z: 3.0 # z-direction maximum acceleration, recommended value: 3.0
   max_j_z: 3.0 # z-direction maximum jerk, recommended value: 3.0
   max_u_z: 3.0 # z-direction control inputs increase / decrease step, must be smaller than max_j, recommended value: 3.0
-  tol_pos: 3.0 # tolerance of distance for goal region, 0 means no tolerance, -1 means no limitation, recommended value: 3.0 for 2-D and 5.0 for 3-D
+  tol_pos: 4.0 # tolerance of distance for goal region, 0 means no tolerance, -1 means no limitation, recommended value: 3.0 for 2-D and 5.0 for 3-D
   global_goal_tol_vel: 2.0 # tolerance of velocity for goal region, recommended value: 2.0 for 2-D and 3.0 for 3-D
   global_goal_tol_acc: -1 # tolerance of acceleration for goal region, recommended value: -1
   dt: 1.0 # execution time for each primitive, recommended value: 1.0
@@ -46,17 +46,17 @@ stopping_policy:
 
 local_global_server:
   # local planning horizon will be from robot to the local voxel map boundary
-  waypoint_reach_xy_threshold: 20.0 # x-y distance threshold, within which intermidiate waypoint is regarded as reached 
-  final_goal_reach_xy_threshold: 10.0 # within which final waypoint is regarded as reached, this should be smaller than waypoint_reach_threshold
+  waypoint_reach_xy_threshold: 6.0 # x-y distance threshold, within which intermidiate waypoint is regarded as reached 
+  final_goal_reach_xy_threshold: 5.0 # within which final waypoint is regarded as reached, this should be smaller than waypoint_reach_threshold
   close_to_final_dist: 5 # distance-to-goal threshold, within which the velocity and acceleration checking will be turned on, -1 means no velocity checking at all
-  local_plan_timeout_duration: 1.0 # local planner timeout in seconds
-  max_local_plan_trials: 1 # should be set as 1 since state machine is now able to try multiple times after planner failures
-  max_horizon: 10 # defulat 5, should be larger than local_plan_timeout_duration*max_local_plan_trials*local_replan_rate 
-  global_planner_verbose: false # verbose mode, default false
+  local_plan_timeout_duration: 1.5 # local planner timeout in seconds
+  max_local_plan_trials: 1.0 # should be set as 1 since state machine is now able to try multiple times after planner failures
+  max_horizon: 10 # defulat 5, should be larger than local_plan_timeout_duration*max_local_plan_trials*replan_rate 
+  global_planner_verbose: true # verbose mode, default false
   odom_frame: "quadrotor/odom" # odometry reference frame
   map_frame: "quadrotor/map" # SLAM reference frame (only for using two-reference-frame system, otherwise this should be set to be the same as odom_frame)
 
 state_machine:
   local_replan_rate: 2.0 # local replan frequency, calling local planner every (1/local_replan_rate) seconds, (float 32)
-  global_replan_rate_factor : 3 # global_replan_rate_factor = local replan frequency / global replan frequency, should be an integer and >= 1, (int)
+  global_replan_rate_factor : 2 # global_replan_rate_factor = local replan frequency / global replan frequency, should be an integer and >= 1, (int)
   max_replan_trials: 50 # max allowed trials to re-enter replanner

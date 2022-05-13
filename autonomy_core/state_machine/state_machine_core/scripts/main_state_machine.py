@@ -57,7 +57,7 @@ def main():
     # Seconds to wait for the stopping policy to finish, should be large enough so that the robot fully stops
     # THIS IS VERY SAFETY CRITICAL! DO NOT CHANGE UNLESS YOU ARE SURE!
     # TODO(xu:) get feedback from stopping policy, instead of hard-coding a wait time
-    wait_for_stop = 5.0
+    wait_for_stop = 3.0
 
     # Create a SMACH state machine
     sm = smach.StateMachine(outcomes=["done"])

@@ -55,6 +55,7 @@ def main():
     quad_tracker.avoid = True  # obstacle avoidance in planner
 
     # Seconds to wait for the stopping policy to finish, should be large enough so that the robot fully stops
+    
     # THIS IS VERY SAFETY CRITICAL! DO NOT CHANGE UNLESS YOU ARE SURE!
     # TODO(xu:) get feedback from stopping policy, instead of hard-coding a wait time
     wait_for_stop = 5.0
@@ -160,9 +161,9 @@ def main():
             },
         )
 
-        # landing state
+        # LandingExecute state
         smach.StateMachine.add(
-            "Landing",
+            "LandingExecute",
             Landing("trackers_manager/land", quad_tracker),
             transitions={
                 "succeeded": "Idle",
@@ -194,18 +195,18 @@ def main():
             "SetHomeHere",
             SetHomeHere(quad_tracker),
             transitions={
-                "succeeded": "LandTransition",
+                "succeeded": "LandingRequest",
                 "failed": "Hover"
             },
         )
 
-        # LandTransition state, activating land tracker
+        # LandingRequest state, activating land tracker
         smach.StateMachine.add(
-            "LandTransition",
+            "LandingRequest",
             TrackerTransition("trackers_manager/transition",
                               "action_trackers/LandTracker", quad_tracker),
             transitions={
-                "succeeded": "Landing",
+                "succeeded": "LandingExecute",
                 "aborted": "Hover",
                 "preempted": "Hover"
             },
@@ -216,28 +217,30 @@ def main():
         smach.StateMachine.add('GetMPWaypoints',
                                GetWaypoints(quad_tracker),
                                transitions={
-                                   'succeeded': 'ExecuteMotionPrimitive',
-                                   'multi': 'ExecuteMotionPrimitive',
+                                   'succeeded': 'EnterReplanner',
+                                   'multi': 'EnterReplanner',
                                    'failed': 'Hover'
                                })
 
-        # ExecuteMotionPrimitive state, entering replanner (sub-)state-machine
+        # EnterReplanner state, entering replanner (sub-)state-machine
+        # succeeded means that all waypoints have been reached
         smach.StateMachine.add(
-            "ExecuteMotionPrimitive",
-            Replanner.REPLANNER(quad_tracker),
+            "EnterReplanner",
+            Replanner.REPLANNER(quad_tracker, wait_for_stop),
             transitions={
-                "succeeded": "Hover",
+                "succeeded": "Hover", # stay hovering
+                # "succeeded": "LandingRequest", # land automatically
                 "failed": "RetryMPWaypoints"
             },
         )
 
-        # RetryMPWaypoints state, re-entering ExecuteMotionPrimitive state if RetryWaypoints returns true (i.e. trail times < pre-defined max_trail_time);
+        # RetryMPWaypoints state, re-entering EnterReplanner state if RetryWaypoints returns true (i.e. trail times < pre-defined max_trail_time);
         # Otherwise, calling stopping policy and transiting to hover.
         smach.StateMachine.add('RetryMPWaypoints',
-                               RetryWaypoints(quad_tracker, wait_for_stop),
+                               RetryWaypoints(quad_tracker),
                                transitions={
-                                   'succeeded': 'ExecuteMotionPrimitive',
-                                   'multi': 'ExecuteMotionPrimitive',
+                                   'succeeded': 'EnterReplanner',
+                                   'multi': 'EnterReplanner',
                                    'failed': 'Hover'
                                })
 

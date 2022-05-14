@@ -68,6 +68,30 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr& cmd) {
       v0_dir_yaw_ = 1.0;
     }
     a0_ << cmd->acceleration.x, cmd->acceleration.y, cmd->acceleration.z, 0.0;
+
+    // clip a0 to lie within [-a_des_abs, a_des_abs]
+    double a_des_abs;
+    for (int axis = 0; axis < 3; ++axis) {
+      if (std::abs(a0_(axis)) > a_des_abs) {
+        if (axis == 0 || axis == 1) {
+          a_des_abs = a_xy_des_;
+        } else {
+          a_des_abs = a_z_des_;
+        }
+        ROS_WARN_STREAM(
+            "[StoppingPolicy:] initial acceleration is "
+            << std::abs(a0_(axis))
+            << ", which is larger than stopping policy max acceleration of "
+            << a_des_abs
+            << ". This is not normal since the stopping policy max "
+               "acceleration "
+               "should be no smaller than acceleration along the trajectory. "
+               "Either plan less aggressive trajectories or increase stopping "
+               "policy max acceleration!");
+        a0_(axis) = std::clamp(a0_(axis), -a_des_abs, a_des_abs);
+      }
+    }
+
     cmd_acc_ = a0_;
     a0_dir_xyz_ << cmd->acceleration.x, cmd->acceleration.y,
         cmd->acceleration.z;
@@ -148,21 +172,6 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     a0 = a0_(axis);
 
     // first, change the acceleration from a0 to -a_des_abs
-    if (std::abs(a0) > a_des_abs) {
-      ROS_WARN_STREAM(
-          "[StoppingPolicy:] initial acceleration is "
-          << a0 << ", which is larger than stopping policy max acceleration of "
-          << a_des_abs
-          << ". This is not normal. Either plan less aggressive trajectories "
-             "or increase stopping policy max acceleration!");
-      // clip a0 to lie within [-a_des_abs, a_des_abs]
-      if (a0 > a_des_abs) {
-        a0 = a_des_abs;
-      } else {
-        a0 = -a_des_abs;
-      }
-    }
-
     // phase 1-3: increase |acceleration| -> const acc -> decrease |acc|
     // calculate time duration for each phase
     t_phase1 = std::abs(-v0_dir * a_des_abs - a0) /
@@ -194,8 +203,8 @@ PositionCommand::ConstPtr StoppingPolicy::update(
       ROS_WARN_STREAM("jerk is increased to: " << j_des_abs);
       t_phase3 = std::abs(0 - a0) / j_des_abs;  // from a0 to 0
     } else if (total_deacc_abs > v0_norm) {
-      // Case 2: a_des_abs will not be reached, using geometric method to solve
-      // this v_virtual is v0 + v_a0, where v_a0 is the change of v if
+      // Case 2: a_des_abs will not be reached, using geometric method to
+      // solve this v_virtual is v0 + v_a0, where v_a0 is the change of v if
       // acceleration changes from a=0 to a=a0 with j_des_abs
       double v_a0_norm = pow(a0, 2) / (2 * j_des_abs);
       double v_virtual = v0_norm + v_a0_norm;
@@ -215,7 +224,8 @@ PositionCommand::ConstPtr StoppingPolicy::update(
     // check: all durations should be non-negative
     if (t_phase1 < 0 || t_phase2 < 0 || t_phase3 < 0) {
       ROS_ERROR_STREAM(
-          "[StoppingPolicy:] time for one of the phases is negative, t_phase1: "
+          "[StoppingPolicy:] time for one of the phases is negative, "
+          "t_phase1: "
           << t_phase1 << " t_phase2: " << t_phase2 << " t_phase3:" << t_phase3
           << " this is not correct!");
     }

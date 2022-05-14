@@ -599,11 +599,12 @@ void RePlanner::update_status() {
           (dist_cmd_to_goal <= final_waypoint_threshold_)) {
         // finished_replanning_ is set as true if this is the final waypoint
         finished_replanning_ = true;
-        ROS_INFO_STREAM(
+        ROS_INFO_STREAM_THROTTLE(
+            1.0,
             "Final waypoint reached according to x and y positions! The "
             "distance threshold is set as: "
-            << final_waypoint_threshold_ << " Total " << pose_goals_.size()
-            << " waypoints received");
+                << final_waypoint_threshold_ << " Total " << pose_goals_.size()
+                << " waypoints received");
       } else if (cur_cb_waypoint_idx_ < (pose_goals_.size() - 1)) {
         // take the next waypoint if the intermidiate waypoint is reached
         cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
@@ -619,16 +620,18 @@ void RePlanner::update_status() {
         /////////////////////////////////////////////////////////////////////
         // TODO(xu:) remove this after we are done with demo, have the quad
         // stop after reaching the waypoint for safety pilot to better react
-        ROS_INFO("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-        ROS_INFO("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-        ROS_INFO("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-        ROS_INFO(
-            "(REMOVE AFTER DEMO:) Waypoint reached! Now aborting replan and "
-            "calling stopping policy before restart with the next waypoint!");
-        ROS_INFO(
-            "(REMOVE AFTER DEMO:) Waypoint reached! Now aborting replan and "
-            "calling stopping policy before restart with the next waypoint!");
-        AbortReplan();
+        // ROS_WARN("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+        // ROS_WARN("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+        // ROS_WARN("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+        // ROS_WARN(
+        //     "(REMOVE AFTER DEMO:) Waypoint reached! Now aborting replan and "
+        //     "calling stopping policy before restart with the next
+        //     waypoint!");
+        // ROS_WARN(
+        //     "(REMOVE AFTER DEMO:) Waypoint reached! Now aborting replan and "
+        //     "calling stopping policy before restart with the next
+        //     waypoint!");
+        // AbortReplan();
         /////////////////////////////////////////////////////////////////////
       }
     };
@@ -651,8 +654,8 @@ void RePlanner::update_status() {
     pos_no_yaw(3) = 0;
     pos_final(2) = 0;
     pos_final(3) = 0;
-    ROS_INFO_STREAM_THROTTLE(
-        1, "Termination error: " << (pos_no_yaw - pos_final).norm());
+    // ROS_INFO_STREAM_THROTTLE(
+    //     1, "Termination error: " << (pos_no_yaw - pos_final).norm());
 
     // replan_server_ set as success if the commanded position and traj end
     // position is less than 1e-3
@@ -941,7 +944,7 @@ void RePlanner::AbortReplan(void) {
   if (replan_server_->isActive()) {
     replan_server_->setAborted(critical_);
   }
-  ROS_ERROR("Replanning terminated!!");
+  ROS_WARN("Replanning terminated!");
 }
 
 RePlanner::RePlanner() : nh_("~") {

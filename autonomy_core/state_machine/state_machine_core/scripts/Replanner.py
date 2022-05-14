@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 import copy
+import rospy
 
 import smach
 import smach_ros
@@ -15,11 +16,15 @@ import state_machine.msg as SM
 # Yaw-related classes (CheckYaw AlignYaw YawSearch) removed (exist in kr_autonomous_flight repo before 8/16/2020).
 
 class StoppingPolicyDone(smach.State):
-    def __init__(self, quad_monitor):
+    def __init__(self, quad_monitor, wait_for_stop):
         smach.State.__init__(self, outcomes=["done"])
         self.quad_monitor = quad_monitor
+        self.wait_for_stop = wait_for_stop
 
     def execute(self, _userdata):
+        print("[state_machine:] waiting for stopping policy to finish, wait time is: ", self.wait_for_stop, " seconds. Change this param in main_state_machine.py if needed.\n")
+        rospy.sleep(self.wait_for_stop)
+        print("[state_machine:] robot should have COMPLETELY STOPPED, otherwise, increase the wait_for_stop in main_state_machine.py!.\n")
         return "done"
 
 class CheckRePlan(smach.State):
@@ -97,7 +102,7 @@ class REPLANNER(smach.StateMachine):
     def child_cb(self, outcome_map):
         return True
 
-    def __init__(self, quad_monitor):
+    def __init__(self, quad_monitor, wait_for_stop):
         smach.StateMachine.__init__(self, outcomes=["succeeded", "failed"])
         self.quad_monitor = quad_monitor
         with self:
@@ -127,7 +132,7 @@ class REPLANNER(smach.StateMachine):
                 },
             )
 
-            # If succeeded all waypoints have been reached), exit replanner with "succeeded" outcome
+            # If all waypoints have been reached, exit replanner with "succeeded" outcome
             smach.StateMachine.add(
                 "StoppingPolicySucceeded",
                 TrackerTransition(
@@ -141,7 +146,7 @@ class REPLANNER(smach.StateMachine):
             )
             smach.StateMachine.add(
                 "StoppingPolicyDoneSucceeded",
-                StoppingPolicyDone(quad_monitor),
+                StoppingPolicyDone(quad_monitor, wait_for_stop),
                 transitions={"done": "succeeded"},
             )
 
@@ -160,6 +165,6 @@ class REPLANNER(smach.StateMachine):
             )
             smach.StateMachine.add(
                 "StoppingPolicyDoneFailed",
-                StoppingPolicyDone(quad_monitor),
+                StoppingPolicyDone(quad_monitor, wait_for_stop),
                 transitions={"done": "failed"},
             )

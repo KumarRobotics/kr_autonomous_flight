@@ -103,6 +103,7 @@ class QuadTracker:
             self.homeP = copy.copy(self.pos)
             self.homeY = self.yaw
             self.ground = copy.copy(self.pos)
+            # current hight + pre defined landing height - takeoff height
             self.ground.z += self.landing_height - self.takeoff_height
             rospy.logwarn("Setting landing height to %f m", self.ground.z)
 

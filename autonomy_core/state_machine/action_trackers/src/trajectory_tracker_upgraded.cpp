@@ -121,13 +121,13 @@ class ActionTrajectoryTracker : public kr_trackers_manager::Tracker {
   bool yaw_alignment_initialized_ = false;
   bool alignment_ongoing_ = false;
   double yaw_align_dt_ =
-      1.5;  // derive yaw alignment direction every yaw_align_dt_ seconds
+      0.5;  // derive yaw alignment direction every yaw_align_dt_ seconds
   double last_yaw_align_x_ = 0.0;
   double last_yaw_align_y_ = 0.0;
   double yaw_des_ = 0.0;
   double ultimate_yaw_des_ = 0.0;
   double yaw_threshold_ =
-      0.5;  // rad, if yaw error is larger than this, alignment will start
+      0.05;  // rad, if yaw error is larger than this, alignment will start
   double yaw_dot_des_ = 0.0;
   bool odom_yaw_recorded_ = false;
 
@@ -479,8 +479,19 @@ void ActionTrajectoryTracker::AlignYaw(
     // derive yaw alignment direction again
     last_yaw_align_time_ = ros::Time::now();
     // desired yaw direction should be arctan(dy, dx)
-    ultimate_yaw_des_ = atan2((msg->pose.pose.position.y - last_yaw_align_y_),
-                              (msg->pose.pose.position.x - last_yaw_align_x_));
+    ultimate_yaw_des_ =
+        std::atan2((msg->pose.pose.position.y - last_yaw_align_y_),
+                   (msg->pose.pose.position.x - last_yaw_align_x_));
+
+    // avoid oscillation when the robot moves backwards
+    if (std ::abs(ultimate_yaw_des_) > (3.14 * 0.9)) {
+      // force the ultimate_yaw_des_ to be a positive number to avoid
+      // oscillating between +pi and -pi
+      ultimate_yaw_des_ = 3.14;
+      ROS_INFO_STREAM(
+          "Robot is moving backwards, and yaw alignment is turned on...");
+    }
+
     // record x and y
     last_yaw_align_x_ = msg->pose.pose.position.x;
     last_yaw_align_y_ = msg->pose.pose.position.y;

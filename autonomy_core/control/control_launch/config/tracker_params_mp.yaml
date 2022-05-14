@@ -8,8 +8,8 @@ take_off_tracker:
 
 trajectory_tracker:
   max_pos_error: 0.75  # maximum allowed trajectory tracking error in meters (recommended value: 0.5-1.0)
-  align_yaw: false # default false
-  yaw_speed_magnitude: 0.3 # in rad/s the yaw alignment rate (recommended value: 0.1-0.3)
+  align_yaw: true # default false
+  yaw_speed_magnitude: 0.5 # in rad/s the yaw alignment rate (recommended value: 0.3-1.0)
   use_lambda: true # pose error checking
 
 trajectory_planner:

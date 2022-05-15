@@ -1,0 +1,5 @@
+- position: [24, -31, 3] # between trees, parallel to the bus area
+- position: [7, -11, 3] # between trees, parallel to the bus area
+#- position: [52, -41, 3] # above the bus area
+- position: [26, -10, 3] # close to home, no tree between this and home
+- position: [0, 0, 3]

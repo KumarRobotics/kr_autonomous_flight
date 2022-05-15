@@ -80,19 +80,15 @@ class GetWaypoints(smach.State):
 class RetryWaypoints(smach.State):
     """Retry waypoints and prepends quadrotors pose"""
 
-    def __init__(self, quad_monitor, wait_for_stop):
+    def __init__(self, quad_monitor):
         smach.State.__init__(self, outcomes=["succeeded", "multi", "failed"])
         self.quad_monitor = quad_monitor
         self.reset_pub = rospy.Publisher("reset", GM.PoseStamped, queue_size=10)
         self.num_trials = 1
         self.max_trials = quad_monitor.max_replan_trials
-        # THIS IS VERY SAFETY CRITICAL! DO NOT CHANGE UNLESS YOU ARE SURE!
-        self.wait_for_stop = wait_for_stop
 
     def execute(self, _userdata):
         # print self.quad_monitor.waypoints
-        print("[state_machine:] waiting for stopping policy to finish, wait time is: ", self.wait_for_stop, " seconds. Change this param in main_state_machine.py if needed.\n")
-        rospy.sleep(self.wait_for_stop)
         print("[state_machine:] retrying waypoints! Have tried ", self.num_trials, " times up till now. max_trials is set as ", self.max_trials, "\n")
 
         if self.num_trials >= self.max_trials:

@@ -6,10 +6,16 @@ take_off_tracker:
   min_thurst: -9.8
   epsilon: 0.01
 
+
+land_tracker: 
+  epsilon: 2.0 # landing process stops when the position command is epsilon below odom
+  vel: 0.5 # landing velocity, will hit ground with this velocity
+  acc: 2.0 # landing acceleration
+
 trajectory_tracker:
   max_pos_error: 0.75  # maximum allowed trajectory tracking error in meters (recommended value: 0.5-1.0)
-  align_yaw: false # default false
-  yaw_speed_magnitude: 0.3 # in rad/s the yaw alignment rate (recommended value: 0.1-0.3)
+  align_yaw: true # default false
+  yaw_speed_magnitude: 0.5 # in rad/s the yaw alignment rate (recommended value: 0.3-1.0)
   use_lambda: true # pose error checking
 
 trajectory_planner:
@@ -48,10 +54,10 @@ local_global_server:
   # local planning horizon will be from robot to the local voxel map boundary
   waypoint_reach_xy_threshold: 6.0 # x-y distance threshold, within which intermidiate waypoint is regarded as reached 
   final_goal_reach_xy_threshold: 5.0 # within which final waypoint is regarded as reached, this should be smaller than waypoint_reach_threshold
-  close_to_final_dist: 5 # distance-to-goal threshold, within which the velocity and acceleration checking will be turned on, -1 means no velocity checking at all
-  local_plan_timeout_duration: 1.5 # local planner timeout in seconds
-  max_local_plan_trials: 1.0 # should be set as 1 since state machine is now able to try multiple times after planner failures
-  max_horizon: 10 # defulat 5, should be larger than local_plan_timeout_duration*max_local_plan_trials*replan_rate 
+  close_to_final_dist: 6.0 # distance-to-goal threshold, should be larger than final_goal_reach_xy_threshold, within which the velocity and acceleration checking will be turned on, -1 means no velocity checking at all
+  local_plan_timeout_duration: 1.0 # local planner timeout in seconds
+  max_local_plan_trials: 2 # should be set as 1 since state machine is now able to try multiple times after planner failures
+  max_horizon: 10 # defulat 5, should be larger than local_plan_timeout_duration*max_local_plan_trials*local_replan_rate 
   global_planner_verbose: true # verbose mode, default false
   odom_frame: "quadrotor/odom" # odometry reference frame
   map_frame: "quadrotor/map" # SLAM reference frame (only for using two-reference-frame system, otherwise this should be set to be the same as odom_frame)

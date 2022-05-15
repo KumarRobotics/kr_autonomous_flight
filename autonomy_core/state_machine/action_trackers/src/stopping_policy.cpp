@@ -70,14 +70,16 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr& cmd) {
     a0_ << cmd->acceleration.x, cmd->acceleration.y, cmd->acceleration.z, 0.0;
 
     // clip a0 to lie within [-a_des_abs, a_des_abs]
-    double a_des_abs;
+    double a_des_abs = 0.0;
+
     for (int axis = 0; axis < 3; ++axis) {
+      if (axis == 0 || axis == 1) {
+        a_des_abs = a_xy_des_;
+      } else {
+        a_des_abs = a_z_des_;
+      }
+
       if (std::abs(a0_(axis)) > a_des_abs) {
-        if (axis == 0 || axis == 1) {
-          a_des_abs = a_xy_des_;
-        } else {
-          a_des_abs = a_z_des_;
-        }
         ROS_WARN_STREAM(
             "[StoppingPolicy:] initial acceleration is "
             << std::abs(a0_(axis))

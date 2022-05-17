@@ -62,11 +62,14 @@ class QuadrotorSafety(Plugin):
             "position_cmd", QM.PositionCommand, self.command_cb, queue_size=10
         )
         self.state_trigger = rospy.Publisher("state_trigger", MHL.StateTransition, queue_size=1)
+        self.replan_state_trigger = rospy.Publisher("replan_state_trigger", std_msgs.msg.String, queue_size=1)
         self.motors_pub = rospy.Publisher("motors", std_msgs.msg.Bool, queue_size=1)
 
         # normal operations
         self._widget.motors_on_push_button.pressed.connect(self._on_motors_on_pressed_empty)
         self._widget.motors_off_push_button.pressed.connect(self._on_motors_off_pressed_empty)
+        self._widget.skip_next_waypoint_push_button.pressed.connect(self._on_skip_next_waypoint_pressed_empty)
+        self._widget.reset_mission_push_button.pressed.connect(self._on_reset_mission_pressed_empty)
         self._widget.takeoff_push_button.pressed.connect(self._on_takeoff_pressed_empty)
         self._widget.landhere_push_button.pressed.connect(self._on_landhere_pressed_empty)
         # self._widget.short_push_button.pressed.connect(self.short_range_pressed)
@@ -126,15 +129,26 @@ class QuadrotorSafety(Plugin):
         self.command_count += 1
 
     def publish_string(self, string):
+        # this will be subscribed by state machine
         msg = MHL.StateTransition()
         msg.transition.data = string
         self.state_trigger.publish(msg)
+
+    def publish_replan_string(self, string):
+        # this will be subscribed by replanner
+        self.replan_state_trigger.publish(string)
 
     def _on_motors_on_pressed_empty(self):
         self.publish_string("motors_on")
 
     def _on_motors_off_pressed_empty(self):
         self.publish_string("motors_off")
+
+    def _on_reset_mission_pressed_empty(self):
+        self.publish_replan_string("reset_mission")
+
+    def _on_skip_next_waypoint_pressed_empty(self):
+        self.publish_replan_string("skip_next_waypoint")
 
     def _on_takeoff_pressed_empty(self):
         self.publish_string("takeoff")

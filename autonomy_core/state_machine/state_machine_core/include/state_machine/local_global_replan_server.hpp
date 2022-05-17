@@ -20,6 +20,8 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
 
+#include "std_msgs/String.h"
+
 // #include <tf/transform_listener.h>
 #include <traj_opt_ros/msg_traj.h>
 #include <traj_opt_ros/ros_bridge.h>
@@ -115,6 +117,7 @@ class RePlanner {
   ros::NodeHandle nh_;
   ros::Subscriber cmd_sub_;
   ros::Subscriber local_map_sub_;
+  ros::Subscriber state_trigger_sub_;
   planning_ros_msgs::VoxelMapConstPtr local_map_ptr_;
 
   // epoch is to record how many steps have been executed, the duration of one
@@ -174,6 +177,12 @@ class RePlanner {
    * @brief map callback, update local_map_ptr_
    */
   void LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr& msg);
+
+  /**
+   * @brief state trigger callback, this will execute high-level commands such
+   * as remove next waypoint, or reset mission (remove all waypoints)
+   */
+  void StateTriggerCb(const std_msgs::String::ConstPtr& msg);
 
   /**
    * @brief Goal callback function

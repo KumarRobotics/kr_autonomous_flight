@@ -393,10 +393,7 @@ void RePlanner::RunTrajectory() {
       run_client_->waitForResult(ros::Duration(tracker_timeout_dur));
   if (!tracker_finished_before_timeout) {
     ROS_ERROR("Tracker aborted or timeout!");
-    state_machine::ReplanResult abort;
-    abort.status = state_machine::ReplanResult::ABORT_FULL_MISSION;
-    active_ = false;
-    replan_server_->setAborted(abort);
+    AbortReplan();
   }
 }
 
@@ -939,6 +936,65 @@ bool RePlanner::CloseToFinal(const vec_Vec3f& original_path,
   }
 }
 
+void RePlanner::StateTriggerCb(const std_msgs::String::ConstPtr& msg) {
+  std::string requested_state = msg->data;
+
+  bool abort_full_mission = false;
+  if (requested_state == "reset_mission") {
+    ROS_WARN("Reset mission button is clicked! Now resetting the mission!");
+    abort_full_mission = true;
+    // reset waypoint index so that the user can send a new mission
+    cur_cb_waypoint_idx_ = 0;
+  } else if (requested_state == "skip_next_waypoint") {
+    ROS_WARN("Skip next waypoint button is clicked! Now skipping it...");
+
+    // if current waypoint is the last waypoint in the mission, we will
+    // abort the mission
+    if (cur_cb_waypoint_idx_ >= (pose_goals_.size() - 1)) {
+      ROS_WARN("The next waypoint is the final waypoint in the mission!!!");
+      abort_full_mission = true;
+      // reset waypoint index so that the user can send a new mission
+      cur_cb_waypoint_idx_ = 0;
+    } else {
+      ROS_WARN(
+          "Now skipping the next waypoint, the stopping policy will be called, "
+          "before re-entering the replanner and continuing to navigate to the "
+          "waypoint after next waypoint...");
+      ROS_WARN(
+          "If a new replan process is not started, it's probably due to "
+          "num_trials > max_replan_trials you set. You can just click "
+          "execute waypoint mission again to force re-start it...");
+      // else, skip the next waypoint by adding 1 to cur_cb_waypoint_idx_
+      cur_cb_waypoint_idx_++;
+      // to immediate make this in effect, we will abort current replan and have
+      // the state machine re-enter the replan
+      AbortReplan();
+    }
+  } else {
+    ROS_ERROR_STREAM(
+        "Wrong replanner state trigger information received, which is: "
+        << requested_state
+        << " , only allowed replanner state trigger msgs are "
+           "skip_next_waypoint and reset_mission. Check!!!");
+  }
+
+  if (abort_full_mission) {
+    ROS_WARN(
+        "Now aborting mission and existing replanner, stopping policy will be "
+        "called! \n If you want to restart with a new mission, click clear_all "
+        "first in the RVIZ GUI to remove existing waypoints, before publishing "
+        "new waypoints!");
+
+    // exit with abort full mission status
+    state_machine::ReplanResult abort;
+    abort.status = state_machine::ReplanResult::ABORT_FULL_MISSION;
+    active_ = false;
+    if (replan_server_->isActive()) {
+      replan_server_->setAborted(abort);
+    }
+  }
+}
+
 void RePlanner::AbortReplan(void) {
   active_ = false;
   if (replan_server_->isActive()) {
@@ -1009,6 +1065,10 @@ RePlanner::RePlanner() : nh_("~") {
   // subscriber of global path
   global_path_sub_ =
       nh_.subscribe("global_path", 1, &RePlanner::GlobalPathCb, this);
+
+  // subscriber of state transition (skip waypoint, reset mission)
+  state_trigger_sub_ = nh_.subscribe(
+      "replan_state_trigger", 1, &RePlanner::StateTriggerCb, this);
 
   // create critical bug report
   critical_.status = state_machine::ReplanResult::CRITICAL_ERROR;

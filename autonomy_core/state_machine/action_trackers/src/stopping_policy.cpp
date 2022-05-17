@@ -197,10 +197,11 @@ PositionCommand::ConstPtr StoppingPolicy::update(
       t_phase2 = 0;  // no constant acceleration phase in this case
       // update j_des so that the robot stops exactly when acc is is decreased
       // from a0 to 0
-      ROS_WARN_STREAM(
+      ROS_WARN_STREAM_THROTTLE(
+          1,
           "[Stopping policy:] Special case where phase 3 can completely stop "
           "the robot, original jerk is: "
-          << j_des_abs);
+              << j_des_abs);
       j_des_abs = pow(a0, 2) / (2 * v0_norm);
       ROS_WARN_STREAM("jerk is increased to: " << j_des_abs);
       t_phase3 = std::abs(0 - a0) / j_des_abs;  // from a0 to 0

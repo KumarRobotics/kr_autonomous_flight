@@ -81,7 +81,7 @@ class RetryWaypoints(smach.State):
     """Retry waypoints and prepends quadrotors pose"""
 
     def __init__(self, quad_monitor):
-        smach.State.__init__(self, outcomes=["succeeded", "multi", "failed"])
+        smach.State.__init__(self, outcomes=["succeeded", "failed"])
         self.quad_monitor = quad_monitor
         self.reset_pub = rospy.Publisher("reset", GM.PoseStamped, queue_size=10)
         self.num_trials = 1

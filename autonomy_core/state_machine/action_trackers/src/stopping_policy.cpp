@@ -189,7 +189,17 @@ PositionCommand::ConstPtr StoppingPolicy::update(
         std::abs((t_phase1 * avg_acc_phase1) + (t_phase3 * avg_acc_phase3));
 
     // 3 possible cases:
-    if ((-v0_dir * a0 > 0) && (pow(a0, 2) / (2 * j_des_abs) > v0_norm)) {
+    if (v0_norm < 0.5) {
+      ROS_INFO_STREAM_THROTTLE(1,
+                               "magnitude of initial velocity along axis "
+                                   << axis
+                                   << " is very small, which is: " << v0_norm
+                                   << " m/s, stopping policy directly setting "
+                                      "velocity along this axis to 0");
+      t_phase1 = 0;
+      t_phase2 = 0;
+      t_phase3 = 0;
+    } else if ((-v0_dir * a0 > 0) && (pow(a0, 2) / (2 * j_des_abs) > v0_norm)) {
       // Case 1: a0 is same direction of change of v0 (which is -v0_dir), and
       // v0_norm is smaller than a0^2 / (2*j_des_abs), this means phase 3 will
       // completely stop the robot with a jerk > j_des, ad phase 1 or phase 2

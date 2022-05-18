@@ -33,6 +33,7 @@ class CheckRePlan(smach.State):
             self,
             outcomes=[
                 "success",
+                "dynamically_infeasible",
                 "critical_error",
                 "no_path",
                 "abort_full_mission"
@@ -72,8 +73,7 @@ class RePlan(smach_ros.SimpleActionState):
         if result.status == 0:
             self.quad_monitor.replan_status = "success"
         elif result.status == 1:
-            self.quad_monitor.replan_status = "abort"
-            raise Exception("The ABORT result should no longer be in use!")
+            self.quad_monitor.replan_status = "dynamically_infeasible"
         elif result.status == 2:
             self.quad_monitor.replan_status = "no_path"
         elif result.status == 3:
@@ -83,8 +83,7 @@ class RePlan(smach_ros.SimpleActionState):
         elif result.status == 5:
             self.quad_monitor.replan_status = "abort_full_mission"
 
-        print("Final result is:", self.quad_monitor.replan_status)
-
+        print("Current replan result is:", self.quad_monitor.replan_status)
 
     def __init__(self, action_topic, quad_monitor):
         smach_ros.SimpleActionState.__init__(
@@ -120,6 +119,7 @@ class REPLANNER(smach.StateMachine):
                 CheckRePlan(quad_monitor),
                 transitions={
                     "success": "StoppingPolicySucceeded",
+                    "dynamically_infeasible": "StoppingPolicyFailed",
                     "no_path": "StoppingPolicyFailed",
                     "critical_error": "StoppingPolicyFailed",
                     "abort_full_mission": "StoppingPolicyAborted",

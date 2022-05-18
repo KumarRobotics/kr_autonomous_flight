@@ -189,7 +189,7 @@ PositionCommand::ConstPtr StoppingPolicy::update(
         std::abs((t_phase1 * avg_acc_phase1) + (t_phase3 * avg_acc_phase3));
 
     // 3 possible cases:
-    if (v0_norm < 0.5) {
+    if (v0_norm < 0.2) {
       ROS_INFO_STREAM_THROTTLE(1,
                                "magnitude of initial velocity along axis "
                                    << axis

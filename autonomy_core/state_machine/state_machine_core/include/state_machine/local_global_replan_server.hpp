@@ -250,7 +250,14 @@ class RePlanner {
   void TransformGlobalGoal();
 
   /**
-   * @brief abort the replan process
+   * @brief abort the replan process, exit with abort full mission, will transit
+   * to hover
+   */
+  void AbortFullMission(void);
+
+  /**
+   * @brief abort the replan process, exit with critical error, will transit
+   * to RetryWaypoints (i.e. re-enter the re-planner)
    */
   void AbortReplan(void);
 };

@@ -130,11 +130,12 @@ void RePlanner::ReplanGoalCb() {
     // this means continuing with previous mission
     ROS_INFO("Continuing to finish waypoints in existing mission...");
     if (pose_goals_.empty()) {
-      ROS_ERROR("++++++++++++++++++++++++++++++++++++++++++++");
-      ROS_ERROR("Existing waypoint list is empty, aborting replan!");
-      ROS_ERROR("This should not happen, check state machine or replanner!");
-      ROS_ERROR("++++++++++++++++++++++++++++++++++++++++++++");
-      AbortReplan();
+      ROS_WARN("Existing waypoint list is empty, aborting replan!");
+      ROS_WARN(
+          "This can be caused by either clicking RESET MISSION, or clicking "
+          "SKIP NEXT WAYPOINT and skipping all of your waypoints!");
+      AbortFullMission();
+      // AbortReplan();
     } else {
       // update the waypoint idx to continue executing the remaining waypoints
       // from the previous replan callback
@@ -268,11 +269,14 @@ void RePlanner::setup_replanner() {
       global_tpgoal);  // only send goal, because global plan server is
                        // subscribing to odom and use that as start
   // global initial plan timeout duration
-  bool global_finished_before_timeout =
-      global_plan_client_->waitForResult(ros::Duration(4.0));
+  double initial_global_timeout_dur = 6.0 * local_timeout_duration_;
+  bool global_finished_before_timeout = global_plan_client_->waitForResult(
+      ros::Duration(initial_global_timeout_dur));
   // check result of global plan
   if (!global_finished_before_timeout) {
-    ROS_ERROR("initial global planning timed out");
+    ROS_ERROR_STREAM(
+        "initial global planning timed out, its timeout duration is set as: "
+        << initial_global_timeout_dur);
     AbortReplan();
     return;
   }
@@ -338,8 +342,9 @@ void RePlanner::setup_replanner() {
 
   // wait for result (initial timeout duration can be large because robot is not
   // moving)
-  bool local_finished_before_timeout =
-      local_plan_client_->waitForResult(ros::Duration(2.0));
+  double initial_local_timeout_dur = local_timeout_duration_ * 2.0;
+  bool local_finished_before_timeout = local_plan_client_->waitForResult(
+      ros::Duration(initial_local_timeout_dur));
 
   // reset the counter
   // TODO(xu:) double check this is working properlly
@@ -347,8 +352,9 @@ void RePlanner::setup_replanner() {
 
   if (!local_finished_before_timeout) {
     // check result of local plan
-    ROS_ERROR("Initial local planning timed out");
-    ROS_ERROR("Initial local planning timout duration is set as 2.0");
+    ROS_ERROR_STREAM(
+        "Initial local planning timed out, its timeout duration is set as: "
+        << initial_local_timeout_dur);
     AbortReplan();
     return;
   }
@@ -945,29 +951,36 @@ void RePlanner::StateTriggerCb(const std_msgs::String::ConstPtr& msg) {
     abort_full_mission = true;
     // reset waypoint index so that the user can send a new mission
     cur_cb_waypoint_idx_ = 0;
+    pose_goals_.clear();
   } else if (requested_state == "skip_next_waypoint") {
-    ROS_WARN("Skip next waypoint button is clicked! Now skipping it...");
+    ROS_INFO("Skip next waypoint button is clicked!");
 
-    // if current waypoint is the last waypoint in the mission, we will
+    // If current waypoint is the last waypoint in the mission, we will
     // abort the mission
     if (cur_cb_waypoint_idx_ >= (pose_goals_.size() - 1)) {
-      ROS_WARN("The next waypoint is the final waypoint in the mission!!!");
+      ROS_ERROR("++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+      ROS_ERROR("++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+      ROS_ERROR(
+          "The next waypoint is the final waypoint in the mission, aborting "
+          "this full mission! \n To re-start, you have to either click CLEAR "
+          "ALL and then publish a new mission, or re-click EXECUTE WAYPOINT "
+          "MISSION (which will start over executing the existing mission)!");
+      ROS_ERROR("++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+      ROS_ERROR("++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
       abort_full_mission = true;
       // reset waypoint index so that the user can send a new mission
       cur_cb_waypoint_idx_ = 0;
+      pose_goals_.clear();
     } else {
-      ROS_WARN(
-          "Now skipping the next waypoint, the stopping policy will be called, "
-          "before re-entering the replanner and continuing to navigate to the "
-          "waypoint after next waypoint...");
-      ROS_WARN(
-          "If a new replan process is not started, it's probably due to "
-          "num_trials > max_replan_trials you set. You can just click "
-          "execute waypoint mission again to force re-start it...");
-      // else, skip the next waypoint by adding 1 to cur_cb_waypoint_idx_
+      // Else, skip the next waypoint by adding 1 to cur_cb_waypoint_idx_
+
+      // Note: If a new replan process is not started, it's probably due to
+      // num_trials > max_replan_trials you set. You can just click
+      // execute waypoint mission again to force re-start it...
+
       cur_cb_waypoint_idx_++;
       // to immediate make this in effect, we will abort current replan and have
-      // the state machine re-enter the replan
+      // the state machine re-enter the replan (after calling stopping policy)
       AbortReplan();
     }
   } else {
@@ -979,23 +992,27 @@ void RePlanner::StateTriggerCb(const std_msgs::String::ConstPtr& msg) {
   }
 
   if (abort_full_mission) {
-    ROS_WARN(
-        "Now aborting mission and existing replanner, stopping policy will be "
-        "called! \n If you want to restart with a new mission, click clear_all "
-        "first in the RVIZ GUI to remove existing waypoints, before publishing "
-        "new waypoints!");
-
-    // exit with abort full mission status
-    state_machine::ReplanResult abort;
-    abort.status = state_machine::ReplanResult::ABORT_FULL_MISSION;
-    active_ = false;
-    if (replan_server_->isActive()) {
-      replan_server_->setAborted(abort);
-    }
+    AbortFullMission();
   }
 }
 
+void RePlanner::AbortFullMission(void) {
+  // exit with abort full mission, will transit to hover
+  state_machine::ReplanResult abort;
+  abort.status = state_machine::ReplanResult::ABORT_FULL_MISSION;
+  active_ = false;
+  if (replan_server_->isActive()) {
+    replan_server_->setAborted(abort);
+  }
+  ROS_WARN(
+      "Now aborting mission and exiting replanner! \n If you want to restart "
+      "with a new mission, click CLEAR ALL first in the RVIZ GUI to remove "
+      "existing waypoints, before publishing new waypoints!");
+}
+
 void RePlanner::AbortReplan(void) {
+  // exit with critical error, will transit to RetryWaypoints (i.e. will
+  // re-enter this re-planner)
   active_ = false;
   if (replan_server_->isActive()) {
     replan_server_->setAborted(critical_);

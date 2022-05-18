@@ -946,28 +946,33 @@ void RePlanner::StateTriggerCb(const std_msgs::String::ConstPtr& msg) {
     // reset waypoint index so that the user can send a new mission
     cur_cb_waypoint_idx_ = 0;
   } else if (requested_state == "skip_next_waypoint") {
-    ROS_WARN("Skip next waypoint button is clicked! Now skipping it...");
+    ROS_INFO("Skip next waypoint button is clicked!");
 
-    // if current waypoint is the last waypoint in the mission, we will
+    // If current waypoint is the last waypoint in the mission, we will
     // abort the mission
     if (cur_cb_waypoint_idx_ >= (pose_goals_.size() - 1)) {
-      ROS_WARN("The next waypoint is the final waypoint in the mission!!!");
+      ROS_ERROR("++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+      ROS_ERROR("++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+      ROS_ERROR(
+          "The next waypoint is the final waypoint in the mission, aborting "
+          "this full mission! \n To re-start, you have to either click CLEAR "
+          "ALL and then publish a new mission, or re-click EXECUTE WAYPOINT "
+          "MISSION (which will start over executing the existing mission)!");
+      ROS_ERROR("++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+      ROS_ERROR("++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
       abort_full_mission = true;
       // reset waypoint index so that the user can send a new mission
       cur_cb_waypoint_idx_ = 0;
     } else {
-      ROS_WARN(
-          "Now skipping the next waypoint, the stopping policy will be called, "
-          "before re-entering the replanner and continuing to navigate to the "
-          "waypoint after next waypoint...");
-      ROS_WARN(
-          "If a new replan process is not started, it's probably due to "
-          "num_trials > max_replan_trials you set. You can just click "
-          "execute waypoint mission again to force re-start it...");
-      // else, skip the next waypoint by adding 1 to cur_cb_waypoint_idx_
+      // Else, skip the next waypoint by adding 1 to cur_cb_waypoint_idx_
+
+      // Note: If a new replan process is not started, it's probably due to
+      // num_trials > max_replan_trials you set. You can just click
+      // execute waypoint mission again to force re-start it...
+
       cur_cb_waypoint_idx_++;
       // to immediate make this in effect, we will abort current replan and have
-      // the state machine re-enter the replan
+      // the state machine re-enter the replan (after calling stopping policy)
       AbortReplan();
     }
   } else {
@@ -981,7 +986,7 @@ void RePlanner::StateTriggerCb(const std_msgs::String::ConstPtr& msg) {
   if (abort_full_mission) {
     ROS_WARN(
         "Now aborting mission and existing replanner, stopping policy will be "
-        "called! \n If you want to restart with a new mission, click clear_all "
+        "called! \n If you want to restart with a new mission, click CLEAR ALL "
         "first in the RVIZ GUI to remove existing waypoints, before publishing "
         "new waypoints!");
 

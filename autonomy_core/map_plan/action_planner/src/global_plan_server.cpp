@@ -1,13 +1,12 @@
 #include <action_planner/ActionPlannerConfig.h>
 #include <actionlib/server/simple_action_server.h>
 #include <eigen_conversions/eigen_msg.h>
-#include <jps/jps_planner.h>    // jps related
-#include <jps/map_util.h>       // jps related
+#include <jps/jps_planner.h>  // jps related
+#include <jps/map_util.h>     // jps related
+#include <kr_planning_msgs/PlanTwoPointAction.h>
+#include <kr_planning_msgs/VoxelMap.h>
+#include <kr_planning_rviz_plugins/data_ros_utils.h>
 #include <nav_msgs/Odometry.h>  // odometry
-#include <planning_ros_msgs/PlanTwoPointAction.h>
-#include <planning_ros_msgs/VoxelMap.h>
-#include <planning_ros_utils/data_ros_utils.h>
-#include <planning_ros_utils/primitive_ros_utils.h>
 #include <ros/ros.h>
 #include <traj_opt_ros/ros_bridge.h>
 
@@ -17,6 +16,7 @@
 #include <boost/thread/thread.hpp>
 
 #include "data_conversions.h"  // setMap, getMap, etc
+#include "primitive_ros_utils.h"
 
 using boost::irange;
 
@@ -36,7 +36,7 @@ class GlobalPlanServer {
   void odom_callback(const nav_msgs::Odometry::ConstPtr& odom);
 
   // global path recorder
-  planning_ros_msgs::Path global_path_msg_;
+  kr_planning_msgs::Path global_path_msg_;
 
   bool aborted_;
 
@@ -65,17 +65,17 @@ class GlobalPlanServer {
   // mutexes
   boost::mutex map_mtx;
   // current global map
-  planning_ros_msgs::VoxelMapConstPtr global_map_ptr_;
+  kr_planning_msgs::VoxelMapConstPtr global_map_ptr_;
 
   bool global_planner_succeeded_{false};
   bool global_plan_exist_{false};
 
   // actionlib
-  boost::shared_ptr<const planning_ros_msgs::PlanTwoPointGoal> goal_;
-  boost::shared_ptr<planning_ros_msgs::PlanTwoPointResult> result_;
+  boost::shared_ptr<const kr_planning_msgs::PlanTwoPointGoal> goal_;
+  boost::shared_ptr<kr_planning_msgs::PlanTwoPointResult> result_;
   // action lib
   std::unique_ptr<
-      actionlib::SimpleActionServer<planning_ros_msgs::PlanTwoPointAction>>
+      actionlib::SimpleActionServer<kr_planning_msgs::PlanTwoPointAction>>
       global_as_;
 
   // planner related
@@ -110,36 +110,34 @@ class GlobalPlanServer {
   /**
    * @brief map callback, update global_map_ptr_
    */
-  void globalMapCB(const planning_ros_msgs::VoxelMap::ConstPtr& msg);
+  void globalMapCB(const kr_planning_msgs::VoxelMap::ConstPtr& msg);
 
   /**
    * @brief Global planner warpper
    */
   bool global_plan_process(const MPL::Waypoint3D& start,
                            const MPL::Waypoint3D& goal,
-                           const planning_ros_msgs::VoxelMap& global_map);
+                           const kr_planning_msgs::VoxelMap& global_map);
 
   /**
    * @brief Slice map util, only used if plan with a 2d jps planner
    */
-  planning_ros_msgs::VoxelMap SliceMap(double h,
-                                       double hh,
-                                       const planning_ros_msgs::VoxelMap& map);
+  kr_planning_msgs::VoxelMap SliceMap(double h, double hh,
+                                      const kr_planning_msgs::VoxelMap& map);
 
   /**
    * @brief Increase the cost of z by dividing global map z resolution by a
    * factor, so that we can still use uniform-cost map for JPS implementation
    * while penlizing z-axis movement (only used if plan with a 3d jps planner)
    */
-  planning_ros_msgs::VoxelMap ChangeZCost(
-      const planning_ros_msgs::VoxelMap& map, int z_cost_factor = 1);
+  kr_planning_msgs::VoxelMap ChangeZCost(const kr_planning_msgs::VoxelMap& map,
+                                         int z_cost_factor = 1);
 
   /**
    * @brief clear global map position
    */
-  planning_ros_msgs::VoxelMap clear_map_position(
-      const planning_ros_msgs::VoxelMap& global_map,
-      const vec_Vec3f& positions);
+  kr_planning_msgs::VoxelMap clear_map_position(
+      const kr_planning_msgs::VoxelMap& global_map, const vec_Vec3f& positions);
 
   /**
    * @brief global planner check if outside map
@@ -148,17 +146,17 @@ class GlobalPlanServer {
 };
 
 void GlobalPlanServer::globalMapCB(
-    const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
+    const kr_planning_msgs::VoxelMap::ConstPtr& msg) {
   global_map_ptr_ = msg;
 }
 
 GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
-  path_pub_ = pnh_.advertise<planning_ros_msgs::Path>("path", 1, true);
-  global_map_cleared_pub_ = pnh_.advertise<planning_ros_msgs::VoxelMap>(
+  path_pub_ = pnh_.advertise<kr_planning_msgs::Path>("path", 1, true);
+  global_map_cleared_pub_ = pnh_.advertise<kr_planning_msgs::VoxelMap>(
       "global_voxel_map_cleared", 1, true);
 
-  global_map_sub_ = pnh_.subscribe(
-      "global_voxel_map", 2, &GlobalPlanServer::globalMapCB, this);
+  global_map_sub_ = pnh_.subscribe("global_voxel_map", 2,
+                                   &GlobalPlanServer::globalMapCB, this);
 
   ros::NodeHandle traj_planner_nh(pnh_, "trajectory_planner");
   traj_planner_nh.param("use_3d_global", use_3d_global_, false);
@@ -168,7 +166,7 @@ GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   local_global_plan_nh.param("global_planner_verbose", jps_verbose_, false);
 
   global_as_ = std::make_unique<
-      actionlib::SimpleActionServer<planning_ros_msgs::PlanTwoPointAction>>(
+      actionlib::SimpleActionServer<kr_planning_msgs::PlanTwoPointAction>>(
       pnh_, "plan_global_path", false);
   // Register goal and preempt callbacks
   global_as_->registerGoalCallback(
@@ -176,10 +174,7 @@ GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   global_as_->start();
 
   // odom callback
-  odom_sub_ = pnh_.subscribe("odom",
-                             10,
-                             &GlobalPlanServer::odom_callback,
-                             this,
+  odom_sub_ = pnh_.subscribe("odom", 10, &GlobalPlanServer::odom_callback, this,
                              ros::TransportHints().tcpNoDelay());
 
   // Set map util for jps
@@ -213,7 +208,7 @@ void GlobalPlanServer::process_all() {
 }
 
 void GlobalPlanServer::process_result(bool solved) {
-  result_ = boost::make_shared<planning_ros_msgs::PlanTwoPointResult>();
+  result_ = boost::make_shared<kr_planning_msgs::PlanTwoPointResult>();
   result_->success = solved;  // set success status
   result_->policy_status = solved ? 1 : -1;
   result_->path = global_path_msg_;
@@ -227,7 +222,7 @@ void GlobalPlanServer::process_result(bool solved) {
   }
 
   // reset goal
-  goal_ = boost::shared_ptr<planning_ros_msgs::PlanTwoPointGoal>();
+  goal_ = boost::shared_ptr<kr_planning_msgs::PlanTwoPointGoal>();
   if (global_as_->isActive()) {
     global_as_->setSucceeded(*result_);
   }
@@ -270,7 +265,7 @@ void GlobalPlanServer::process_goal() {
   }
 
   // clear start and goal
-  planning_ros_msgs::VoxelMap global_map_cleared;
+  kr_planning_msgs::VoxelMap global_map_cleared;
   vec_Vec3f positions;
   positions.push_back(start.pos);
   positions.push_back(goal.pos);
@@ -285,15 +280,15 @@ void GlobalPlanServer::process_goal() {
   process_result(global_planner_succeeded_);
 }
 
-planning_ros_msgs::VoxelMap GlobalPlanServer::clear_map_position(
-    const planning_ros_msgs::VoxelMap& global_map_original,
+kr_planning_msgs::VoxelMap GlobalPlanServer::clear_map_position(
+    const kr_planning_msgs::VoxelMap& global_map_original,
     const vec_Vec3f& positions) {
   // make a copy, not the most efficient way, but necessary because we need to
   // maintain both original and cleared maps
-  planning_ros_msgs::VoxelMap global_map_cleared;
+  kr_planning_msgs::VoxelMap global_map_cleared;
   global_map_cleared = global_map_original;
 
-  planning_ros_msgs::VoxelMap voxel_map;
+  kr_planning_msgs::VoxelMap voxel_map;
 
   // Replaced with corresponding parameter value from VoxelMsg.msg
   int8_t val_free = voxel_map.val_free;
@@ -353,15 +348,14 @@ void GlobalPlanServer::goalCB() {
 }
 
 bool GlobalPlanServer::global_plan_process(
-    const MPL::Waypoint3D& start,
-    const MPL::Waypoint3D& goal,
-    const planning_ros_msgs::VoxelMap& global_map) {
+    const MPL::Waypoint3D& start, const MPL::Waypoint3D& goal,
+    const kr_planning_msgs::VoxelMap& global_map) {
   std::string map_frame;
   map_frame = global_map.header.frame_id;
   if (use_3d_global_) {
     if (z_cost_factor_ > 1) {
       // increase the cost of z in voxel map
-      planning_ros_msgs::VoxelMap non_uniform_cost_map =
+      kr_planning_msgs::VoxelMap non_uniform_cost_map =
           ChangeZCost(global_map, z_cost_factor_);
       setMap(jps_3d_map_util_, non_uniform_cost_map);
     } else {
@@ -371,7 +365,7 @@ bool GlobalPlanServer::global_plan_process(
   } else {
     // slice the 3D map to get 2D map for path planning, at the height of
     // z-value of start point
-    planning_ros_msgs::VoxelMap global_occ_map =
+    kr_planning_msgs::VoxelMap global_occ_map =
         SliceMap(start.pos(2), global_map.resolution, global_map);
     setMap(jps_map_util_, global_occ_map);
     jps_util_->updateMap();
@@ -402,8 +396,8 @@ bool GlobalPlanServer::global_plan_process(
       path_pub_.publish(global_path_msg_);
     }
   } else {
-    if (!jps_util_->plan(
-            start.pos.topRows(2), goal.pos.topRows(2), 1.0, true)) {
+    if (!jps_util_->plan(start.pos.topRows(2), goal.pos.topRows(2), 1.0,
+                         true)) {
       // jps_util_->plan params: start, goal, eps, use_jps
       ROS_WARN("Fail to plan a 2d global path!");
       return false;
@@ -424,10 +418,10 @@ bool GlobalPlanServer::global_plan_process(
   return true;
 }
 
-planning_ros_msgs::VoxelMap GlobalPlanServer::SliceMap(
-    double h, double hh, const planning_ros_msgs::VoxelMap& map) {
+kr_planning_msgs::VoxelMap GlobalPlanServer::SliceMap(
+    double h, double hh, const kr_planning_msgs::VoxelMap& map) {
   // slice a 3D voxel map
-  planning_ros_msgs::VoxelMap voxel_map;
+  kr_planning_msgs::VoxelMap voxel_map;
   voxel_map.origin.x = map.origin.x;
   voxel_map.origin.y = map.origin.y;
   voxel_map.origin.z = 0;
@@ -459,9 +453,9 @@ planning_ros_msgs::VoxelMap GlobalPlanServer::SliceMap(
   return voxel_map;
 }
 
-planning_ros_msgs::VoxelMap GlobalPlanServer::ChangeZCost(
-    const planning_ros_msgs::VoxelMap& map, int z_cost_factor) {
-  planning_ros_msgs::VoxelMap voxel_map;
+kr_planning_msgs::VoxelMap GlobalPlanServer::ChangeZCost(
+    const kr_planning_msgs::VoxelMap& map, int z_cost_factor) {
+  kr_planning_msgs::VoxelMap voxel_map;
   voxel_map.origin.x = map.origin.x;
   voxel_map.origin.y = map.origin.y;
   voxel_map.origin.z = map.origin.z * z_cost_factor;

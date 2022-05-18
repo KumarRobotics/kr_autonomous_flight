@@ -15,9 +15,9 @@ using boost::timer::cpu_times;
 CoveragePlanner::CoveragePlanner() : nh_("/"), pnh_("~") {
   initial_polygon_publisher_ =
       nh_.advertise<geometry_msgs::PolygonStamped>("original_polygon", 1);
-  path_pub_ = nh_.advertise<planning_ros_msgs::Path>("coverage_path", 1, true);
+  path_pub_ = nh_.advertise<kr_planning_msgs::Path>("coverage_path", 1, true);
   all_points_pub_ =
-      nh_.advertise<planning_ros_msgs::Path>("all_input_points", 1, true);
+      nh_.advertise<kr_planning_msgs::Path>("all_input_points", 1, true);
   pnh_.param("input_file_path", fname_, std::string("input.txt"));
 }
 

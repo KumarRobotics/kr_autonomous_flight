@@ -1,6 +1,6 @@
 #include <eigen_conversions/eigen_msg.h>
 #include <nav_msgs/Odometry.h>
-#include <planning_ros_utils/data_ros_utils.h>
+#include <kr_planning_rviz_plugins/data_ros_utils.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Temperature.h>
 #include <sensor_msgs/point_cloud_conversion.h>
@@ -40,7 +40,7 @@ class LocalGlobalMapperNode {
    * local map)
    */
   void cropLocalMap(const Eigen::Vector3d& center_position_map,
-                     const Eigen::Vector3d& center_position_odom);
+                    const Eigen::Vector3d& center_position_odom);
 
   /**
    * @brief Lookup the transform from lidar to map frame and from lidar to odom
@@ -50,8 +50,8 @@ class LocalGlobalMapperNode {
    * @param pose_odom_lidar_ptr  Output tf from lidar to odom
    */
   void getLidarPoses(const std_msgs::Header& cloud_header,
-                      geometry_msgs::Pose* pose_map_lidar_ptr,
-                      geometry_msgs::Pose* pose_odom_lidar_ptr);
+                     geometry_msgs::Pose* pose_map_lidar_ptr,
+                     geometry_msgs::Pose* pose_odom_lidar_ptr);
 
   /**
    * @brief Adds input cloud to storage map, publishes new local map and global
@@ -92,9 +92,9 @@ class LocalGlobalMapperNode {
   std::unique_ptr<mapper::VoxelMapper> storage_voxel_mapper_;  // mapper
   // std::unique_ptr<VoxelMapper> local_voxel_mapper_;  // mapper
 
-  planning_ros_msgs::VoxelMap global_map_info_;
-  planning_ros_msgs::VoxelMap storage_map_info_;
-  planning_ros_msgs::VoxelMap local_map_info_;
+  kr_planning_msgs::VoxelMap global_map_info_;
+  kr_planning_msgs::VoxelMap storage_map_info_;
+  kr_planning_msgs::VoxelMap local_map_info_;
 
   ros::NodeHandle nh_;
   ros::Subscriber cloud_sub;

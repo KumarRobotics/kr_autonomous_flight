@@ -8,7 +8,7 @@ from multiprocessing.pool import ThreadPool
 import rospy
 import smach
 import smach_ros
-import planning_ros_msgs.msg as MHL
+import kr_planning_msgs.msg as MHL
 
 from MainStates import GetWaypoints, RetryWaypoints, WaitState, ArmDisarmMavros, PublishBoolMsgState, TrackerTransition, TakingOff, SetHomeHere, Landing
 from SwitchState import SwitchState

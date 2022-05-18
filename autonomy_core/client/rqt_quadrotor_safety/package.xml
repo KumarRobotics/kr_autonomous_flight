@@ -14,7 +14,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <run_depend>geometry_msgs</run_depend>
-  <run_depend>planning_ros_msgs</run_depend>
+  <run_depend>kr_planning_msgs</run_depend>
   <run_depend>mavros_msgs</run_depend>
   <run_depend>python-rospkg</run_depend>
   <run_depend>rostopic</run_depend>

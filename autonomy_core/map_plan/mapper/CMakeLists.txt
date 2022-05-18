@@ -7,12 +7,13 @@ find_package(
   COMPONENTS roscpp
              pcl_ros
              image_geometry
-             planning_ros_msgs
-             planning_ros_utils
+             kr_planning_msgs
+             kr_planning_rviz_plugins
              depth_image_proc
              sensor_msgs
              eigen_conversions
              tf_conversions)
+             
 find_package(Boost REQUIRED COMPONENTS timer)
 
 catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME})

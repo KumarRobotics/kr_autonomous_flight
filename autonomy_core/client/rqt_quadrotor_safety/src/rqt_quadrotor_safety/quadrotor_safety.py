@@ -18,7 +18,7 @@ except ImportError:
 from rqt_gui_py.plugin import Plugin
 
 import std_msgs.msg
-import planning_ros_msgs.msg as MHL
+import kr_planning_msgs.msg as MHL
 from nav_msgs.msg import Odometry
 import kr_mav_msgs.msg as QM
 import numpy as np

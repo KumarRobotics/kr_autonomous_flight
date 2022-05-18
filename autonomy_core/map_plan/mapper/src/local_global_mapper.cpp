@@ -4,15 +4,15 @@ LocalGlobalMapperNode::LocalGlobalMapperNode(const ros::NodeHandle& nh)
     : nh_(nh) {
   initParams();
 
-  cloud_sub = nh_.subscribe(
-      cloud_name_, 1, &LocalGlobalMapperNode::cloudCallback, this);
+  cloud_sub = nh_.subscribe(cloud_name_, 1,
+                            &LocalGlobalMapperNode::cloudCallback, this);
 
   global_map_pub =
-      nh_.advertise<planning_ros_msgs::VoxelMap>("global_voxel_map", 1, true);
+      nh_.advertise<kr_planning_msgs::VoxelMap>("global_voxel_map", 1, true);
   storage_map_pub =
-      nh_.advertise<planning_ros_msgs::VoxelMap>("storage_voxel_map", 1, true);
+      nh_.advertise<kr_planning_msgs::VoxelMap>("storage_voxel_map", 1, true);
   local_map_pub =
-      nh_.advertise<planning_ros_msgs::VoxelMap>("local_voxel_map", 1, true);
+      nh_.advertise<kr_planning_msgs::VoxelMap>("local_voxel_map", 1, true);
 
   time_pub = nh_.advertise<sensor_msgs::Temperature>("/timing/mapper", 1);
 
@@ -116,12 +116,9 @@ void LocalGlobalMapperNode::globalMapInit() {
   const double global_res = global_map_info_.resolution;
   int8_t global_val_default = 0;
   // Initialize the mapper
-  global_voxel_mapper_.reset(
-      new mapper::VoxelMapper(global_origin,
-                              global_dim_d,
-                              global_res,
-                              global_val_default,
-                              global_decay_times_to_empty_));
+  global_voxel_mapper_.reset(new mapper::VoxelMapper(
+      global_origin, global_dim_d, global_res, global_val_default,
+      global_decay_times_to_empty_));
 
   // build the array for map inflation
   global_infla_array_.clear();
@@ -156,12 +153,9 @@ void LocalGlobalMapperNode::storageMapInit() {
   const double res = storage_map_info_.resolution;
   int8_t storage_val_default = 0;
   // Initialize the mapper
-  storage_voxel_mapper_.reset(
-      new mapper::VoxelMapper(storage_origin,
-                              storage_dim_d,
-                              res,
-                              storage_val_default,
-                              local_decay_times_to_empty_));
+  storage_voxel_mapper_.reset(new mapper::VoxelMapper(
+      storage_origin, storage_dim_d, res, storage_val_default,
+      local_decay_times_to_empty_));
 }
 
 void LocalGlobalMapperNode::localInflaInit() {
@@ -191,7 +185,7 @@ void LocalGlobalMapperNode::cropLocalMap(
   local_origin_map(2) = storage_map_info_.origin.z;
 
   // core function: crop local map from the storage map
-  planning_ros_msgs::VoxelMap local_voxel_map =
+  kr_planning_msgs::VoxelMap local_voxel_map =
       storage_voxel_mapper_->getInflatedLocalMap(local_origin_map, local_dim_d);
 
   // Transform local map by moving its origin. This is because we want the
@@ -219,17 +213,15 @@ void LocalGlobalMapperNode::getLidarPoses(
     // for real robot, the point cloud frame_id may not exist in the tf tree,
     // manually defining it here.
     // TODO(xu): make this automatic
-    auto tf_map_lidar = tf_listener.LookupTransform(
-        map_frame_, lidar_frame_, cloud_header.stamp);
-    auto tf_odom_lidar = tf_listener.LookupTransform(
-        odom_frame_, lidar_frame_, cloud_header.stamp);
+    auto tf_map_lidar = tf_listener.LookupTransform(map_frame_, lidar_frame_,
+                                                    cloud_header.stamp);
+    auto tf_odom_lidar = tf_listener.LookupTransform(odom_frame_, lidar_frame_,
+                                                     cloud_header.stamp);
     if ((!tf_map_lidar) || (!tf_odom_lidar)) {
       ROS_WARN(
           "[Mapper real-robot:] Failed to get transform (either from %s to %s; "
           "or from %s to %s)",
-          lidar_frame_.c_str(),
-          map_frame_.c_str(),
-          lidar_frame_.c_str(),
+          lidar_frame_.c_str(), map_frame_.c_str(), lidar_frame_.c_str(),
           odom_frame_.c_str());
       return;
     } else {
@@ -245,15 +237,13 @@ void LocalGlobalMapperNode::getLidarPoses(
       ROS_WARN(
           "[Mapper simulation:] Failed to get transform map to lidar (from %s "
           "to %s)",
-          cloud_header.frame_id.c_str(),
-          map_frame_.c_str());
+          cloud_header.frame_id.c_str(), map_frame_.c_str());
       return;
     } else if (!tf_odom_lidar) {
       ROS_WARN(
           "[Mapper simulation:] Failed to get transform odom to lidar (from %s "
           "to %s)",
-          cloud_header.frame_id.c_str(),
-          odom_frame_.c_str());
+          cloud_header.frame_id.c_str(), odom_frame_.c_str());
       return;
     } else {
       *pose_map_lidar_ptr = *tf_map_lidar;
@@ -262,8 +252,7 @@ void LocalGlobalMapperNode::getLidarPoses(
   }
 }
 
-void LocalGlobalMapperNode::processCloud(
-    const sensor_msgs::PointCloud& cloud) {
+void LocalGlobalMapperNode::processCloud(const sensor_msgs::PointCloud& cloud) {
   if ((storage_voxel_mapper_ == nullptr) || (global_voxel_mapper_ == nullptr)) {
     ROS_WARN("voxel mapper not initialized!");
     return;
@@ -298,14 +287,14 @@ void LocalGlobalMapperNode::processCloud(
 
   timer.start();
   // local raytracing using lidar position in the map frame (not odom frame)
-  storage_voxel_mapper_->addCloud(
-      pts, T_map_lidar, local_infla_array_, false, local_max_raycast_);
+  storage_voxel_mapper_->addCloud(pts, T_map_lidar, local_infla_array_, false,
+                                  local_max_raycast_);
   ROS_DEBUG("[storage map addCloud]: %f",
             static_cast<double>(timer.elapsed().wall) / 1e6);
 
   // get and publish storage map (this is very slow)
   if (pub_storage_map_) {
-    planning_ros_msgs::VoxelMap storage_map =
+    kr_planning_msgs::VoxelMap storage_map =
         storage_voxel_mapper_->getInflatedMap();
     storage_map.header.frame_id = map_frame_;
     storage_map_pub.publish(storage_map);
@@ -322,8 +311,8 @@ void LocalGlobalMapperNode::processCloud(
   ++counter_;
   if (counter_ % update_interval_ == 0) {
     timer.start();
-    global_voxel_mapper_->addCloud(
-        pts, T_map_lidar, global_infla_array_, false, global_max_raycast_);
+    global_voxel_mapper_->addCloud(pts, T_map_lidar, global_infla_array_, false,
+                                   global_max_raycast_);
     ROS_DEBUG("[global map addCloud]: %f",
               static_cast<double>(timer.elapsed().wall) / 1e6);
     timer.start();
@@ -339,14 +328,14 @@ void LocalGlobalMapperNode::processCloud(
               static_cast<double>(timer.elapsed().wall) / 1e6);
 
     counter_ = 0;
-    planning_ros_msgs::VoxelMap global_map =
+    kr_planning_msgs::VoxelMap global_map =
         global_voxel_mapper_->getInflatedMap();
     global_map.header.frame_id = map_frame_;
     global_map_pub.publish(global_map);
   }
 
-  ROS_DEBUG_THROTTLE(
-      1, "[Mapper]: Got cloud, number of points: [%zu]", cloud.points.size());
+  ROS_DEBUG_THROTTLE(1, "[Mapper]: Got cloud, number of points: [%zu]",
+                     cloud.points.size());
 }
 
 void LocalGlobalMapperNode::cloudCallback(

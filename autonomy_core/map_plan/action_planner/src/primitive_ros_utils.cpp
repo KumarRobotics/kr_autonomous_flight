@@ -1,13 +1,13 @@
-#include "planning_ros_utils/primitive_ros_utils.h"
+#include "primitive_ros_utils.h"
 
-planning_ros_msgs::Primitive toPrimitiveROSMsg(const MPL::Primitive2D &pr,
+kr_planning_msgs::Primitive toPrimitiveROSMsg(const MPL::Primitive2D &pr,
                                                double z) {
   const auto cx = pr.pr(0).coeff();
   const auto cy = pr.pr(1).coeff();
   const auto cyaw = pr.pr_yaw().coeff();
   Vec6f cz = Vec6f::Zero();
   cz[5] = z;
-  planning_ros_msgs::Primitive msg;
+  kr_planning_msgs::Primitive msg;
   msg.cx.resize(6);
   msg.cy.resize(6);
   msg.cz.resize(6);
@@ -23,12 +23,12 @@ planning_ros_msgs::Primitive toPrimitiveROSMsg(const MPL::Primitive2D &pr,
   return msg;
 }
 
-planning_ros_msgs::Primitive toPrimitiveROSMsg(const MPL::Primitive3D &pr) {
+kr_planning_msgs::Primitive toPrimitiveROSMsg(const MPL::Primitive3D &pr) {
   const auto cx = pr.pr(0).coeff();
   const auto cy = pr.pr(1).coeff();
   const auto cz = pr.pr(2).coeff();
   const auto cyaw = pr.pr_yaw().coeff();
-  planning_ros_msgs::Primitive msg;
+  kr_planning_msgs::Primitive msg;
   msg.cx.resize(6);
   msg.cy.resize(6);
   msg.cz.resize(6);
@@ -44,27 +44,27 @@ planning_ros_msgs::Primitive toPrimitiveROSMsg(const MPL::Primitive3D &pr) {
   return msg;
 }
 
-planning_ros_msgs::PrimitiveArray toPrimitiveArrayROSMsg(
+kr_planning_msgs::PrimitiveArray toPrimitiveArrayROSMsg(
     const vec_E<MPL::Primitive2D> &prs, double z) {
-  planning_ros_msgs::PrimitiveArray msg;
+  kr_planning_msgs::PrimitiveArray msg;
   for (const auto &pr : prs) {
     msg.primitives.push_back(toPrimitiveROSMsg(pr, z));
   }
   return msg;
 }
 
-planning_ros_msgs::PrimitiveArray toPrimitiveArrayROSMsg(
+kr_planning_msgs::PrimitiveArray toPrimitiveArrayROSMsg(
     const vec_E<MPL::Primitive3D> &prs) {
-  planning_ros_msgs::PrimitiveArray msg;
+  kr_planning_msgs::PrimitiveArray msg;
   for (const auto &pr : prs) {
     msg.primitives.push_back(toPrimitiveROSMsg(pr));
   }
   return msg;
 }
 
-planning_ros_msgs::Trajectory toTrajectoryROSMsg(const MPL::Trajectory2D &traj,
+kr_planning_msgs::Trajectory toTrajectoryROSMsg(const MPL::Trajectory2D &traj,
                                                  double z) {
-  planning_ros_msgs::Trajectory msg;
+  kr_planning_msgs::Trajectory msg;
   for (const auto &seg : traj.segs)
     msg.primitives.push_back(toPrimitiveROSMsg(seg, z));
 
@@ -82,9 +82,9 @@ planning_ros_msgs::Trajectory toTrajectoryROSMsg(const MPL::Trajectory2D &traj,
   return msg;
 }
 
-planning_ros_msgs::Trajectory toTrajectoryROSMsg(
+kr_planning_msgs::Trajectory toTrajectoryROSMsg(
     const MPL::Trajectory3D &traj) {
-  planning_ros_msgs::Trajectory msg;
+  kr_planning_msgs::Trajectory msg;
   for (const auto &seg : traj.segs)
     msg.primitives.push_back(toPrimitiveROSMsg(seg));
 
@@ -102,7 +102,7 @@ planning_ros_msgs::Trajectory toTrajectoryROSMsg(
   return msg;
 }
 
-MPL::Primitive2D toPrimitive2D(const planning_ros_msgs::Primitive &pr) {
+MPL::Primitive2D toPrimitive2D(const kr_planning_msgs::Primitive &pr) {
   Vec6f cx, cy, cyaw;
   for (int i = 0; i < 6; i++) {
     cx(i) = pr.cx[i];
@@ -117,7 +117,7 @@ MPL::Primitive2D toPrimitive2D(const planning_ros_msgs::Primitive &pr) {
   return MPL::Primitive2D(cs, pr.t, MPL::SNPxYAW);
 }
 
-MPL::Primitive3D toPrimitive3D(const planning_ros_msgs::Primitive &pr) {
+MPL::Primitive3D toPrimitive3D(const kr_planning_msgs::Primitive &pr) {
   Vec6f cx, cy, cz, cyaw;
   for (int i = 0; i < 6; i++) {
     cx(i) = pr.cx[i];
@@ -135,7 +135,7 @@ MPL::Primitive3D toPrimitive3D(const planning_ros_msgs::Primitive &pr) {
 }
 
 MPL::Trajectory2D toTrajectory2D(
-    const planning_ros_msgs::Trajectory &traj_msg) {
+    const kr_planning_msgs::Trajectory &traj_msg) {
   // Constructor from ros msg
   MPL::Trajectory2D traj;
   traj.taus.push_back(0);
@@ -168,7 +168,7 @@ MPL::Trajectory2D toTrajectory2D(
 }
 
 MPL::Trajectory3D toTrajectory3D(
-    const planning_ros_msgs::Trajectory &traj_msg) {
+    const kr_planning_msgs::Trajectory &traj_msg) {
   MPL::Trajectory3D traj;
   traj.taus.push_back(0);
   for (const auto &it : traj_msg.primitives) {

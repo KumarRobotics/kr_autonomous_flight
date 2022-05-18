@@ -15,17 +15,17 @@ find_package(
              pcl_ros
              mapper
              jps3d
-             planning_ros_utils
-             planning_ros_msgs
+             kr_planning_rviz_plugins
+             kr_planning_msgs
              traj_opt_ros
              dynamic_reconfigure
              motion_primitive_library)
 
 generate_dynamic_reconfigure_options(cfg/ActionPlanner.cfg)
 
-catkin_package(CATKIN_DEPENDS dynamic_reconfigure planning_ros_msgs)
+catkin_package(CATKIN_DEPENDS dynamic_reconfigure kr_planning_msgs)
 
-add_library(${PROJECT_NAME} src/data_conversions.cpp)
+add_library(${PROJECT_NAME} src/data_conversions.cpp src/primitive_ros_utils.cpp)
 target_include_directories(${PROJECT_NAME} PUBLIC src ${catkin_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES})
 

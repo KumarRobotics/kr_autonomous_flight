@@ -10,7 +10,6 @@ jobs:
       with:
         github_token: ${{ secrets.KR_AUTONOMOUS_FLIGHT_TOKEN_REVIEWDOG }}
         reporter: github-pr-check
-        flags: --exclude=autonomy_core/map_plan/jps3d/include/jps/graph_search.h --exclude autonomy_core/map_plan/jps3d/src/graph_search.cpp --exclude autonomy_core/map_plan/planning_ros_utils/src/planning_rviz_plugins/map_display.h --exclude autonomy_core/state_machine/action_trackers/src/take_off_tracker.cpp --exclude autonomy_core/map_plan/mpl/include/mpl_basis/lambda.h --exclude autonomy_core/map_plan/mpl/include/mpl_planner/env_base.h --exclude autonomy_core/map_plan/mpl/src/env_base.cpp --exclude autonomy_core/map_plan/mpl/src/env_map.cpp
         filter: "-whitespace/comments,-whitespace/indent,-build/include_order,-whitespace/ending_newline"
         #   ,-readability/braces\
         #   ,-whitespace/braces\

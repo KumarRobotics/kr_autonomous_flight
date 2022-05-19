@@ -1,11 +1,13 @@
 #include <action_planner/ActionPlannerConfig.h>
 #include <actionlib/server/simple_action_server.h>
+#include <data_conversions.h>  // setMap, getMap, etc
 #include <eigen_conversions/eigen_msg.h>
+#include <kr_planning_msgs/PlanTwoPointAction.h>
+#include <kr_planning_rviz_plugins/data_ros_utils.h>
 #include <mpl_basis/trajectory.h>
 #include <mpl_collision/map_util.h>
 #include <mpl_planner/map_planner.h>
-#include <kr_planning_msgs/PlanTwoPointAction.h>
-#include <kr_planning_rviz_plugins/data_ros_utils.h>
+#include <primitive_ros_utils.h>
 #include <ros/console.h>
 #include <ros/ros.h>
 #include <traj_opt_ros/ros_bridge.h>
@@ -14,9 +16,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
-
-#include "primitive_ros_utils.h"
-#include "data_conversions.h"  // setMap, getMap, etc
 
 using boost::irange;
 
@@ -260,7 +259,7 @@ void LocalPlanServer::process_result(const MPL::Trajectory3D& traj,
       geometry_msgs::Pose p_fin;
       geometry_msgs::Twist v_fin, a_fin, j_fin;
 
-      MPL::Waypoint3D pt_f = traj.evaluate(endt * double(i + 1));
+      MPL::Waypoint3D pt_f = traj.evaluate(endt * static_cast<double>(i + 1));
       // check if evaluation is successful, if not, set result->success to be
       // false! (if failure case, a null Waypoint is returned)
       if ((pt_f.pos(0) == 0) && (pt_f.pos(1) == 0) && (pt_f.pos(2) == 0) &&
@@ -269,7 +268,7 @@ void LocalPlanServer::process_result(const MPL::Trajectory3D& traj,
         ROS_WARN_STREAM(
             "waypoint evaluation failed, set result->success to be false");
         ROS_WARN_STREAM("trajectory total time:" << traj.total_t_);
-        ROS_WARN_STREAM("evaluating at:" << endt * double(i + 1));
+        ROS_WARN_STREAM("evaluating at:" << endt * static_cast<double>(i + 1));
       }
 
       p_fin.position.x = pt_f.pos(0), p_fin.position.y = pt_f.pos(1),
@@ -386,7 +385,7 @@ kr_planning_msgs::VoxelMap LocalPlanServer::clear_map_position(
   local_map_cleared = local_map_original;
 
   kr_planning_msgs::VoxelMap voxel_map;
-  
+
   // Replaced with corresponding parameter value from VoxelMsg.msg
   int8_t val_free = voxel_map.val_free;
   ROS_WARN_ONCE("Value free is set as %d", val_free);

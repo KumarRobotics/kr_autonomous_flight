@@ -1,5 +1,6 @@
 #include <action_planner/ActionPlannerConfig.h>
 #include <actionlib/server/simple_action_server.h>
+#include <data_conversions.h>  // setMap, getMap, etc
 #include <eigen_conversions/eigen_msg.h>
 #include <jps/jps_planner.h>  // jps related
 #include <jps/map_util.h>     // jps related
@@ -7,6 +8,7 @@
 #include <kr_planning_msgs/VoxelMap.h>
 #include <kr_planning_rviz_plugins/data_ros_utils.h>
 #include <nav_msgs/Odometry.h>  // odometry
+#include <primitive_ros_utils.h>
 #include <ros/ros.h>
 #include <traj_opt_ros/ros_bridge.h>
 
@@ -14,9 +16,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
-
-#include "data_conversions.h"  // setMap, getMap, etc
-#include "primitive_ros_utils.h"
 
 using boost::irange;
 
@@ -122,7 +121,8 @@ class GlobalPlanServer {
   /**
    * @brief Slice map util, only used if plan with a 2d jps planner
    */
-  kr_planning_msgs::VoxelMap SliceMap(double h, double hh,
+  kr_planning_msgs::VoxelMap SliceMap(double h,
+                                      double hh,
                                       const kr_planning_msgs::VoxelMap& map);
 
   /**
@@ -155,8 +155,8 @@ GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   global_map_cleared_pub_ = pnh_.advertise<kr_planning_msgs::VoxelMap>(
       "global_voxel_map_cleared", 1, true);
 
-  global_map_sub_ = pnh_.subscribe("global_voxel_map", 2,
-                                   &GlobalPlanServer::globalMapCB, this);
+  global_map_sub_ = pnh_.subscribe(
+      "global_voxel_map", 2, &GlobalPlanServer::globalMapCB, this);
 
   ros::NodeHandle traj_planner_nh(pnh_, "trajectory_planner");
   traj_planner_nh.param("use_3d_global", use_3d_global_, false);
@@ -174,7 +174,10 @@ GlobalPlanServer::GlobalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   global_as_->start();
 
   // odom callback
-  odom_sub_ = pnh_.subscribe("odom", 10, &GlobalPlanServer::odom_callback, this,
+  odom_sub_ = pnh_.subscribe("odom",
+                             10,
+                             &GlobalPlanServer::odom_callback,
+                             this,
                              ros::TransportHints().tcpNoDelay());
 
   // Set map util for jps
@@ -348,7 +351,8 @@ void GlobalPlanServer::goalCB() {
 }
 
 bool GlobalPlanServer::global_plan_process(
-    const MPL::Waypoint3D& start, const MPL::Waypoint3D& goal,
+    const MPL::Waypoint3D& start,
+    const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& global_map) {
   std::string map_frame;
   map_frame = global_map.header.frame_id;
@@ -396,8 +400,8 @@ bool GlobalPlanServer::global_plan_process(
       path_pub_.publish(global_path_msg_);
     }
   } else {
-    if (!jps_util_->plan(start.pos.topRows(2), goal.pos.topRows(2), 1.0,
-                         true)) {
+    if (!jps_util_->plan(
+            start.pos.topRows(2), goal.pos.topRows(2), 1.0, true)) {
       // jps_util_->plan params: start, goal, eps, use_jps
       ROS_WARN("Fail to plan a 2d global path!");
       return false;

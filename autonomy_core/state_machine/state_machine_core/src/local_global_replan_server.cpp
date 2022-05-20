@@ -599,7 +599,19 @@ void RePlanner::update_status() {
           (dist_cmd_to_goal <= final_waypoint_threshold_)) {
         // finished_replanning_ is set as true if this is the final waypoint
         finished_replanning_ = true;
-        ROS_INFO_STREAM_THROTTLE(
+        ROS_WARN_STREAM_THROTTLE(
+            1.0,
+            "Final waypoint reached according to x and y positions! The "
+            "distance threshold is set as: "
+                << final_waypoint_threshold_ << " Total " << pose_goals_.size()
+                << " waypoints received");
+        ROS_WARN_STREAM_THROTTLE(
+            1.0,
+            "Final waypoint reached according to x and y positions! The "
+            "distance threshold is set as: "
+                << final_waypoint_threshold_ << " Total " << pose_goals_.size()
+                << " waypoints received");
+        ROS_WARN_STREAM_THROTTLE(
             1.0,
             "Final waypoint reached according to x and y positions! The "
             "distance threshold is set as: "
@@ -608,7 +620,37 @@ void RePlanner::update_status() {
       } else if (cur_cb_waypoint_idx_ < (pose_goals_.size() - 1)) {
         // take the next waypoint if the intermidiate waypoint is reached
         cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
-        ROS_INFO_STREAM(
+        ROS_WARN_STREAM(
+            "Intermidiate waypoint reached according to x and y positions, "
+            "continue to the next waypoint, "
+            "whose index is: "
+            << cur_cb_waypoint_idx_
+            << "The distance threshold is set as:" << waypoint_threshold_);
+        ROS_WARN_STREAM(
+            "Intermidiate waypoint reached according to x and y positions, "
+            "continue to the next waypoint, "
+            "whose index is: "
+            << cur_cb_waypoint_idx_
+            << "The distance threshold is set as:" << waypoint_threshold_);
+        ROS_WARN_STREAM(
+            "Intermidiate waypoint reached according to x and y positions, "
+            "continue to the next waypoint, "
+            "whose index is: "
+            << cur_cb_waypoint_idx_
+            << "The distance threshold is set as:" << waypoint_threshold_);
+        ROS_WARN_STREAM(
+            "Intermidiate waypoint reached according to x and y positions, "
+            "continue to the next waypoint, "
+            "whose index is: "
+            << cur_cb_waypoint_idx_
+            << "The distance threshold is set as:" << waypoint_threshold_);
+        ROS_WARN_STREAM(
+            "Intermidiate waypoint reached according to x and y positions, "
+            "continue to the next waypoint, "
+            "whose index is: "
+            << cur_cb_waypoint_idx_
+            << "The distance threshold is set as:" << waypoint_threshold_);
+        ROS_WARN_STREAM(
             "Intermidiate waypoint reached according to x and y positions, "
             "continue to the next waypoint, "
             "whose index is: "

@@ -228,8 +228,8 @@ def main():
             "EnterReplanner",
             Replanner.REPLANNER(quad_tracker, wait_for_stop),
             transitions={
-                "succeeded": "Hover", # stay hovering
-                # "succeeded": "LandingRequest", # land automatically
+                #  "succeeded": "Hover", # stay hovering
+                "succeeded": "LandingRequest", # land automatically
                 "failed": "RetryMPWaypoints"
             },
         )

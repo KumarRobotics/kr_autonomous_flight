@@ -33,17 +33,17 @@ class CheckRePlan(smach.State):
             self,
             outcomes=[
                 "success",
+                "dynamically_infeasible",
                 "critical_error",
-                "abort",
                 "no_path",
-                "abort_full_mission",
+                "abort_full_mission"
             ],
         )
         self.quad_monitor = quad_monitor
 
     def execute(self, _userdata):
-        if self.quad_monitor.abort:
-            return "abort"
+        # if self.quad_monitor.abort:
+        #     return "abort"
         if self.quad_monitor.replan_status is None:
             return "critical_error"
         return self.quad_monitor.replan_status
@@ -72,24 +72,18 @@ class RePlan(smach_ros.SimpleActionState):
     def result_cb(self, _userdata, status, result):
         if result.status == 0:
             self.quad_monitor.replan_status = "success"
-            self.quad_monitor.abort = False
         elif result.status == 1:
-            self.quad_monitor.replan_status = "abort"
-            self.quad_monitor.abort = True
+            self.quad_monitor.replan_status = "dynamically_infeasible"
         elif result.status == 2:
             self.quad_monitor.replan_status = "no_path"
-            self.quad_monitor.abort = True
         elif result.status == 3:
             self.quad_monitor.replan_status = "critical_error"
-            self.quad_monitor.abort = True
         elif result.status == 4:
             raise Exception("The IN_PROGRESS result should have been disabled!")
         elif result.status == 5:
             self.quad_monitor.replan_status = "abort_full_mission"
-            self.quad_monitor.abort = True
 
-        print("Final result is:", self.quad_monitor.replan_status)
-
+        print("Current replan result is:", self.quad_monitor.replan_status)
 
     def __init__(self, action_topic, quad_monitor):
         smach_ros.SimpleActionState.__init__(
@@ -103,7 +97,7 @@ class REPLANNER(smach.StateMachine):
         return True
 
     def __init__(self, quad_monitor, wait_for_stop):
-        smach.StateMachine.__init__(self, outcomes=["succeeded", "failed"])
+        smach.StateMachine.__init__(self, outcomes=["succeeded", "failed", "aborted"])
         self.quad_monitor = quad_monitor
         with self:
             smach.StateMachine.add('TrajTransitionMP', TrackerTransition("trackers_manager/transition","action_trackers/ActionTrajectoryTracker", quad_monitor),
@@ -125,10 +119,10 @@ class REPLANNER(smach.StateMachine):
                 CheckRePlan(quad_monitor),
                 transitions={
                     "success": "StoppingPolicySucceeded",
-                    "abort": "StoppingPolicyFailed",
+                    "dynamically_infeasible": "StoppingPolicyFailed",
                     "no_path": "StoppingPolicyFailed",
-                    "abort_full_mission": "StoppingPolicyFailed",
                     "critical_error": "StoppingPolicyFailed",
+                    "abort_full_mission": "StoppingPolicyAborted",
                 },
             )
 
@@ -151,7 +145,7 @@ class REPLANNER(smach.StateMachine):
             )
 
 
-            # If failed, exit replanner with "failed" outcome
+            # If failed, exit replanner with "failed" outcome, the state machine may re-start replanning
             smach.StateMachine.add(
                 "StoppingPolicyFailed",
                 TrackerTransition(
@@ -167,4 +161,24 @@ class REPLANNER(smach.StateMachine):
                 "StoppingPolicyDoneFailed",
                 StoppingPolicyDone(quad_monitor, wait_for_stop),
                 transitions={"done": "failed"},
+            )
+
+
+
+            # If aborted, exit replanner with "aborted" outcome, the state machine will enter hover mode, and will NOT re-start replanning
+            smach.StateMachine.add(
+                "StoppingPolicyAborted",
+                TrackerTransition(
+                    "trackers_manager/transition", "action_trackers/StoppingPolicy", quad_monitor
+                ),
+                transitions={
+                    "succeeded": "StoppingPolicyDoneAborted",
+                    "aborted": "StoppingPolicyDoneAborted",
+                    "preempted": "StoppingPolicyDoneAborted",
+                },
+            )
+            smach.StateMachine.add(
+                "StoppingPolicyDoneAborted",
+                StoppingPolicyDone(quad_monitor, wait_for_stop),
+                transitions={"done": "aborted"},
             )

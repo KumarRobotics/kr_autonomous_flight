@@ -3,6 +3,7 @@ kr_mav_control/
 mrsl_quadrotor/
 msckf_vio/
 ouster_example/
+waypoint_navigation_plugin/
 
 #===========
 # C++

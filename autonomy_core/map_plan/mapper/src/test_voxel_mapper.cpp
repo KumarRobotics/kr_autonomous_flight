@@ -41,8 +41,6 @@ protected:
     std::unique_ptr<mapper::VoxelMapper> p_test_mapper_;
     Eigen::Vector3d point{1, 2, 3};
     mapper::vec_Vec3i neighbors;
-    std::chrono::time_point<std::chrono::steady_clock> start, end;
-    std::chrono::duration<float> duration;
 };
 
 TEST_F(VoxelMapperTest, TestGetMap)

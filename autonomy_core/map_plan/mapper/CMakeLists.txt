@@ -24,3 +24,35 @@ target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES})
 
 add_executable(local_global_mapper src/local_global_mapper.cpp)
 target_link_libraries(local_global_mapper PUBLIC ${PROJECT_NAME} Boost::timer)
+
+
+#----------------------------------------------------------------------------------
+# Add testing with GoogleTest
+# Should update the zip file to the most recent Git commit hash of the GoogleTest version
+#include(FetchContent)
+#FetchContent_Declare(
+#    googletest
+#    URL https://github.com/google/googletest/archive/8d51dc50eb7e7698427fed81b85edad0e032112e.zip
+#)
+#
+## For Windows: Prevent overriding the parent project's compiler/linker settings
+#set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+#FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+
+add_executable(
+    test_voxel_mapper
+    src/test_voxel_mapper.cpp
+)
+
+target_link_libraries(
+    test_voxel_mapper PUBLIC
+    ${PROJECT_NAME}
+    gtest_main
+)
+
+include(GoogleTest)
+gtest_discover_tests(test_voxel_mapper)
+
+

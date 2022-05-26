@@ -28,17 +28,6 @@ target_link_libraries(local_global_mapper PUBLIC ${PROJECT_NAME} Boost::timer)
 
 #----------------------------------------------------------------------------------
 # Add testing with GoogleTest
-# Should update the zip file to the most recent Git commit hash of the GoogleTest version
-#include(FetchContent)
-#FetchContent_Declare(
-#    googletest
-#    URL https://github.com/google/googletest/archive/8d51dc50eb7e7698427fed81b85edad0e032112e.zip
-#)
-#
-## For Windows: Prevent overriding the parent project's compiler/linker settings
-#set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-#FetchContent_MakeAvailable(googletest)
-
 enable_testing()
 
 add_executable(

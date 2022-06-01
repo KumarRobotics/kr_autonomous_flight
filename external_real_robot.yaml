@@ -8,4 +8,4 @@ repositories:
   ouster_decoder:
     type: git
     url: http://github.com/KumarRobotics/ouster_decoder.git
-    version: main
+    version: d66b52d9941647f459c31f81a344c6e9dc77ab34

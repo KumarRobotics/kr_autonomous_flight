@@ -5,7 +5,8 @@
  */
 void RePlanner::GlobalPathCb(const kr_planning_msgs::Path& path) {
   global_path_.clear();
-  global_path_ = ros_to_path(path);  // extract the global path information
+  global_path_ = kr_planning_rviz_plugins::ros_to_path(
+      path);  // extract the global path information
 }
 
 void RePlanner::EpochCb(const std_msgs::Int64& msg) {
@@ -282,7 +283,7 @@ void RePlanner::setup_replanner() {
   }
   auto global_result = global_plan_client_->getResult();
   if (global_result->success) {
-    global_path_ = ros_to_path(
+    global_path_ = kr_planning_rviz_plugins::ros_to_path(
         global_result->path);  // extract the global path information
     ROS_WARN("initial global plan succeeded!");
   } else {
@@ -459,7 +460,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
                                 &local_tpgoal.a_init,
                                 &local_tpgoal.j_init);
   Vec3f start_pos;
-  start_pos = pose_to_eigen(local_tpgoal.p_init);
+  start_pos = kr_planning_rviz_plugins::pose_to_eigen(local_tpgoal.p_init);
 
   // Replan step 1: Global plan
   // ########################################################################################################
@@ -770,7 +771,8 @@ vec_Vec3f RePlanner::PathCropIntersect(const vec_Vec3f& path) {
   }
 
   // publish for visualization
-  kr_planning_msgs::Path local_path_msg_ = path_to_ros(cropped_path);
+  kr_planning_msgs::Path local_path_msg_ =
+      kr_planning_rviz_plugins::path_to_ros(cropped_path);
   local_path_msg_.header.frame_id = map_frame_;
   cropped_path_pub_.publish(local_path_msg_);
 
@@ -815,7 +817,7 @@ vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f& path_original) {
   map_to_odom.orientation.z = transformStamped.transform.rotation.z;
 
   // TF transform from the map frame to odom frame
-  auto map_to_odom_tf = toTF(map_to_odom);
+  auto map_to_odom_tf = kr_planning_rviz_plugins::toTF(map_to_odom);
   Vec3f waypoint_wrt_map;
 
   vec_Vec3f path_wrt_map;
@@ -826,7 +828,8 @@ vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f& path_original) {
   }
 
   // publish transformed global path for visualization
-  kr_planning_msgs::Path path_wrt_map_msg = path_to_ros(path_wrt_map);
+  kr_planning_msgs::Path path_wrt_map_msg =
+      kr_planning_rviz_plugins::path_to_ros(path_wrt_map);
   path_wrt_map_msg.header.frame_id = map_frame_;
   global_path_wrt_map_pub_.publish(path_wrt_map_msg);
   return path_wrt_map;
@@ -1033,8 +1036,8 @@ RePlanner::RePlanner() : nh_("~") {
   cropped_path_pub_ =
       priv_nh.advertise<kr_planning_msgs::Path>("cropped_local_path", 1, true);
 
-  global_path_wrt_map_pub_ = priv_nh.advertise<kr_planning_msgs::Path>(
-      "global_path_wrt_map", 1, true);
+  global_path_wrt_map_pub_ =
+      priv_nh.advertise<kr_planning_msgs::Path>("global_path_wrt_map", 1, true);
 
   priv_nh.param("max_horizon", max_horizon_, 5);
   priv_nh.param("crop_radius", crop_radius_, 10.0);

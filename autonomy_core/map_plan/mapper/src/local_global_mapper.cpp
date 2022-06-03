@@ -4,8 +4,8 @@ LocalGlobalMapperNode::LocalGlobalMapperNode(const ros::NodeHandle& nh)
     : nh_(nh) {
   initParams();
 
-  cloud_sub = nh_.subscribe(cloud_name_, 1,
-                            &LocalGlobalMapperNode::cloudCallback, this);
+  cloud_sub = nh_.subscribe(
+      cloud_name_, 1, &LocalGlobalMapperNode::cloudCallback, this);
 
   global_map_pub =
       nh_.advertise<kr_planning_msgs::VoxelMap>("global_voxel_map", 1, true);
@@ -116,9 +116,12 @@ void LocalGlobalMapperNode::globalMapInit() {
   const double global_res = global_map_info_.resolution;
   int8_t global_val_default = 0;
   // Initialize the mapper
-  global_voxel_mapper_.reset(new mapper::VoxelMapper(
-      global_origin, global_dim_d, global_res, global_val_default,
-      global_decay_times_to_empty_));
+  global_voxel_mapper_.reset(
+      new mapper::VoxelMapper(global_origin,
+                              global_dim_d,
+                              global_res,
+                              global_val_default,
+                              global_decay_times_to_empty_));
 
   // build the array for map inflation
   global_infla_array_.clear();
@@ -153,9 +156,12 @@ void LocalGlobalMapperNode::storageMapInit() {
   const double res = storage_map_info_.resolution;
   int8_t storage_val_default = 0;
   // Initialize the mapper
-  storage_voxel_mapper_.reset(new mapper::VoxelMapper(
-      storage_origin, storage_dim_d, res, storage_val_default,
-      local_decay_times_to_empty_));
+  storage_voxel_mapper_.reset(
+      new mapper::VoxelMapper(storage_origin,
+                              storage_dim_d,
+                              res,
+                              storage_val_default,
+                              local_decay_times_to_empty_));
 }
 
 void LocalGlobalMapperNode::localInflaInit() {
@@ -213,15 +219,17 @@ void LocalGlobalMapperNode::getLidarPoses(
     // for real robot, the point cloud frame_id may not exist in the tf tree,
     // manually defining it here.
     // TODO(xu): make this automatic
-    auto tf_map_lidar = tf_listener.LookupTransform(map_frame_, lidar_frame_,
-                                                    cloud_header.stamp);
-    auto tf_odom_lidar = tf_listener.LookupTransform(odom_frame_, lidar_frame_,
-                                                     cloud_header.stamp);
+    auto tf_map_lidar = tf_listener.LookupTransform(
+        map_frame_, lidar_frame_, cloud_header.stamp);
+    auto tf_odom_lidar = tf_listener.LookupTransform(
+        odom_frame_, lidar_frame_, cloud_header.stamp);
     if ((!tf_map_lidar) || (!tf_odom_lidar)) {
       ROS_WARN(
           "[Mapper real-robot:] Failed to get transform (either from %s to %s; "
           "or from %s to %s)",
-          lidar_frame_.c_str(), map_frame_.c_str(), lidar_frame_.c_str(),
+          lidar_frame_.c_str(),
+          map_frame_.c_str(),
+          lidar_frame_.c_str(),
           odom_frame_.c_str());
       return;
     } else {
@@ -237,13 +245,15 @@ void LocalGlobalMapperNode::getLidarPoses(
       ROS_WARN(
           "[Mapper simulation:] Failed to get transform map to lidar (from %s "
           "to %s)",
-          cloud_header.frame_id.c_str(), map_frame_.c_str());
+          cloud_header.frame_id.c_str(),
+          map_frame_.c_str());
       return;
     } else if (!tf_odom_lidar) {
       ROS_WARN(
           "[Mapper simulation:] Failed to get transform odom to lidar (from %s "
           "to %s)",
-          cloud_header.frame_id.c_str(), odom_frame_.c_str());
+          cloud_header.frame_id.c_str(),
+          odom_frame_.c_str());
       return;
     } else {
       *pose_map_lidar_ptr = *tf_map_lidar;
@@ -262,8 +272,10 @@ void LocalGlobalMapperNode::processCloud(const sensor_msgs::PointCloud& cloud) {
   geometry_msgs::Pose pose_odom_lidar;
   getLidarPoses(cloud.header, &pose_map_lidar, &pose_odom_lidar);
 
-  const Eigen::Affine3d T_map_lidar = toTF(pose_map_lidar);
-  const Eigen::Affine3d T_odom_lidar = toTF(pose_odom_lidar);
+  const Eigen::Affine3d T_map_lidar =
+      kr_planning_rviz_plugins::toTF(pose_map_lidar);
+  const Eigen::Affine3d T_odom_lidar =
+      kr_planning_rviz_plugins::toTF(pose_odom_lidar);
 
   // This is the lidar position in the odom frame, used for raytracing &
   // cropping local map
@@ -283,12 +295,13 @@ void LocalGlobalMapperNode::processCloud(const sensor_msgs::PointCloud& cloud) {
   double min_range = 0.75;  // points within this distance will be discarded
   double min_range_squared;
   min_range_squared = min_range * min_range;
-  const auto pts = cloud_to_vec_filter(cloud, min_range_squared);
+  const auto pts =
+      kr_planning_rviz_plugins::cloud_to_vec_filter(cloud, min_range_squared);
 
   timer.start();
   // local raytracing using lidar position in the map frame (not odom frame)
-  storage_voxel_mapper_->addCloud(pts, T_map_lidar, local_infla_array_, false,
-                                  local_max_raycast_);
+  storage_voxel_mapper_->addCloud(
+      pts, T_map_lidar, local_infla_array_, false, local_max_raycast_);
   ROS_DEBUG("[storage map addCloud]: %f",
             static_cast<double>(timer.elapsed().wall) / 1e6);
 
@@ -311,8 +324,8 @@ void LocalGlobalMapperNode::processCloud(const sensor_msgs::PointCloud& cloud) {
   ++counter_;
   if (counter_ % update_interval_ == 0) {
     timer.start();
-    global_voxel_mapper_->addCloud(pts, T_map_lidar, global_infla_array_, false,
-                                   global_max_raycast_);
+    global_voxel_mapper_->addCloud(
+        pts, T_map_lidar, global_infla_array_, false, global_max_raycast_);
     ROS_DEBUG("[global map addCloud]: %f",
               static_cast<double>(timer.elapsed().wall) / 1e6);
     timer.start();
@@ -334,8 +347,8 @@ void LocalGlobalMapperNode::processCloud(const sensor_msgs::PointCloud& cloud) {
     global_map_pub.publish(global_map);
   }
 
-  ROS_DEBUG_THROTTLE(1, "[Mapper]: Got cloud, number of points: [%zu]",
-                     cloud.points.size());
+  ROS_DEBUG_THROTTLE(
+      1, "[Mapper]: Got cloud, number of points: [%zu]", cloud.points.size());
 }
 
 void LocalGlobalMapperNode::cloudCallback(

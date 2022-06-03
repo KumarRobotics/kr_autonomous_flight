@@ -14,6 +14,10 @@ using vec_Vec3d = AlignedVector<Eigen::Vector3d>;
 using vec_Vec3i = AlignedVector<Eigen::Vector3i>;
 
 class VoxelMapper {
+  // Making test class and tests friends of VoxelMapper class to be able to acces private methods
+  // and members
+  friend class VoxelMapperTest;
+  friend class VoxelMapperTest_TestAllocate_Test;
  public:
   /**
    * @brief Simple constructor

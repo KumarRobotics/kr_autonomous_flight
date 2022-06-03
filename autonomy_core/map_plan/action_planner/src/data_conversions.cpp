@@ -10,21 +10,21 @@ void setMap(const std::shared_ptr<MPL::VoxelMapUtil>& map_util,
 }
 
 void getMap(const std::shared_ptr<MPL::VoxelMapUtil>& map_util,
-            kr_planning_msgs::VoxelMap& map) {
+            kr_planning_msgs::VoxelMap* map) {
   Vec3f ori = map_util->getOrigin();
   Vec3i dim = map_util->getDim();
   double res = map_util->getRes();
 
-  map.origin.x = ori(0);
-  map.origin.y = ori(1);
-  map.origin.z = ori(2);
+  map->origin.x = ori(0);
+  map->origin.y = ori(1);
+  map->origin.z = ori(2);
 
-  map.dim.x = dim(0);
-  map.dim.y = dim(1);
-  map.dim.z = dim(2);
-  map.resolution = res;
+  map->dim.x = dim(0);
+  map->dim.y = dim(1);
+  map->dim.z = dim(2);
+  map->resolution = res;
 
-  map.data = map_util->getMap();
+  map->data = map_util->getMap();
 }
 
 void setMap(const std::shared_ptr<JPS::VoxelMapUtil>& map_util,
@@ -35,21 +35,21 @@ void setMap(const std::shared_ptr<JPS::VoxelMapUtil>& map_util,
 }
 
 void getMap(const std::shared_ptr<JPS::VoxelMapUtil>& map_util,
-            kr_planning_msgs::VoxelMap& map) {
+            kr_planning_msgs::VoxelMap* map) {
   Vec3f ori = map_util->getOrigin();
   Vec3i dim = map_util->getDim();
   double res = map_util->getRes();
 
-  map.origin.x = ori(0);
-  map.origin.y = ori(1);
-  map.origin.z = ori(2);
+  map->origin.x = ori(0);
+  map->origin.y = ori(1);
+  map->origin.z = ori(2);
 
-  map.dim.x = dim(0);
-  map.dim.y = dim(1);
-  map.dim.z = dim(2);
-  map.resolution = res;
+  map->dim.x = dim(0);
+  map->dim.y = dim(1);
+  map->dim.z = dim(2);
+  map->resolution = res;
 
-  map.data = map_util->getMap();
+  map->data = map_util->getMap();
 }
 
 void setMap(const std::shared_ptr<JPS::OccMapUtil>& map_util,
@@ -60,21 +60,21 @@ void setMap(const std::shared_ptr<JPS::OccMapUtil>& map_util,
 }
 
 void getMap(const std::shared_ptr<JPS::OccMapUtil>& map_util,
-            kr_planning_msgs::VoxelMap& map) {
+            kr_planning_msgs::VoxelMap* map) {
   Vec2f ori = map_util->getOrigin();
   Vec2i dim = map_util->getDim();
   double res = map_util->getRes();
 
-  map.origin.x = ori(0);
-  map.origin.y = ori(1);
-  map.origin.z = 0;
+  map->origin.x = ori(0);
+  map->origin.y = ori(1);
+  map->origin.z = 0;
 
-  map.dim.x = dim(0);
-  map.dim.y = dim(1);
-  map.dim.z = 1;
-  map.resolution = res;
+  map->dim.x = dim(0);
+  map->dim.y = dim(1);
+  map->dim.z = 1;
+  map->resolution = res;
 
-  map.data = map_util->getMap();
+  map->data = map_util->getMap();
 }
 
 kr_planning_msgs::VoxelMap sliceMap(const kr_planning_msgs::VoxelMap& map,

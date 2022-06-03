@@ -10,19 +10,19 @@ void setMap(const std::shared_ptr<MPL::VoxelMapUtil>& map_util,
             const kr_planning_msgs::VoxelMap& msg);
 
 void getMap(const std::shared_ptr<MPL::VoxelMapUtil>& map_util,
-            kr_planning_msgs::VoxelMap& map);
+            kr_planning_msgs::VoxelMap* map);
 
 void setMap(const std::shared_ptr<JPS::VoxelMapUtil>& map_util,
             const kr_planning_msgs::VoxelMap& msg);
 
 void getMap(const std::shared_ptr<JPS::VoxelMapUtil>& map_util,
-            kr_planning_msgs::VoxelMap& map);
+            kr_planning_msgs::VoxelMap* map);
 
 void setMap(const std::shared_ptr<JPS::OccMapUtil>& map_util,
             const kr_planning_msgs::VoxelMap& msg);
 
 void getMap(const std::shared_ptr<JPS::OccMapUtil>& map_util,
-            kr_planning_msgs::VoxelMap& map);
+            kr_planning_msgs::VoxelMap* map);
 
 // NOTE: This function is the same as getInflatedOccMap function in
 // voxel_mapper.cpp, should merge them.

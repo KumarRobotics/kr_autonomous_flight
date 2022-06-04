@@ -488,9 +488,9 @@ vec_Vec3i VoxelMapper::rayTrace(const Eigen::Vector3d& pt1,
 }
 
 Eigen::Vector3i VoxelMapper::floatToInt(const Eigen::Vector3d& pt) {
-  return Eigen::Vector3i(std::round((pt(0) - origin_d_(0)) / res_),
-                         std::round((pt(1) - origin_d_(1)) / res_),
-                         std::round((pt(2) - origin_d_(2)) / res_));
+  return Eigen::Vector3i(std::floor((pt(0) - origin_d_(0)) / res_),
+                         std::floor((pt(1) - origin_d_(1)) / res_),
+                         std::floor((pt(2) - origin_d_(2)) / res_));
 }
 
 Eigen::Vector3d VoxelMapper::intToFloat(const Eigen::Vector3i& pn) {

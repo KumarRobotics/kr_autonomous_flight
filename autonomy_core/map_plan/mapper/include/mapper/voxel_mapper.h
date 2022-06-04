@@ -163,7 +163,7 @@ class VoxelMapper {
   Eigen::Affine3d lidar_rot_;
 
   /// Map resolution
-  float res_;
+  double res_;
   /// Map object, it is a 3D array
   boost::multi_array<int8_t, 3> map_;
   /// Inflated map object, it is a 3D array

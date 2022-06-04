@@ -18,6 +18,7 @@ class VoxelMapper {
   // and members
   friend class VoxelMapperTest;
   friend class VoxelMapperTest_TestAllocate_Test;
+  friend class VoxelMapperTest_TestDecayLocalCloud_Test;
  public:
   /**
    * @brief Simple constructor

@@ -4,6 +4,7 @@
 
 #include <Eigen/Geometry>
 #include <boost/multi_array.hpp>
+#include <gtest/gtest_prod.h>
 
 namespace mapper {
 
@@ -17,8 +18,8 @@ class VoxelMapper {
   // Making test class and tests friends of VoxelMapper class to be able to acces private methods
   // and members
   friend class VoxelMapperTest;
-  friend class VoxelMapperTest_TestAllocate_Test;
-  friend class VoxelMapperTest_TestDecayLocalCloud_Test;
+  FRIEND_TEST(VoxelMapperTest, TestAllocateRelocate);
+  FRIEND_TEST(VoxelMapperTest, TestDecayLocalCloud);
  public:
   /**
    * @brief Simple constructor

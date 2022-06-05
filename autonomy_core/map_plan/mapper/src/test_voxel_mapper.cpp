@@ -1,8 +1,7 @@
 #include <iostream>
 #include <gtest/gtest.h>
-#include <memory>
 #include <cmath>
-#include <chrono>
+#include <memory>
 #include <planning_ros_msgs/VoxelMap.h>
 #include "mapper/voxel_mapper.h"
 
@@ -15,41 +14,43 @@ namespace mapper
 class VoxelMapperTest : public testing::Test
 {
 protected:
-    // Google test needs to create objects of this test fixture and it calls the default constructor
-    VoxelMapperTest();
-    VoxelMapperTest(double x_orig, double y_orig, double z_orig, int x_dim, int y_dim, int z_dim,
-                    double res, int decay_times);
+    void SetUp() override;
 
-    const double x_origin_; 
-    const double y_origin_; 
-    const double z_origin_; 
-    const int x_dim_;
-    const int y_dim_;
-    const int z_dim_;
-    const double resolution_;
-    const int decay_times_;
+    double x_origin_;
+    double y_origin_;
+    double z_origin_;
+    int x_dim_;
+    int y_dim_;
+    int z_dim_;
+    double resolution_;
+    int8_t val_default_;
+    int8_t val_occ_;
+    int8_t val_even_;
+    int8_t val_add_;
+    int decay_times_;
 
     // This is the VoxelMapper object that is used for all the tests
     std::unique_ptr<mapper::VoxelMapper> p_test_mapper_;
-
-    // Timing variables to measure method callback performance
-    std::chrono::time_point<std::chrono::steady_clock> time_start, time_end;
 };
 
-
-/*** Defining the methods in the VoxelMapperTest class defintion ***/
-VoxelMapperTest::VoxelMapperTest()
-    :VoxelMapperTest(-100, -100, -5, 200, 200, 10, 0.5, 30) {}
-
-VoxelMapperTest::VoxelMapperTest(double x_orig, double y_orig, double z_orig,
-                                 int x_dim, int y_dim, int z_dim, double res, int decay_times)
-    : x_origin_(x_orig), y_origin_(y_orig), z_origin_(z_orig),
-      x_dim_(x_dim), y_dim_(y_dim), z_dim_(z_dim),
-      resolution_(res), decay_times_(decay_times)
+void VoxelMapperTest::SetUp()
 {
-    const Eigen::Vector3d origin(x_origin_, y_origin_, z_origin_);
-    const Eigen::Vector3d dimensions(x_dim_, y_dim_, z_dim_);
-    p_test_mapper_.reset(new mapper::VoxelMapper(origin, dimensions, resolution_, 0, decay_times_));
+    x_origin_ = -100;
+    y_origin_ = -100;
+    z_origin_ = -5;
+    x_dim_ = 200;
+    y_dim_ = 200;
+    z_dim_ = 10;
+    resolution_ = 0.5;
+    val_default_ = 0;
+    decay_times_ = 30;
+    Eigen::Vector3d origin(x_origin_, y_origin_, z_origin_);
+    Eigen::Vector3d dimensions(x_dim_, y_dim_, z_dim_);
+    p_test_mapper_.reset( new mapper::VoxelMapper(origin, dimensions, resolution_, val_default_,
+                                                  decay_times_));
+    val_occ_ = p_test_mapper_->val_occ;
+    val_even_ = p_test_mapper_->val_even;
+    val_add_ = p_test_mapper_->val_add;
 }
 
 
@@ -62,24 +63,15 @@ VoxelMapperTest::VoxelMapperTest(double x_orig, double y_orig, double z_orig,
  * we could access it directly via friendship to verify the correct initialization of allocate(),
  * but this test should not depend on the data type of the map_ variable; for this reason, we use
  * the getMap() method to check the status of the map. In the first three assertions, we check that
- * the map is created with the correct dimensions. In the second portion we check that relocating is
- * working properly.
+ * the map is created with the correct dimensions.
  */
-TEST_F(VoxelMapperTest, TestAllocate)
+TEST_F(VoxelMapperTest, TestAllocateDimensions)
 {
-    /*****  PART1: Test that map is created with correct dimensions  *****/
     // Creating voxel mapper object with same parameters as global_voxel_mapper in source file:
     // local_global_mapper.cpp
     Eigen::Vector3d origin(-100, -100, -5);
     Eigen::Vector3d dimensions(200, 200, 10);
-
-    time_start = std::chrono::steady_clock::now();
     p_test_mapper_.reset(new mapper::VoxelMapper(origin, dimensions, 0.5, 0, 30));
-    time_end = std::chrono::steady_clock::now();
-    std::cout << "CALLBACK Duration (Constructor): " <<
-        std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_start).count()
-        << "us" << std::endl;
-
     EXPECT_EQ(p_test_mapper_->getMap().data.size(), 3200000);
 
     // Creating voxel mapper object with same parameters as storage_voxel_mapper in source file:
@@ -94,14 +86,14 @@ TEST_F(VoxelMapperTest, TestAllocate)
     dimensions = Eigen::Vector3d(10, 10, 10);
     p_test_mapper_.reset(new mapper::VoxelMapper(origin, dimensions, 0.1, 0, 30));
     EXPECT_EQ(p_test_mapper_->getMap().data.size(), 1000000);
+}
 
-
-    /*****  PART2: Now test whether the relocation is working  *****/
-    // Create voxel mapper object
-    origin = Eigen::Vector3d(-100, -100, -5);
-    dimensions = Eigen::Vector3d(200, 200, 10);
-    p_test_mapper_.reset(new mapper::VoxelMapper(origin, dimensions, 0.5, 0, 30));
-
+/**
+ * @brief Similar to TestAllocateDimensions but here we test that the relocating of the map is
+ * working properly. 
+ */
+TEST_F(VoxelMapperTest, TestAllocateRelocate)
+{
     // Mark all voxels as occupied. This original map, in world coordinates, ranges from:
     // x: -100 to 100
     // y: -100 to 100
@@ -111,8 +103,7 @@ TEST_F(VoxelMapperTest, TestAllocate)
     // y: 200 voxels from -100 to 0 and 200 voxels from 0 to 100
     // z: 10 voxels from -5 to 0 and 10 voxels from 0 to 5
     int num_voxels = 3200000;
-    std::fill(p_test_mapper_->map_.data(), p_test_mapper_->map_.data() + num_voxels,
-              p_test_mapper_->val_occ);
+    std::fill(p_test_mapper_->map_.data(), p_test_mapper_->map_.data() + num_voxels, val_occ_);
 
     // Relocating map in the positive direction in all three axes centered at (0,0,0) and
     // reducing x-dim and y-dim by 50. With the same resolution this means 100 less voxels in each
@@ -120,22 +111,16 @@ TEST_F(VoxelMapperTest, TestAllocate)
     Eigen::Vector3d new_origin(0, 0, 0);
     Eigen::Vector3d new_dimensions(150, 150, 10);
     // True means that the relocating actually happened
-    time_start = std::chrono::steady_clock::now();
-    bool allocated = p_test_mapper_->allocate(new_dimensions, new_origin);
-    time_end = std::chrono::steady_clock::now();
-    std::cout << "CALLBACK Duration (allocate): " <<
-        std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_start).count()
-        << "us" << std::endl;
-    
-    EXPECT_TRUE(allocated);
+    EXPECT_TRUE(p_test_mapper_->allocate(new_dimensions, new_origin));
+
     planning_ros_msgs::VoxelMap relocated_map = p_test_mapper_->getMap();
 
     // Create the ground truth voxel map to compare the relocated map to
     planning_ros_msgs::VoxelMap gt_voxel_map;
-    int dim_x = 150 / 0.5;     // new map should have 300 voxels in x dimension
-    int dim_y = 150 / 0.5;     // new map should have 300 voxels in y dimension
-    int dim_z = 10 / 0.5;      // new map should have 20 voxels in z dimension
-    gt_voxel_map.data.resize(dim_x * dim_y * dim_z, p_test_mapper_->val_default);
+    int dim_x = 150 / resolution_;     // new map should have 300 voxels in x dimension
+    int dim_y = 150 / resolution_;     // new map should have 300 voxels in y dimension
+    int dim_z = 10 / resolution_;      // new map should have 20 voxels in z dimension
+    gt_voxel_map.data.resize(dim_x * dim_y * dim_z, val_default_);
 
     // Sections with overlap between the previous origin-dimensions and the new origin-dimensions
     // should be marked as obstacles while all other voxels should have the default value.
@@ -155,7 +140,7 @@ TEST_F(VoxelMapperTest, TestAllocate)
             for (int z = 0; z < 10; z++)
             {
                 int idx = x + 300 * y + 300 * 300 * z;
-                gt_voxel_map.data[idx] = p_test_mapper_->val_occ;
+                gt_voxel_map.data[idx] = val_occ_;
             }
         }
     }
@@ -190,15 +175,10 @@ TEST_F(VoxelMapperTest, TestDecayLocalCloud)
     // Now decay the voxels that are in the range of 9.8 in all three axes around (0, 0, 0)
     Eigen::Vector3d position(0, 0, 0);
     double max_range = 9.8;
-    time_start = std::chrono::steady_clock::now();
     for (int i = 0; i < num_calls; i++)
     {
         p_test_mapper_->decayLocalCloud(position, max_range);
     }
-    time_end = std::chrono::steady_clock::now();
-    std::cout << "CALLBACK Duration (decayLocalCloud): " <<
-        std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_start).count()
-        << "us" << std::endl;
 
     planning_ros_msgs::VoxelMap decayed_map = p_test_mapper_->getMap();
 
@@ -253,15 +233,21 @@ TEST_F(VoxelMapperTest, TestAddCloud)
     double max_range = 30.0;
     vec_Vec3d lidar_points;
 
-    // Add 3 points for all voxels in the range -30 to in all 3 axes. Some will be discarded
+    // Number of points need for one scan to mark voxel as occupied
+    int num_points = (val_occ_ - val_even_) / val_add_;
+
+    // Add 3 points for all voxels in the range -30 to 30 in all 3 axes. Some will be discarded
     // and only a sperical shape of voxels around (-10, -5, -1) should be marked as occupied
-    for (double x = -30; x <= 30; x+=0.5)
+    for (int x = 0; x <= 120; x++)
     {
-        for (double y = -30; y <= 30; y+=0.5)
+        for (int y = 0; y <= 120; y++)
         {
-            for (double z = -30; z <= 30; z+=0.5)
+            for (int z = 0; z <= 120; z++)
             {
-                Eigen::Vector3d point(x, y, z);
+                double real_x = -30 + x * 0.5;
+                double real_y = -30 + y * 0.5;
+                double real_z = -30 + z * 0.5;
+                Eigen::Vector3d point(real_x, real_y, real_z);
                 for (int n = 0; n < 3; n++)
                 {
                     lidar_points.push_back(point);
@@ -277,12 +263,7 @@ TEST_F(VoxelMapperTest, TestAddCloud)
     neighbors.push_back(Eigen::Vector3i(0, -1, 0));
     neighbors.push_back(Eigen::Vector3i(0, 1, 0));
 
-    time_start = std::chrono::steady_clock::now();
     p_test_mapper_->addCloud(lidar_points, t_map_lidar, neighbors, false, max_range);
-    time_end = std::chrono::steady_clock::now();
-    std::cout << "CALLBACK Duration (addCloud): " <<
-        std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_start).count()
-        << "us" << std::endl;
     planning_ros_msgs::VoxelMap processed_map = p_test_mapper_->getMap();
     planning_ros_msgs::VoxelMap processed_inflated_map = p_test_mapper_->getInflatedMap();
 
@@ -292,8 +273,8 @@ TEST_F(VoxelMapperTest, TestAddCloud)
     int x_dim = x_dim_ / resolution_;
     int y_dim = y_dim_ / resolution_;
     int z_dim = z_dim_ / resolution_;
-    gt_voxel_map.data.resize(x_dim * y_dim * z_dim, gt_voxel_map.val_default);
-    gt_inflated_voxel_map.data.resize(x_dim * y_dim * z_dim, gt_voxel_map.val_default);
+    gt_voxel_map.data.resize(x_dim * y_dim * z_dim, val_default_);
+    gt_inflated_voxel_map.data.resize(x_dim * y_dim * z_dim, val_default_);
 
     // Fill the voxels that should be occupied
     for (int x = 0; x < x_dim; x++)
@@ -302,8 +283,8 @@ TEST_F(VoxelMapperTest, TestAddCloud)
         {
             for (int z = 0; z < z_dim; z++)
             {
-                Eigen::Vector3d voxel_pos = Eigen::Vector3d(x, y, z) * 0.5 +
-                                            Eigen::Vector3d(-100, -100, -5);  
+                Eigen::Vector3d voxel_pos = Eigen::Vector3d(x, y, z) * resolution_ +
+                                            Eigen::Vector3d(x_origin_, y_origin_, z_origin_);
                 if ((voxel_pos - lidar_pos).norm() <= max_range)
                 {
                     int idx = x + x_dim * y + x_dim * y_dim * z;
@@ -349,19 +330,8 @@ TEST_F(VoxelMapperTest, TestAddCloud)
  */
 TEST_F(VoxelMapperTest, TestGetInflatedMap)
 {
-    time_start = std::chrono::steady_clock::now();
     planning_ros_msgs::VoxelMap normal_map = p_test_mapper_->getMap();
-    time_end = std::chrono::steady_clock::now();
-    std::cout << "CALLBACK Duration (getMap): " <<
-        std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_start).count()
-        << "us" << std::endl;
-
-    time_start = std::chrono::steady_clock::now();
     planning_ros_msgs::VoxelMap inflated_map = p_test_mapper_->getInflatedMap();
-    time_end = std::chrono::steady_clock::now();
-    std::cout << "CALLBACK Duration (getInflatedMap): " <<
-        std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_start).count()
-        << "us" << std::endl;
 
     int num_voxels = 3200000;
     ASSERT_EQ(normal_map.data.size(), num_voxels);
@@ -388,19 +358,14 @@ TEST_F(VoxelMapperTest, TestGetInflatedLocalMap)
     Eigen::Vector3d origin(75, 25, 2.5);
     Eigen::Vector3d dimensions(100, 100, 10);
     
-    time_start = std::chrono::steady_clock::now();
     planning_ros_msgs::VoxelMap local_map = p_test_mapper_->getInflatedLocalMap(origin, dimensions);
-    time_end = std::chrono::steady_clock::now();
-    std::cout << "CALLBACK Duration (getInflatedLocalMap): " <<
-        std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_start).count()
-        << "us" << std::endl;
 
     // Create the ground truth voxel map to compare it to the local map
     planning_ros_msgs::VoxelMap gt_voxel_map;
     int dim_x = dimensions(0) / resolution_;
     int dim_y = dimensions(1) / resolution_;
     int dim_z = dimensions(2) / resolution_;
-    gt_voxel_map.data.resize(dim_x * dim_y * dim_z, gt_voxel_map.val_occ);
+    gt_voxel_map.data.resize(dim_x * dim_y * dim_z, val_occ_);
 
     for (int x = 0; x < 50; x++)        // 200 - 150 = 50
     {
@@ -409,7 +374,7 @@ TEST_F(VoxelMapperTest, TestGetInflatedLocalMap)
             for (int z = 0; z < 5; z++) // 10 - 5 = 5
             {
                 int idx = x + dim_x * y + dim_x * dim_y * z;
-                gt_voxel_map.data[idx] = gt_voxel_map.val_default;
+                gt_voxel_map.data[idx] = val_default_;
             }
         }
     }

@@ -10,7 +10,7 @@ This is the autonomous flight code stack used at KumarRobotics, providing a comp
 ![Docker Build State_machine](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-state-machine.yaml/badge.svg)
 ![Docker Build Sim](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-sim.yaml/badge.svg)
 
-## High-level Code Structure 
+## High-level Code Structure
 ![alt text](https://github.com/KumarRobotics/kr_autonomous_flight/blob/master/docs/autonomy_stack_pipeline.png)
 
 ## Documentation and Instructions
@@ -44,7 +44,7 @@ If you use our code in your work, please cite:
 ```
 
 ```
-@inproceedings{mohta2018experiments,
+@article{mohta2018experiments,
   title={Experiments in fast, autonomous, gps-denied quadrotor flight},
   author={Mohta, Kartik and Sun, Ke and Liu, Sikang and Watterson, Michael and Pfrommer, Bernd and Svacha, James and Mulgaonkar, Yash and Taylor, Camillo Jose and Kumar, Vijay},
   booktitle={2018 IEEE International Conference on Robotics and Automation (ICRA)},
@@ -55,15 +55,18 @@ If you use our code in your work, please cite:
 ```
 
 ```
-@inproceedings{liu2022large,
-title={Large-scale Autonomous Flight with Real-time Semantic SLAM under Dense Forest Canopy},
-author={Liu, Xu and Nardari, Guilherme V and Ojeda, Fernando Cladera and Tao, Yuezhan and Zhou, Alex and Donnelly, Thomas and Qu, Chao and Chen, Steven W and Romero, Roseli AF and Taylor, Camillo J and Kumar, Vijay},
-journal={IEEE Robotics and Automation Letters (RA-L)},
-year={2022}
+@article{liu2022large,
+  title={Large-Scale Autonomous Flight With Real-Time Semantic SLAM Under Dense Forest Canopy},
+  author={Liu, Xu and Nardari, Guilherme V. and Ojeda, Fernando Cladera and Tao, Yuezhan and Zhou, Alex and Donnelly, Thomas and Qu, Chao and Chen, Steven W. and Romero, Roseli A. F. and Taylor, Camillo J. and Kumar, Vijay},
+  journal={IEEE Robotics and Automation Letters},
+  year={2022},
+  volume={7},
+  number={2},
+  pages={5512-5519},
 }
 ```
 
-## Acknowledgement 
+## Acknowledgement
 This is a multi-year project. We gratefully acknowledge contributions from our current members and lab alumni. The contributors can be found in the papers listed above. In addition, [Laura Jarin-Lipschitz](https://github.com/ljarin), [Justin Thomas](https://github.com/justinthomas) also contributed to this work. We also thank our [funding agencies](https://www.kumarrobotics.org/research/).
 
 ## License

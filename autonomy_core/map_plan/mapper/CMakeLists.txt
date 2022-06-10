@@ -30,18 +30,7 @@ target_link_libraries(local_global_mapper PUBLIC ${PROJECT_NAME} Boost::timer)
 # Add testing with GoogleTest
 enable_testing()
 
-add_executable(
-    test_voxel_mapper
-    src/test_voxel_mapper.cpp
-)
-
-target_link_libraries(
-    test_voxel_mapper PUBLIC
-    ${PROJECT_NAME}
-    gtest_main
-)
-
-include(GoogleTest)
-gtest_discover_tests(test_voxel_mapper)
+catkin_add_gtest(test_voxel_mapper test/test_voxel_mapper.cpp)
+target_link_libraries(test_voxel_mapper ${catkin_LIBRARIES} ${PROJECT_NAME})
 
 

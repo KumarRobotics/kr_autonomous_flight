@@ -33,4 +33,10 @@ enable_testing()
 catkin_add_gtest(test_voxel_mapper test/test_voxel_mapper.cpp)
 target_link_libraries(test_voxel_mapper ${catkin_LIBRARIES} ${PROJECT_NAME})
 
+#----------------------------------------------------------------------------------
+# Add microbenchmarking with Google Benchmark
+find_package(benchmark REQUIRED)
+add_executable(benchmarking test/benchmark_voxel_mapper.cpp)
+target_link_libraries(benchmarking benchmark::benchmark ${PROJECT_NAME})
+
 

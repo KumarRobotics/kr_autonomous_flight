@@ -7,22 +7,13 @@ import json
 def callback(data):
     x = json.loads(data.data)
     with open('ouster_metadata_parsed.json', 'w') as f:
-        json.dump(x, f, ensure_ascii=False, indent=4)    
-        #  json.dump(data.data, f)
+        # Dump metadata into json
+        json.dump(x, f, ensure_ascii=False, indent=4)
     print("metadata saved")
-    
+
 def listener():
-
-    # In ROS, nodes are uniquely named. If two nodes with the same
-    # name are launched, the previous one is kicked off. The
-    # anonymous=True flag means that rospy will choose a unique
-    # name for our 'listener' node so that multiple listeners can
-    # run simultaneously.
-    rospy.init_node('listener', anonymous=True)
-
+    rospy.init_node('parse_ouster_metadata', anonymous=True)
     rospy.Subscriber("/os_node/metadata", String, callback)
-
-    # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
 
 if __name__ == '__main__':

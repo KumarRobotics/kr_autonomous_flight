@@ -36,6 +36,25 @@ VoxelMapper::VoxelMapper(const Eigen::Vector3d& origin,
   }
 }
 
+void VoxelMapper::setMap(const Eigen::Vector3d &ori, const Eigen::Vector3i &dim,
+                         const std::vector<signed char> &map, double res) {
+  dim_ = dim;
+  origin_d_ = ori;
+  res_ = res;
+
+  map_.resize(boost::extents[dim_(0)][dim_(1)][dim_(2)]);
+
+  Eigen::Vector3i n;
+  for (n(0) = 0; n(0) < dim_(0); n(0)++) {
+    for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+      for (n(2) = 0; n(2) < dim_(2); n(2)++) {
+        int idx = n(0) + dim_(0) * n(1) + dim_(0) * dim_(1) * n(2);
+        map_[n(0)][n(1)][n(2)] = map[idx];
+      }
+    }
+  }
+}
+
 void VoxelMapper::setMapUnknown() {
   val_default = val_unknown;
   std::fill(map_.data(), map_.data() + map_.num_elements(), val_unknown);
@@ -108,13 +127,14 @@ vec_Vec3d VoxelMapper::getLocalCloud(const Eigen::Vector3d& pos,
   for (int i = 0; i < 3; i++) dim_low(i) = dim1(i) < 0 ? 0 : dim1(i);
 
   Eigen::Vector3i dim2 = floatToInt(pos + ori + dim);
-  for (int i = 0; i < 3; i++) dim_up(i) = dim2(i) > dim_(i) ? dim_(i) : dim2(i);
+  for (int i = 0; i < 3; i++)
+    dim_up(i) = dim2(i) >= dim_(i) ? dim_(i)-1 : dim2(i);
 
   vec_Vec3d pts;
   Eigen::Vector3i n;
-  for (n(0) = dim_low(0); n(0) < dim_up(0); n(0)++) {
-    for (n(1) = dim_low(1); n(1) < dim_up(1); n(1)++) {
-      for (n(2) = dim_low(2); n(2) < dim_up(2); n(2)++) {
+  for (n(0) = dim_low(0); n(0) <= dim_up(0); n(0)++) {
+    for (n(1) = dim_low(1); n(1) <= dim_up(1); n(1)++) {
+      for (n(2) = dim_low(2); n(2) <= dim_up(2); n(2)++) {
         if (map_[n(0)][n(1)][n(2)] > val_even) pts.push_back(intToFloat(n));
       }
     }
@@ -140,14 +160,15 @@ void VoxelMapper::decayLocalCloud(const Eigen::Vector3d& pos,
   for (int i = 0; i < 3; i++) dim_low(i) = dim1(i) < 0 ? 0 : dim1(i);
 
   Eigen::Vector3i dim2 = floatToInt(end_pos);
-  for (int i = 0; i < 3; i++) dim_up(i) = dim2(i) > dim_(i) ? dim_(i) : dim2(i);
+  for (int i = 0; i < 3; i++)
+    dim_up(i) = dim2(i) >= dim_(i) ? dim_(i)-1 : dim2(i);
 
   // Decaying voxels within robot's local region (voxels will disappear if
   // unobserved for (val_occ - val_even) / val_decay times)
   Eigen::Vector3i n;
-  for (n(0) = dim_low(0); n(0) < dim_up(0); n(0)++) {
-    for (n(1) = dim_low(1); n(1) < dim_up(1); n(1)++) {
-      for (n(2) = dim_low(2); n(2) < dim_up(2); n(2)++) {
+  for (n(0) = dim_low(0); n(0) <= dim_up(0); n(0)++) {
+    for (n(1) = dim_low(1); n(1) <= dim_up(1); n(1)++) {
+      for (n(2) = dim_low(2); n(2) <= dim_up(2); n(2)++) {
         if (map_[n(0)][n(1)][n(2)] > val_even)
           map_[n(0)][n(1)][n(2)] = map_[n(0)][n(1)][n(2)] - val_decay;
         if (inflated_map_[n(0)][n(1)][n(2)] > val_even)
@@ -169,13 +190,14 @@ vec_Vec3d VoxelMapper::getInflatedLocalCloud(const Eigen::Vector3d& pos,
   for (int i = 0; i < 3; i++) dim_low(i) = dim1(i) < 0 ? 0 : dim1(i);
 
   Eigen::Vector3i dim2 = floatToInt(pos + ori + dim);
-  for (int i = 0; i < 3; i++) dim_up(i) = dim2(i) > dim_(i) ? dim_(i) : dim2(i);
+  for (int i = 0; i < 3; i++)
+    dim_up(i) = dim2(i) >= dim_(i) ? dim_(i)-1 : dim2(i);
 
   vec_Vec3d pts;
   Eigen::Vector3i n;
-  for (n(0) = dim_low(0); n(0) < dim_up(0); n(0)++) {
-    for (n(1) = dim_low(1); n(1) < dim_up(1); n(1)++) {
-      for (n(2) = dim_low(2); n(2) < dim_up(2); n(2)++) {
+  for (n(0) = dim_low(0); n(0) <= dim_up(0); n(0)++) {
+    for (n(1) = dim_low(1); n(1) <= dim_up(1); n(1)++) {
+      for (n(2) = dim_low(2); n(2) <= dim_up(2); n(2)++) {
         if (inflated_map_[n(0)][n(1)][n(2)] > val_free)
           pts.push_back(intToFloat(n));
       }
@@ -494,7 +516,8 @@ Eigen::Vector3i VoxelMapper::floatToInt(const Eigen::Vector3d& pt) {
 }
 
 Eigen::Vector3d VoxelMapper::intToFloat(const Eigen::Vector3i& pn) {
-  return pn.cast<double>() * res_ + origin_d_;
+  return (pn.cast<double>() + Eigen::Vector3d(0.5, 0.5, 0.5)) * res_
+    + origin_d_;
 }
 
 bool VoxelMapper::isOutSide(const Eigen::Vector3i& pn) {

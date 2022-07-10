@@ -19,7 +19,6 @@ class VoxelMapper {
   // access private methods and members
   friend class VoxelMapperTest;
   FRIEND_TEST(VoxelMapperTest, TestAllocateRelocate);
-  FRIEND_TEST(VoxelMapperTest, TestDecayLocalCloud);
 
  public:
   /**
@@ -37,6 +36,9 @@ class VoxelMapper {
               int8_t val = 0,
               int decay_times_to_empty = 0);
 
+  /// set the map with some predefined values
+  void setMap(const Eigen::Vector3d &ori, const Eigen::Vector3i &dim,
+              const std::vector<signed char> &map, double res);
   /// Set all voxels as unknown
   void setMapUnknown();
   /// Set all voxels as free

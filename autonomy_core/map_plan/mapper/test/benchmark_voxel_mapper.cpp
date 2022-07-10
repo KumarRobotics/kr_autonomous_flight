@@ -6,7 +6,7 @@
  * fourth argument is the resolution multiplied by 100 because arguments are
  * signed long.
  */
-static void BM_GetMap(benchmark::State& state) {
+static void BM_GetInflatedMap(benchmark::State& state) {
   int x_dim = state.range(0);
   int y_dim = state.range(1);
   int z_dim = state.range(2);
@@ -23,14 +23,9 @@ static void BM_GetMap(benchmark::State& state) {
                                   decay_times);
 
   for (auto _ : state) {
-    test_mapper.getMap();
+    test_mapper.getInflatedMap();
   }
 }
-
-BENCHMARK(BM_GetMap)
-  ->Args({200, 200, 10, 50})
-  ->Args({200, 200, 10, 25})
-  ->Args({200, 200, 10, 10});
 
 
 /**
@@ -61,11 +56,6 @@ static void BM_DecayLocalCloud(benchmark::State& state) {
     test_mapper.decayLocalCloud(position, max_range);
   }
 }
-
-BENCHMARK(BM_DecayLocalCloud)
-  ->Args({200, 200, 10, 50})
-  ->Args({200, 200, 10, 25})
-  ->Args({200, 200, 10, 10});
 
 
 /**
@@ -126,11 +116,6 @@ static void BM_AddCloud(benchmark::State& state) {
   }
 }
 
-BENCHMARK(BM_AddCloud)
-  ->Args({200, 200, 10, 50})
-  ->Args({200, 200, 10, 25})
-  ->Args({200, 200, 10, 10});
-
 
 /**
  * @brief Arguments represent the x-dim, y-dim, and z-dim size respectively. The
@@ -161,42 +146,28 @@ static void BM_GetInflatedLocalMap(benchmark::State& state) {
   }
 }
 
+
+BENCHMARK(BM_GetInflatedMap)
+  ->Args({200, 200, 10, 50})
+  ->Args({200, 200, 10, 25})
+  ->Args({200, 200, 10, 10});
+
+BENCHMARK(BM_DecayLocalCloud)
+  ->Args({200, 200, 10, 50})
+  ->Args({200, 200, 10, 25})
+  ->Args({200, 200, 10, 10});
+
+BENCHMARK(BM_AddCloud)
+  ->Args({200, 200, 10, 50})
+  ->Args({200, 200, 10, 25})
+  ->Args({200, 200, 10, 10});
+
 BENCHMARK(BM_GetInflatedLocalMap)
   ->Args({200, 200, 10, 50})
   ->Args({200, 200, 10, 25})
   ->Args({200, 200, 10, 10});
 
 
-// class VoxelMapperBenchmark : public benchmark::Fixture {
-//  public:
-//   void SetUp(const ::benchmark::State& state) {
-//     int x_origin_ = -100;
-//     int y_origin_ = -100;
-//     int z_origin_ = -5;
-//     int x_dim_ = 200;
-//     int y_dim_ = 200;
-//     int z_dim_ = 10;
-//     double resolution_ = 0.5;
-//     int8_t val_default_ = 0;
-//     int decay_times_ = 30;
-//     Eigen::Vector3d origin(x_origin_, y_origin_, z_origin_);
-//     Eigen::Vector3d dimensions(x_dim_, y_dim_, z_dim_);
-//     p_test_mapper_.reset(new mapper::VoxelMapper(origin, dimensions,
-//                                         resolution_, val_default_,
-//                                         decay_times_));
-//   }
-
-//   std::unique_ptr<mapper::VoxelMapper> p_test_mapper_;  
-
-// };
-
-// BENCHMARK_DEFINE_F(VoxelMapperBenchmark, GetMapTest)(benchmark::State& st) {
-//   for (auto _ : st) {
-//     p_test_mapper_->getMap();
-//   }
-// }
-
-// BENCHMARK_REGISTER_F(VoxelMapperBenchmark, GetMapTest);
-
-
 BENCHMARK_MAIN();
+
+

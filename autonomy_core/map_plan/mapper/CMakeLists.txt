@@ -28,6 +28,9 @@ target_link_libraries(local_global_mapper PUBLIC ${PROJECT_NAME} Boost::timer)
 
 #----------------------------------------------------------------------------------
 # Add testing with GoogleTest
+
+# To run test:
+#   catkin test mapper
 enable_testing()
 
 catkin_add_gtest(test_voxel_mapper test/test_voxel_mapper.cpp)
@@ -35,7 +38,24 @@ target_link_libraries(test_voxel_mapper ${catkin_LIBRARIES} ${PROJECT_NAME})
 
 #----------------------------------------------------------------------------------
 # Add microbenchmarking with Google Benchmark
-find_package(benchmark REQUIRED)
+
+# To run benchmark:
+#   rosrun mapper benchmarking
+# if you want to save the results to a file: 
+#   rosrun mapper benchmarking --benchmark_out=file_name.json
+# if you want to compare two benchmark files, use the compare.py script located
+# in the build directory under mapper/_deps/benchmark-src/tools/ (you will need
+# to have pandas installed). Also changed the shebang to use python3
+# e.g. from the catkin root directory run:
+#   ./build/mapper/_deps/benchmark-src/tools/compare.py benchmarks file1.json file2.json 
+
+include(FetchContent)
+FetchContent_Declare(
+    benchmark
+    URL https://github.com/google/benchmark/archive/b7afda2cd2d81230737caa1073e160b6406798d7.zip
+)
+FetchContent_MakeAvailable(benchmark)
+
 add_executable(benchmarking test/benchmark_voxel_mapper.cpp)
 target_link_libraries(benchmarking benchmark::benchmark ${PROJECT_NAME})
 

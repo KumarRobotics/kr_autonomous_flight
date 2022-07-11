@@ -78,7 +78,7 @@ class VoxelMapperTest : public testing::Test {
 /**
  * @brief Used for debugging purposes. When a test fails this function can be
  * used to retrieve the corresponding voxel index from a linear indexing value
- * @param index index of voxel stored in contiguous memory
+ * @param index Index of voxel stored in contiguous memory
  * @return Eigen::Vector3i : Voxel index
  */
 Eigen::Vector3i VoxelMapperTest::getVoxel(int index) {
@@ -108,12 +108,12 @@ void VoxelMapperTest::SetUp() {
     p_test_mapper_.reset( new mapper::VoxelMapper(origin, dimensions,
                                                   resolution_, val_default_,
                                                   decay_times_));
-    val_occ_ = p_test_mapper_->val_occ;
-    val_even_ = p_test_mapper_->val_even;
-    val_add_ = p_test_mapper_->val_add;
-    val_unknown_ = p_test_mapper_->val_unknown;
-    val_free_ = p_test_mapper_->val_free;
-    val_decay_ = p_test_mapper_->val_decay;
+    val_occ_        = p_test_mapper_->val_occ_;
+    val_even_       = p_test_mapper_->val_even_;
+    val_add_        = p_test_mapper_->val_add_;
+    val_unknown_    = p_test_mapper_->val_unknown_;
+    val_free_       = p_test_mapper_->val_free_;
+    val_decay_      = p_test_mapper_->val_decay_;
 
     // Fill the cloud with some random known points
     gt_cloud_.push_back(Eigen::Vector3d(0.25, 0.25, 0.25));
@@ -184,7 +184,7 @@ TEST_F(VoxelMapperTest, TestAllocateRelocate) {
     // what they previously were
     Eigen::Vector3d prev_origin(x_origin_, y_origin_, z_origin_);
     Eigen::Vector3d prev_dimensions(x_dim_, y_dim_, z_dim_);
-    ASSERT_FALSE(p_test_mapper_->allocate(prev_dimensions, prev_origin));
+    ASSERT_FALSE(p_test_mapper_->allocate(prev_origin, prev_dimensions));
 
     // Mark all voxels as occupied. This original map, in world coordinates,
     // ranges from:
@@ -210,7 +210,7 @@ TEST_F(VoxelMapperTest, TestAllocateRelocate) {
     Eigen::Vector3d new_origin(0, 0, 0);
     Eigen::Vector3d new_dimensions(150, 150, 10);
     // True means that the relocating actually happened
-    EXPECT_TRUE(p_test_mapper_->allocate(new_dimensions, new_origin));
+    EXPECT_TRUE(p_test_mapper_->allocate(new_origin, new_dimensions));
 
     planning_ros_msgs::VoxelMap relocated_map = p_test_mapper_->getMap();
 
@@ -675,8 +675,7 @@ TEST_F(VoxelMapperTest, TestGetLocalCloud) {
     Eigen::Vector3d origin(-35, -50, 1);
     Eigen::Vector3d dimensions(70, 75, 3.4);
     vec_Vec3d point_cloud =
-        p_test_mapper_->getLocalCloud(Eigen::Vector3d(0, 0, 0),
-                                      origin, dimensions);
+        p_test_mapper_->getLocalCloud(origin, dimensions);
 
     // Create the local ground truth cloud
     vec_Vec3d gt_local_cloud;
@@ -730,8 +729,7 @@ TEST_F(VoxelMapperTest, TestGetInflatedLocalCloud) {
     Eigen::Vector3d origin(-35, -50, 1);
     Eigen::Vector3d dimensions(70, 75, 3.4);
     vec_Vec3d point_cloud =
-        p_test_mapper_->getInflatedLocalCloud(Eigen::Vector3d(0, 0, 0),
-                                      origin, dimensions);
+        p_test_mapper_->getInflatedLocalCloud(origin, dimensions);
 
     // Create the local ground truth cloud
     vec_Vec3d gt_local_cloud;

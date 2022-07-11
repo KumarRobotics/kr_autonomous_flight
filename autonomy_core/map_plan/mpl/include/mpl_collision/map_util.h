@@ -103,4 +103,13 @@ typedef MapUtil<2> OccMapUtil;
 
 typedef MapUtil<3> VoxelMapUtil;
 
+template <int Dim>
+int MapUtil<Dim>::getIndex(const Veci<Dim> &pn) {
+  if constexpr (Dim == 3) {
+    return pn(0) + dim_(0) * pn(1) + dim_(0) * dim_(1) * pn(2);
+  } else {
+    return pn(0) + dim_(0) * pn(1);
+  }
+}
+
 }  // namespace MPL

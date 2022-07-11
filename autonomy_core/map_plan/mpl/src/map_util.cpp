@@ -5,15 +5,6 @@
 namespace MPL {
 
 template <int Dim>
-int MapUtil<Dim>::getIndex(const Veci<Dim> &pn) {
-  if constexpr (Dim == 3) {
-    return pn(0) + dim_(0) * pn(1) + dim_(0) * dim_(1) * pn(2);
-  } else {
-    return pn(0) + dim_(0) * pn(1);
-  }
-}
-
-template <int Dim>
 bool MapUtil<Dim>::isOutside(const Veci<Dim> &pn) {
   for (int i = 0; i < Dim; i++)
     if (pn(i) < 0 || pn(i) >= dim_(i)) return true;
@@ -65,7 +56,7 @@ template <int Dim>
 Veci<Dim> MapUtil<Dim>::floatToInt(const Vecf<Dim> &pt) {
   Veci<Dim> pn;
   for (int i = 0; i < Dim; i++)
-    pn(i) = std::round((pt(i) - origin_d_(i)) / res_ - 0.5);
+    pn(i) = std::floor((pt(i) - origin_d_(i)) / res_);
   return pn;
 }
 

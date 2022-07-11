@@ -75,6 +75,8 @@ static void BM_AddCloud(benchmark::State& state) {
   int decay_times = 30;
   Eigen::Vector3d origin(x_origin, y_origin, z_origin);
   Eigen::Vector3d dimensions(x_dim, y_dim, z_dim);
+
+  // Create the voxel mapper object
   mapper::VoxelMapper test_mapper(origin, dimensions,
                                   resolution, val_default,
                                   decay_times);

@@ -6,6 +6,7 @@
 #include <boost/multi_array.hpp>
 #include <gtest/gtest_prod.h>
 #include <mpl_collision/map_util.h>
+#include <vector>
 
 namespace mapper {
 

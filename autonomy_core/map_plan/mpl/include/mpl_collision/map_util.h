@@ -2,6 +2,7 @@
 
 #include "mpl_basis/data_type.h"
 #include <planning_ros_msgs/VoxelMap.h>
+#include <vector>
 
 namespace MPL {
 
@@ -104,12 +105,51 @@ typedef MapUtil<2> OccMapUtil;
 typedef MapUtil<3> VoxelMapUtil;
 
 template <int Dim>
-int MapUtil<Dim>::getIndex(const Veci<Dim> &pn) {
+inline int MapUtil<Dim>::getIndex(const Veci<Dim> &pn) {
   if constexpr (Dim == 3) {
     return pn(0) + dim_(0) * pn(1) + dim_(0) * dim_(1) * pn(2);
   } else {
     return pn(0) + dim_(0) * pn(1);
   }
+}
+
+template <int Dim>
+inline bool MapUtil<Dim>::isOutside(const Veci<Dim> &pn) {
+  if constexpr (Dim == 3) {
+    return (pn(0) < 0 || pn(0) >= dim_(0) ||
+            pn(1) < 0 || pn(1) >= dim_(1) ||
+            pn(2) < 0 || pn(2) >= dim_(2));
+  } else {
+    return (pn(0) < 0 || pn(0) >= dim_(0) ||
+            pn(1) < 0 || pn(1) >= dim_(1));
+  }
+}
+
+template <int Dim>
+inline bool MapUtil<Dim>::isFree(const Veci<Dim> &pn) {
+  // First check if the voxel is within the bounds of the map and if it isn't,
+  // return false. This is accomplished by taking advantage of short-circuit
+  // evaluation. An if-else statement could also be used here but it isn't
+  // to avoid issues with branch predictions and inline.
+  return (!isOutside(pn) && isFree(getIndex(pn)));
+}
+
+template <int Dim>
+inline bool MapUtil<Dim>::isOccupied(const Veci<Dim> &pn) {
+  // First check if the voxel is within the bounds of the map and if it isn't,
+  // return false. This is accomplished by taking advantage of short-circuit
+  // evaluation. An if-else statement could also be used here but it isn't
+  // to avoid issues with branch predictions and inline.
+  return (!isOutside(pn) && isOccupied(getIndex(pn)));
+}
+
+template <int Dim>
+inline bool MapUtil<Dim>::isUnknown(const Veci<Dim> &pn) {
+  // First check if the voxel is within the bounds of the map and if it isn't,
+  // return false. This is accomplished by taking advantage of short-circuit
+  // evaluation. An if-else statement could also be used here but it isn't
+  // to avoid issues with branch predictions and inline.
+  return (!isOutside(pn) && isUnknown(getIndex(pn)));
 }
 
 }  // namespace MPL

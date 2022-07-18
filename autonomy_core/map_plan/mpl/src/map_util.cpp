@@ -5,35 +5,6 @@
 namespace MPL {
 
 template <int Dim>
-bool MapUtil<Dim>::isOutside(const Veci<Dim> &pn) {
-  for (int i = 0; i < Dim; i++)
-    if (pn(i) < 0 || pn(i) >= dim_(i)) return true;
-  return false;
-}
-
-template <int Dim>
-bool MapUtil<Dim>::isFree(const Veci<Dim> &pn) {
-  if (isOutside(pn))
-    return false;
-  else
-    return isFree(getIndex(pn));
-}
-
-template <int Dim>
-bool MapUtil<Dim>::isOccupied(const Veci<Dim> &pn) {
-  if (isOutside(pn))
-    return false;
-  else
-    return isOccupied(getIndex(pn));
-}
-
-template <int Dim>
-bool MapUtil<Dim>::isUnknown(const Veci<Dim> &pn) {
-  if (isOutside(pn)) return false;
-  return isUnknown(getIndex(pn));
-}
-
-template <int Dim>
 void MapUtil<Dim>::setMap(const Vecf<Dim> &ori, const Veci<Dim> &dim,
                           const Tmap &map, decimal_t res) {
   map_ = map;
@@ -93,16 +64,16 @@ vec_Vecf<Dim> MapUtil<Dim>::getCloud() {
   vec_Vecf<Dim> cloud;
   Veci<Dim> n;
   if constexpr (Dim == 3) {
-    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
+    for (n(2) = 0; n(2) < dim_(2); n(2)++) {
       for (n(1) = 0; n(1) < dim_(1); n(1)++) {
-        for (n(2) = 0; n(2) < dim_(2); n(2)++) {
+        for (n(0) = 0; n(0) < dim_(0); n(0)++) {
           if (isOccupied(getIndex(n))) cloud.push_back(intToFloat(n));
         }
       }
     }
   } else {
-    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
-      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+    for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+      for (n(0) = 0; n(0) < dim_(0); n(0)++) {
         if (isOccupied(getIndex(n))) cloud.push_back(intToFloat(n));
       }
     }
@@ -116,16 +87,16 @@ vec_Vecf<Dim> MapUtil<Dim>::getFreeCloud() {
   Veci<Dim> n;
 
   if constexpr (Dim == 3) {
-    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
+    for (n(2) = 0; n(2) < dim_(2); n(2)++) {
       for (n(1) = 0; n(1) < dim_(1); n(1)++) {
-        for (n(2) = 0; n(2) < dim_(2); n(2)++) {
+        for (n(0) = 0; n(0) < dim_(0); n(0)++) {
           if (isFree(getIndex(n))) cloud.push_back(intToFloat(n));
         }
       }
     }
   } else {
-    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
-      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+    for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+      for (n(0) = 0; n(0) < dim_(0); n(0)++) {
         if (isFree(getIndex(n))) cloud.push_back(intToFloat(n));
       }
     }
@@ -139,16 +110,16 @@ vec_Vecf<Dim> MapUtil<Dim>::getUnknownCloud() {
   Veci<Dim> n;
 
   if constexpr (Dim == 3) {
-    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
+    for (n(2) = 0; n(2) < dim_(2); n(2)++) {
       for (n(1) = 0; n(1) < dim_(1); n(1)++) {
-        for (n(2) = 0; n(2) < dim_(2); n(2)++) {
+        for (n(0) = 0; n(0) < dim_(0); n(0)++) {
           if (isUnknown(getIndex(n))) cloud.push_back(intToFloat(n));
         }
       }
     }
   } else {
-    for (n(0) = 0; n(0) < dim_(0); n(0)++) {
-      for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+    for (n(1) = 0; n(1) < dim_(1); n(1)++) {
+      for (n(0) = 0; n(0) < dim_(0); n(0)++) {
         if (isUnknown(getIndex(n))) cloud.push_back(intToFloat(n));
       }
     }

@@ -69,7 +69,7 @@ BENCHMARK_DEFINE_F(BenchmarkMapUtil, BM_isOutside)(benchmark::State& state) {
     // being optimized out
     int counter = 0;
 
-    for (auto &voxel: test_voxels_) {
+    for (auto &voxel : test_voxels_) {
       bool it_is = mapper_.isOutside(voxel);
 
       if (it_is) {
@@ -89,7 +89,7 @@ BENCHMARK_DEFINE_F(BenchmarkMapUtil, BM_isFree)(benchmark::State& state) {
     // being optimized out
     int counter = 0;
 
-    for (auto &voxel: test_voxels_) {
+    for (auto &voxel : test_voxels_) {
       bool it_is = mapper_.isFree(voxel);
 
       if (it_is) {
@@ -109,7 +109,7 @@ BENCHMARK_DEFINE_F(BenchmarkMapUtil, BM_isOccupied)(benchmark::State& state) {
     // being optimized out
     int counter = 0;
 
-    for (auto &voxel: test_voxels_) {
+    for (auto &voxel : test_voxels_) {
       bool it_is = mapper_.isOccupied(voxel);
 
       if (it_is) {
@@ -129,7 +129,7 @@ BENCHMARK_DEFINE_F(BenchmarkMapUtil, BM_isUnknown)(benchmark::State& state) {
     // being optimized out
     int counter = 0;
 
-    for (auto &voxel: test_voxels_) {
+    for (auto &voxel : test_voxels_) {
       bool it_is = mapper_.isUnknown(voxel);
 
       if (it_is) {
@@ -187,7 +187,7 @@ BENCHMARK_DEFINE_F(BenchmarkMapUtil, BM_rayTrace)(benchmark::State& state) {
     for (auto &start : start_positions) {
       for (auto &end : end_positions) {
         vec_Vec3i voxels = mapper_.rayTrace(start, end);
-        if (voxels.size() == -1 ) {
+        if (voxels.size() == -1) {
           std::cout << "This message should not have been printed" << std::endl;
         }
       }

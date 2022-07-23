@@ -10,6 +10,7 @@
 	<arg name="robot_frame_id" default="$(arg robot)"/>
   <!-- This frame_id should be the frame_id of the imu used for S-MSCKF	 -->
 	<arg name="vio_imu_frame_id" default="$(arg robot)/stereo_rig_imu"/>
+	<arg name="lidar_frame_id" default="$(arg robot)/lidar"/>
 	<arg name="vio_ref_frame_id" default="$(arg robot)/odom"/>
 	<arg name="ukf_ref_frame_id" default="$(arg robot)/odom"/>
   <!-- This should be set true for simulation -->
@@ -17,26 +18,30 @@
   <!-- This should be set false for simulation -->
   <arg name="publish_odom_tf" default="true"/>
 
+  <!-- enable vio or lidar -->
+  <arg name="enable_vio_odom" default="true"/>
+  <arg name="enable_lidar" default="false"/>
+
     <!-- Use msckf_calib_gen to generate this yaml file when using unity sim -->
     <arg name="calibration_file" default="$(find estimation_launch)/config/msckf_calib.yaml"/>
 
     <group ns="$(arg robot)">
-        <!-- Image Processor Nodelet  -->
-        <include file="$(find estimation_launch)/launch/msckf_imgproc.launch">
-            <arg name="calibration_file" value="$(arg calibration_file)"/>
-            <arg name="imu" value="$(arg imu)"/>
-            <arg name="cam0" default="$(arg cam0)"/>
-            <arg name="cam1" default="$(arg cam1)"/>
-            <arg name="image" default="$(arg image)"/>
-        </include>
+        <!-- Image Processor Nodelet -->
+        <!-- <include file="$(find estimation_launch)/launch/msckf_imgproc.launch"> -->
+            <!-- <arg name="calibration_file" value="$(arg calibration_file)"/> -->
+            <!-- <arg name="imu" value="$(arg imu)"/> -->
+            <!-- <arg name="cam0" default="$(arg cam0)"/> -->
+            <!-- <arg name="cam1" default="$(arg cam1)"/> -->
+            <!-- <arg name="image" default="$(arg image)"/> -->
+        <!-- </include> -->
         <!-- Msckf Filter Nodelet -->
-        <include file="$(find estimation_launch)/launch/msckf_vio.launch">
-            <arg name="calibration_file" value="$(arg calibration_file)"/>
-            <arg name="imu" value="$(arg imu)"/>
-		    <!-- fixed reference frame for vio -->
-            <arg name="fixed_frame_id" value="$(arg vio_ref_frame_id)"/>
-            <arg name="child_frame_id" value="$(arg vio_imu_frame_id)"/>
-        </include>
+        <!-- <include file="$(find estimation_launch)/launch/msckf_vio.launch"> -->
+            <!-- <arg name="calibration_file" value="$(arg calibration_file)"/> -->
+            <!-- <arg name="imu" value="$(arg imu)"/> -->
+        <!-- fixed reference frame for vio -->
+            <!-- <arg name="fixed_frame_id" value="$(arg vio_ref_frame_id)"/> -->
+            <!-- <arg name="child_frame_id" value="$(arg vio_imu_frame_id)"/> -->
+        <!-- </include> -->
 
 		<!-- UKF Nodelet -->
 		<node pkg="nodelet" type="nodelet" name="fla_ukf" args="standalone fla_ukf/FLAUKFNodelet" clear_params="true" output="screen">
@@ -45,20 +50,22 @@
 		  <remap from="~mag" to="$(arg mag)"/>
 		  <remap from="~height" to="mavros/distance_sensor/lidarlite_pub"/>
 		  <remap from="~vio_odom" to="vio/odom"/>
+      <remap from="~pose_lidar" to="/quadrotor/llol_odom/pose_cov"/>
 		  <remap from="~odom_out" to="$(arg output_odom)"/>
 		  <!-- fixed reference frame for ukf -->
 		  <param name="world_frame_id" value="$(arg ukf_ref_frame_id)"/>
 		  <param name="robot_frame_id" value="$(arg robot_frame_id)"/>
 		  <param name="cam_frame_id" value="$(arg vio_imu_frame_id)"/>
+      <param name="lidar_frame_id" value="$(arg lidar_frame_id)"/>
 		  <!-- fixed reference frame for vio -->
+		  <param name="enable_vio_odom" value="$(arg enable_vio_odom)"/>
+		  <param name="enable_lidar" value="$(arg enable_lidar)"/>
 		  <param name="vision_frame_id" value="$(arg vio_ref_frame_id)"/>
 		  <param name="enable_laser" value="false"/>
 		  <param name="enable_cam" value="false"/>
-		  <param name="enable_velodyne" value="false"/>
 		  <param name="enable_gps" value="false"/>
 		  <param name="enable_height" value="false"/>
 		  <param name="enable_mag" value="false"/>
-		  <param name="enable_vio_odom" value="true"/>
 		  <param name="enable_yaw" value="false"/>
           <param name="publish_tf" value="$(arg publish_odom_tf)"/>     
     </node>

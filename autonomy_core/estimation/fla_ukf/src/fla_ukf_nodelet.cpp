@@ -34,7 +34,7 @@ class FLAUKFNodelet : public nodelet::Nodelet {
   void imu_callback(const sensor_msgs::Imu::ConstPtr &msg);
   void cam_callback(
       const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg);
-  void velodyne_callback(
+  void lidar_callback(
       const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg);
   void laser_callback(const nav_msgs::Odometry::ConstPtr &msg);
   void height_callback(const sensor_msgs::Range::ConstPtr &msg);
@@ -45,11 +45,11 @@ class FLAUKFNodelet : public nodelet::Nodelet {
   void yaw_callback(const geometry_msgs::QuaternionStamped::ConstPtr &msg);
 
   FLAUKF fla_ukf_;
-  ros::Subscriber sub_imu_, sub_cam_, sub_laser_, sub_height_, sub_velodyne_,
+  ros::Subscriber sub_imu_, sub_cam_, sub_laser_, sub_height_, sub_lidar_,
       sub_gps_, sub_mag_, sub_vio_odom_, sub_height_toggle_, sub_yaw_;
   ros::Publisher pub_ukf_odom_, pub_mag_yaw_;
   std::string world_frame_id_, cam_frame_id_, robot_frame_id_, vision_frame_id_,
-      velodyne_frame_id_;
+      lidar_frame_id_;
   unsigned int cam_delay_;
   std::queue<sensor_msgs::Imu> imu_queue_;
   static constexpr int imu_calib_limit_ = 100;
@@ -58,15 +58,15 @@ class FLAUKFNodelet : public nodelet::Nodelet {
   tf2_ros::Buffer tf_buffer_;
   std::unique_ptr<tf2_ros::TransformListener> tf_listener_;
   tf2_ros::TransformBroadcaster tf_broadcaster_;
-  Eigen::Isometry3d T_cam_body_, T_body_cam_, T_world_vision_, T_velodyne_body_;
+  Eigen::Isometry3d T_cam_body_, T_body_cam_, T_world_vision_, T_lidar_body_;
   bool static_transforms_initialized_ = false;
   bool takeoff_detected_ = false;
   bool height_measurement_received_ = false;
   double takeoff_detection_threshold_;
   bool ignore_laser_ = false;
   bool ignore_height_ = false;
-  boost::optional<Eigen::Isometry3d> T_world_velodyneMap_;
-  bool enable_cam_, enable_velodyne_, enable_laser_, enable_height_,
+  boost::optional<Eigen::Isometry3d> T_world_lidarMap_;
+  bool enable_cam_, enable_lidar_, enable_laser_, enable_height_,
       enable_gps_, enable_mag_, enable_vio_odom_, enable_yaw_;
   double declination_;
   static constexpr size_t mag_buffer_size_ = 100;
@@ -125,7 +125,7 @@ FLAUKFNodelet::FLAUKFNodelet() {}
 void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {
   if (!static_transforms_initialized_) {
     geometry_msgs::TransformStamped transform_cam_body, transform_world_vision,
-        transform_velodyne_body;
+        transform_lidar_body;
     try {
       transform_cam_body = tf_buffer_.lookupTransform(
           cam_frame_id_, robot_frame_id_, ros::Time(0));  // Used for front IMU
@@ -133,9 +133,9 @@ void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {
         transform_world_vision = tf_buffer_.lookupTransform(
             world_frame_id_, vision_frame_id_, ros::Time(0));
       }
-      if (enable_velodyne_) {
-        transform_velodyne_body = tf_buffer_.lookupTransform(
-            velodyne_frame_id_, robot_frame_id_, ros::Time(0));
+      if (enable_lidar_) {
+        transform_lidar_body = tf_buffer_.lookupTransform(
+            lidar_frame_id_, robot_frame_id_, ros::Time(0));
       }
     } catch (tf2::TransformException &ex) {
       ROS_WARN("%s", ex.what());
@@ -144,8 +144,8 @@ void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {
     tf::transformMsgToEigen(transform_cam_body.transform, T_cam_body_);
     T_body_cam_ = T_cam_body_.inverse();
     tf::transformMsgToEigen(transform_world_vision.transform, T_world_vision_);
-    tf::transformMsgToEigen(transform_velodyne_body.transform,
-                            T_velodyne_body_);
+    tf::transformMsgToEigen(transform_lidar_body.transform,
+                            T_lidar_body_);
     static_transforms_initialized_ = true;
   }
 
@@ -237,7 +237,7 @@ void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {
   }
 }
 
-void FLAUKFNodelet::velodyne_callback(
+void FLAUKFNodelet::lidar_callback(
     const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg) {
   if (!height_measurement_received_)
     NODELET_ERROR_THROTTLE(1, "No height measurement received!");
@@ -246,26 +246,26 @@ void FLAUKFNodelet::velodyne_callback(
   // each camera pose
   height_measurement_received_ = false;
 
-  if (!T_world_velodyneMap_) {
+  if (!T_world_lidarMap_) {
     auto x = fla_ukf_.GetState();
     const Eigen::Vector3d translation{x(0), x(1), x(2)};
     const Eigen::Quaterniond rotation =
         Eigen::AngleAxisd(x(8), Eigen::Vector3d::UnitZ()) *
         Eigen::AngleAxisd(x(7), Eigen::Vector3d::UnitY()) *
         Eigen::AngleAxisd(x(6), Eigen::Vector3d::UnitX());
-    T_world_velodyneMap_->linear() = rotation.toRotationMatrix();
-    T_world_velodyneMap_->translation() = translation;
+    T_world_lidarMap_->linear() = rotation.toRotationMatrix();
+    T_world_lidarMap_->translation() = translation;
   }
 
-  Eigen::Isometry3d T_velodyneMap_velodyne;
-  tf::poseMsgToEigen(msg->pose.pose, T_velodyneMap_velodyne);
+  Eigen::Isometry3d T_lidarMap_lidar;
+  tf::poseMsgToEigen(msg->pose.pose, T_lidarMap_lidar);
 
   const Eigen::Isometry3d T_world_body =
-      T_world_velodyneMap_.get() * T_velodyneMap_velodyne * T_velodyne_body_;
+      T_world_lidarMap_.get() * T_lidarMap_lidar * T_lidar_body_;
 
-  // ROS_INFO_STREAM("T_velodyne_body:\n" << T_velodyne_body_.matrix());
-  // ROS_INFO_STREAM("T_velodyneMap_velodyne:\n" <<
-  // T_velodyneMap_velodyne.matrix());
+  // ROS_INFO_STREAM("T_lidar_body:\n" << T_lidar_body_.matrix());
+  // ROS_INFO_STREAM("T_lidarMap_lidar:\n" <<
+  // T_lidarMap_lidar.matrix());
   // ROS_INFO_STREAM("T_world_body:\n" << T_world_body.matrix());
 
   const Eigen::Quaterniond q_world_body(T_world_body.rotation());
@@ -282,17 +282,19 @@ void FLAUKFNodelet::velodyne_callback(
   z(4) = rpy(1);
   z(5) = rpy(2);
   // Assemble measurement covariance
-  FLAUKF::MeasCamCov RnVelodyne(FLAUKF::MeasCamCov::Zero());
+  FLAUKF::MeasCamCov Rnlidar(FLAUKF::MeasCamCov::Zero());
+  
+  // Force inflating the covariance matrix (position x5 and orientation x25)
   for (int i = 0; i < 6; i++) {
     for (int j = 0; j < 6; j++) {
       const double cov_multiplier = ((i < 3) ? 5 : 25) * ((j < 3) ? 5 : 25);
-      RnVelodyne(i, j) = cov_multiplier * msg->pose.covariance[j + i * 6];
+      Rnlidar(i, j) = cov_multiplier * msg->pose.covariance[j + i * 6];
     }
   }
-  std::cout << "RnVelodyne: " << RnVelodyne.diagonal().transpose() << std::endl;
+  // std::cout << "Rnlidar: " << Rnlidar.diagonal().transpose() << std::endl;
 
   // Measurement update
-  if (fla_ukf_.MeasurementUpdateCam(z, RnVelodyne, msg->header.stamp))
+  if (fla_ukf_.MeasurementUpdateCam(z, Rnlidar, msg->header.stamp))
     ignore_laser_ = true;
 }
 
@@ -659,7 +661,7 @@ void FLAUKFNodelet::onInit(void) {
 
   n.param("enable_laser", enable_laser_, true);
   n.param("enable_cam", enable_cam_, true);
-  n.param("enable_velodyne", enable_velodyne_, true);
+  n.param("enable_lidar", enable_lidar_, true);
   n.param("enable_gps", enable_gps_, true);
   n.param("enable_height", enable_height_, true);
   n.param("enable_mag", enable_mag_, true);
@@ -669,7 +671,7 @@ void FLAUKFNodelet::onInit(void) {
 
   n.param("world_frame_id", world_frame_id_, std::string("world"));
   n.param("vision_frame_id", vision_frame_id_, std::string("vision"));
-  n.param("velodyne_frame_id", velodyne_frame_id_, std::string("velodyne"));
+  n.param("lidar_frame_id", lidar_frame_id_, std::string("lidar"));
   n.param("robot_frame_id", robot_frame_id_, std::string("base_link"));
   n.param("cam_frame_id", cam_frame_id_, std::string("cam"));
 
@@ -748,9 +750,9 @@ void FLAUKFNodelet::onInit(void) {
   if (enable_cam_)
     sub_cam_ = n.subscribe("pose_cam", 10, &FLAUKFNodelet::cam_callback, this,
                            ros::TransportHints().tcpNoDelay());
-  if (enable_velodyne_)
-    sub_velodyne_ =
-        n.subscribe("pose_velodyne", 10, &FLAUKFNodelet::velodyne_callback,
+  if (enable_lidar_)
+    sub_lidar_ =
+        n.subscribe("pose_lidar", 10, &FLAUKFNodelet::lidar_callback,
                     this, ros::TransportHints().tcpNoDelay());
   if (enable_laser_)
     sub_laser_ = n.subscribe("laser_odom", 10, &FLAUKFNodelet::laser_callback,

@@ -1,10 +1,15 @@
 repositories:
 
-  msckf_vio:
-    type: git
-    url: http://github.com/KumarRobotics/msckf_vio.git
-    version: master
+  # msckf_vio:
+    # type: git
+    # url: http://github.com/KumarRobotics/msckf_vio.git
+    # version: master
 
+  llol:
+    type: git
+    url: https://github.com/versatran01/llol
+    version: 08e74138e7a77fd5070b6d76b811fe9219430419 # switch to old commit if it fails: 6fafc5d872d99f34ca30de39b6885d2bb880797c
+  
   kr_mav_control:
     type: git
     url: http://github.com/KumarRobotics/kr_mav_control.git

@@ -288,7 +288,7 @@ bool FLAUKF::MeasurementUpdateSE3(const MeasCamVec &z, const MeasCamCov &RnCam,
   Mat<meas_cam_count_, 2 * L + 1> Za;
   // Mean
   for (unsigned int k = 0; k < Xa.cols(); k++)
-    Za.col(k) = MeasurementModelCam(Xa.col(k));
+    Za.col(k) = MeasurementModelSE3(Xa.col(k));
 
   MeasCamVec z_pred =
       wm_.replicate<meas_cam_count_, 1>().cwiseProduct(Za).rowwise().sum();

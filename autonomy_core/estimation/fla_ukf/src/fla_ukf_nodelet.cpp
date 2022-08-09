@@ -23,6 +23,14 @@
 
 #include "fla_ukf/fla_ukf.h"
 
+/*
+1. world, lidar_map, lidar, body
+2. laser_callback
+3. lidar callback
+4. laser_odom and pose_lidar
+5. what's height and yaw callback used for?
+*/
+
 class FLAUKFNodelet : public nodelet::Nodelet {
  public:
   FLAUKFNodelet();
@@ -294,7 +302,7 @@ void FLAUKFNodelet::lidar_callback(
   // std::cout << "Rnlidar: " << Rnlidar.diagonal().transpose() << std::endl;
 
   // Measurement update
-  if (fla_ukf_.MeasurementUpdateCam(z, Rnlidar, msg->header.stamp))
+  if (fla_ukf_.MeasurementUpdateSE3(z, Rnlidar, msg->header.stamp))
     ignore_laser_ = true;
 }
 
@@ -355,35 +363,36 @@ void FLAUKFNodelet::cam_callback(
 #endif
 
   // Measurement update
-  fla_ukf_.MeasurementUpdateCam(z, RnCam, msg->header.stamp);
+  fla_ukf_.MeasurementUpdateSE3(z, RnCam, msg->header.stamp);
 }
 void FLAUKFNodelet::laser_toggle_callback(const std_msgs::Bool::ConstPtr &msg) {
   ignore_height_ = !msg->data;
   ROS_INFO_STREAM("Ignore laser: " << ignore_height_);
 }
 
-void FLAUKFNodelet::laser_callback(const nav_msgs::Odometry::ConstPtr &msg) {
-  // NODELET_INFO("laser_callback");
-  if (ignore_laser_) return;
+// void FLAUKFNodelet::laser_callback(const nav_msgs::Odometry::ConstPtr &msg) {
+//   // NODELET_INFO("laser_callback");
+//   // use odometry message as measurement, used as initial pose in UKF
+//   if (ignore_laser_) return;
 
-  FLAUKF::MeasLaserVec z;
-  double yaw = tf2::getYaw(msg->pose.pose.orientation);
-  z(0) = msg->pose.pose.position.x;
-  z(1) = msg->pose.pose.position.y;
-  z(2) = yaw;
+//   FLAUKF::MeasLaserVec z;
+//   double yaw = tf2::getYaw(msg->pose.pose.orientation);
+//   z(0) = msg->pose.pose.position.x;
+//   z(1) = msg->pose.pose.position.y;
+//   z(2) = yaw;
 
-  // Assemble measurement covariance
-  FLAUKF::MeasLaserCov RnLaser{FLAUKF::MeasLaserCov::Zero()};
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      int row_idx = (i < 2) ? i : i + 1;  // Skip 3rd row
-      int col_idx = (j < 2) ? j : j + 1;  // Skip 3rd col
-      RnLaser(i, j) = msg->pose.covariance[row_idx + col_idx * 6];
-    }
-  }
-  RnLaser.block<2, 2>(0, 0) *= 50 * 50;  // Inflate covariance for XY
-  fla_ukf_.MeasurementUpdateLaser(z, RnLaser, msg->header.stamp);
-}
+//   // Assemble measurement covariance
+//   FLAUKF::MeasLaserCov RnLaser{FLAUKF::MeasLaserCov::Zero()};
+//   for (int i = 0; i < 3; i++) {
+//     for (int j = 0; j < 3; j++) {
+//       int row_idx = (i < 2) ? i : i + 1;  // Skip 3rd row
+//       int col_idx = (j < 2) ? j : j + 1;  // Skip 3rd col
+//       RnLaser(i, j) = msg->pose.covariance[row_idx + col_idx * 6];
+//     }
+//   }
+//   RnLaser.block<2, 2>(0, 0) *= 50 * 50;  // Inflate covariance for XY
+//   fla_ukf_.MeasurementUpdateLaser(z, RnLaser, msg->header.stamp);
+// }
 
 void FLAUKFNodelet::height_callback(const sensor_msgs::Range::ConstPtr &msg) {
   if (ignore_height_) return;
@@ -754,9 +763,9 @@ void FLAUKFNodelet::onInit(void) {
     sub_lidar_ =
         n.subscribe("pose_lidar", 10, &FLAUKFNodelet::lidar_callback,
                     this, ros::TransportHints().tcpNoDelay());
-  if (enable_laser_)
-    sub_laser_ = n.subscribe("laser_odom", 10, &FLAUKFNodelet::laser_callback,
-                             this, ros::TransportHints().tcpNoDelay());
+  // if (enable_laser_)
+  //   sub_laser_ = n.subscribe("laser_odom", 10, &FLAUKFNodelet::laser_callback,
+  //                            this, ros::TransportHints().tcpNoDelay());
   if (enable_height_) {
     sub_height_ = n.subscribe("height", 10, &FLAUKFNodelet::height_callback,
                               this, ros::TransportHints().tcpNoDelay());

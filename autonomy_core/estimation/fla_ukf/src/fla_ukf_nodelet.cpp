@@ -74,7 +74,7 @@ class FLAUKFNodelet : public nodelet::Nodelet {
   bool ignore_laser_ = false;
   bool ignore_height_ = false;
   boost::optional<Eigen::Isometry3d> T_world_lidarMap_;
-  bool enable_cam_, enable_lidar_, enable_laser_, enable_height_,
+  bool enable_lidar_, enable_laser_, enable_height_,
       enable_gps_, enable_mag_, enable_vio_odom_, enable_yaw_;
   double declination_;
   static constexpr size_t mag_buffer_size_ = 100;
@@ -137,7 +137,8 @@ void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {
     try {
       transform_cam_body = tf_buffer_.lookupTransform(
           cam_frame_id_, robot_frame_id_, ros::Time(0));  // Used for front IMU
-      if (enable_cam_ || enable_vio_odom_) {
+      // if (enable_cam_ || enable_vio_odom_) {
+      if (enable_vio_odom_) {
         transform_world_vision = tf_buffer_.lookupTransform(
             world_frame_id_, vision_frame_id_, ros::Time(0));
       }
@@ -160,7 +161,7 @@ void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {
   imu_queue_.push(*msg);
   if (imu_queue_.size() <= cam_delay_) return;
 
-  if (msg->header.stamp - last_vio_timestamp_ >= ros::Duration(0.5)) {
+  if (msg->header.stamp - last_vio_timestamp_ >= ros::Duration(0.5) && enable_vio_odom_) {
     ROS_WARN_THROTTLE(0.05,
                       "========= DANGER!!! DANGER!!! No recent VIO "
                       "messages received =========");
@@ -248,7 +249,8 @@ void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {
 void FLAUKFNodelet::lidar_callback(
     const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg) {
   if (!height_measurement_received_)
-    NODELET_ERROR_THROTTLE(1, "No height measurement received!");
+    NODELET_WARN_ONCE("No height measurement received!");
+//    NODELET_ERROR_THROTTLE(1, "No height measurement received!");
 
   // Reset height_measurement_received_ to check for height measurements between
   // each camera pose
@@ -295,7 +297,7 @@ void FLAUKFNodelet::lidar_callback(
   // Force inflating the covariance matrix (position x5 and orientation x25)
   for (int i = 0; i < 6; i++) {
     for (int j = 0; j < 6; j++) {
-      const double cov_multiplier = ((i < 3) ? 5 : 25) * ((j < 3) ? 5 : 25);
+      const double cov_multiplier = ((i < 3) ? 0.1 : 25) * ((j < 3) ? 0.1 : 25);
       Rnlidar(i, j) = cov_multiplier * msg->pose.covariance[j + i * 6];
     }
   }
@@ -669,7 +671,7 @@ void FLAUKFNodelet::onInit(void) {
   ros::NodeHandle n(getPrivateNodeHandle());
 
   n.param("enable_laser", enable_laser_, true);
-  n.param("enable_cam", enable_cam_, true);
+  // n.param("enable_cam", enable_cam_, true);
   n.param("enable_lidar", enable_lidar_, true);
   n.param("enable_gps", enable_gps_, true);
   n.param("enable_height", enable_height_, true);
@@ -756,9 +758,9 @@ void FLAUKFNodelet::onInit(void) {
 
   sub_imu_ = n.subscribe("imu", 10, &FLAUKFNodelet::imu_callback, this,
                          ros::TransportHints().tcpNoDelay());
-  if (enable_cam_)
-    sub_cam_ = n.subscribe("pose_cam", 10, &FLAUKFNodelet::cam_callback, this,
-                           ros::TransportHints().tcpNoDelay());
+  // if (enable_cam_)
+  //   sub_cam_ = n.subscribe("pose_cam", 10, &FLAUKFNodelet::cam_callback, this,
+  //                          ros::TransportHints().tcpNoDelay());
   if (enable_lidar_)
     sub_lidar_ =
         n.subscribe("pose_lidar", 10, &FLAUKFNodelet::lidar_callback,

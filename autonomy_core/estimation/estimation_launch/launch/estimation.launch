@@ -62,7 +62,6 @@
 		  <param name="enable_lidar" value="$(arg enable_lidar)"/>
 		  <param name="vision_frame_id" value="$(arg vio_ref_frame_id)"/>
 		  <param name="enable_laser" value="false"/>
-		  <param name="enable_cam" value="false"/>
 		  <param name="enable_gps" value="false"/>
 		  <param name="enable_height" value="false"/>
 		  <param name="enable_mag" value="false"/>

@@ -64,7 +64,7 @@
 		  <param name="enable_laser" value="false"/>
 		  <param name="enable_cam" value="false"/>
 		  <param name="enable_gps" value="false"/>
-		  <param name="enable_height" value="true"/>
+		  <param name="enable_height" value="false"/>
 		  <param name="enable_mag" value="false"/>
 		  <param name="enable_yaw" value="false"/>
           <param name="publish_tf" value="$(arg publish_odom_tf)"/>     

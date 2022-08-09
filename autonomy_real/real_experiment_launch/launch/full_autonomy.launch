@@ -6,7 +6,7 @@
 	<arg name="vio_frame_id" default="vio/odom"/>
 
   <arg name="mass" default="4.2"/>
-	<arg name="odom_topic" default="llol_odom"/>
+	<arg name="odom_topic" default="odom"/>
 
 	<arg name="record_bag" default="true"/>
 

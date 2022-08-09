@@ -27,6 +27,7 @@
 
   <include file="$(find ouster_decoder)/launch/decoder.launch">
     <arg name="lidar_ns" value="$(arg robot)"/>
+    <arg name="replay" value="false"/>
   </include>
 </launch>
 

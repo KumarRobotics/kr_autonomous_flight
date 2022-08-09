@@ -247,11 +247,11 @@ bool FLAUKF::MeasurementUpdateLaser(const MeasLaserVec &z,
   return true;
 }
 
-bool FLAUKF::MeasurementUpdateCam(const MeasCamVec &z, const MeasCamCov &RnCam,
+bool FLAUKF::MeasurementUpdateSE3(const MeasCamVec &z, const MeasCamCov &RnCam,
                                   const ros::Time &time) {
   // Init
   if (!init_process_ || !init_meas_) {
-    std::cout << "MeasurementUpdateCam:" << std::endl;
+    std::cout << "MeasurementUpdateSE3:" << std::endl;
     for (unsigned int i = 0; i < meas_cam_count_; ++i) {
       xa_(meas_cam_idx_[i]) = z(i);
       std::cout << "z(" << i << "): " << z(i) << std::endl;
@@ -330,7 +330,7 @@ bool FLAUKF::MeasurementUpdateCam(const MeasCamVec &z, const MeasCamCov &RnCam,
   return true;
 }
 
-FLAUKF::MeasCamVec FLAUKF::MeasurementModelCam(const StateVec &x) {
+FLAUKF::MeasCamVec FLAUKF::MeasurementModelSE3(const StateVec &x) {
   MeasCamVec z;
   z.segment<3>(0) = x.segment<3>(0);
   z.segment<3>(3) = x.segment<3>(6);

@@ -23,7 +23,7 @@ class FLAUKF {
   using Mat = Eigen::Matrix<Scalar_t, N, M>;
 
   // Dimensions
-  // State: [pos, vel, rot_rpy, bias_acc, bias_gyro, vio_yaw_offset]
+  // State: [pos 3d, vel 3d, rot_rpy 3d, bias_acc 3d, bias_gyro 3d, vio_yaw_offset 1d]
   static constexpr unsigned int state_count_ = 16;
   static constexpr unsigned int proc_noise_count_ = 13;
   static constexpr unsigned int input_count_ = 6;
@@ -87,9 +87,9 @@ class FLAUKF {
 
   bool ProcessUpdate(const InputVec &u, const ros::Time &time);
 
-  bool MeasurementUpdateCam(const MeasCamVec &z, const MeasCamCov &RnCam,
+  bool MeasurementUpdateSE3(const MeasCamVec &z, const MeasCamCov &RnCam,
                             const ros::Time &time);
-  MeasCamVec MeasurementModelCam(const StateVec &x);
+  MeasCamVec MeasurementModelSE3(const StateVec &x);
 
   bool MeasurementUpdateLaser(const MeasLaserVec &z,
                               const MeasLaserCov &RnLaser,
@@ -146,7 +146,7 @@ class FLAUKF {
     Xaa.template block<L, L>(0, L + 1).noalias() -= gamma_ * sqrtPaa;
     return Xaa;
   }
-
+  // process model
   StateVec ProcessModel(const StateVec &x, const InputVec &u,
                         const ProcNoiseVec &w, Scalar_t dt);
   bool PropagateAprioriCovariance(const ros::Time time);

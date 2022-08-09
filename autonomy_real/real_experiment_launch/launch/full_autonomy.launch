@@ -6,7 +6,7 @@
 	<arg name="vio_frame_id" default="vio/odom"/>
 
   <arg name="mass" default="4.2"/>
-	<arg name="odom_topic" default="odom"/>
+	<arg name="odom_topic" default="llol_odom"/>
 
 	<arg name="record_bag" default="true"/>
 
@@ -83,8 +83,8 @@
 	</include>
   
 	 <!--ublox-->
-   <include file="$(find ublox_gps)/launch/ublox_device.launch">
-   </include>
+   <!-- <include file="$(find ublox_gps)/launch/ublox_device.launch"> -->
+   <!-- </include> -->
 
   <!-- bag record  -->
 	<group if="$(arg record_bag)"> 

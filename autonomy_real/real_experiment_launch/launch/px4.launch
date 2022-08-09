@@ -3,8 +3,8 @@
 <launch>
 	<!-- vim: set ft=xml noet : -->
 	<!-- example launch script for PX4 based FCU's -->
-
-  <arg name="fcu_url" default="/dev/serial/by-id/usb-FTDI_TTL232R-3V3_FTADKXHI-if00-port0:921600"/>
+  <!-- <arg name="fcu_url" default="/dev/serial/by-id/usb-FTDI_TTL232R-3V3_FTADKXHI-if00-port0:921600"/> -->
+  <arg name="fcu_url" default="/dev/serial/by-id/usb-FTDI_TTL232R-3V3_FTGARU2U-if00-port0:921600"/>
 	<arg name="gcs_url" default="" />
 	<arg name="tgt_system" default="1" />
 	<arg name="tgt_component" default="1" />

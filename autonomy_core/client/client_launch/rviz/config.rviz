@@ -1,0 +1,397 @@
+Panels:
+  - Class: rviz/Displays
+    Help Height: 0
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /globalMap1/global_cloud1
+        - /Grid1/Offset1
+      Splitter Ratio: 0.5
+    Tree Height: 665
+  - Class: rviz/Selection
+    Name: Selection
+  - Class: rviz/Tool Properties
+    Expanded:
+      - /2D Pose Estimate1
+      - /2D Nav Goal1
+      - /Publish Point1
+    Name: Tool Properties
+    Splitter Ratio: 0.5886790156364441
+  - Class: rviz/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+  - Class: rviz/Time
+    Experimental: false
+    Name: Time
+    SyncMode: 0
+    SyncSource: global_cloud
+Preferences:
+  PromptSaveOnExit: true
+Toolbars:
+  toolButtonStyle: 2
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz/Group
+      Displays:
+        - Alpha: 0.05000000074505806
+          Autocompute Intensity Bounds: true
+          Autocompute Value Bounds:
+            Max Value: 2.9600000381469727
+            Min Value: -2.940000057220459
+            Value: true
+          Axis: Z
+          Channel Name: intensity
+          Class: rviz/PointCloud2
+          Color: 186; 189; 182
+          Color Transformer: FlatColor
+          Decay Time: 0
+          Enabled: true
+          Invert Rainbow: true
+          Max Color: 115; 210; 22
+          Min Color: 239; 41; 41
+          Name: global_cloud
+          Position Transformer: XYZ
+          Queue Size: 10
+          Selectable: true
+          Size (Pixels): 3
+          Size (m): 0.10000000149011612
+          Style: Squares
+          Topic: /global_cloud
+          Unreliable: false
+          Use Fixed Frame: true
+          Use rainbow: false
+          Value: true
+        - Class: rviz/MarkerArray
+          Enabled: true
+          Marker Topic: /random_forest/global_semantics_vis
+          Name: global_cylinders
+          Namespaces:
+            {}
+          Queue Size: 100
+          Value: true
+      Enabled: true
+      Name: globalMap
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz/Grid
+      Color: 46; 52; 54
+      Enabled: true
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 40
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Class: rviz/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: true
+      Name: InteractiveMarkers
+      Show Axes: false
+      Show Descriptions: true
+      Show Visual Aids: false
+      Update Topic: /waypoint_nav/update
+      Value: true
+    - Alpha: 1
+      Class: rviz/Axes
+      Enabled: true
+      Length: 1
+      Name: Axes
+      Radius: 0.10000000149011612
+      Reference Frame: <Fixed Frame>
+      Show Trail: false
+      Value: true
+    - Class: rviz/Group
+      Displays:
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /quadrotor/mesh_visualization/robot
+          Name: quadrotor
+          Namespaces:
+            {}
+          Queue Size: 100
+          Value: true
+        - Alpha: 1
+          Axes Length: 0.5
+          Axes Radius: 0.05000000074505806
+          Class: rviz/Pose
+          Color: 226; 226; 0
+          Enabled: true
+          Head Length: 0.30000001192092896
+          Head Radius: 0.10000000149011612
+          Name: Command
+          Queue Size: 10
+          Shaft Length: 0.800000011920929
+          Shaft Radius: 0.05000000074505806
+          Shape: Arrow
+          Topic: /quadrotor/so3_control/cmd_viz
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 25; 255; 0
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: wps_line
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 10
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /quadrotor/waypoints
+          Unreliable: false
+          Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /quadrotor/semantic_planner_node/local_goal_point
+          Name: local_goal
+          Namespaces:
+            {}
+          Queue Size: 100
+          Value: true
+        - Class: rviz/MarkerArray
+          Enabled: true
+          Marker Topic: /quadrotor/odom_visualization/fov_visual
+          Name: fov
+          Namespaces:
+            {}
+          Queue Size: 100
+          Value: true
+        - Class: rviz/Group
+          Displays:
+            - Alpha: 0.6000000238418579
+              Autocompute Intensity Bounds: true
+              Autocompute Value Bounds:
+                Max Value: 1.350000023841858
+                Min Value: -0.44999998807907104
+                Value: true
+              Axis: Z
+              Channel Name: intensity
+              Class: rviz/PointCloud2
+              Color: 32; 74; 135
+              Color Transformer: FlatColor
+              Decay Time: 0
+              Enabled: true
+              Invert Rainbow: false
+              Max Color: 255; 255; 255
+              Min Color: 0; 0; 0
+              Name: grid_map
+              Position Transformer: XYZ
+              Queue Size: 10
+              Selectable: true
+              Size (Pixels): 3
+              Size (m): 0.10000000149011612
+              Style: Flat Squares
+              Topic: /quadrotor/semantic_planner_node/grid_map/occupancy_inflate
+              Unreliable: false
+              Use Fixed Frame: true
+              Use rainbow: true
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /quadrotor/pcl_render_node/semantics_local_vis
+              Name: Semantics
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /quadrotor/semantic_planner_node/starpolyhedron
+              Name: SFCs
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
+            - Alpha: 0.20000000298023224
+              BoundColor: 255; 0; 0
+              Class: decomp_rviz_plugins/PolyhedronArray
+              Enabled: true
+              MeshColor: 0; 170; 255
+              Name: SFCs
+              Queue Size: 10
+              Scale: 0.10000000149011612
+              State: Mesh
+              Topic: /quadrotor/semantic_planner_node/sikangpolyhedron
+              Unreliable: false
+              Value: true
+              VsColor: 0; 255; 0
+              VsScale: 1
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /quadrotor/pcl_render_node/local_semantics_cylinders_vis
+              Name: sematic_cylinders
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
+            - Alpha: 0.20000000298023224
+              BoundColor: 255; 0; 0
+              Class: decomp_rviz_plugins/PolyhedronArray
+              Enabled: true
+              MeshColor: 0; 170; 255
+              Name: semantic_polys
+              Queue Size: 10
+              Scale: 0.10000000149011612
+              State: Mesh
+              Topic: /quadrotor/pcl_render_node/local_semantics_poly_vis
+              Unreliable: false
+              Value: true
+              VsColor: 0; 255; 0
+              VsScale: 1
+          Enabled: true
+          Name: Map
+        - Class: rviz/Group
+          Displays:
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /quadrotor/odom_visualization/mav_id
+              Name: mav_id
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /quadrotor/semantic_planner_node/global_list
+              Name: global_path
+              Namespaces:
+                {}
+              Queue Size: 10000
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /quadrotor/semantic_planner_node/kino_astar_list
+              Name: local_path
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /quadrotor/semantic_planner_node/optimal_list
+              Name: optimal_path
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
+            - Class: rviz/Marker
+              Enabled: false
+              Marker Topic: /quadrotor/odom_visualization/trajectory
+              Name: traj
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: false
+            - Class: rviz/MarkerArray
+              Enabled: true
+              Marker Topic: /quadrotor/semantic_planner_node/optimal_yaw_list
+              Name: yaw_list
+              Namespaces:
+                {}
+              Queue Size: 1
+              Value: true
+            - Class: rviz/Marker
+              Enabled: true
+              Marker Topic: /quadrotor/odom_visualization/velocity
+              Name: velocity
+              Namespaces:
+                {}
+              Queue Size: 100
+              Value: true
+          Enabled: true
+          Name: Path
+      Enabled: true
+      Name: quadrotor
+  Enabled: true
+  Global Options:
+    Background Color: 238; 238; 236
+    Default Light: true
+    Fixed Frame: simulator
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+      Hide Inactive Objects: true
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/FocusCamera
+    - Class: rviz/Measure
+    - Class: rviz/SetInitialPose
+      Theta std deviation: 0.2617993950843811
+      Topic: /initialpose
+      X std deviation: 0.5
+      Y std deviation: 0.5
+    - Class: rviz/SetGoal
+      Topic: /move_base_simple/goal
+    - Class: rviz/PublishPoint
+      Single click: true
+      Topic: /clicked_point
+    - Class: waypoint_nav_plugin/WaypointNav
+      WaypointsTool:
+        default_height: 0
+        frame_id: /simulator
+        topic: /quadrotor/waypoints
+  Value: true
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Distance: 59.74871826171875
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Field of View: 0.7853981852531433
+      Focal Point:
+        X: 0.3862127363681793
+        Y: 0.26370400190353394
+        Z: 5.249032020568848
+      Focal Shape Fixed Size: false
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 1.5697963237762451
+      Target Frame: <Fixed Frame>
+      Yaw: 3.1385889053344727
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 2063
+  Hide Left Dock: false
+  Hide Right Dock: false
+  QMainWindow State: 000000ff00000000fd00000004000000000000033a00000707fc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b000000b000fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000b0fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000006e000003070000018200fffffffb000000260057006100790070006f0069006e00740020004e0061007600690067006100740069006f006e0100000381000003f4000001f800fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f0000035afc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d0000035a0000013200fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000009ad00000060fc0100000002fb0000000800540069006d00650100000000000009ad0000057100fffffffb0000000800540069006d00650100000000000004500000000000000000000006670000070700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Selection:
+    collapsed: false
+  Time:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
+  Views:
+    collapsed: false
+  Waypoint Navigation:
+    collapsed: false
+  Width: 2477
+  X: 66
+  Y: 0

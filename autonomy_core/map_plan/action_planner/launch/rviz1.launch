@@ -1,0 +1,7 @@
+<launch>
+  <arg name="rviz_config" default="$(find multi_mav_launch)/rviz/config.rviz"/>
+  <node pkg="rviz"
+    type="rviz"
+    name="rviz"
+    args="-d $(arg rviz_config)"/>
+</launch>

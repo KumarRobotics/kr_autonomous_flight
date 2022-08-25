@@ -19,8 +19,8 @@
   <arg name="publish_odom_tf" default="true"/>
 
   <!-- enable vio or lidar -->
-  <arg name="enable_vio_odom" default="false"/>
-  <arg name="enable_lidar" default="true"/>
+  <arg name="enable_vio_odom" default="true"/>
+  <arg name="enable_lidar" default="false"/>
 
     <!-- Use msckf_calib_gen to generate this yaml file when using unity sim -->
     <arg name="calibration_file" default="$(find estimation_launch)/config/msckf_calib.yaml"/>

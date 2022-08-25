@@ -8,7 +8,7 @@
   <arg name="mass" default="4.2"/>
 	<arg name="odom_topic" default="odom"/>
 
-	<arg name="record_bag" default="true"/>
+	<arg name="record_bag" default="false"/>
 
   <arg name="poll_period" default="1.0"/>
 
@@ -21,17 +21,20 @@
   
    <node name="imu_throttler" type="throttle" pkg="topic_tools" args="messages /ovc/vectornav/imu 200 /ovc/vectornav/imu_throttled" />
   <!-- drivers -->
-  <include file="$(find real_experiment_launch)/launch/ouster_decoder.launch">
-      <arg name="robot" value="$(arg robot)"/>
-      <arg name="sensor_hostname" value="192.168.100.12"/>
-      <arg name="udp_dest" value="192.168.100.1"/>
-      <arg name="lidar_port" value="7502"/>
-      <arg name="imu_port" value="7503"/>
-      <arg name="replay" value="false"/>
-      <arg name="lidar_mode" value="1024x10"/>
-      <arg name="metadata" value="ouster_metadata.json"/>
-  </include>
+  <!-- <include file="$(find real_experiment_launch)/launch/ouster_decoder.launch"> -->
+      <!-- <arg name="robot" value="$(arg robot)"/> -->
+      <!-- <arg name="sensor_hostname" value="192.168.100.12"/> -->
+      <!-- <arg name="udp_dest" value="192.168.100.1"/> -->
+      <!-- <arg name="lidar_port" value="7502"/> -->
+      <!-- <arg name="imu_port" value="7503"/> -->
+      <!-- <arg name="replay" value="false"/> -->
+      <!-- <arg name="lidar_mode" value="1024x10"/> -->
+      <!-- <arg name="metadata" value="ouster_metadata.json"/> -->
+  <!-- </include> -->
 
+  <!-- publish_tf -->
+<include file="$(find real_experiment_launch)/launch/old-launch/os1_robot_ns.launch">
+   </include>
    
    <!-- pixhawk (nice priority -15) -->
 <group ns="$(arg robot)"> 
@@ -50,7 +53,7 @@
    <!-- system launch that includes mapper planner state_machine controller state_estimation-->
   <include file="$(find state_machine_launch)/launch/system_mp.launch">
     <arg name="onboard_sensing" value="$(arg onboard_sensing)" />
-    <arg name="takeoff_height" value="1.5" />
+    <arg name="takeoff_height" value="2.5" />
     <arg name="mass" value="$(arg mass)" />
     <arg name="min_dispersion_planner" value="false" />
       <arg name="calibration_file" value="$(find real_experiment_launch)/config/msckf_calib.yaml"/>
@@ -60,10 +63,10 @@
       <arg name="cam1" value="/ovc/right"/>
       <arg name="robot_frame_id" value="$(arg robot)/base_link"/>
       <arg name="vio_imu_frame_id" value="$(arg robot)/ovc_camera_link"/>
-      <arg name="imu" value="/ovc/vectornav/imu_throttled"/>
+      <arg name="imu" value="/ovc/vectornav/imu"/>
       <arg name="mag" value="/ovc/vectornav/mag"/>
       <arg name="publish_body_camera_tf" default="false"/>
-      <arg name="lidar_cloud_topic" value="cloud"/>
+      <arg name="lidar_cloud_topic" value="os_cloud_node/points"/>
       <arg name="lidar_frame" value="$(arg robot)/lidar" />
       <arg name="publish_odom_tf" default="true"/>
       <arg name="real_robot" value="true"/>

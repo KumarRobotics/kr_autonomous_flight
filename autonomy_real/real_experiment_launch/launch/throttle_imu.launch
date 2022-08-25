@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+	<arg name="robot" default="quadrotor"/>
+   <node name="imu_throttler" type="throttle" pkg="topic_tools" args="messages /ovc/vectornav/imu 250 /ovc/vectornav/imu_throttled" />
+   <node name="imu_throttler" type="throttle" pkg="topic_tools" args="messages /ovc/vectornav/mag 250 /ovc/vectornav/mag_throttled" />
+</launch>

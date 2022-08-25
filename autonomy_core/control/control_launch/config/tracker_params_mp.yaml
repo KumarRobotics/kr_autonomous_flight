@@ -1,8 +1,8 @@
 # This should contain tracker parameters
 
-take_off_tracker: 
-  thrust_rate: 5.0 # if the robot cannot take off after reaching max_thrust, try increasing this (with caution if you're running real-robot experiments)
-  max_thrust: 4.0 # if the robot cannot take off after reaching max_thrust, try increasing this (with caution if you're running real-robot experiments)
+take_off_tracker:  
+  thrust_rate: 6.0 # default 5.0. If the robot cannot take off after reaching max_thrust, try increasing this (with caution if you're running real-robot experiments)
+  max_thrust: 5.0 # default 4.0. If the robot cannot take off after reaching max_thrust, try increasing this (with caution if you're running real-robot experiments)
   min_thurst: -9.8
   epsilon: 0.01
 

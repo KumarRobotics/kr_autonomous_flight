@@ -49,7 +49,7 @@
 		  <remap from="~imu" to="$(arg imu)"/>
 		  <remap from="~mag" to="$(arg mag)"/>
 		  <remap from="~height" to="mavros/distance_sensor/lidarlite_pub"/>
-		  <remap from="~vio_odom" to="vio/odom"/>
+		  <remap from="~vio_odom" to="/Odometry"/>
       <remap from="~pose_lidar" to="/quadrotor/llol_odom/pose_cov"/>
 		  <remap from="~odom_out" to="$(arg output_odom)"/>
 		  <!-- fixed reference frame for ukf -->

@@ -15,7 +15,7 @@
 
       <remap from="~imu" to="sync/imu/imu"/>
       <remap from="~height" to="mavros/distance_sensor/lidarlite_pub"/>
-      <remap from="~vio_odom" to="/Odometry"/>
+      <remap from="~vio_odom" to="vio/odom"/>
       <remap from="~odom_out" to="$(arg odom_out)"/>
 
       <param name="world_frame_id" value="$(arg world_frame_id)"/>

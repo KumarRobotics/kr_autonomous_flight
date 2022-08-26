@@ -165,8 +165,10 @@ void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {
 
   if (msg->header.stamp - last_vio_timestamp_ >= ros::Duration(0.5) && enable_vio_odom_) {
     ROS_WARN_THROTTLE(0.05,
-                      "========= DANGER!!! DANGER!!! No recent VIO "
-                      "messages received =========");
+                      "========= WARNING! No recent odometry (LIDAR or VIO) "
+                      "messages received. If using VIO, check if camera and IMU are published correctly; "
+                      "If using LIDAR odometry, wait a while (~10s), if warning continues, check if LIDAR"
+                      "packets are published correctly =========");
     ROS_WARN_THROTTLE(0.05, "msg->header.stamp %d, last_vio_timestamp_ %d", msg->header.stamp, last_vio_timestamp_);
   }
 

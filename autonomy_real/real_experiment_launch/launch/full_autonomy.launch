@@ -86,7 +86,11 @@
 		<arg name="robot" value="$(arg robot)"/>
 	</include>
   
-	 <!--ublox-->
+  <!-- LIDAR Odometry -->
+  <include file="$(find faster_lio)/launch/mapping_ouster64.launch">
+  </include>
+  
+  <!--ublox-->
    <!-- <include file="$(find ublox_gps)/launch/ublox_device.launch"> -->
    <!-- </include> -->
 

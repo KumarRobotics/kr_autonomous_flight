@@ -83,8 +83,8 @@
 	</include>
   
 	 <!--ublox-->
-   <include file="$(find ublox_gps)/launch/ublox_device.launch">
-   </include>
+   <!-- <include file="$(find ublox_gps)/launch/ublox_device.launch"> -->
+   <!-- </include> -->
 
   <!-- bag record  -->
 	<group if="$(arg record_bag)"> 

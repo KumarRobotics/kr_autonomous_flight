@@ -269,7 +269,7 @@ void RePlanner::setup_replanner() {
       global_tpgoal);  // only send goal, because global plan server is
                        // subscribing to odom and use that as start
   // global initial plan timeout duration
-  double initial_global_timeout_dur = 6.0 * local_timeout_duration_;
+  double initial_global_timeout_dur = 5.0 * local_timeout_duration_;
   bool global_finished_before_timeout = global_plan_client_->waitForResult(
       ros::Duration(initial_global_timeout_dur));
   // check result of global plan
@@ -277,6 +277,19 @@ void RePlanner::setup_replanner() {
     ROS_ERROR_STREAM(
         "initial global planning timed out, its timeout duration is set as: "
         << initial_global_timeout_dur);
+
+    // Skip waypoint if timed out
+    if (cur_cb_waypoint_idx_ >= (pose_goals_.size() - 1)) {
+      ROS_ERROR(
+          "The next waypoint is the final waypoint in the mission, aborting "
+          "this full mission!");
+      cur_cb_waypoint_idx_ = 0;
+      pose_goals_.clear();
+    } else {
+      cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
+      ROS_ERROR_STREAM("skipping the waypoint: " << cur_cb_waypoint_idx_);
+    }
+
     AbortReplan();
     return;
   }
@@ -286,6 +299,18 @@ void RePlanner::setup_replanner() {
         global_result->path);  // extract the global path information
     ROS_WARN("initial global plan succeeded!");
   } else {
+    // Skip waypoint if failed
+    if (cur_cb_waypoint_idx_ >= (pose_goals_.size() - 1)) {
+      ROS_ERROR(
+          "The next waypoint is the final waypoint in the mission, aborting "
+          "this full mission!");
+      cur_cb_waypoint_idx_ = 0;
+      pose_goals_.clear();
+    } else {
+      cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
+      ROS_ERROR_STREAM("skipping the waypoint: " << cur_cb_waypoint_idx_);
+    }
+
     ROS_WARN("initial global plan failed!");
     AbortReplan();
     return;
@@ -342,7 +367,7 @@ void RePlanner::setup_replanner() {
 
   // wait for result (initial timeout duration can be large because robot is not
   // moving)
-  double initial_local_timeout_dur = local_timeout_duration_ * 2.0;
+  double initial_local_timeout_dur = local_timeout_duration_ * 3.0;
   bool local_finished_before_timeout = local_plan_client_->waitForResult(
       ros::Duration(initial_local_timeout_dur));
 
@@ -355,11 +380,36 @@ void RePlanner::setup_replanner() {
     ROS_ERROR_STREAM(
         "Initial local planning timed out, its timeout duration is set as: "
         << initial_local_timeout_dur);
+
+    // Skip waypoint if timed out
+    if (cur_cb_waypoint_idx_ >= (pose_goals_.size() - 1)) {
+      ROS_ERROR(
+          "The next waypoint is the final waypoint in the mission, aborting "
+          "this full mission!");
+      cur_cb_waypoint_idx_ = 0;
+      pose_goals_.clear();
+    } else {
+      cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
+      ROS_ERROR_STREAM("skipping the waypoint: " << cur_cb_waypoint_idx_);
+    }
+
     AbortReplan();
     return;
   }
   auto local_result = local_plan_client_->getResult();
   if (!local_result->success) {
+    // Skip waypoint if failed
+    if (cur_cb_waypoint_idx_ >= (pose_goals_.size() - 1)) {
+      ROS_ERROR(
+          "The next waypoint is the final waypoint in the mission, aborting "
+          "this full mission!");
+      cur_cb_waypoint_idx_ = 0;
+      pose_goals_.clear();
+    } else {
+      cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
+      ROS_ERROR_STREAM("skipping the waypoint: " << cur_cb_waypoint_idx_);
+    }
+
     ROS_ERROR("Initial local planning failed to find a local trajectory!");
     AbortReplan();
     return;
@@ -978,7 +1028,7 @@ void RePlanner::StateTriggerCb(const std_msgs::String::ConstPtr& msg) {
       // num_trials > max_replan_trials you set. You can just click
       // execute waypoint mission again to force re-start it...
 
-      cur_cb_waypoint_idx_++;
+      cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
       // to immediate make this in effect, we will abort current replan and have
       // the state machine re-enter the replan (after calling stopping policy)
       AbortReplan();

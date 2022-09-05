@@ -16,6 +16,7 @@
 #include <sensor_msgs/Temperature.h>
 #include <state_machine/ReplanAction.h>
 #include <std_msgs/Int64.h>
+#include <std_msgs/Int8.h>
 #include <tf/transform_datatypes.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
@@ -83,6 +84,9 @@ class RePlanner {
   double timer_counter_ = 0;
   double average_time_ = 0;
 
+  // exploration stuff
+  ros::Publisher waypoint_idx_pub_;
+
   // tf_listener
   tf2_ros::Buffer tfBuffer;
   tf2_ros::TransformListener* tfListener;
@@ -101,8 +105,8 @@ class RePlanner {
   geometry_msgs::Pose pose_goal_wrt_odom_;  // goal recorder (transformed to
                                             // account for odom drift)
 
-  int cur_cb_waypoint_idx_{0};  // index of current goal in the array of goals
-                                // (waypoints)
+  int cur_cb_waypoint_idx_{0};  // index of current goal in the array of
+                                // goals (waypoints)
   std::vector<geometry_msgs::Pose> pose_goals_;  // an array of goals
 
   bool finished_replanning_{
@@ -207,15 +211,18 @@ class RePlanner {
    */
   bool PlanTrajectory(int horizon);
 
+  void IncrementWaypointIdx();
+  void ResetWaypointIdx();
+
   /**
-   * @brief Crop global path for local planner by intersecting it with local map
-   * boundaries
+   * @brief Crop global path for local planner by intersecting it with local
+   * map boundaries
    * @param path original path to crop
    * @return cropped path, which has at least 2 waypoints, the first element
    * will be the global path start, and the last element will be the
    * intersection between the global map and local voxel map (which is to be
-   * used as local goal). The other waypoints are global path's waypoints that
-   * lie between the global path's start and the intersection
+   * used as local goal). The other waypoints are global path's waypoints
+   * that lie between the global path's start and the intersection
    *
    */
   vec_Vec3f PathCropIntersect(const vec_Vec3f& path);
@@ -244,14 +251,14 @@ class RePlanner {
   vec_Vec3f TransformGlobalPath(const vec_Vec3f& path_original);
 
   /**
-   * @brief transform global path from map frame to odom frame, this is the key
-   * step in two reference frame system setup
+   * @brief transform global path from map frame to odom frame, this is the
+   * key step in two reference frame system setup
    */
   void TransformGlobalGoal();
 
   /**
-   * @brief abort the replan process, exit with abort full mission, will transit
-   * to hover
+   * @brief abort the replan process, exit with abort full mission, will
+   * transit to hover
    */
   void AbortFullMission(void);
 

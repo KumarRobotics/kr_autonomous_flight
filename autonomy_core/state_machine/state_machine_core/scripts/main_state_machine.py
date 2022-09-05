@@ -48,11 +48,11 @@ def main():
         raise Exception("[State machine:] state_machine/max_replan_trials is not set in the ros param YAML file!")
 
     # Create holder for tracker object
-    quad_tracker = QuadTracker(rospy.names.get_namespace() + "abort")
-    quad_tracker.local_replan_rate = local_replan_rate
-    quad_tracker.global_replan_rate_factor = global_replan_rate_factor
-    quad_tracker.max_replan_trials = max_replan_trials
-    quad_tracker.avoid = True  # obstacle avoidance in planner
+    quad_monitor = QuadTracker(rospy.names.get_namespace() + "abort")
+    quad_monitor.local_replan_rate = local_replan_rate
+    quad_monitor.global_replan_rate_factor = global_replan_rate_factor
+    quad_monitor.max_replan_trials = max_replan_trials
+    quad_monitor.avoid = True  # obstacle avoidance in planner
 
     # Seconds to wait for the stopping policy to finish, should be large enough so that the robot fully stops
     
@@ -68,7 +68,7 @@ def main():
         smach.StateMachine.add(
             "IdleTransition",
             TrackerTransition("trackers_manager/transition",
-                              "action_trackers/TakeOffTracker", quad_tracker),
+                              "action_trackers/TakeOffTracker", quad_monitor),
             transitions={
                 "succeeded": "Off",
                 "aborted": "Off",
@@ -80,7 +80,7 @@ def main():
         smach.StateMachine.add(
             "Off",
             SwitchState("state_trigger", MHL.StateTransition, ["motors_on"],
-                        quad_tracker),
+                        quad_monitor),
             transitions={
                 "invalid": "Off",
                 "preempted": "Off",
@@ -140,7 +140,7 @@ def main():
                 "state_trigger",
                 MHL.StateTransition,
                 ["motors_off", "takeoff"],
-                quad_tracker,
+                quad_monitor,
             ),
             transitions={
                 "invalid": "Idle",
@@ -153,7 +153,7 @@ def main():
         # taking off state
         smach.StateMachine.add(
             "TakingOff",
-            TakingOff("trackers_manager/take_off", quad_tracker),
+            TakingOff("trackers_manager/take_off", quad_monitor),
             transitions={
                 "succeeded": "Hover",
                 "aborted": "Idle",
@@ -164,7 +164,7 @@ def main():
         # LandingExecute state
         smach.StateMachine.add(
             "LandingExecute",
-            Landing("trackers_manager/land", quad_tracker),
+            Landing("trackers_manager/land", quad_monitor),
             transitions={
                 "succeeded": "Idle",
                 "aborted": "Hover",
@@ -179,7 +179,7 @@ def main():
                 "state_trigger",
                 MHL.StateTransition,
                 ["land_here", "waypoints"],
-                quad_tracker,
+                quad_monitor,
             ),
             transitions={
                 "invalid": "Hover",
@@ -193,7 +193,7 @@ def main():
         # Set home position for land_here command
         smach.StateMachine.add(
             "SetHomeHere",
-            SetHomeHere(quad_tracker),
+            SetHomeHere(quad_monitor),
             transitions={
                 "succeeded": "LandingRequest",
                 "failed": "Hover"
@@ -204,7 +204,7 @@ def main():
         smach.StateMachine.add(
             "LandingRequest",
             TrackerTransition("trackers_manager/transition",
-                              "action_trackers/LandTracker", quad_tracker),
+                              "action_trackers/LandTracker", quad_monitor),
             transitions={
                 "succeeded": "LandingExecute",
                 "aborted": "Hover",
@@ -215,7 +215,7 @@ def main():
 
         # GetMPWaypoints state, processing waypoints for motion primitive based replanner:
         smach.StateMachine.add('GetMPWaypoints',
-                               GetWaypoints(quad_tracker),
+                               GetWaypoints(quad_monitor),
                                transitions={
                                    'succeeded': 'EnterReplanner',
                                    'multi': 'EnterReplanner',
@@ -226,7 +226,7 @@ def main():
         # succeeded means that all waypoints have been reached
         smach.StateMachine.add(
             "EnterReplanner",
-            Replanner.REPLANNER(quad_tracker, wait_for_stop),
+            Replanner.REPLANNER(quad_monitor, wait_for_stop),
             transitions={
                 "succeeded": "Hover", # stay hovering
                 "aborted": "Hover", # TODO(xu) better to reset num_trials in RetryWaypoints class to 1 too
@@ -238,7 +238,7 @@ def main():
         # RetryMPWaypoints state, re-entering EnterReplanner state if RetryWaypoints returns true (i.e. trail times < pre-defined max_trail_time);
         # Otherwise, calling stopping policy and transiting to hover.
         smach.StateMachine.add('RetryMPWaypoints',
-                               RetryWaypoints(quad_tracker),
+                               RetryWaypoints(quad_monitor),
                                transitions={
                                    'succeeded': 'EnterReplanner',
                                    'failed': 'Hover'

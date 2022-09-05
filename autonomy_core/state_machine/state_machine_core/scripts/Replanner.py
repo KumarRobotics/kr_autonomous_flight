@@ -76,7 +76,16 @@ class RePlan(smach_ros.SimpleActionState):
 
         self.odom_sub = rospy.Subscriber("odom", Odometry, self.odom_cb, queue_size=10)
         self.odom_count = 0
-        self.exploration_in_progress = False
+
+        # 0 means no exploration is in progress
+        # 1 means exploration phase 1 is yet to start, meaning that it is the first observation of the cuboid (unstable)
+        # 2 means exploration phase 1 is in progress, meaning that it is going to the first waypoint of the cuboid (unstable)
+        # 3 means exploration phase 1 is done, and phase 2 is yet to start, meaning that the first waypoint of the cuboid is reached and cuboid stabilized, replan to explore all 4 waypoints of the stable cuboid
+        # 4 means exploration phase 1 is done, and phase 2 is in progress, exploring the all 4 waypoints of the stable cuboid
+        # will go back to 0 when phase 2 is done
+        self.exploration_status = 0
+        # self.exploration_phase_1_in_progress = False
+        # self.exploration_phase_2_in_progress = False
         self.exploration_start_idx = None
         
     
@@ -106,47 +115,79 @@ class RePlan(smach_ros.SimpleActionState):
         if self.current_executing_waypoint_idx is None:
             return
 
-        exploration_waypoints = [[self.robot_x + 10, self.robot_y, 5]]
-        if (self.exploration_start_idx is not None) and (self.current_executing_waypoint_idx >= self.exploration_start_idx + len(exploration_waypoints)):
-                self.exploration_in_progress == False
-        if rospy.Time.now().secs - self.prev_pub_time > 20.0 and self.exploration_in_progress == False:
-            self.exploration_in_progress == True
-            self.exploration_start_idx = self.current_executing_waypoint_idx
+        exploration_waypoints = [[self.robot_x + 20, self.robot_y, 5], [self.robot_x+20, self.robot_y+ 20, 5], [self.robot_x-20, self.robot_y+20, 5], [self.robot_x-20, self.robot_y-20, 5]]
+        assert(len(exploration_waypoints) == 4)
+        if (rospy.Time.now().secs - self.prev_pub_time > 30.0): 
+            if self.exploration_status == 0:
+            # if (self.exploration_phase_1_in_progress == False) and (self.exploration_phase_2_in_progress == False):
+                print('starting exploration...')
+                self.exploration_start_idx = self.current_executing_waypoint_idx
+                self.original_number_of_waypoints = len(self.quad_monitor.waypoints.poses)
+                self.exploration_status = 1
+                self.termination_idx_of_phase_1 = self.exploration_start_idx + 1
+                self.termination_idx_of_phase_2 = self.exploration_start_idx + len(exploration_waypoints) + 1
 
-            # the all waypoints will include [original_reached_waypoints, exploration_waypoints, original_future_waypoints]
-            self.quad_monitor.pose_goals= []
-            original_all_waypoints = copy.deepcopy(self.quad_monitor.waypoints.poses)
-            self.quad_monitor.waypoints.poses = []
-            original_cur_future_waypoints = []
 
-            for cur_wp_idx, cur_wp in enumerate(original_all_waypoints):
-                if cur_wp_idx < self.current_executing_waypoint_idx:
-                    # reached waypoints
-                    self.quad_monitor.waypoints.poses.append(original_all_waypoints[cur_wp_idx])
-                else:
-                    # original current and future waypoints
-                    original_cur_future_waypoints.append(original_all_waypoints[cur_wp_idx])
+            # update waypoints from information_gain_planner
+            # check if cuboid is explored
+            if (self.exploration_status == 2) and (self.current_executing_waypoint_idx >= self.termination_idx_of_phase_1):
+                self.exploration_status = 3
+            if (self.exploration_status == 4) and (self.current_executing_waypoint_idx >= self.termination_idx_of_phase_2):
+                # de-activate exploration to enable receiving new exploration waypoints
+                self.exploration_status = 0
+                self.prev_pub_time = rospy.Time.now().secs
 
-            for cur_wp in exploration_waypoints:
-                posC = GM.PoseStamped()
-                posC.pose.position.x = cur_wp[0]
-                posC.pose.position.y = cur_wp[1]
-                posC.pose.position.z = cur_wp[2]
-                self.quad_monitor.waypoints.poses.append(posC)
 
-            for cur_wp in original_cur_future_waypoints:
-                self.quad_monitor.waypoints.poses.append(cur_wp)
-            
-            
-            self.quad_monitor.pose_goals = [it.pose for it in self.quad_monitor.waypoints.poses]
+                
+            if self.exploration_status == 1: 
+                self.exploration_status = 2
+                self.exploration_phase_1_in_progress = True
+                waypoint_to_add = copy.deepcopy([exploration_waypoints[0]])
+                self.update_waypoints(waypoint_to_add)
+                # sanity check
+                assert(len(self.quad_monitor.pose_goals) == (self.original_number_of_waypoints + len(waypoint_to_add)))
+                self.original_number_of_waypoints = len(self.quad_monitor.pose_goals)
+                self.pub_exploration_state_trigger()
+                print('starting phase 1 of exploration')
+            elif self.exploration_status == 3:
+                self.exploration_status = 4
+                waypoint_to_add = copy.deepcopy(exploration_waypoints)
+                self.update_waypoints(waypoint_to_add)
+                # sanity check
+                assert(len(self.quad_monitor.pose_goals) == (self.original_number_of_waypoints + len(waypoint_to_add)))
+                self.pub_exploration_state_trigger()
+                print('starting phase 2 of exploration')
 
-            # sanity check
-            assert(len(self.quad_monitor.pose_goals) == (len(original_all_waypoints) + len(exploration_waypoints)))
 
-            self.pub_exploration_state_trigger()
-            self.prev_pub_time = rospy.Time.now().secs
 
-            
+
+    def update_waypoints(self, exploration_waypoints):
+        # the all waypoints will include [original_reached_waypoints, exploration_waypoints, original_future_waypoints]
+        self.quad_monitor.pose_goals= []
+        original_all_waypoints = copy.deepcopy(self.quad_monitor.waypoints.poses)
+        self.quad_monitor.waypoints.poses = []
+        original_cur_future_waypoints = []
+
+        for cur_wp_idx, cur_wp in enumerate(original_all_waypoints):
+            if cur_wp_idx < self.current_executing_waypoint_idx:
+                # reached waypoints
+                self.quad_monitor.waypoints.poses.append(original_all_waypoints[cur_wp_idx])
+            else:
+                # original current and future waypoints
+                original_cur_future_waypoints.append(original_all_waypoints[cur_wp_idx])
+
+        for cur_wp in exploration_waypoints:
+            posC = GM.PoseStamped()
+            posC.pose.position.x = cur_wp[0]
+            posC.pose.position.y = cur_wp[1]
+            posC.pose.position.z = cur_wp[2]
+            self.quad_monitor.waypoints.poses.append(posC)
+
+        for cur_wp in original_cur_future_waypoints:
+            self.quad_monitor.waypoints.poses.append(cur_wp)
+        
+        
+        self.quad_monitor.pose_goals = [it.pose for it in self.quad_monitor.waypoints.poses]
 
     def pub_exploration_state_trigger(self):
         self.exploration_state_trigger.publish("switch_to_exploration")

@@ -11,7 +11,15 @@ import smach
 import smach_ros
 from MainStates import TrackerTransition
 import state_machine.msg as SM
+from std_msgs.msg import Int8
+from std_msgs.msg import String
 
+from nav_msgs.msg import Odometry
+import geometry_msgs.msg as GM
+
+from visualization_msgs.msg import Marker, MarkerArray
+import numpy as np
+from tf.transformations import euler_from_quaternion
 
 # Yaw-related classes (CheckYaw AlignYaw YawSearch) removed (exist in kr_autonomous_flight repo before 8/16/2020).
 
@@ -50,6 +58,115 @@ class CheckRePlan(smach.State):
 
 
 class RePlan(smach_ros.SimpleActionState):
+    def __init__(self, action_topic, quad_monitor):
+        smach_ros.SimpleActionState.__init__(
+            self, action_topic, SM.ReplanAction, goal_cb=self.goal_cb, result_cb=self.result_cb
+        )
+        self.quad_monitor = quad_monitor
+
+        self.waypoint_idx_sub = rospy.Subscriber("/waypoint_idx", Int8, self.waypoint_idx_cb, queue_size=5)
+
+        self.cuboids_sub = rospy.Subscriber("/car_cuboid_body", MarkerArray, self.cuboid_cb, queue_size=5)
+
+        self.current_executing_waypoint_idx = None
+    
+        self.exploration_state_trigger = rospy.Publisher("replan_state_trigger",String, queue_size=1)
+
+        self.prev_pub_time = rospy.Time.now().secs
+
+        self.odom_sub = rospy.Subscriber("odom", Odometry, self.odom_cb, queue_size=10)
+        self.odom_count = 0
+        self.exploration_in_progress = False
+        self.exploration_start_idx = None
+        
+    
+    def odom_cb(self, msg):
+        # if self.odom_count % 10 == 0:
+        self.robot_x = np.round(msg.pose.pose.position.x, 4)
+        self.robot_y = np.round(msg.pose.pose.position.y, 4)
+        self.robot_z = np.round(msg.pose.pose.position.z, 4)
+
+        quaternion = (
+            msg.pose.pose.orientation.x,
+            msg.pose.pose.orientation.y,
+            msg.pose.pose.orientation.z,
+            msg.pose.pose.orientation.w,
+        )
+        euler = euler_from_quaternion(quaternion)
+        yaw = np.round(euler[2], 4)
+        # self._widget.odom_x_data.setText(str(x))
+        # self._widget.odom_y_data.setText(str(y))
+        # self._widget.odom_z_data.setText(str(z))
+        # self._widget.odom_yaw_data.setText(str(yaw))
+            # self.odom_count = 0
+        self.odom_count += 1
+        self.explore()
+
+    def explore(self):
+        if self.current_executing_waypoint_idx is None:
+            return
+
+        exploration_waypoints = [[self.robot_x + 10, self.robot_y, 5]]
+        if (self.exploration_start_idx is not None) and (self.current_executing_waypoint_idx >= self.exploration_start_idx + len(exploration_waypoints)):
+                self.exploration_in_progress == False
+        if rospy.Time.now().secs - self.prev_pub_time > 20.0 and self.exploration_in_progress == False:
+            self.exploration_in_progress == True
+            self.exploration_start_idx = self.current_executing_waypoint_idx
+
+            # the all waypoints will include [original_reached_waypoints, exploration_waypoints, original_future_waypoints]
+            self.quad_monitor.pose_goals= []
+            original_all_waypoints = copy.deepcopy(self.quad_monitor.waypoints.poses)
+            self.quad_monitor.waypoints.poses = []
+            original_cur_future_waypoints = []
+
+            for cur_wp_idx, cur_wp in enumerate(original_all_waypoints):
+                if cur_wp_idx < self.current_executing_waypoint_idx:
+                    # reached waypoints
+                    self.quad_monitor.waypoints.poses.append(original_all_waypoints[cur_wp_idx])
+                else:
+                    # original current and future waypoints
+                    original_cur_future_waypoints.append(original_all_waypoints[cur_wp_idx])
+
+            for cur_wp in exploration_waypoints:
+                posC = GM.PoseStamped()
+                posC.pose.position.x = cur_wp[0]
+                posC.pose.position.y = cur_wp[1]
+                posC.pose.position.z = cur_wp[2]
+                self.quad_monitor.waypoints.poses.append(posC)
+
+            for cur_wp in original_cur_future_waypoints:
+                self.quad_monitor.waypoints.poses.append(cur_wp)
+            
+            
+            self.quad_monitor.pose_goals = [it.pose for it in self.quad_monitor.waypoints.poses]
+
+            # sanity check
+            assert(len(self.quad_monitor.pose_goals) == (len(original_all_waypoints) + len(exploration_waypoints)))
+
+            self.pub_exploration_state_trigger()
+            self.prev_pub_time = rospy.Time.now().secs
+
+            
+
+    def pub_exploration_state_trigger(self):
+        self.exploration_state_trigger.publish("switch_to_exploration")
+
+    def cuboid_cb(self, msg):
+        self.check_eligible_cuboid(msg)
+
+    def check_eligible_cuboid(self, cuboid_marker_array):
+        # if eligible explore()
+        pass
+
+    # def fake_check_eligible_cuboid(self):
+    #     print("eligible cuboid found publishing state trigger")
+
+        
+
+    def waypoint_idx_cb(self, msg):
+        self.current_executing_waypoint_idx = msg.data
+        print('For exploration: current_executing_waypoint_idx is ', self.current_executing_waypoint_idx)
+
     def goal_cb(self, _userdata, goal):
         # rospy.logerr(type(goal.p_init))
         goal.p_init = copy.deepcopy(self.quad_monitor.get_curr_poseC())
@@ -60,7 +177,16 @@ class RePlan(smach_ros.SimpleActionState):
             goal.avoid_obstacles = self.quad_monitor.avoid
 
         if self.quad_monitor.pose_goals is not None:
+            # loading the waypoints with exploration waypoints
+            # self.quad_monitor.pose_goals = [it.pose for it in
+            #     self.quad_monitor.waypoints.poses]
             goal.p_finals = self.quad_monitor.pose_goals
+            # TODO: add exploration waypoints here, but need to insert in the proper index!
+            
+        else:
+            print("pose_goals is None, single waypoint mode (exploration is not supported)")
+            # if exploration_on 
+            # TODO: add exploration into waypoints, and pose_goal as the last element
 
         goal.continue_mission = self.quad_monitor.continue_mission
 
@@ -85,18 +211,12 @@ class RePlan(smach_ros.SimpleActionState):
 
         print("Current replan result is:", self.quad_monitor.replan_status)
 
-    def __init__(self, action_topic, quad_monitor):
-        smach_ros.SimpleActionState.__init__(
-            self, action_topic, SM.ReplanAction, goal_cb=self.goal_cb, result_cb=self.result_cb
-        )
-        self.quad_monitor = quad_monitor
-
 
 class REPLANNER(smach.StateMachine):
     def child_cb(self, outcome_map):
         return True
 
-    def __init__(self, quad_monitor, wait_for_stop):
+    def __init__(self, quad_monitor, wait_for_stop):       
         smach.StateMachine.__init__(self, outcomes=["succeeded", "failed", "aborted"])
         self.quad_monitor = quad_monitor
         with self:

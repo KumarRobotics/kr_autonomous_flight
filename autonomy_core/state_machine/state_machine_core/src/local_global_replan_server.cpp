@@ -113,6 +113,20 @@ void RePlanner::LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
   local_map_ptr_ = msg;
 }
 
+void RePlanner::IncrementWaypointIdx() {
+  cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
+  std_msgs::Int8 msg;
+  msg.data = cur_cb_waypoint_idx_;
+  waypoint_idx_pub_.publish(msg);
+}
+
+void RePlanner::ResetWaypointIdx() {
+  cur_cb_waypoint_idx_ = 0;
+  std_msgs::Int8 msg;
+  msg.data = cur_cb_waypoint_idx_;
+  waypoint_idx_pub_.publish(msg);
+}
+
 void RePlanner::ReplanGoalCb() {
   boost::mutex::scoped_lock lock(mtx_);
   // accept new goal (ref:
@@ -137,6 +151,8 @@ void RePlanner::ReplanGoalCb() {
       AbortFullMission();
       // AbortReplan();
     } else {
+      // use existing goals
+      pose_goals_ = goal->p_finals;
       // update the waypoint idx to continue executing the remaining waypoints
       // from the previous replan callback
       ROS_INFO("Last replan process has finished %d waypoints!",
@@ -144,9 +160,9 @@ void RePlanner::ReplanGoalCb() {
     }
   } else {
     // reset cur_cb_waypoint_idx
-    cur_cb_waypoint_idx_ = 0;
+    ResetWaypointIdx();
     // this means starting a new mission
-    ROS_INFO("Non-empty goal is sent, excecuting a new mission...");
+    ROS_INFO("Excecuting a new mission...");
     if ((goal->p_finals).empty()) {
       ROS_INFO("waypoints list is empty, now using single goal intead!");
       pose_goals_.push_back(goal->p_final);
@@ -253,7 +269,7 @@ void RePlanner::setup_replanner() {
           "Initial waypoint is already close to the robot "
           "position, continuing "
           "with the next waypoint!");
-      cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
+      IncrementWaypointIdx();
       pose_goal_ = pose_goals_[cur_cb_waypoint_idx_];
       TransformGlobalGoal();
     }
@@ -283,10 +299,10 @@ void RePlanner::setup_replanner() {
       ROS_ERROR(
           "The next waypoint is the final waypoint in the mission, aborting "
           "this full mission!");
-      cur_cb_waypoint_idx_ = 0;
+      ResetWaypointIdx();
       pose_goals_.clear();
     } else {
-      cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
+      IncrementWaypointIdx();
       ROS_ERROR_STREAM("skipping the waypoint: " << cur_cb_waypoint_idx_);
     }
 
@@ -304,10 +320,10 @@ void RePlanner::setup_replanner() {
       ROS_ERROR(
           "The next waypoint is the final waypoint in the mission, aborting "
           "this full mission!");
-      cur_cb_waypoint_idx_ = 0;
+      ResetWaypointIdx();
       pose_goals_.clear();
     } else {
-      cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
+      IncrementWaypointIdx();
       ROS_ERROR_STREAM("skipping the waypoint: " << cur_cb_waypoint_idx_);
     }
 
@@ -386,10 +402,10 @@ void RePlanner::setup_replanner() {
       ROS_ERROR(
           "The next waypoint is the final waypoint in the mission, aborting "
           "this full mission!");
-      cur_cb_waypoint_idx_ = 0;
+      ResetWaypointIdx();
       pose_goals_.clear();
     } else {
-      cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
+      IncrementWaypointIdx();
       ROS_ERROR_STREAM("skipping the waypoint: " << cur_cb_waypoint_idx_);
     }
 
@@ -403,10 +419,10 @@ void RePlanner::setup_replanner() {
       ROS_ERROR(
           "The next waypoint is the final waypoint in the mission, aborting "
           "this full mission!");
-      cur_cb_waypoint_idx_ = 0;
+      ResetWaypointIdx();
       pose_goals_.clear();
     } else {
-      cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
+      IncrementWaypointIdx();
       ROS_ERROR_STREAM("skipping the waypoint: " << cur_cb_waypoint_idx_);
     }
 
@@ -660,7 +676,7 @@ void RePlanner::update_status() {
                 << " waypoints received");
       } else if (cur_cb_waypoint_idx_ < (pose_goals_.size() - 1)) {
         // take the next waypoint if the intermidiate waypoint is reached
-        cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
+        IncrementWaypointIdx();
         ROS_INFO_STREAM(
             "Intermidiate waypoint reached according to x and y positions, "
             "continue to the next waypoint, "
@@ -1000,7 +1016,7 @@ void RePlanner::StateTriggerCb(const std_msgs::String::ConstPtr& msg) {
     ROS_WARN("Reset mission button is clicked! Now resetting the mission!");
     abort_full_mission = true;
     // reset waypoint index so that the user can send a new mission
-    cur_cb_waypoint_idx_ = 0;
+    ResetWaypointIdx();
     pose_goals_.clear();
   } else if (requested_state == "skip_next_waypoint") {
     ROS_INFO("Skip next waypoint button is clicked!");
@@ -1019,7 +1035,7 @@ void RePlanner::StateTriggerCb(const std_msgs::String::ConstPtr& msg) {
       ROS_ERROR("++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
       abort_full_mission = true;
       // reset waypoint index so that the user can send a new mission
-      cur_cb_waypoint_idx_ = 0;
+      ResetWaypointIdx();
       pose_goals_.clear();
     } else {
       // Else, skip the next waypoint by adding 1 to cur_cb_waypoint_idx_
@@ -1028,17 +1044,24 @@ void RePlanner::StateTriggerCb(const std_msgs::String::ConstPtr& msg) {
       // num_trials > max_replan_trials you set. You can just click
       // execute waypoint mission again to force re-start it...
 
-      cur_cb_waypoint_idx_ = cur_cb_waypoint_idx_ + 1;
+      IncrementWaypointIdx();
       // to immediate make this in effect, we will abort current replan and have
       // the state machine re-enter the replan (after calling stopping policy)
       AbortReplan();
     }
+  } else if (requested_state == "switch_to_exploration") {
+    // state machine will manipulate the waypoints and start exploration
+    AbortReplan();
+    ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+    ROS_WARN("Switching to exploration mode!");
+    ROS_WARN("++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
   } else {
     ROS_ERROR_STREAM(
         "Wrong replanner state trigger information received, which is: "
         << requested_state
         << " , only allowed replanner state trigger msgs are "
-           "skip_next_waypoint and reset_mission. Check!!!");
+           "skip_next_waypoint, switch_to_exploration and reset_mission. "
+           "Check!!!");
   }
 
   if (abort_full_mission) {
@@ -1079,6 +1102,8 @@ RePlanner::RePlanner() : nh_("~") {
       "/timing/replanner/global_replan", 1);
   time_pub2 = priv_nh.advertise<sensor_msgs::Temperature>(
       "/timing/replanner/local_replan", 1);
+
+  waypoint_idx_pub_ = priv_nh.advertise<std_msgs::Int8>("/waypoint_idx", 1);
 
   cropped_path_pub_ =
       priv_nh.advertise<planning_ros_msgs::Path>("cropped_local_path", 1, true);

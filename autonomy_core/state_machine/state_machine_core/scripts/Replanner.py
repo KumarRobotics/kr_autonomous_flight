@@ -20,6 +20,7 @@ import geometry_msgs.msg as GM
 from visualization_msgs.msg import Marker, MarkerArray
 import numpy as np
 from tf.transformations import euler_from_quaternion
+from scipy.spatial.transform import Rotation as R
 
 # Yaw-related classes (CheckYaw AlignYaw YawSearch) removed (exist in kr_autonomous_flight repo before 8/16/2020).
 
@@ -57,6 +58,12 @@ class CheckRePlan(smach.State):
         return self.quad_monitor.replan_status
 
 
+
+
+
+
+
+################################################################################ RePlan Class #######################################################################################
 class RePlan(smach_ros.SimpleActionState):
     def __init__(self, action_topic, quad_monitor):
         smach_ros.SimpleActionState.__init__(
@@ -77,6 +84,20 @@ class RePlan(smach_ros.SimpleActionState):
         self.odom_sub = rospy.Subscriber("odom", Odometry, self.odom_cb, queue_size=10)
         self.odom_count = 0
 
+
+        self.robot_x = None
+        self.robot_y = None
+        self.robot_z = None
+        self.exploration_waypoints = None
+        self.start_new_exploration = False
+        self.explored_cuboid_xy = []
+
+        self.car_cuboids_sub = rospy.Subscriber("/car_cuboids", MarkerArray, callback=self.car_cuboids_cb, queue_size=1)
+        
+        data_dir = "/home/sam/bags/stats-for-testing/"
+        filename = "asslam_front_driver_counter_clockwise.txt"
+        self.active_mapping_waypoints = np.loadtxt(data_dir + filename)
+        
         # 0 means no exploration is in progress
         # 1 means exploration phase 1 is yet to start, meaning that it is the first observation of the cuboid (unstable)
         # 2 means exploration phase 1 is in progress, meaning that it is going to the first waypoint of the cuboid (unstable)
@@ -112,12 +133,15 @@ class RePlan(smach_ros.SimpleActionState):
         self.explore()
 
     def explore(self):
-        if self.current_executing_waypoint_idx is None:
+        if (self.current_executing_waypoint_idx is None) or (self.exploration_waypoints is None):
+            print('Not initialized enough for exploration...')
             return
 
-        exploration_waypoints = [[self.robot_x + 20, self.robot_y, 5], [self.robot_x+20, self.robot_y+ 20, 5], [self.robot_x-20, self.robot_y+20, 5], [self.robot_x-20, self.robot_y-20, 5]]
+        exploration_waypoints = self.exploration_waypoints
+        # exploration_waypoints = [[self.robot_x + 20, self.robot_y, 5], [self.robot_x+20, self.robot_y+ 20, 5], [self.robot_x-20, self.robot_y+20, 5], [self.robot_x-20, self.robot_y-20, 5]]
         assert(len(exploration_waypoints) == 4)
-        if (rospy.Time.now().secs - self.prev_pub_time > 30.0): 
+        if self.start_new_exploration:
+        # if (rospy.Time.now().secs - self.prev_pub_time > 30.0): 
             if self.exploration_status == 0:
             # if (self.exploration_phase_1_in_progress == False) and (self.exploration_phase_2_in_progress == False):
                 print('starting exploration...')
@@ -135,7 +159,8 @@ class RePlan(smach_ros.SimpleActionState):
             if (self.exploration_status == 4) and (self.current_executing_waypoint_idx >= self.termination_idx_of_phase_2):
                 # de-activate exploration to enable receiving new exploration waypoints
                 self.exploration_status = 0
-                self.prev_pub_time = rospy.Time.now().secs
+                # self.prev_pub_time = rospy.Time.now().secs
+                self.start_new_exploration = False
 
 
                 
@@ -159,8 +184,92 @@ class RePlan(smach_ros.SimpleActionState):
                 print('starting phase 2 of exploration')
 
 
+    def car_cuboids_cb(self, car_cuboids_msg):
+
+        cur_cuboids_xy_yaw = []
+        explored_threshold = 5
+        threshold_to_explore = 15
+
+        if self.robot_x is None:
+            print(f'odometry not yet received')
+            return
+        for car_cuboid in car_cuboids_msg.markers:
+            already_explored = False
+            R_lidar_odom_to_world = R.from_euler('z', np.pi / 2.0).as_matrix()
+            cuboid_x_lidar_odom = car_cuboid.pose.position.x 
+            cuboid_y_lidar_odom = car_cuboid.pose.position.y
+            cuboid_pos_world = R_lidar_odom_to_world @ np.array([cuboid_x_lidar_odom, cuboid_y_lidar_odom, 0])
+            cuboid_yaw = car_cuboid.pose.orientation.z 
+            cuboid_x_world = cuboid_pos_world[0]
+            cuboid_y_world = cuboid_pos_world[1]
+            cuboid_yaw_world = cuboid_yaw + np.pi / 2.0
+            cur_cuboids_xy_yaw.append((cuboid_x_world, cuboid_y_world, cuboid_yaw_world))
+
+            # check if this cuboid is already explored
+            for cur_explored_cuboid in self.explored_cuboid_xy:
+                diff_x = cuboid_x_world - cur_explored_cuboid[0]
+                diff_y = cuboid_y_world - cur_explored_cuboid[1]
+                distance = np.linalg.norm(np.array([diff_x, diff_y]))
+                if distance < explored_threshold:
+                    print('already explored')
+                    already_explored = True
+                    break
+                
+
+            if already_explored == False:
+                # check if this cuboid has distance less than desired threshold
+                diff_x = cuboid_x_world - self.robot_x
+                diff_y = cuboid_y_world - self.robot_y
+                distance = np.linalg.norm(np.array([diff_x, diff_y]))
+                if distance < threshold_to_explore:
+                    self.explored_cuboid_xy.append((cuboid_x_world, cuboid_y_world))
+                    R_world2cube = R.from_euler('z', -cuboid_yaw_world).as_matrix()
+                    robot_in_cuboid_frame = R_world2cube @ np.array([self.robot_x, self.robot_y, self.robot_z])
+                    quadrant = None
+                    x = robot_in_cuboid_frame[0] 
+                    y = robot_in_cuboid_frame[1] 
+                    if x > 0:
+                        if y > 0:
+                            # front driver
+                            quadrant = 1 
+                        else: 
+                            # front passenger
+                            quadrant = 4
+                    else:
+                        if y > 0:
+                            # rear driver
+                            quadrant = 2
+                        else:
+                            # rear passenger
+                            quadrant = 3
+
+                    start_idx = (quadrant - 1) * 4
+                    end_idx = start_idx + 4
+                    xy_point_to_explore = self.active_mapping_waypoints[start_idx:end_idx, :2]
+                    print('valid cuboid added, starting exploration...')
+                    self.exploration_waypoints = []
+                    for row in xy_point_to_explore: 
+                        
+                        self.exploration_waypoints.append([cuboid_x_world + row[0], cuboid_y_world +row[1], 5])
+                    self.start_new_exploration = True
+                    break
+
+                    
+
+        # cur_cuboids_xy_yaw = np.array(cur_cuboids_xy_yaw)
+        # # check if this cuboid is already explored
+        # for cur_explored_cuboid in self.explored_cuboid_xy:
+        #     xy_diff = cur_cuboids_xy_yaw[:,:2] - cur_explored_cuboid
+        #     distances = np.linalg.norm(xy_diff, axis=1)
 
 
+        # # check if this cuboid has distance less than desired threshold
+        # min_distance_cuboid = 
+            
+            
+        self.active_mapping_waypoints
+
+        
     def update_waypoints(self, exploration_waypoints):
         # the all waypoints will include [original_reached_waypoints, exploration_waypoints, original_future_waypoints]
         self.quad_monitor.pose_goals= []
@@ -251,6 +360,26 @@ class RePlan(smach_ros.SimpleActionState):
             self.quad_monitor.replan_status = "abort_full_mission"
 
         print("Current replan result is:", self.quad_monitor.replan_status)
+
+################################################################################ RePlan Class ends #######################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class REPLANNER(smach.StateMachine):

@@ -36,8 +36,27 @@
   /graph_slam/pose
   /graph_slam/submap
   /graph_slam/trajectory
-  /sloam/debug/obs_tree_features
-  /sloam/map_pose
+    /os_node/llol_odom
+    /sloam/cubes_map
+    /sloam/cubes_submap
+    /sloam/debug/map_ground_features
+    /sloam/debug/map_ground_model
+    /sloam/debug/map_tree_models
+    /sloam/debug/obs_ground_features
+    /sloam/debug/obs_ground_model
+    /sloam/debug/obs_tree_features
+    /sloam/debug/obs_tree_models
+    /sloam/debug/robot1/trajectory
+    /sloam/debug/robot2/trajectory
+    /sloam/map
+    /sloam/map_pose
+    /sloam/observation
+    /sloam/quadrotor1/pose_high_freq
+    /sloam/quadrotor1/sloam_odom_high_freq
+    /sloam/quadrotor2/pose_high_freq
+    /sloam/quadrotor2/sloam_odom_high_freq
+    /sloam/segmentation/ground
+
     "
     output="screen"/>
 </launch>

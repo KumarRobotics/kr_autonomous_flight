@@ -1,0 +1,23 @@
+<launch>
+    <arg name="debug" default="false"/>
+    <env if="$(arg debug)" name="ROSCONSOLE_CONFIG_FILE" value="$(find llol)/launch/debug.conf"/>
+
+    <arg name="tbb" default="0"/>
+    <arg name="log" default="0"/>
+    <arg name="vis" default="false"/>
+    <arg name="rigid" default="true"/>
+    <arg name="odom_frame" default="odom"/>
+
+    <node pkg="llol" type="sv_node_llol" name="llol_odom" output="screen" ns="os_node">
+        <remap from="~imu" to="/quadrotor/imu"/>
+        <remap from="~image" to="/quadrotor/image"/>
+        <remap from="~camera_info" to="/quadrotor/camera_info"/>
+
+        <rosparam command="load" file="$(find llol)/config/llol.yaml" />
+        <param name="tbb" type="int" value="$(arg tbb)"/>
+        <param name="log" type="int" value="$(arg log)"/>
+        <param name="vis" type="bool" value="$(arg vis)"/>
+        <param name="rigid" type="bool" value="$(arg rigid)"/>
+        <param name="odom_frame" type="string" value="$(arg odom_frame)"/>
+    </node>
+</launch>

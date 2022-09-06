@@ -94,7 +94,7 @@ class RePlan(smach_ros.SimpleActionState):
 
         self.car_cuboids_sub = rospy.Subscriber("/car_cuboids", MarkerArray, callback=self.car_cuboids_cb, queue_size=1)
         
-        data_dir = "/home/sam/bags/stats-for-testing/"
+        data_dir = "/home/dcist/bags/stats-for-testing/"
         filename = "asslam_front_driver_counter_clockwise.txt"
         self.active_mapping_waypoints = np.loadtxt(data_dir + filename)
         

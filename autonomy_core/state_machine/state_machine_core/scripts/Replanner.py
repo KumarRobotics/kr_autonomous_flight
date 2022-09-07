@@ -69,21 +69,20 @@ class RePlan(smach_ros.SimpleActionState):
         smach_ros.SimpleActionState.__init__(
             self, action_topic, SM.ReplanAction, goal_cb=self.goal_cb, result_cb=self.result_cb
         )
+
+
+        # enable exploration or not (if True, will reactively explore the environment when a cuboid message is published)
+        self.perform_exploration = False
+
         self.quad_monitor = quad_monitor
 
         self.waypoint_idx_sub = rospy.Subscriber("/waypoint_idx", Int8, self.waypoint_idx_cb, queue_size=5)
-
-        self.cuboids_sub = rospy.Subscriber("/car_cuboid_body", MarkerArray, self.cuboid_cb, queue_size=5)
 
         self.current_executing_waypoint_idx = None
     
         self.exploration_state_trigger = rospy.Publisher("replan_state_trigger",String, queue_size=1)
 
         self.prev_pub_time = rospy.Time.now().secs
-
-        self.odom_sub = rospy.Subscriber("odom", Odometry, self.odom_cb, queue_size=10)
-        self.odom_count = 0
-
 
         self.robot_x = None
         self.robot_y = None
@@ -92,11 +91,14 @@ class RePlan(smach_ros.SimpleActionState):
         self.start_new_exploration = False
         self.explored_cuboid_xy = []
 
-        self.car_cuboids_sub = rospy.Subscriber("/car_cuboids", MarkerArray, callback=self.car_cuboids_cb, queue_size=1)
-        
         data_dir = "/home/sam/bags/stats-for-testing/"
         filename = "asslam_front_driver_counter_clockwise.txt"
         self.active_mapping_waypoints = np.loadtxt(data_dir + filename)
+
+        if self.perform_exploration:
+            self.odom_sub = rospy.Subscriber("odom", Odometry, self.odom_cb, queue_size=10)
+            self.car_cuboids_sub = rospy.Subscriber("/car_cuboids", MarkerArray, callback=self.car_cuboids_cb, queue_size=1)
+
         
         # 0 means no exploration is in progress
         # 1 means exploration phase 1 is yet to start, meaning that it is the first observation of the cuboid (unstable)
@@ -111,25 +113,9 @@ class RePlan(smach_ros.SimpleActionState):
         
     
     def odom_cb(self, msg):
-        # if self.odom_count % 10 == 0:
         self.robot_x = np.round(msg.pose.pose.position.x, 4)
         self.robot_y = np.round(msg.pose.pose.position.y, 4)
         self.robot_z = np.round(msg.pose.pose.position.z, 4)
-
-        quaternion = (
-            msg.pose.pose.orientation.x,
-            msg.pose.pose.orientation.y,
-            msg.pose.pose.orientation.z,
-            msg.pose.pose.orientation.w,
-        )
-        euler = euler_from_quaternion(quaternion)
-        yaw = np.round(euler[2], 4)
-        # self._widget.odom_x_data.setText(str(x))
-        # self._widget.odom_y_data.setText(str(y))
-        # self._widget.odom_z_data.setText(str(z))
-        # self._widget.odom_yaw_data.setText(str(yaw))
-            # self.odom_count = 0
-        self.odom_count += 1
         self.explore()
 
     def explore(self):
@@ -300,16 +286,6 @@ class RePlan(smach_ros.SimpleActionState):
 
     def pub_exploration_state_trigger(self):
         self.exploration_state_trigger.publish("switch_to_exploration")
-
-    def cuboid_cb(self, msg):
-        self.check_eligible_cuboid(msg)
-
-    def check_eligible_cuboid(self, cuboid_marker_array):
-        # if eligible explore()
-        pass
-
-    # def fake_check_eligible_cuboid(self):
-    #     print("eligible cuboid found publishing state trigger")
 
         
 

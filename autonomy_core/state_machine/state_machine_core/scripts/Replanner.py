@@ -90,8 +90,6 @@ class RePlan(smach_ros.SimpleActionState):
         self.exploration_waypoints = None
         self.start_new_exploration = False
         self.explored_cuboid_xy = []
-
-        self.car_cuboids_sub = rospy.Subscriber("/car_cuboids", MarkerArray, callback=self.car_cuboids_cb, queue_size=1)
         
         data_dir = "/home/dcist/bags/stats-for-testing/"
         filename = "asslam_front_driver_counter_clockwise.txt"

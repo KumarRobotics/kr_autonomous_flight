@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+<arg name="robot" default="quadrotor"/>
+<node pkg="topic_tools" type="relay" name="lidar_relay" args="$(arg robot)/camera_info /os_node/camera_info"/>
+<node pkg="topic_tools" type="relay" name="lidar_relay2" args="$(arg robot)/image /os_node/image"/>
+<node pkg="topic_tools" type="relay" name="lidar_relay3" args="$(arg robot)/imu /os_node/imu"/>
+</launch>

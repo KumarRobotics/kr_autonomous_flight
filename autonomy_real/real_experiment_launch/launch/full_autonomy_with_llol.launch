@@ -38,6 +38,11 @@
   </include>
 </group>
 
+	<!-- <include file="$(find real_experiment_launch)/launch/relay_lidar.launch"> -->
+  <!-- </include> -->
+<!-- lidar odometry -->
+<include file="$(find real_experiment_launch)/launch/llol_with_robot_ns.launch">
+  </include>
 
 <!-- publish_tf -->
     <include file="$(find real_experiment_launch)/launch/publish_tf.launch">

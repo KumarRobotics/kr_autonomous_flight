@@ -72,7 +72,11 @@ class RePlan(smach_ros.SimpleActionState):
 
 
         # enable exploration or not (if True, will reactively explore the environment when a cuboid message is published)
-        self.perform_exploration = False
+        self.perform_exploration = False   
+        self.active_localization = False
+        self.closest_cylinder_xy = None
+
+        self.default_waypoint_z_height = 5
 
         self.quad_monitor = quad_monitor
 
@@ -90,14 +94,26 @@ class RePlan(smach_ros.SimpleActionState):
         self.exploration_waypoints = None
         self.start_new_exploration = False
         self.explored_cuboid_xy = []
-        
-        data_dir = "/home/dcist/bags/stats-for-testing/"
-        filename = "asslam_front_driver_counter_clockwise.txt"
-        self.active_mapping_waypoints = np.loadtxt(data_dir + filename)
 
+        self.last_active_localization_time = None
+        self.active_localization_requested = False
+        self.active_localization_max_interval = 300 # seconds
+
+        self.odom_sub = rospy.Subscriber("odom", Odometry, self.odom_cb, queue_size=10)
         if self.perform_exploration:
-            self.odom_sub = rospy.Subscriber("odom", Odometry, self.odom_cb, queue_size=10)
+            data_dir = "/home/dcist/bags/stats-for-testing/"
+            filename = "asslam_front_driver_counter_clockwise.txt"
+            self.active_mapping_waypoints = np.loadtxt(data_dir + filename)
             self.car_cuboids_sub = rospy.Subscriber("/car_cuboids", MarkerArray, callback=self.car_cuboids_cb, queue_size=1)
+        if self.active_localization:
+            # active localization will be carried out either
+            # (1) the previous active localization call has been more than self.active_localization_max_interval, or 
+            # (2) active_localization_trigger_cb is called (when covariance is too large, generic sloam will trigger this)
+
+            # from generic sloam
+            self.car_cuboids_sub = rospy.Subscriber("/sloam/map_cylinder_models", MarkerArray, callback=self.cylinder_cb, queue_size=1)
+            # from generic sloam, when covariance is larger than a threshold
+            self.car_cuboids_sub = rospy.Subscriber("/sloam/active_localization_trigger", String, callback=self.active_localization_trigger_cb, queue_size=1)
 
         
         # 0 means no exploration is in progress
@@ -116,7 +132,31 @@ class RePlan(smach_ros.SimpleActionState):
         self.robot_x = np.round(msg.pose.pose.position.x, 4)
         self.robot_y = np.round(msg.pose.pose.position.y, 4)
         self.robot_z = np.round(msg.pose.pose.position.z, 4)
-        self.explore()
+        if self.perform_exploration:
+            self.explore()
+        if self.active_localization:
+            if self.last_active_localization_time is not None:
+                if rospy.Time.now().secs - self.last_active_localization_time > self.active_localization_max_interval:
+                    self.active_localization_requested = True
+            self.active_localize()
+            
+    
+    def active_localization_trigger_cb(self,msg):
+        self.active_localization_requested = True
+
+    def active_localize(self):
+        if self.active_localization_requested:
+            if self.closest_cylinder_xy is not None: 
+                print('Cylinder suitable for active localization is found, now performing active localization!')
+                additional_waypoint = [[self.closest_cylinder_xy[0],self.closest_cylinder_xy[1],self.default_waypoint_z_height]]
+                self.update_waypoints_trigger_exploration(additional_waypoint)
+                # reset flag
+                self.active_localization_requested = False
+                # reset timer
+                self.last_active_localization_time = rospy.Time.now().secs
+            else:
+                print('Cylinder suitable for active localization is NOT found, skipping active localization! This should NOT happen except for the very beginning where no trees/light poles are observed!')
+
 
     def explore(self):
         if (self.current_executing_waypoint_idx is None) or (self.exploration_waypoints is None):
@@ -154,20 +194,50 @@ class RePlan(smach_ros.SimpleActionState):
                 self.exploration_status = 2
                 self.exploration_phase_1_in_progress = True
                 waypoint_to_add = copy.deepcopy([exploration_waypoints[0]])
-                self.update_waypoints(waypoint_to_add)
-                # sanity check
-                assert(len(self.quad_monitor.pose_goals) == (self.original_number_of_waypoints + len(waypoint_to_add)))
-                self.original_number_of_waypoints = len(self.quad_monitor.pose_goals)
-                self.pub_exploration_state_trigger()
+                self.update_waypoints_trigger_exploration(waypoint_to_add)
                 print('starting phase 1 of exploration')
             elif self.exploration_status == 3:
                 self.exploration_status = 4
                 waypoint_to_add = copy.deepcopy(exploration_waypoints)
-                self.update_waypoints(waypoint_to_add)
-                # sanity check
-                assert(len(self.quad_monitor.pose_goals) == (self.original_number_of_waypoints + len(waypoint_to_add)))
-                self.pub_exploration_state_trigger()
+                self.update_waypoints_trigger_exploration(waypoint_to_add)
                 print('starting phase 2 of exploration')
+
+
+
+    def cylinder_cb(self, cylinder_msg):
+        if self.last_active_localization_time is None:
+            # initialize the timer only after when cylinder is received to avoid active localization from the very beginning
+            self.last_active_localization_time = rospy.Time.now().secs
+
+        cur_cylinders_xy_yaw = []
+        current_detection_range = 18 # no need to revist landmarks closer than current detection range
+        min_distance = 10000 # initialization
+
+        if self.robot_x is None:
+            print(f'odometry not yet received')
+            return
+        for cylinder in cylinder_msg.markers:
+            # only do this if the marker is submap, instead of current detection
+            if cylinder.id > 20000:
+                already_explored = False
+                R_lidar_odom_to_world = R.from_euler('z', np.pi / 2.0).as_matrix()
+                cylinder_x_lidar_odom = cylinder.pose.position.x
+                cylinder_y_lidar_odom = cylinder.pose.position.y
+                cylinder_pos_world = R_lidar_odom_to_world @ np.array([cylinder_x_lidar_odom, cylinder_y_lidar_odom, 0])
+                cylinder_yaw = cylinder.pose.orientation.z
+                cylinder_x_world = cylinder_pos_world[0]
+                cylinder_y_world = cylinder_pos_world[1]
+                cylinder_yaw_world = cylinder_yaw + np.pi / 2.0
+                cur_cylinders_xy_yaw.append((cylinder_x_world, cylinder_y_world, cylinder_yaw_world))
+                diff_x = cylinder_x_world - self.robot_x
+                diff_y = cylinder_y_world - self.robot_y
+                distance = np.linalg.norm(np.array([diff_x, diff_y]))
+                if distance > current_detection_range and distance < min_distance:
+                    min_distance = distance
+                    self.closest_cylinder_xy = np.array([cylinder_x_world,cylinder_y_world])
+
+
+
 
 
     def car_cuboids_cb(self, car_cuboids_msg):
@@ -236,7 +306,7 @@ class RePlan(smach_ros.SimpleActionState):
                     self.exploration_waypoints = []
                     for row in xy_point_to_explore: 
                         
-                        self.exploration_waypoints.append([cuboid_x_world + row[0], cuboid_y_world +row[1], 5])
+                        self.exploration_waypoints.append([cuboid_x_world + row[0], cuboid_y_world +row[1], self.default_waypoint_z_height])
                     self.start_new_exploration = True
                     break
 
@@ -252,11 +322,10 @@ class RePlan(smach_ros.SimpleActionState):
         # # check if this cuboid has distance less than desired threshold
         # min_distance_cuboid = 
             
-            
-        self.active_mapping_waypoints
+
 
         
-    def update_waypoints(self, exploration_waypoints):
+    def update_waypoints_trigger_exploration(self, exploration_waypoints):
         # the all waypoints will include [original_reached_waypoints, exploration_waypoints, original_future_waypoints]
         self.quad_monitor.pose_goals= []
         original_all_waypoints = copy.deepcopy(self.quad_monitor.waypoints.poses)
@@ -283,6 +352,8 @@ class RePlan(smach_ros.SimpleActionState):
         
         
         self.quad_monitor.pose_goals = [it.pose for it in self.quad_monitor.waypoints.poses]
+
+        self.pub_exploration_state_trigger()
 
     def pub_exploration_state_trigger(self):
         self.exploration_state_trigger.publish("switch_to_exploration")

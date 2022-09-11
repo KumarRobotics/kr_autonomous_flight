@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-  <arg name="dir" default="/home/dcist/bags/falcon_pennovation"/>
+  <arg name="dir" default="/home/dcist/bags/falcon_pennovation" />
   <node pkg="rosbag" type="record" name="recorder" args="
   -o $(arg dir)
   /quadrotor/vio/odom
@@ -41,7 +41,8 @@
     /sloam/cubes_submap
     /sloam/debug/map_ground_features
     /sloam/debug/map_ground_model
-    /sloam/debug/map_tree_models
+    /sloam/map_cylinder_models
+    /sloam/active_localization_trigger
     /sloam/debug/obs_ground_features
     /sloam/debug/obs_ground_model
     /sloam/debug/obs_tree_features
@@ -57,6 +58,5 @@
     /sloam/quadrotor2/sloam_odom_high_freq
     /sloam/segmentation/ground
 
-    "
-    output="screen"/>
+    " output="screen" />
 </launch>

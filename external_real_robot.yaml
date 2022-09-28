@@ -3,7 +3,7 @@ repositories:
   ouster_example:
     type: git
     url: http://github.com/ouster-lidar/ouster_example.git
-    version: master 
+    version: 43107a1d14b8cd22378a830bd07aa7acca1269a4 
 
   ouster_decoder:
     type: git

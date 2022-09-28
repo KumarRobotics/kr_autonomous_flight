@@ -30,4 +30,3 @@
     <arg name="replay" value="false"/>
   </include>
 </launch>
-

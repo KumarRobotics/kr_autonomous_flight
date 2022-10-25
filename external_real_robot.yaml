@@ -9,3 +9,8 @@ repositories:
     type: git
     url: http://github.com/KumarRobotics/ouster_decoder.git
     version: d66b52d9941647f459c31f81a344c6e9dc77ab34
+
+  faster_lio:
+    type: git
+    url: http://github.com/XuRobotics/faster-lio.git
+    version: master

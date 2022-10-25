@@ -1,5 +1,7 @@
 # vcstool downloaded repos
 kr_mav_control/
+faster-lio
+ouster_decoder/
 mrsl_quadrotor/
 msckf_vio/
 ouster_example/

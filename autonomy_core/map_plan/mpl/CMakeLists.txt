@@ -54,14 +54,14 @@ target_link_libraries(test_map_util ${catkin_LIBRARIES} ${PROJECT_NAME})
 # e.g. from the catkin root directory run:
 #   ./build/motion_primitive_library/_deps/benchmark-src/tools/compare.py benchmarks file1.json file2.json
 
-include(FetchContent)
-FetchContent_Declare(
-    benchmark
-    URL https://github.com/google/benchmark/archive/b7afda2cd2d81230737caa1073e160b6406798d7.zip
-)
-FetchContent_MakeAvailable(benchmark)
+#include(FetchContent)
+#FetchContent_Declare(
+#    benchmark
+#    URL https://github.com/google/benchmark/archive/b7afda2cd2d81230737caa1073e160b6406798d7.zip
+#)
+#FetchContent_MakeAvailable(benchmark)
 
-add_executable(map_util_benchmarking test/benchmark_map_util.cpp)
-target_link_libraries(map_util_benchmarking benchmark::benchmark ${PROJECT_NAME})
+#add_executable(map_util_benchmarking test/benchmark_map_util.cpp)
+#target_link_libraries(map_util_benchmarking benchmark::benchmark ${PROJECT_NAME})
 
 

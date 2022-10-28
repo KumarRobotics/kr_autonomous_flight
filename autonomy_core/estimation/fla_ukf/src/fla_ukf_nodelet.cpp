@@ -491,7 +491,7 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg) {
   z(8) = rpy(2);
 
 
-  // TODO: tuning the covaraince for LIDAR odometry integration
+  // TODO: unhack this, tuning the covaraince for LIDAR odometry integration
   // Assemble measurement covariance
   FLAUKF::MeasVioCov RnVio(FLAUKF::MeasVioCov::Zero());
   // Pose covariance
@@ -500,9 +500,8 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg) {
       const int row_idx = (i < 3) ? i : i + 3;
       const int col_idx = (j < 3) ? j : j + 3;
       if (i!=j){RnVio(row_idx, col_idx) = 0; continue;}
-      // Remove cross covariance with Z and increase Z covariance
-      const double cov_multiplier = (i <= 2 || j <= 2) ? 5 : 1;
-      const double cov_inflater = 0;//(i == 2 && j == 2) ? 100 : 0;
+      const double cov_multiplier = (i <= 2 || j <= 2) ? 10 : 1;
+      const double cov_inflater = (i <= 2 && j <= 2) ? 0.5 : 0;
 
       RnVio(row_idx, col_idx) =
           cov_multiplier * msg->pose.covariance[i * 6 + j] + cov_inflater;

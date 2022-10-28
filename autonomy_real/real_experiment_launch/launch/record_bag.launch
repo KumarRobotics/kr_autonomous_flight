@@ -3,7 +3,10 @@
   <arg name="dir" default="/home/dcist/bags/falcon_pennovation"/>
   <node pkg="rosbag" type="record" name="recorder" args="
   -o $(arg dir)
-  /quadrotor/vio/odom
+  /Odometry
+  /os_node/imu_packets
+  /os_node/lidar_packets
+  /os_node/metadata
   /tf
   /tf_static
   /quadrotor/local_plan_server/traj
@@ -11,22 +14,9 @@
   /quadrotor/local_global_replan_server/local_global_server/global_path_wrt_map  
   /rosout
   /rosout_agg
-    /quadrotor/mapper/global_voxel_map_throttled
-    /graph_slam/raw_drifted_vio
-  /quadrotor/mapper/local_voxel_map_throttled
   /quadrotor/odom
   /ublox/fix
   /ublox/fix_velocity
-  /os_node/imu_packets
-  /os_node/lidar_packets
-  /os_node/metadata
-  /ovc/left/camera_info
-  /ovc/left/image_raw
-  /ovc/right/camera_info
-  /ovc/right/image_raw   
-  /ovc/vectornav/imu
-  /ovc/vectornav/mag
-  /ovc/imu
   /quadrotor/so3_control/cmd_viz
   /quadrotor/position_cmd
   /quadrotor/local_plan_server/expanded_cloud

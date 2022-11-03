@@ -4,8 +4,13 @@
 	<!-- vim: set ft=xml noet : -->
 	<!-- example launch script for PX4 based FCU's -->
 
-  <arg name="fcu_url" default="/dev/serial/by-id/usb-FTDI_TTL232R-3V3_FTADKXHI-if00-port0:921600"/>
-	<arg name="gcs_url" default="" />
+  <!-- for Falcon 4 Enceladus -->
+  <!-- <arg name="fcu_url" default="/dev/serial/by-id/usb-FTDI_TTL232R-3V3_FTADKXHI-if00-port0:921600"/> -->
+  <!-- for Falcon 4 Rhea -->
+  <arg name="fcu_url" default="/dev/serial/by-id/usb-FTDI_TTL232R-3V3_FTGARU2U-if00-port0:921600"/>
+  <!-- for your own quad, check what is there in /dev/by-id/ -->
+  
+  <arg name="gcs_url" default="" />
 	<arg name="tgt_system" default="1" />
 	<arg name="tgt_component" default="1" />
 	<arg name="log_output" default="screen" />

@@ -24,3 +24,13 @@ repositories:
     type: git
     url: https://github.com/KumarRobotics/waypoint_navigation_plugin.git
     version: master
+    
+  DecompROS:
+    type: git
+    url: https://github.com/yuwei-wu/DecompROS.git
+    version: opt_poly
+
+  catkin_simple:
+    type: git
+    url: https://github.com/catkin/catkin_simple.git
+    version: master

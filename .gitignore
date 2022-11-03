@@ -4,7 +4,8 @@ mrsl_quadrotor/
 msckf_vio/
 ouster_example/
 waypoint_navigation_plugin/
-
+DecompROS/
+catkin_simple/
 #===========
 # C++
 # ===========

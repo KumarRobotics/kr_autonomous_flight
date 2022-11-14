@@ -500,8 +500,8 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg) {
       const int row_idx = (i < 3) ? i : i + 3;
       const int col_idx = (j < 3) ? j : j + 3;
       if (i!=j){RnVio(row_idx, col_idx) = 0; continue;}
-      const double cov_multiplier = (i <= 2 || j <= 2) ? 10 : 1;
-      const double cov_inflater = (i <= 2 && j <= 2) ? 0.5 : 0;
+      const double cov_multiplier = (i <= 2 || j <= 2) ? 0: 0;
+      const double cov_inflater = (i <= 2 && j <= 2) ? 1.5 : 0.1;
 
       RnVio(row_idx, col_idx) =
           cov_multiplier * msg->pose.covariance[i * 6 + j] + cov_inflater;
@@ -521,8 +521,8 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg) {
     // }
   // }
   // Linear velocity covariance
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
+  for (int i = 0; i < 6; i++) {
+    for (int j = 0; j < 6; j++) {
       // RnVio(3 + i, 3 + j) = msg->twist.covariance[i * 6 + j];
       if (i == j){
       RnVio(3 + i, 3 + j) =10;// msg->twist.covariance[i * 6 + j];

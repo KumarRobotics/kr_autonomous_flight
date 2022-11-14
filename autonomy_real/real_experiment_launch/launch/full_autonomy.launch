@@ -99,7 +99,7 @@
   </include>
 
   <!-- LIDAR Odometry -->
-  <include file="$(find faster_lio)/launch/mapping_ouster64.launch"></include>
+  <!-- <include file="$(find faster_lio)/launch/mapping_ouster64.launch"></include> -->
 
   <!--ublox-->
   <!-- <include file="$(find ublox_gps)/launch/ublox_device.launch"> -->

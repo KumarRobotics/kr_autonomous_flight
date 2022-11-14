@@ -5,6 +5,7 @@
   -o $(arg dir)
   /Odometry
   /os_node/imu_packets
+    /ovc/vectornav/imu
   /os_node/lidar_packets
   /os_node/metadata
   /tf

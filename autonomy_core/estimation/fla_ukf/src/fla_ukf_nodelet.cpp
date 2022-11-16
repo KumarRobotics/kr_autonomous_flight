@@ -494,19 +494,32 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg) {
   // TODO: unhack this, tuning the covaraince for LIDAR odometry integration
   // Assemble measurement covariance
   FLAUKF::MeasVioCov RnVio(FLAUKF::MeasVioCov::Zero());
-  // Pose covariance
-  for (int i = 0; i < 6; i++) {
-    for (int j = 0; j < 6; j++) {
-      const int row_idx = (i < 3) ? i : i + 3;
-      const int col_idx = (j < 3) ? j : j + 3;
-      if (i!=j){RnVio(row_idx, col_idx) = 0; continue;}
-      const double cov_multiplier = (i <= 2 || j <= 2) ? 0: 0;
-      const double cov_inflater = (i <= 2 && j <= 2) ? 1.5 : 0.1;
-
-      RnVio(row_idx, col_idx) =
+  // RnVio corresponds to diag([pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, roll, pitch, yaw])
+  // Position covariance
+  double pos_covariance = 1.0;
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      if (i!=j){RnVio(i, j) = 0; continue;}
+      const double cov_multiplier = 0;// (i <= 2 || j <= 2) ? 0: 0;
+      const double cov_inflater = pos_covariance; // (i <= 2 && j <= 2) ? 0.75 : 0;
+      RnVio(i, j) =
           cov_multiplier * msg->pose.covariance[i * 6 + j] + cov_inflater;
     }
   }
+  // Orientation covariance
+  // RnVio corresponds to diag([pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, roll, pitch, yaw])
+  double orientation_cov_deg = 10;
+  double orientation_cov = orientation_cov_deg * 3.14 / 180;
+  for (int i = 6; i < 9; i++) {
+    for (int j = 6; j < 9; j++) {
+      if (i == j){
+      RnVio(i, j) =orientation_cov;
+      } else{
+      RnVio(i, j) =0;
+      }
+    }
+  }
+
   
 // for (int i = 0; i < 6; i++) {
     // for (int j = 0; j < 6; j++) {
@@ -521,18 +534,18 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg) {
     // }
   // }
   // Linear velocity covariance
-  for (int i = 0; i < 6; i++) {
-    for (int j = 0; j < 6; j++) {
-      // RnVio(3 + i, 3 + j) = msg->twist.covariance[i * 6 + j];
+  // RnVio corresponds to diag([pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, roll, pitch, yaw])
+  for (int i = 3; i < 6; i++) {
+    for (int j = 3; j < 6; j++) {
       if (i == j){
-      RnVio(3 + i, 3 + j) =10;// msg->twist.covariance[i * 6 + j];
+      RnVio(i, j) =50;// msg->twist.covariance[i * 6 + j];
       } else{
-      RnVio(3 + i, 3 + j) =0;// msg->twist.covariance[i * 6 + j];
+      RnVio(i, j) =0;// msg->twist.covariance[i * 6 + j];
       
       }
     }
   }
-
+  
   // for (int k = 0; k < 2; ++k) {  // Only need to check for position X/Y
     // Keep the VIO covariance within a reasonable band so that we don't trust
     // it too much or too less

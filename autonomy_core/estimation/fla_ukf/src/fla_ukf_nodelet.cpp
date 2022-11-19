@@ -496,7 +496,7 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg) {
   FLAUKF::MeasVioCov RnVio(FLAUKF::MeasVioCov::Zero());
   // RnVio corresponds to diag([pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, roll, pitch, yaw])
   // Position covariance
-  double pos_covariance = 1.0;
+  double pos_covariance = 0.5;
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
       if (i!=j){RnVio(i, j) = 0; continue;}

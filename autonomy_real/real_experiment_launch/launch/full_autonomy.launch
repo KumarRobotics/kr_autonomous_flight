@@ -19,7 +19,9 @@
   </node>
   -->
 
-  <node name="imu_throttler" type="throttle" pkg="topic_tools" args="messages /ovc/vectornav/imu 200 /ovc/vectornav/imu_throttled" />
+  <include file="$(find real_experiment_launch)/launch/throttle_imu.launch">
+  </include>
+  
   <!-- drivers -->
 
   <!-- If using LIDAR odometry -->
@@ -75,8 +77,8 @@
     <arg name="cam1" value="/ovc/right" />
     <arg name="robot_frame_id" value="$(arg robot)/base_link" />
     <arg name="vio_imu_frame_id" value="$(arg robot)/ovc_camera_link" />
-    <arg name="imu" value="/ovc/vectornav/imu" />
-    <arg name="mag" value="/ovc/vectornav/mag" />
+    <arg name="imu" value="/ovc/vectornav/imu_throttled" />
+    <arg name="mag" value="/ovc/vectornav/mag_throttled" />
     <arg name="publish_body_camera_tf" default="false" />
     <arg name="lidar_cloud_topic" value="os_cloud_node/points" />
     <arg name="lidar_frame" value="$(arg robot)/lidar" />

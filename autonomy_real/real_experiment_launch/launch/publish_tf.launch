@@ -11,10 +11,10 @@
       <!-- ovc-imu to body transform -->
     <!-- case1: 15-degree pitching down, ovc-imu to body transform, if using Yaw Pitch Roll convention it is 1.5707963, 0.0, -1.32, if using Quaternion it is -0.43 -0.43 0.56 0.56 -->
     <!-- case2 30-degree pitching down, ovc-imu to body transform, if using Yaw Pitch Roll convention it is 1.5707963, 0.0, -1.04, if using Quaternion it is  -0.3513473, -0.3513473, 0.6136408, 0.6136408 -->
-    <node pkg="tf2_ros" type="static_transform_publisher" name="$(arg robot)body_ovc_tf" args="0.1, -0.05, 0, 1.5707963, 0.0, -1.32 $(arg robot_frame_id) $(arg vio_imu_frame_id)"/>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="$(arg robot)body_ovc_tf" args="0.1, -0.05, 0, 1.5707963, 0.0, -1.27 $(arg robot_frame_id) $(arg vio_imu_frame_id)"/>
     <node pkg="tf2_ros" type="static_transform_publisher" name="$(arg robot)ovc_to_imu_tf" args="0, 0, 0, 0, 0, 0 $(arg vio_imu_frame_id) ovc_vnav_link"/>
     <!-- TODO: modified while integrating lidar odometry, may need to add 3.14 Yaw for the mapper to work properly -->
-    <node pkg="tf2_ros" type="static_transform_publisher" name="$(arg robot)body_lidar_tf" args="0, 0, 0.0, 0, 0, 0 $(arg robot_frame_id) $(arg robot)/lidar"/> 
+    <node pkg="tf2_ros" type="static_transform_publisher" name="$(arg robot)body_lidar_tf" args="0, 0, 0.1, 0, 0, 0 $(arg robot_frame_id) $(arg robot)/lidar"/> 
     <node pkg="tf2_ros" type="static_transform_publisher" name="lidar_lidar_tf" args="0, 0, 0.0, 0, 0, 0 $(arg robot)/lidar os_lidar"/> 
     <node pkg="tf2_ros" type="static_transform_publisher" name="init_odom_lidarodom_transform_pub" args="0 0 0 0 0 0 camera_init $(arg robot)/map"/>
 </launch>

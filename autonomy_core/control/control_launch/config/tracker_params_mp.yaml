@@ -21,8 +21,8 @@ trajectory_tracker:
 trajectory_planner:
   debug: false # debug mode, default false
   verbose: false # verbose mode, default false
-  max_v: 4.0 # x-y-direction maximum velocity,recommended value: for 2-D 9, for 3-D 3
-  max_a: 4.0 # x-y-direction maximum acceleration, recommended value: for 2-D 7, for 3-D 2
+  max_v: 2.0 # x-y-direction maximum velocity,recommended value: for 2-D 9, for 3-D 3
+  max_a: 2.0 # x-y-direction maximum acceleration, recommended value: for 2-D 7, for 3-D 2
   max_j: 2.0 # x-y-direction maximum jerk, recommended value: for 2-D 3, for 3-D 2
   max_u: 2.0 # x-y-direction control inputs increase / decrease step, must be smaller than max_j, recommended value: for 2-D 3, for 3-D 1, for each axis jerk increment choice is -max_u, 0, max_u
   use_3d_local: false # local planner operates in 3D (true) or 2D (false)

@@ -13,6 +13,17 @@
 #include "mapper/tf_listener.h"
 #include "mapper/voxel_mapper.h"
 
+// Define storage map reinitialize direction
+#define CENTER 0
+#define RIGHT_BOTTOM 1
+#define RIGHT_TOP 2
+#define LEFT_BOTTOM 3
+#define LEFT_TOP 4
+#define LEFT 5
+#define RIGHT 6
+#define TOP 7
+#define BOTTOM 8
+
 // Timer stuff
 using boost::timer::cpu_timer;
 using boost::timer::cpu_times;
@@ -30,6 +41,12 @@ class LocalGlobalMapperNode {
    * @brief Reads parameters from ROS parameter server
    */
   void initParams();
+
+  /**
+   * @brief Check if storage map needs reinitialize
+   * 
+   */
+  int reinitializeStorageMapFlag(const Eigen::Vector3d& center_position_map);
 
   /**
    * @brief Crops the local map from the storage map, transforms it to odometry
@@ -129,12 +146,14 @@ class LocalGlobalMapperNode {
   bool global_use_robot_dim_z_;
   double global_map_dim_d_x_, global_map_dim_d_y_, global_map_dim_d_z_;
   double local_map_dim_d_x_, local_map_dim_d_y_, local_map_dim_d_z_;
+  double storage_ori_offset_x_, storage_ori_offset_y_;
+  double prev_storage_center_x_, prev_storage_center_y_;
 
   double local_max_raycast_, global_max_raycast_;  // maximum raycasting range
   double occ_map_height_;
   Eigen::Vector3d local_ori_offset_;
   bool pub_storage_map_ =
-      false;  // don't set this as true unless you're debugging, it's very slow
+      true; //false;  // don't set this as true unless you're debugging, it's very slow
 
   int update_interval_;
   int counter_ = 0;

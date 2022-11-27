@@ -23,13 +23,28 @@ LocalGlobalMapperNode::LocalGlobalMapperNode(const ros::NodeHandle& nh)
   storage_map_info_.dim.z = local_map_info_.dim.z;
 
   // storage map should have same x y z center and x_dim y_dim as global map
-  storage_map_info_.origin.x = global_map_info_.origin.x;
-  storage_map_info_.origin.y = global_map_info_.origin.y;
-  storage_map_info_.origin.z = global_map_info_.origin.z;
+  /*
   storage_map_info_.dim.x = static_cast<int>(
       ceil((global_map_dim_d_x_) / storage_map_info_.resolution));
   storage_map_info_.dim.y = static_cast<int>(
       ceil((global_map_dim_d_y_) / storage_map_info_.resolution));
+  */
+
+  storage_map_info_.dim.x = static_cast<int>(
+      ceil((local_map_dim_d_x_) * 3 / local_map_info_.resolution));
+  storage_map_info_.dim.y = static_cast<int>(
+      ceil((local_map_dim_d_y_) * 3 / local_map_info_.resolution));
+
+  storage_ori_offset_x_ = - local_map_dim_d_x_ * 3 / 2;
+  storage_ori_offset_y_ = - local_map_dim_d_y_ * 3 / 2;
+
+  storage_map_info_.origin.x = local_map_info_.origin.x + storage_ori_offset_x_; // global_map_info_.origin.x;
+  storage_map_info_.origin.y = local_map_info_.origin.y + storage_ori_offset_y_; // global_map_info_.origin.y;
+  storage_map_info_.origin.z = global_map_info_.origin.z;
+
+  prev_storage_center_x_ = local_map_info_.origin.x;
+  prev_storage_center_y_ = local_map_info_.origin.y;
+
 
   local_map_info_.dim.x =
       static_cast<int>(ceil((local_map_dim_d_x_) / local_map_info_.resolution));
@@ -262,6 +277,34 @@ void LocalGlobalMapperNode::getLidarPoses(
   }
 }
 
+int LocalGlobalMapperNode::reinitializeStorageMapFlag(const Eigen::Vector3d& center_position_map) {
+  // TODO: Check if we need to reinitialize the storage map
+  int x = center_position_map[0] - prev_storage_center_x_;
+  int y = center_position_map[1] - prev_storage_center_y_;
+  double thresh_x = local_map_dim_d_x_ * 0.8;
+  double thresh_y = local_map_dim_d_y_ * 0.8;
+  
+  if (x < -thresh_x && y < -thresh_y) {
+    return RIGHT_BOTTOM;
+  } else if (x < -thresh_x && y > thresh_y) {
+    return RIGHT_TOP;
+  } else if (x > thresh_x && y < -thresh_y) {
+    return LEFT_BOTTOM;
+  } else if (x > thresh_x && y > thresh_y) {
+    return LEFT_TOP;
+  } else if (y < -thresh_y) {
+    return BOTTOM;
+  } else if (y > thresh_y) {
+    return TOP;
+  } else if (x > thresh_x) {
+    return LEFT;
+  } else if (x < -thresh_x) {
+    return RIGHT;
+  } else {
+    return CENTER;
+  }
+}
+
 void LocalGlobalMapperNode::processCloud(
     const sensor_msgs::PointCloud& cloud) {
   if ((storage_voxel_mapper_ == nullptr) || (global_voxel_mapper_ == nullptr)) {
@@ -302,6 +345,58 @@ void LocalGlobalMapperNode::processCloud(
       pts, T_map_lidar, local_infla_array_, false, local_max_raycast_);
   ROS_DEBUG("[storage map addCloud]: %f",
             static_cast<double>(timer.elapsed().wall) / 1e6);
+
+  // Reinitiliaze storage map to follow local map
+  int pos_to_storage_ori = reinitializeStorageMapFlag(lidar_position_map);
+  if (pos_to_storage_ori == LEFT_BOTTOM) {
+    // TODO: Reset storage map origin
+    prev_storage_center_x_ = prev_storage_center_x_ + local_map_dim_d_x_;
+    prev_storage_center_y_ = local_map_info_.origin.y - local_map_dim_d_y_;
+    storage_map_info_.origin.x = prev_storage_center_x_ + storage_ori_offset_x_; 
+    storage_map_info_.origin.y = prev_storage_center_y_ + storage_ori_offset_y_; 
+    storageMapInit();    
+  } else if (pos_to_storage_ori == LEFT_TOP) {
+    // TODO: Reset storage map origin
+    prev_storage_center_x_ = prev_storage_center_x_ + local_map_dim_d_x_;
+    prev_storage_center_y_ = local_map_info_.origin.y + local_map_dim_d_y_;
+    storage_map_info_.origin.x = prev_storage_center_x_ + storage_ori_offset_x_; 
+    storage_map_info_.origin.y = prev_storage_center_y_ + storage_ori_offset_y_; 
+    storageMapInit();    
+  } else if (pos_to_storage_ori == RIGHT_BOTTOM) {
+    // TODO: Reset storage map origin
+    prev_storage_center_x_ = prev_storage_center_x_ - local_map_dim_d_x_;
+    prev_storage_center_y_ = local_map_info_.origin.y - local_map_dim_d_y_;
+    storage_map_info_.origin.x = prev_storage_center_x_ + storage_ori_offset_x_; 
+    storage_map_info_.origin.y = prev_storage_center_y_ + storage_ori_offset_y_; 
+    storageMapInit();    
+  } else if (pos_to_storage_ori == RIGHT_TOP) {
+    // TODO: Reset storage map origin
+    prev_storage_center_x_ = prev_storage_center_x_ - local_map_dim_d_x_;
+    prev_storage_center_y_ = local_map_info_.origin.y + local_map_dim_d_y_;
+    storage_map_info_.origin.x = prev_storage_center_x_+ storage_ori_offset_x_; 
+    storage_map_info_.origin.y = prev_storage_center_y_ + storage_ori_offset_y_; 
+    storageMapInit();    
+  } else if (pos_to_storage_ori == LEFT) {
+    // TODO: Reset storage map origin
+    prev_storage_center_x_ = prev_storage_center_x_ + local_map_dim_d_x_;
+    storage_map_info_.origin.x = prev_storage_center_x_ + storage_ori_offset_x_; 
+    storageMapInit();    
+  } else if (pos_to_storage_ori == RIGHT) {
+    // TODO: Reset storage map origin
+    prev_storage_center_x_ = prev_storage_center_x_ - local_map_dim_d_x_;
+    storage_map_info_.origin.x = prev_storage_center_x_ + storage_ori_offset_x_; 
+    storageMapInit();    
+  } else if (pos_to_storage_ori == TOP) {
+    // TODO: Reset storage map origin
+    prev_storage_center_y_ = local_map_info_.origin.y + local_map_dim_d_y_;
+    storage_map_info_.origin.y = prev_storage_center_y_ + storage_ori_offset_y_; 
+    storageMapInit();    
+  } else if (pos_to_storage_ori == BOTTOM) {
+    // TODO: Reset storage map origin
+    prev_storage_center_y_ = local_map_info_.origin.y - local_map_dim_d_y_;
+    storage_map_info_.origin.y = prev_storage_center_y_ + storage_ori_offset_y_; 
+    storageMapInit();    
+  }
 
   // get and publish storage map (this is very slow)
   if (pub_storage_map_) {

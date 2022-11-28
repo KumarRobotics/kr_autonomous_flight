@@ -6,6 +6,7 @@ ouster_example/
 waypoint_navigation_plugin/
 DecompROS/
 catkin_simple/
+kr_demo_planner/
 #===========
 # C++
 # ===========

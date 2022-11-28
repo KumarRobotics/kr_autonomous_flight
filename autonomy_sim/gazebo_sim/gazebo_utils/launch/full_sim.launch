@@ -32,9 +32,9 @@
   <arg name="gains_file" default="$(find gazebo_utils)/config/falcon4_os1_so3_gains.yaml"/>
   <!-- several example world, check out mrsl_quadrotor/mrsl_quadrotor_description/worlds for all examples --> 
   <!-- example 1: small forest --> 
-  <arg name="world_model" default="forest0"/>
+  <!-- <arg name="world_model" default="forest0"/> -->
   <!-- example 2: large forest --> 
-  <!-- <arg name="world_model" default="forest_Large"/> -->
+  <arg name="world_model" default="forest_Large"/>
   <!-- example 3: simple pillars --> 
   <!-- <arg name="world_model" default="pillars"/> -->
 

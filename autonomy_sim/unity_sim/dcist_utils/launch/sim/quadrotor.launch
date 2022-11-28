@@ -16,14 +16,14 @@
     <!-- depth camera also has semantic feature, which will have the same width and height as depth image-->
     <!-- <arg name="depth_width" default="256"/> -->
     <!-- <arg name="depth_height" default="160"/> -->
-    <arg name="depth_width" default="512"/>
-    <arg name="depth_height" default="280"/>
+    <arg name="depth_width" default="256"/>
+    <arg name="depth_height" default="160"/>
     <!-- <arg name="depth_width" default="1200"/> -->
     <!-- <arg name="depth_height" default="720"/> -->
     <arg name="depth_frame_rate" default="5"/>
     <arg name="use_enhanced_yaml" default="true"/>
     <!-- depth and semantic segmentation range, should not exceed 65 (i.e. 65000 mm) to prevent overflow since it's 16-bit image type-->
-    <arg name="depth_range" default="40"/> 
+    <arg name="depth_range" default="30"/> 
     <arg name="semantic_range" default="10"/>
 
     <arg name="description" default="$(find arl_unity_ros_air)/config/quadrotor_yaml.yaml"/>

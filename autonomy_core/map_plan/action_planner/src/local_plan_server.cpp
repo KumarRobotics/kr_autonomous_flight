@@ -20,7 +20,7 @@
 
 #include <plan_manage/planner_manager.h>
 #include <traj_utils/planning_visualization.h>
-
+#include <chrono>
 
 using boost::irange;
 
@@ -604,8 +604,8 @@ bool LocalPlanServer::local_plan_process(
                 1.0,  goal.vel(2), goal.acc(2);
 
 
-  std::cout << "startState is " << startState << std::endl;
-  std::cout << "endState is " << endState << std::endl;
+  // std::cout << "startState is " << startState << std::endl;
+  // std::cout << "endState is " << endState << std::endl;
   
 
   if(use_opt_planner_){
@@ -647,6 +647,7 @@ bool LocalPlanServer::local_plan_process(
 
 // prevent concurrent planner modes
 void LocalPlanServer::goalCB() {
+  auto start_timer = std::chrono::high_resolution_clock::now();
   goal_ = local_as_->acceptNewGoal();
   // check_vel is true if local planner reaches global goal
 
@@ -660,6 +661,9 @@ void LocalPlanServer::goalCB() {
   }
   aborted_ = false;
   process_all();
+  auto end_timer = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_timer - start_timer);
+  std::cout << "Local goalCB took"<<duration.count() << "micro sec"<< std::endl;
 }
 
 int main(int argc, char** argv) {

@@ -34,3 +34,7 @@ repositories:
     type: git
     url: https://github.com/catkin/catkin_simple.git
     version: master
+
+  kr_demo_planner:
+    type: git
+    url: https

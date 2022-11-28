@@ -15,6 +15,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
+#include <chrono>
+
 
 #include "data_conversions.h"  // setMap, getMap, etc
 
@@ -347,9 +349,13 @@ bool GlobalPlanServer::is_outside_map(const Eigen::Vector3i& pn,
 }
 
 void GlobalPlanServer::goalCB() {
+  auto start_timer = std::chrono::high_resolution_clock::now();
   goal_ = global_as_->acceptNewGoal();
   aborted_ = false;
   process_all();
+  auto end_timer = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_timer - start_timer);
+  std::cout << "Global goalCB took"<<duration.count() << "micro sec"<< std::endl;
 }
 
 bool GlobalPlanServer::global_plan_process(

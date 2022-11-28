@@ -169,6 +169,7 @@ void LocalGlobalMapperNode::storageMapInit() {
       storage_map_info_.dim.z * storage_map_info_.resolution);
   const double res = storage_map_info_.resolution;
   int8_t storage_val_default = 0;
+
   // Initialize the mapper
   storage_voxel_mapper_.reset(
       new mapper::VoxelMapper(storage_origin,
@@ -176,6 +177,30 @@ void LocalGlobalMapperNode::storageMapInit() {
                               res,
                               storage_val_default,
                               local_decay_times_to_empty_));
+}
+
+void LocalGlobalMapperNode::storageMapReInit(int direction) {
+  const Eigen::Vector3d storage_origin(storage_map_info_.origin.x,
+                                       storage_map_info_.origin.y,
+                                       storage_map_info_.origin.z);
+  const Eigen::Vector3d storage_dim_d(
+      storage_map_info_.dim.x * storage_map_info_.resolution,
+      storage_map_info_.dim.y * storage_map_info_.resolution,
+      storage_map_info_.dim.z * storage_map_info_.resolution);
+  const double res = storage_map_info_.resolution;
+  int8_t storage_val_default = 0;
+
+  std::vector<signed char> old_map = storage_voxel_mapper_->get_voxel_map().getMap();
+
+  storage_voxel_mapper_.reset(
+      new mapper::VoxelMapper(storage_origin,
+                              storage_dim_d,
+                              res,
+                              storage_val_default,
+                              local_decay_times_to_empty_));
+
+  storage_voxel_mapper_->reAllocate(old_map, storage_origin, storage_dim_d, direction);
+
 }
 
 void LocalGlobalMapperNode::localInflaInit() {
@@ -354,48 +379,52 @@ void LocalGlobalMapperNode::processCloud(
     prev_storage_center_y_ = prev_storage_center_y_ - local_map_dim_d_y_;
     storage_map_info_.origin.x = prev_storage_center_x_ + storage_ori_offset_x_; 
     storage_map_info_.origin.y = prev_storage_center_y_ + storage_ori_offset_y_; 
-    storageMapInit();    
+    // storageMapInit();    
   } else if (pos_to_storage_ori == LEFT_TOP) {
     // TODO: Reset storage map origin
     prev_storage_center_x_ = prev_storage_center_x_ + local_map_dim_d_x_;
     prev_storage_center_y_ = prev_storage_center_y_ + local_map_dim_d_y_;
     storage_map_info_.origin.x = prev_storage_center_x_ + storage_ori_offset_x_; 
     storage_map_info_.origin.y = prev_storage_center_y_ + storage_ori_offset_y_; 
-    storageMapInit();    
+    // storageMapInit();    
   } else if (pos_to_storage_ori == RIGHT_BOTTOM) {
     // TODO: Reset storage map origin
     prev_storage_center_x_ = prev_storage_center_x_ - local_map_dim_d_x_;
     prev_storage_center_y_ = prev_storage_center_y_ - local_map_dim_d_y_;
     storage_map_info_.origin.x = prev_storage_center_x_ + storage_ori_offset_x_; 
     storage_map_info_.origin.y = prev_storage_center_y_ + storage_ori_offset_y_; 
-    storageMapInit();    
+    // storageMapInit();    
   } else if (pos_to_storage_ori == RIGHT_TOP) {
     // TODO: Reset storage map origin
     prev_storage_center_x_ = prev_storage_center_x_ - local_map_dim_d_x_;
     prev_storage_center_y_ = prev_storage_center_y_ + local_map_dim_d_y_;
     storage_map_info_.origin.x = prev_storage_center_x_+ storage_ori_offset_x_; 
     storage_map_info_.origin.y = prev_storage_center_y_ + storage_ori_offset_y_; 
-    storageMapInit();    
+    // storageMapInit();    
   } else if (pos_to_storage_ori == LEFT) {
     // TODO: Reset storage map origin
     prev_storage_center_x_ = prev_storage_center_x_ + local_map_dim_d_x_;
     storage_map_info_.origin.x = prev_storage_center_x_ + storage_ori_offset_x_; 
-    storageMapInit();    
+    // storageMapInit();    
+    storageMapReInit(LEFT); 
   } else if (pos_to_storage_ori == RIGHT) {
     // TODO: Reset storage map origin
     prev_storage_center_x_ = prev_storage_center_x_ - local_map_dim_d_x_;
     storage_map_info_.origin.x = prev_storage_center_x_ + storage_ori_offset_x_; 
-    storageMapInit();    
+    // storageMapInit();
+    storageMapReInit(RIGHT);    
   } else if (pos_to_storage_ori == TOP) {
     // TODO: Reset storage map origin
     prev_storage_center_y_ = prev_storage_center_y_ + local_map_dim_d_y_;
     storage_map_info_.origin.y = prev_storage_center_y_ + storage_ori_offset_y_; 
-    storageMapInit();   
+    // storageMapInit();   
+    storageMapReInit(TOP);  
   } else if (pos_to_storage_ori == BOTTOM) {
     // TODO: Reset storage map origin
     prev_storage_center_y_ = prev_storage_center_y_ - local_map_dim_d_y_;
     storage_map_info_.origin.y = prev_storage_center_y_ + storage_ori_offset_y_; 
-    storageMapInit();   
+    // storageMapReInit();   
+    storageMapReInit(BOTTOM);  
   }
 
   // get and publish storage map (this is very slow)

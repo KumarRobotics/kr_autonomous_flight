@@ -36,7 +36,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: Local
+    SyncSource: StorageMap
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -213,8 +213,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: -9999
-            Min Value: 9999
+            Max Value: 3.625
+            Min Value: 0.125
             Value: true
           Axis: Z
           BoundScale: 0.5
@@ -276,7 +276,7 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
-      Enabled: true
+      Enabled: false
       Name: Maps
     - Class: rviz/Group
       Displays:
@@ -548,7 +548,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 209.7288360595703
+      Distance: 175.9504852294922
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -564,9 +564,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5097962617874146
+      Pitch: 0.7797964811325073
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 3.110365629196167
+      Yaw: 3.120365619659424
     Saved: ~
 Window Geometry:
   Displays:

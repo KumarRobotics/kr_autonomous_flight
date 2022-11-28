@@ -95,6 +95,12 @@ class LocalGlobalMapperNode {
    */
   void storageMapInit();
 
+  /**unique_ptr
+   * @brief Re allocates storage map
+   * 
+   */
+  void storageMapReInit(int direction);
+
   /**
    * @brief Initializes the array for inflation for the local map
    */

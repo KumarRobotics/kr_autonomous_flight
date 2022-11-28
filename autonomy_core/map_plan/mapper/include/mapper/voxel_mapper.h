@@ -134,7 +134,7 @@ class VoxelMapper {
   vec_Vec3d getCloud();
 
   /**
-   * @brief Get a vector of points that are located at the center of occupied
+   * @brief Get a vector of points that are located at  ctheenter of occupied
    * voxels in the inflated map
    */
   vec_Vec3d getInflatedCloud();
@@ -184,6 +184,19 @@ class VoxelMapper {
    * @param tf The pose of the frame that the points are relative to 
    */
   void freeCloud(const vec_Vec3d& pts, const Eigen::Affine3d& tf);
+
+  mapper::VoxelMap get_voxel_map() {
+    return map_;
+  };
+
+  mapper::VoxelMap get_inflated_voxel_map() {
+    return inflated_map_;
+  };
+
+  bool reAllocate(const std::vector<signed char> old_map,
+                  const Eigen::Vector3d& new_ori_d,
+                  const Eigen::Vector3d& new_dim_d,
+                  int direction);
 
  private:
   /**

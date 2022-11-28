@@ -37,4 +37,5 @@ repositories:
 
   kr_demo_planner:
     type: git
-    url: https
+    url: git@github.com:yuwei-wu/kr_demo_planner.git
+    version: simon_edit

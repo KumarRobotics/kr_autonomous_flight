@@ -604,8 +604,8 @@ bool LocalPlanServer::local_plan_process(
                 1.0,  goal.vel(2), goal.acc(2);
 
 
-  // std::cout << "startState is " << startState << std::endl;
-  // std::cout << "endState is " << endState << std::endl;
+  std::cout << "startState is " << startState << std::endl;
+  std::cout << "endState is " << endState << std::endl;
   
 
   if(use_opt_planner_){

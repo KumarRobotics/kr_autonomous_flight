@@ -1,5 +1,5 @@
-robot_r: 0.50 # robot radius, local and global maps will be dilated in x and y with a radius of [ceil(robot_r/res)] cells
-robot_h: 1.0 # robot height, local and global maps will be dilated in z direction for 2*[ceil(robot_h/res)] cells (if robot_r is set as 0, there will not be any dilation along z either).
+robot_r: 1.0 # robot radius, local and global maps will be dilated in x and y with a radius of [ceil(robot_r/res)] cells
+robot_h: 0.5 # robot height, local and global maps will be dilated in z direction for 2*[ceil(robot_h/res)] cells (if robot_r is set as 0, there will not be any dilation along z either).
 
 # global mapper config
 global:

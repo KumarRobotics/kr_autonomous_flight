@@ -28,9 +28,9 @@
   <arg name="param_file" default="$(find dcist_utils)/config/forest.yaml"/>
 
   <!-- x corresponds to z in Unity simulator, y corresponds to -x, z corresponds to y -->
-  <arg name="x" default="50.0"/>
-  <arg name="y" default="50.0"/>
-  <arg name="z" default="1.0"/>
+  <arg name="x" default="170.0"/>
+  <arg name="y" default="25.0"/>
+  <arg name="z" default="9.0"/>
 
   <!-- <arg name="x" default="15.0"/> -->
   <!-- <arg name="y" default="20.0"/> -->

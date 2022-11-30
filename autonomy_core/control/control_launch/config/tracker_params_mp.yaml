@@ -28,8 +28,10 @@ trajectory_planner:
   use_3d_local: false # local planner operates in 3D (true) or 2D (false)
 
   use_3d_global: true # global planner operates in 3D (true, in this case use_3d_local has to be set as true) or 2D (false)
-  z_cost_factor: 2 # global map z cost factor, this also influences the vertical semi field of view of global planner into 45-degree / z_cost_factor  (cost_along_z = z_cost_factor * cost_along_x_or_y)
-  
+  z_cost_factor: 1 # global map z cost factor, this also influences the vertical semi field of view of global planner into 45-degree / z_cost_factor  (cost_along_z = z_cost_factor * cost_along_x_or_y)
+  # TODO: Z factor not working, has a bug, set value to 1 always!
+
+
   max_v_z: 1.5 # z-direction maximum velocity, recommended value: 1.5
   max_a_z: 3.0 # z-direction maximum acceleration, recommended value: 3.0
   max_j_z: 3.0 # z-direction maximum jerk, recommended value: 3.0

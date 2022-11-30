@@ -601,7 +601,7 @@ bool LocalPlanServer::local_plan_process(
 
   endState <<   goal.pos(0),  goal.vel(0), goal.acc(0),
                 goal.pos(1),  goal.vel(1), goal.acc(1),
-                1.0,  goal.vel(2), goal.acc(2);
+                goal.pos(2),  goal.vel(2), goal.acc(2);
 
 
   std::cout << "startState is " << startState << std::endl;

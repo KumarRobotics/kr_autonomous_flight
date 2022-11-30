@@ -27,7 +27,7 @@ trajectory_planner:
   max_u: 2.0 # x-y-direction control inputs increase / decrease step, must be smaller than max_j, recommended value: for 2-D 3, for 3-D 1, for each axis jerk increment choice is -max_u, 0, max_u
   use_3d_local: false # local planner operates in 3D (true) or 2D (false)
 
-  use_3d_global: false # global planner operates in 3D (true, in this case use_3d_local has to be set as true) or 2D (false)
+  use_3d_global: true # global planner operates in 3D (true, in this case use_3d_local has to be set as true) or 2D (false)
   z_cost_factor: 2 # global map z cost factor, this also influences the vertical semi field of view of global planner into 45-degree / z_cost_factor  (cost_along_z = z_cost_factor * cost_along_x_or_y)
   
   max_v_z: 1.5 # z-direction maximum velocity, recommended value: 1.5
@@ -50,7 +50,7 @@ trajectory_planner:
   optimization/w_sta_obs: 20.0
   search/max_tau: 0.6
   search/init_max_tau: 0.6
-  search/horizon: 15.0
+  search/horizon: 13.0
   search/lambda_heu: 5.0
   search/allocate_num: 100000
   search/resolution_astar: 0.3

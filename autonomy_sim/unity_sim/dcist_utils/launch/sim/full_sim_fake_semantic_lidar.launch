@@ -7,7 +7,7 @@
   <arg name="robot" default="quadrotor" />  
   <arg name="min_dispersion_planner" default="false" />
   <arg name="run_graph_slam" default="false" />
-  <arg name="launch_unity" default="false" />
+  <arg name="launch_unity" default="true" />
   <arg name="coverage_planner" default="false" />
   <arg name="save_range_images" default="false" />
 
@@ -28,9 +28,9 @@
   <arg name="param_file" default="$(find dcist_utils)/config/forest.yaml"/>
 
   <!-- x corresponds to z in Unity simulator, y corresponds to -x, z corresponds to y -->
-  <arg name="x" default="0"/>
-  <arg name="y" default="0"/>
-  <arg name="z" default="0.5"/>
+  <arg name="x" default="170.0"/>
+  <arg name="y" default="25.0"/>
+  <arg name="z" default="9.0"/>
 
   <!-- <arg name="x" default="15.0"/> -->
   <!-- <arg name="y" default="20.0"/> -->

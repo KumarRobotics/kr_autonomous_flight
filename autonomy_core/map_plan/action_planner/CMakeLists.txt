@@ -19,7 +19,10 @@ find_package(
              planning_ros_msgs
              traj_opt_ros
              dynamic_reconfigure
-             motion_primitive_library)
+             motion_primitive_library
+             opt_planner
+             decomp_ros_utils
+             decomp_ros_msgs)
 
 generate_dynamic_reconfigure_options(cfg/ActionPlanner.cfg)
 

@@ -8,9 +8,7 @@ Panels:
         - /Status1
         - /TF1/Frames1
         - /Env1/Environment1
-        - /Planner1
-        - /Maps1
-        - /Maps1/Local1
+        - /Estimation1
         - /Estimation1/ground_truth_odom1/Shape1
         - /Estimation1/vio_corrected1/Shape1
         - /Estimation1/vio_corrected1/Covariance1
@@ -19,8 +17,10 @@ Panels:
         - /Estimation1/vio_drifted1/Shape1
         - /Estimation1/graphslam1/Shape1
         - /Estimation1/ukf_odom1/Shape1
+        - /opt_planner1
+        - /opt_planner1/sfc1
       Splitter Ratio: 0.5211267471313477
-    Tree Height: 323
+    Tree Height: 357
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -39,7 +39,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Local
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -216,8 +216,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 10.125
-            Min Value: -0.125
+            Max Value: 3.625
+            Min Value: 0.125
             Value: true
           Axis: Z
           BoundScale: 0.5
@@ -238,7 +238,7 @@ Visualization Manager:
           Queue Size: 1
           Selectable: true
           Size (Pixels): 3
-          Size (m): 0.5
+          Size (m): 0.25
           State: Occupied
           Style: Boxes
           Topic: /quadrotor/mapper/local_voxel_map
@@ -259,7 +259,7 @@ Visualization Manager:
           Color: 252; 233; 79
           Color Transformer: FlatColor
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           MeshAlpha: 0.10000000149011612
@@ -278,7 +278,7 @@ Visualization Manager:
           Unreliable: true
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
       Enabled: true
       Name: Maps
     - Class: rviz/Group
@@ -308,7 +308,7 @@ Visualization Manager:
           Shape:
             Alpha: 1
             Axes Length: 10
-            Axes Radius: 0.5
+            Axes Radius: 0.30000001192092896
             Color: 25; 255; 0
             Head Length: 0.30000001192092896
             Head Radius: 0.10000000149011612
@@ -448,7 +448,7 @@ Visualization Manager:
           Shape:
             Alpha: 1
             Axes Length: 3
-            Axes Radius: 1.5
+            Axes Radius: 0.5
             Color: 255; 25; 0
             Head Length: 0.30000001192092896
             Head Radius: 0.10000000149011612
@@ -485,6 +485,40 @@ Visualization Manager:
       Show Visual Aids: false
       Update Topic: /quadrotor/waypoint_nav/update
       Value: true
+    - Class: rviz/Group
+      Displays:
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /quadrotor/local_plan_server/trajectory_planner/optimal_list
+          Name: opt_traj
+          Namespaces:
+            {}
+          Queue Size: 100
+          Value: true
+        - Alpha: 0.20000000298023224
+          BoundColor: 92; 53; 102
+          Class: decomp_rviz_plugins/PolyhedronArray
+          Enabled: true
+          MeshColor: 173; 127; 168
+          Name: sfc
+          Queue Size: 10
+          Scale: 0.05000000074505806
+          State: Both
+          Topic: /quadrotor/local_plan_server/trajectory_planner/sikangpolyhedron
+          Unreliable: false
+          Value: true
+          VsColor: 0; 255; 0
+          VsScale: 1
+      Enabled: true
+      Name: opt_planner
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /quadrotor/local_plan_server/trajectory_planner/kino_astar_list
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 189; 234; 201
@@ -518,7 +552,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 60.19675827026367
+      Distance: 46.01115798950195
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -526,25 +560,25 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 7.960505485534668
-        Y: 0.8160955309867859
-        Z: 8.540030479431152
+        X: -0.14657296240329742
+        Y: -3.248763084411621
+        Z: 1.359855055809021
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.1453958749771118
+      Pitch: 1.5697963237762451
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 3.170363426208496
+      Yaw: 3.075385808944702
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 752
+  Height: 1016
   Hide Left Dock: false
   Hide Right Dock: true
-  QMainWindow State: 000000ff00000000fd0000000400000000000001d300000252fc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d00000180000000c900fffffffb000000260057006100790070006f0069006e00740020004e0061007600690067006100740069006f006e01000001c3000000cc000000be00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f00000252fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d00000252000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000056a0000003efc0100000002fb0000000800540069006d006501000000000000056a000002eb00fffffffb0000000800540069006d00650100000000000004500000000000000000000003910000025200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001d300000327fc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000dafb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000001a2000000c900fffffffb000000260057006100790070006f0069006e00740020004e0061007600690067006100740069006f006e01000001e50000017f000000be00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f00000252fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d00000252000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000072800000071fc0100000002fb0000000800540069006d0065010000000000000728000002eb00fffffffb0000000800540069006d006501000000000000045000000000000000000000054f0000032700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -555,6 +589,6 @@ Window Geometry:
     collapsed: true
   Waypoint Navigation:
     collapsed: false
-  Width: 1386
-  X: 274
-  Y: 277
+  Width: 1832
+  X: 88
+  Y: 27

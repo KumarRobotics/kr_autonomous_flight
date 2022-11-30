@@ -4,7 +4,8 @@
   <arg name="robot" default="$(env EMU_ROBOT_NAME)"/>
   <arg name="world_frame_id" default="world"/>
   <arg name="robot_frame_id" default="base_link"/>
-  <arg name="cam_frame_id" default="odom"/>
+  <arg name="vio_imu_frame_id" default="imu"/>
+  <arg name="lidar_frame_id" default="lidar"/>
   <arg name="odom_out" default="odom"/>
   <arg name="publish_tf" default="true"/>
 
@@ -19,14 +20,15 @@
 
       <param name="world_frame_id" value="$(arg world_frame_id)"/>
       <param name="robot_frame_id" value="$(arg robot_frame_id)"/>
-      <param name="cam_frame_id" value="$(arg cam_frame_id)"/>
+      <param name="cam_frame_id" value="$(arg vio_imu_frame_id)"/>
+      <param name="lidar_frame_id" value="$(arg lidar_frame_id)"/>
+      <param name="enable_vio_odom" value="true"/>
+      <param name="enable_lidar" value="true"/>
       <param name="enable_laser" value="false"/>
       <param name="enable_cam" value="false"/>
-      <param name="enable_velodyne" value="false"/>
       <param name="enable_gps" value="false"/>
       <param name="enable_height" value="false"/>
       <param name="enable_mag" value="false"/>
-      <param name="enable_vio_odom" value="true"/>
       <param name="enable_yaw" value="false"/>
       <param name="publish_tf" value="$(arg publish_tf)"/>      
     </node>

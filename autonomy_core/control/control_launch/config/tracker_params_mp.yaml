@@ -1,8 +1,8 @@
 # This should contain tracker parameters
 
-take_off_tracker: 
-  thrust_rate: 5.0 # if the robot cannot take off after reaching max_thrust, try increasing this (with caution if you're running real-robot experiments)
-  max_thrust: 4.0 # if the robot cannot take off after reaching max_thrust, try increasing this (with caution if you're running real-robot experiments)
+take_off_tracker:  
+  thrust_rate: 6.0 # default 5.0. If the robot cannot take off after reaching max_thrust, try increasing this (with caution if you're running real-robot experiments)
+  max_thrust: 5.0 # default 4.0. If the robot cannot take off after reaching max_thrust, try increasing this (with caution if you're running real-robot experiments)
   min_thurst: -9.8
   epsilon: 0.01
 
@@ -13,8 +13,8 @@ land_tracker:
   acc: 2.0 # landing acceleration
 
 trajectory_tracker:
-  max_pos_error: 0.75  # maximum allowed trajectory tracking error in meters (recommended value: 0.5-1.0)
-  align_yaw: true # default false
+  max_pos_error: 1.50  # maximum allowed trajectory tracking error in meters (recommended value: 0.5-1.0)
+  align_yaw: false # default false
   yaw_speed_magnitude: 0.5 # in rad/s the yaw alignment rate (recommended value: 0.3-1.0)
   use_lambda: true # pose error checking
 
@@ -62,15 +62,15 @@ trajectory_planner:
 
 
 stopping_policy:
-  acc_xy_des: 6.0 # stopping policy x-y maximum acceleration 
-  jerk_xy_des: 3.0 # stopping policy x-y maximum jerk 
+  acc_xy_des: 4.0 # stopping policy x-y maximum acceleration 
+  jerk_xy_des: 2.0 # stopping policy x-y maximum jerk 
   acc_z_des: 2.0 # stopping policy z maximum acceleration 
   jerk_z_des: 1.0 # stopping policy z maximum jerk 
   acc_yaw_des: 0.05 # stopping policy yaw maximum angular acceleration in rad/(s^2)
 
 local_global_server:
   # local planning horizon will be from robot to the local voxel map boundary
-  waypoint_reach_xy_threshold: 20.0 # x-y distance threshold, within which intermidiate waypoint is regarded as reached 
+  waypoint_reach_xy_threshold: 10.0 # x-y distance threshold, within which intermidiate waypoint is regarded as reached 
   final_goal_reach_xy_threshold: 7.0 # within which final waypoint is regarded as reached, this should be smaller than waypoint_reach_threshold
   close_to_final_dist: 10.0 # distance-to-goal threshold, should be larger than final_goal_reach_xy_threshold, within which the velocity and acceleration checking will be turned on, -1 means no velocity checking at all
   local_plan_timeout_duration: 1.0 # local planner timeout in seconds
@@ -83,4 +83,4 @@ local_global_server:
 state_machine:
   local_replan_rate: 2.0 # local replan frequency, calling local planner every (1/local_replan_rate) seconds, (float 32)
   global_replan_rate_factor : 3 # global_replan_rate_factor = local replan frequency / global replan frequency, should be an integer and >= 1, (int)
-  max_replan_trials: 50 # max allowed trials to re-enter replanner
+  max_replan_trials: 100 # max allowed trials to re-enter replanner

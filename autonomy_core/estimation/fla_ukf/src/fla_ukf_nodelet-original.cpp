@@ -142,12 +142,10 @@ void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {
         transform_world_vision = tf_buffer_.lookupTransform(
             world_frame_id_, vision_frame_id_, ros::Time(0));
       }
-      // TODO:unhack this
-      // TODO:remap the odometry instead of hard coding
-      // if (enable_lidar_) {
+      if (enable_lidar_) {
         transform_lidar_body = tf_buffer_.lookupTransform(
             lidar_frame_id_, robot_frame_id_, ros::Time(0));
-      // }
+      }
     } catch (tf2::TransformException &ex) {
       ROS_WARN("%s", ex.what());
       return;
@@ -165,11 +163,8 @@ void FLAUKFNodelet::imu_callback(const sensor_msgs::Imu::ConstPtr &msg) {
 
   if (msg->header.stamp - last_vio_timestamp_ >= ros::Duration(0.5) && enable_vio_odom_) {
     ROS_WARN_THROTTLE(0.05,
-                      "========= WARNING! No recent odometry (LIDAR or VIO) "
-                      "messages received. If using VIO, check if camera and IMU are published correctly; "
-                      "If using LIDAR odometry, wait a while (~10s), if warning continues, check if LIDAR"
-                      "packets are published correctly =========");
-    ROS_WARN_THROTTLE(0.05, "msg->header.stamp %d, last_vio_timestamp_ %d", msg->header.stamp, last_vio_timestamp_);
+                      "========= DANGER!!! DANGER!!! No recent VIO "
+                      "messages received =========");
   }
 
   const sensor_msgs::Imu imu_msg = imu_queue_.front();
@@ -302,16 +297,8 @@ void FLAUKFNodelet::lidar_callback(
   // Force inflating the covariance matrix (position x5 and orientation x25)
   for (int i = 0; i < 6; i++) {
     for (int j = 0; j < 6; j++) {
-      // const double cov_multiplier = ((i < 3) ? 5 : 25) * ((j < 3) ? 5 : 25);
-      // Rnlidar(i, j) = cov_multiplier * msg->pose.covariance[j + i * 6];
-      // use constant noise covariance
-      if(i == j){
-        if(i<3)
-          Rnlidar(i, j) = 10;
-        else
-          Rnlidar(i, j) = 100;
-      }
-        
+      const double cov_multiplier = ((i < 3) ? 0.1 : 25) * ((j < 3) ? 0.1 : 25);
+      Rnlidar(i, j) = cov_multiplier * msg->pose.covariance[j + i * 6];
     }
   }
   // std::cout << "Rnlidar: " << Rnlidar.diagonal().transpose() << std::endl;
@@ -443,7 +430,6 @@ void FLAUKFNodelet::height_callback(const sensor_msgs::Range::ConstPtr &msg) {
 
 void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg) {
   last_vio_timestamp_ = msg->header.stamp;
-  // ROS_WARN_THROTTLE(0.05, "vio_odom_callback updates last_vio_timestamp_ to %d", last_vio_timestamp_);
 
   Eigen::Isometry3d T_vision_cam;
   tf::poseMsgToEigen(msg->pose.pose, T_vision_cam);
@@ -451,15 +437,8 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg) {
   Eigen::Vector3d v_vision_cam;
   tf::vectorMsgToEigen(msg->twist.twist.linear, v_vision_cam);
 
-
-  // TODO: unhack this
-  // TODO: acutaully T_vision_cam is LIDAR odometry
-  auto T_world_odom = T_world_vision_;
-  auto T_odom_lidar = T_vision_cam;
   const Eigen::Isometry3d T_world_body =
-      T_world_odom * T_odom_lidar * T_lidar_body_;//T_cam_body_;
-  // const Eigen::Isometry3d T_world_body =
-  //     T_world_vision_ * T_vision_cam * T_cam_body_;
+      T_world_vision_ * T_vision_cam * T_cam_body_;
 
   const Eigen::Quaterniond q_world_body(T_world_body.rotation());
   const Eigen::Vector3d t_world_body(T_world_body.translation());
@@ -472,10 +451,38 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg) {
   // ROS_INFO_STREAM("t_world_body (vio): " << t_world_body.transpose());
   // ROS_INFO_STREAM("rpy_world_body (vio): " << 180/M_PI * rpy.transpose());
 
-
-
 #if VIO_NO_POSITION
   // NOTE(Kartik): Only using orientation and velocity
+
+  // Assemble measurement
+  FLAUKF::MeasVioVec z;
+  z(0) = v_world_body(0);
+  z(1) = v_world_body(1);
+  z(2) = v_world_body(2);
+  z(3) = rpy(0);
+  z(4) = rpy(1);
+  z(5) = rpy(2);
+
+  // Assemble measurement covariance
+  FLAUKF::MeasVioCov RnVio(FLAUKF::MeasVioCov::Zero());
+  // Pose covariance
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      const int row_idx = i + 3;
+      const int col_idx = j + 3;
+
+      // Remove cross covariance with Z and increase Z covariance
+      // const double cov_multiplier = (i == 2 || j == 2) ? 0 : 1;
+      // const double cov_inflater  = (i == 2 && j == 2) ? 100 : 0;
+
+      RnVio(row_idx, col_idx) = msg->pose.covariance[i * 6 + j];
+    }
+  }
+  // Linear velocity covariance
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      RnVio(i, j) = msg->twist.covariance[i * 6 + j];
+    }
   }
 #else
   // Assemble measurement
@@ -490,88 +497,51 @@ void FLAUKFNodelet::vio_odom_callback(const nav_msgs::Odometry::ConstPtr &msg) {
   z(7) = rpy(1);
   z(8) = rpy(2);
 
-
-  // TODO: unhack this, tuning the covaraince for LIDAR odometry integration
   // Assemble measurement covariance
   FLAUKF::MeasVioCov RnVio(FLAUKF::MeasVioCov::Zero());
-  // RnVio corresponds to diag([pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, roll, pitch, yaw])
-  // Position covariance
-  double pos_covariance = 0.5;
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      if (i!=j){RnVio(i, j) = 0; continue;}
-      const double cov_multiplier = 0;// (i <= 2 || j <= 2) ? 0: 0;
-      const double cov_inflater = pos_covariance; // (i <= 2 && j <= 2) ? 0.75 : 0;
-      RnVio(i, j) =
+  // Pose covariance
+  for (int i = 0; i < 6; i++) {
+    for (int j = 0; j < 6; j++) {
+      const int row_idx = (i < 3) ? i : i + 3;
+      const int col_idx = (j < 3) ? j : j + 3;
+
+      // Remove cross covariance with Z and increase Z covariance
+      const double cov_multiplier = (i == 2 || j == 2) ? 0 : 1;
+      const double cov_inflater = (i == 2 && j == 2) ? 100 : 0;
+
+      RnVio(row_idx, col_idx) =
           cov_multiplier * msg->pose.covariance[i * 6 + j] + cov_inflater;
     }
   }
-  // Orientation covariance
-  // RnVio corresponds to diag([pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, roll, pitch, yaw])
-  double orientation_cov_deg = 10;
-  double orientation_cov = orientation_cov_deg * 3.14 / 180;
-  for (int i = 6; i < 9; i++) {
-    for (int j = 6; j < 9; j++) {
-      if (i == j){
-      RnVio(i, j) =orientation_cov;
-      } else{
-      RnVio(i, j) =0;
-      }
+  // Linear velocity covariance
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      RnVio(3 + i, 3 + j) = msg->twist.covariance[i * 6 + j];
     }
   }
 
-  
-// for (int i = 0; i < 6; i++) {
-    // for (int j = 0; j < 6; j++) {
-      // const int row_idx = (i < 3) ? i : i + 3;
-      // const int col_idx = (j < 3) ? j : j + 3;
-//
-      // const double cov_multiplier = (i == 2 || j == 2) ? 0 : 1;
-      // const double cov_inflater = (i == 2 && j == 2) ? 100 : 0;
-//
-      // RnVio(row_idx, col_idx) =
-          // cov_multiplier * msg->pose.covariance[i * 6 + j] + cov_inflater;
-    // }
-  // }
-  // Linear velocity covariance
-  // RnVio corresponds to diag([pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, roll, pitch, yaw])
-  for (int i = 3; i < 6; i++) {
-    for (int j = 3; j < 6; j++) {
-      if (i == j){
-      RnVio(i, j) =50;// msg->twist.covariance[i * 6 + j];
-      } else{
-      RnVio(i, j) =0;// msg->twist.covariance[i * 6 + j];
-      
-      }
-    }
-  }
-  
-  // for (int k = 0; k < 2; ++k) {  // Only need to check for position X/Y
+  for (int k = 0; k < 2; ++k) {  // Only need to check for position X/Y
     // Keep the VIO covariance within a reasonable band so that we don't trust
     // it too much or too less
-    // double const vio_pos_min_std = 1.0;
-    // double const vio_pos_max_std = 3.0;
-//
-    // double scale_factor = 1;
-    // if (RnVio(k, k) == 0)
-      // RnVio(k, k) = vio_pos_min_std * vio_pos_min_std;
-    // else if (RnVio(k, k) > vio_pos_max_std * vio_pos_max_std)
-      // scale_factor = vio_pos_max_std / std::sqrt(RnVio(k, k));
-    // else if (RnVio(k, k) < vio_pos_min_std * vio_pos_min_std)
-      // scale_factor = vio_pos_min_std / std::sqrt(RnVio(k, k));
-//
-    // if (scale_factor != 1) {
-      // for (int i = 0; i < RnVio.rows(); ++i) {
-        // RnVio(i, k) *= scale_factor;
-        // RnVio(k, i) *= scale_factor;
-      // }
-    // }
-  // }
+    double const vio_pos_min_std = 1.0;
+    double const vio_pos_max_std = 3.0;
+
+    double scale_factor = 1;
+    if (RnVio(k, k) == 0)
+      RnVio(k, k) = vio_pos_min_std * vio_pos_min_std;
+    else if (RnVio(k, k) > vio_pos_max_std * vio_pos_max_std)
+      scale_factor = vio_pos_max_std / std::sqrt(RnVio(k, k));
+    else if (RnVio(k, k) < vio_pos_min_std * vio_pos_min_std)
+      scale_factor = vio_pos_min_std / std::sqrt(RnVio(k, k));
+
+    if (scale_factor != 1) {
+      for (int i = 0; i < RnVio.rows(); ++i) {
+        RnVio(i, k) *= scale_factor;
+        RnVio(k, i) *= scale_factor;
+      }
+    }
+  }
 #endif
-
-
-
-
 
   // Measurement update
   if (fla_ukf_.MeasurementUpdateVio(z, RnVio, msg->header.stamp))
@@ -786,7 +756,6 @@ void FLAUKFNodelet::onInit(void) {
   pub_ukf_odom_ = n.advertise<nav_msgs::Odometry>("odom_out", 10);
   pub_mag_yaw_ = n.advertise<geometry_msgs::PoseStamped>("mag_yaw", 10);
 
-  // imu
   sub_imu_ = n.subscribe("imu", 10, &FLAUKFNodelet::imu_callback, this,
                          ros::TransportHints().tcpNoDelay());
   // if (enable_cam_)

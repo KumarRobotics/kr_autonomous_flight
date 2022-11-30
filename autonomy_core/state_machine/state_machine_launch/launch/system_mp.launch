@@ -40,12 +40,15 @@
 		<include file="$(find estimation_launch)/launch/estimation.launch">
 			<!-- Those params are set for unity simulation, they may need to be modified if used for real robot experiments or other simulator -->
 			<arg name="publish_body_camera_tf" value="$(arg publish_body_camera_tf)"/>
-			<arg name="vio_imu_frame_id" value="$(arg vio_imu_frame_id)"/>			
+			<arg name="vio_imu_frame_id" value="$(arg vio_imu_frame_id)"/>	
+			<arg name="lidar_frame_id" value="$(arg lidar_frame)"/>					
 			<arg name="publish_odom_tf" value="$(arg publish_odom_tf)"/>
 			<arg name="cam0" value="$(arg cam0)"/>
 			<arg name="cam1" value="$(arg cam1)"/>
 			<arg name="imu" value="$(arg imu)"/>
 			<arg name="mag" value="$(arg mag)"/>
+		  <arg name="enable_vio_odom" value="true"/>
+		  <arg name="enable_lidar" value="false"/>
 			<arg name="output_odom" value="$(arg output_odom)"/>
 			<arg name="robot_frame_id" value="$(arg robot_frame_id)"/>
 			<arg name="calibration_file" value="$(arg calibration_file)"/>		

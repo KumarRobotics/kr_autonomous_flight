@@ -1,0 +1,5 @@
+repositories:
+  faster-lio:
+    type: git
+    url: https://github.com/XuRobotics/faster-lio
+    version: main

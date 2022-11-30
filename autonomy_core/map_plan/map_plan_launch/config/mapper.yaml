@@ -11,10 +11,10 @@ global:
   range_z: 15.0 # range of the map in z-axis, map will span over [center_z - 0.5*range_z, center_z + 0.5*range_z] (high impact on memory and computation usage, recommended value: 10)
   resolution: 1.0 # resolution of the map (high impact on memory and computation usage, recommended value: 1.0~2.0 for sparse environments, 0.5 for dense environments) 
   num_point_cloud_skip: 3 # the global map update frequency = point cloud frequency / num_point_cloud_skip
-  max_raycast_range: 45.0 # max raycast range, the smaller, the less computation demand, but shorter perception range
+  max_raycast_range: 30.0 # max raycast range, the smaller, the less computation demand, but shorter perception range
   dilate_xy: true # dilate global map along x and y axis (recommended value: true)
   dilate_z: true # dilate global map along z axis (recommended value: false)
-  decay_times_to_empty: 30 # number of times of decay to empty, 0 means no decay, the noisier your state estimator is, the smaller this value should be (when using ground-truth pose, set this as 0)
+  decay_times_to_empty: 15 # number of times of decay to empty, 0 means no decay, the noisier your state estimator is, the smaller this value should be (when using ground-truth pose, set this as 0)
 
 local: # local map range z and center_z will be the same as storage map
   # local planning horizon will be from robot to the local voxel map boundary

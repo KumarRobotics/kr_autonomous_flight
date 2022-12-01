@@ -1,0 +1,34 @@
+# The modifications of the output file from Kalibr:
+# 1. For each matrix (e.g. cam0/T_cam_imu), remove the brackets and minus sign for each line. Use one pair of brackets for each matrix.
+# 2. Add the T_imu_body at the end of the calibration file (usually set to identity).
+T_imu_body: [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+  0.0, 1.0]
+cam0:
+  T_cam_imu:
+    [0.0,-1.0, 0.0, 0.1,
+     0.0, 0.0,-1.0, 0.0,
+     1.0, 0.0, 0.0, -0.1,
+     0.0, 0.0, 0.0, 1.0]
+  camera_model: pinhole
+  intrinsics: [130.499, 130.499, 160.0, 120.0]
+  distortion_model: radtan
+  distortion_coeffs: [0.0, 0.0, 0.0, 0.0]
+  resolution: [480, 320]
+  rostopic: /quadrotor/camera_left/image_raw
+cam1:
+  T_cam_imu:
+    [0.0,-1.0, 0.0, -0.1,
+     0.0, 0.0,-1.0, 0.0,
+     1.0, 0.0, 0.0, -0.1,
+     0.0, 0.0, 0.0, 1.0]
+  T_cn_cnm1:
+    [1.0, 0.0, 0.0, -0.2,
+     0.0, 1.0, 0.0, 0.0,
+     0.0, 0.0, 1.0, 0.0,
+     0.0, 0.0, 0.0, 1.0]
+  camera_model: pinhole
+  intrinsics: [130.499, 130.499, 160.0, 120.0]
+  distortion_model: radtan
+  distortion_coeffs: [0.0, 0.0, 0.0, 0.0]
+  resolution: [480, 320]
+  rostopic: /quadrotor/camera_right/image_raw

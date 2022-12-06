@@ -28,7 +28,7 @@ trajectory_planner:
   use_3d_local: false # local planner operates in 3D (true) or 2D (false)
 
   use_3d_global: false # global planner operates in 3D (true, in this case use_3d_local has to be set as true) or 2D (false)
-  z_cost_factor: 2 # global map z cost factor, this also influences the vertical semi field of view of global planner into 45-degree / z_cost_factor  (cost_along_z = z_cost_factor * cost_along_x_or_y)
+  z_cost_factor: 1 # [TODO: have to set to 1 to work, otherwise path will go through obstacles, need to be fixed] global map z cost factor, this also influences the vertical semi field of view of global planner into 45-degree / z_cost_factor  (cost_along_z = z_cost_factor * cost_along_x_or_y)
   
   max_v_z: 1.5 # z-direction maximum velocity, recommended value: 1.5
   max_a_z: 3.0 # z-direction maximum acceleration, recommended value: 3.0
@@ -41,7 +41,7 @@ trajectory_planner:
   ndt: 1.0 # default 1
   max_num: -1 # maxmum number of expansion, -1 means no limitation
   heuristic_weight: 50.0 # the larger heuristic_weight, the more emphasis on min time and the less emphasis on min control effort, recommended value: 50 for 2-D, 300 for 3-D
-  vertical_semi_fov: 0.61 # vertical semi field of view (in rad), used for 3D planning only, value should lie in (0, pi/2), if 2D planning set it as 0
+  vertical_semi_fov: 1.57 # vertical semi field of view (in rad), used for 3D planning only, value should lie in (0, pi/2), if 2D planning set it as 0
 
 stopping_policy:
   acc_xy_des: 6.0 # stopping policy x-y maximum acceleration 

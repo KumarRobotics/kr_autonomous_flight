@@ -15,6 +15,12 @@
   <!-- Use msckf_calib_gen to generate this yaml file when using unity sim -->
   <arg name="calibration_file" default="$(find real_experiment_launch)/launch/uav_ugv_localization/msckf_config/msckf_calib.yaml" />
 
+
+  <!-- publish_tf -->
+  <include file="$(find real_experiment_launch)/launch/uav_ugv_localization/publish_tf_atl.launch">
+    <arg name="robot" value="$(arg robot)" />
+  </include>
+
   <group ns="$(arg robot)">
     <!-- Image Processor Nodelet -->
     <include file="$(find estimation_launch)/launch/msckf_imgproc.launch">

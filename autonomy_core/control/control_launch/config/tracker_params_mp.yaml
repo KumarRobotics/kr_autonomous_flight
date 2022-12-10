@@ -44,22 +44,24 @@ trajectory_planner:
   max_num: -1 # maxmum number of expansion, -1 means no limitation
   heuristic_weight: 50.0 # the larger heuristic_weight, the more emphasis on min time and the less emphasis on min control effort, recommended value: 50 for 2-D, 300 for 3-D
   vertical_semi_fov: 0.61 # vertical semi field of view (in rad), used for 3D planning only, value should lie in (0, pi/2), if 2D planning set it as 0
-  use_opt_planner: true
-  optimization/bb_back: 2.0
-  optimization/w_time: 8.0
-  optimization/w_vel: 360.0
-  optimization/w_acc: 360.0
-  optimization/w_sta_obs: 20.0
-  search/max_tau: 0.6
-  search/init_max_tau: 0.6
-  search/horizon: 13.0
-  search/lambda_heu: 5.0
-  search/allocate_num: 100000
-  search/resolution_astar: 0.3
-  search/vis_check_num: 15
-  search/w_time: 3.0
-  search/use_jerk: false
-  search/time_res: 0.15
+  use_opt_planner: true # set true if using the optimization-based planner
+  optimization/bb_xy_size: 4.0 # xy half size of the intial polytope of flight corridor
+  optimization/bb_z_up: 2.0 # z up size of the intial polytope of flight corridor
+  optimization/bb_z_down: 2.0 # z down size of the intial polytope of flight corridor
+  optimization/w_time: 8.0 # penalty weight to minimize the total time (4~20)
+  optimization/w_vel: 360.0 # penalty weight to minimize the the violate velocity (100 ~ 1000)
+  optimization/w_acc: 360.0 # penalty weight to minimize the the violate accelrate (100 ~ 1000)
+  optimization/w_sta_obs: 20.0 # penalty weight to enforce the position inside flight corridor (100 ~ 1000)
+  search/max_tau: 0.6 # time interval for kinodynamic search
+  search/init_max_tau: 0.6 # time interval for kinodynamic search (usually don't change it)
+  search/horizon: 13.0 # local search horizon
+  search/lambda_heu: 5.0 # heu weight
+  search/allocate_num: 100000 # total allocate space to store nodes
+  search/resolution_astar: 0.3 # tolerance for a star search
+  search/vis_check_num: 15 # number of checking point along each segement
+  search/w_time: 3.0 # time weight
+  search/use_jerk: false # set false now
+  search/time_res: 0.15 # time resolution to index the path
   map_frame: "quadrotor/map" 
 
 

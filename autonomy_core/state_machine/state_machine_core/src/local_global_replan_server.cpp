@@ -751,6 +751,14 @@ vec_Vec3f RePlanner::PathCropIntersect(const vec_Vec3f& path) {
         if (is_first_intersection) {
           ROS_INFO("Ignoring the first intersection...");
           is_first_intersection = false;
+          
+          if (i == path.size() - 1) {
+            cropped_path.push_back(path[i]);
+            ROS_INFO(
+                "Global goal is inside local voxel map, directly using it as local "
+                "goal!");
+          }
+
         } else {
           cropped_path.push_back(intersect_pt);
           ROS_INFO(

@@ -29,6 +29,9 @@
   /graph_slam/trajectory
   /sloam/debug/obs_tree_features
   /sloam/map_pose
+    /quadrotor/local_plan_server/trajectory_planner/optimal_list
+    /quadrotor/local_plan_server/trajectory_planner/kino_astar_list
+    /quadrotor/local_plan_server/trajectory_planner/sikangpolyhedron
     "
     output="screen"/>
 </launch>

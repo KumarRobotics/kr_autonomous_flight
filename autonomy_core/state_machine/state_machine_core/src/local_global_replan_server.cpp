@@ -269,7 +269,7 @@ void RePlanner::setup_replanner() {
       global_tpgoal);  // only send goal, because global plan server is
                        // subscribing to odom and use that as start
   // global initial plan timeout duration
-  double initial_global_timeout_dur = 6.0 * local_timeout_duration_;
+  double initial_global_timeout_dur = 10.0 * local_timeout_duration_;
   bool global_finished_before_timeout = global_plan_client_->waitForResult(
       ros::Duration(initial_global_timeout_dur));
   // check result of global plan

@@ -76,8 +76,8 @@ class LocalPlanServer {
   bool debug_;
   bool verbose_;
   bool pub_cleared_map_ = false;
-
-  bool use_opt_planner_;
+  bool use_3d_local_; // it is for 2D mp planner
+  bool use_opt_planner_ = false;
   bool set_vis_ = false;
 
   std::string frame_id_;
@@ -98,6 +98,7 @@ class LocalPlanServer {
    */
   void process_goal();
 
+  /***@yuwei***/
   /**
    * @brief Record result (trajectory, status, etc)
    */
@@ -177,6 +178,7 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   // TODO(xu:) not differentiating between 2D and 3D, causing extra resource
   // usage for 2D case, this needed to be changed in both planner util as well
   // as map util, which requires the slicing map function
+  /***@yuwei: optimization based planner ***/
   if (use_opt_planner_){
 
     ROS_WARN("+++++++++++++++++++++++++++++++++++");
@@ -190,7 +192,6 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
 
   }else{
 
-    bool use_3d_local_;
     traj_planner_nh.param("use_3d_local", use_3d_local_, false);
     
     double vz_max, az_max, jz_max, uz_max;
@@ -298,7 +299,7 @@ void LocalPlanServer::process_result(const planning_ros_msgs::SplineTrajectory& 
       num_goals = 1;
     }
 
-
+    /***@yuwei: optimization based planner ***/
     if (use_opt_planner_){
       
       Eigen::Vector3d pos, vel, acc;
@@ -594,44 +595,52 @@ bool LocalPlanServer::local_plan_process(
 
   /***@yuwei: optimization based planner ***/
 
-
-  startState <<   start.pos(0),  start.vel(0), start.acc(0),
-                  start.pos(1),  start.vel(1), start.acc(1),
-                  start.pos(2),  start.vel(2), start.acc(2);
-
-  endState <<   goal.pos(0),  goal.vel(0), goal.acc(0),
-                goal.pos(1),  goal.vel(1), goal.acc(1),
-                goal.pos(2),  goal.vel(2), goal.acc(2);
-
-
-  std::cout << "startState is " << startState << std::endl;
-  std::cout << "endState is " << endState << std::endl;
-  
-
   if(use_opt_planner_){
 
-    ROS_WARN("[LocalPlanServer:] trigger opt_planner!!!!!");
+    ROS_WARN("[LocalPlanServer] trigger opt_planner!!!!!");
+    startState <<   start.pos(0),  start.vel(0), start.acc(0),
+                    start.pos(1),  start.vel(1), start.acc(1),
+                    start.pos(2),  start.vel(2), start.acc(2);
+    endState <<   goal.pos(0),  goal.vel(0), goal.acc(0),
+                  goal.pos(1),  goal.vel(1), goal.acc(1),
+                  goal.pos(2),  goal.vel(2), goal.acc(2);
+
+
+    std::cout << "startState is " << startState << std::endl;
+    std::cout << "endState is " << endState << std::endl;
+    
 
     valid = planner_manager_->localPlanner(startState, endState);
     if (valid) {
-
       opt_traj_ = planner_manager_->local_data_.traj_;
       traj_total_time_ = opt_traj_.getTotalDuration();
-
-      ROS_WARN("[LocalPlanServer:] planning success ! !!!!!");
+      ROS_WARN("[LocalPlanServer] planning success ! !!!!!");
 
     }
 
   }else{
 
+    ROS_WARN("[LocalPlanServer] trigger mp_planner!!!!!");
+    std::cout << "start.pos is " << start.pos.transpose() << std::endl;
+    std::cout << "goal.pos is "  << goal.pos.transpose()<< std::endl;
+    
+
     mp_planner_util_->reset();
     // start and new_goal contain full informaiton about
     // position/velocity/acceleration
-    valid = mp_planner_util_->plan(start, goal);
+    if(!use_3d_local_) 
+    {
+      MPL::Waypoint3D new_goal = goal;
+      new_goal.pos(2) = start.pos(2); // or else it cannot reach the local goal position.
+      valid = mp_planner_util_->plan(start, new_goal);
+    }else{
+      valid = mp_planner_util_->plan(start, goal);
+    }
+
     if (valid) {
       mp_traj_ = mp_planner_util_->getTraj();
       traj_total_time_ = mp_traj_.getTotalTime();
-
+      ROS_WARN("[LocalPlanServer] planning success ! !!!!!");
     }
 
     // for visualization: publish expanded nodes as a point cloud

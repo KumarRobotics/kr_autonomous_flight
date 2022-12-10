@@ -39,4 +39,4 @@ repositories:
   kr_demo_planner:
     type: git
     url: git@github.com:yuwei-wu/kr_demo_planner.git
-    version: simon_edit
+    version: kr_auto_flight

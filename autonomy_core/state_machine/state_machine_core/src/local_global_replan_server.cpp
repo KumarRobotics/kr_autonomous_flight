@@ -85,7 +85,7 @@ void RePlanner::LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
                         << avg_map_frequency_
                         << " Hz, most recent update rate is: "
                         << current_map_frequency << " Hz");
-        // abort replan and trigger stopping policy
+        // if rate sharply increasing, it is safe and we do not abort
         // AbortReplan();
       } else if (current_map_frequency <
                  (1 - percent_tol) * avg_map_frequency_) {
@@ -99,7 +99,8 @@ void RePlanner::LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
                          << " Hz, most recent update rate is: "
                          << current_map_frequency << " Hz");
         // abort replan and trigger stopping policy
-        AbortReplan();
+        // TODO(xu:) add this back after we add the multiple threading
+        // AbortReplan();
       } else {
         ROS_INFO_STREAM_THROTTLE(
             1,
@@ -193,7 +194,8 @@ void RePlanner::setup_replanner() {
         "Probably due to LIDAR packets loss or computation, check "
         "(1) LIDAR connection, and (2) computation headroom!");
     // abort replan and trigger stopping policy
-    AbortReplan();
+    // TODO(xu:) add this back after we add the multiple threading
+    // AbortReplan();
   }
 
   if (!do_setup_ || active_) {
@@ -269,7 +271,7 @@ void RePlanner::setup_replanner() {
       global_tpgoal);  // only send goal, because global plan server is
                        // subscribing to odom and use that as start
   // global initial plan timeout duration
-  double initial_global_timeout_dur = 10.0 * local_timeout_duration_;
+  double initial_global_timeout_dur = 6.0 * local_timeout_duration_;
   bool global_finished_before_timeout = global_plan_client_->waitForResult(
       ros::Duration(initial_global_timeout_dur));
   // check result of global plan
@@ -418,7 +420,8 @@ bool RePlanner::PlanTrajectory(int horizon) {
         "Probably due to LIDAR packets loss or computation, check "
         "(1) LIDAR connection, and (2) computation headroom!");
     // abort replan and trigger stopping policy
-    AbortReplan();
+    // TODO(xu:) add this back after we add the multiple threading
+    // AbortReplan();
   }
 
   // horizon = 1 + (current_plan_epoch - last_plan_epoch),

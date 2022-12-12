@@ -29,6 +29,8 @@
   /graph_slam/trajectory
   /sloam/debug/obs_tree_features
   /sloam/map_pose
+    /quadrotor/mapper/local_voxel_map_throttled
+    /quadrotor/mapper/global_voxel_map_throttled
     /quadrotor/local_plan_server/trajectory_planner/optimal_list
     /quadrotor/local_plan_server/trajectory_planner/kino_astar_list
     /quadrotor/local_plan_server/trajectory_planner/sikangpolyhedron

@@ -7,7 +7,9 @@
     <arg name="lidar_frame" default=""/>
     <arg name="real_robot" default="false"/>
     <arg name="mapper_config"/>
-    <arg name="prefix" value="nice -n 1"/>
+    <!-- <arg name="prefix" value="nice -n 1"/> -->
+    <!-- hard assigning threads to avoid computation spikes -->
+    <arg name="prefix" value="taskset -c 0"/>
 
     <!-- use nice to set low priority for mapper -->
     <node pkg="mapper" name="mapper" type="local_global_mapper" output="screen" launch-prefix="$(arg prefix)">

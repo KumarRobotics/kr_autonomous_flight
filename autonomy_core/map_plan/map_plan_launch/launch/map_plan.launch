@@ -2,7 +2,7 @@
 <launch>
     <arg name="robot" default="$(optenv ROBOT_NAME quadrotor)"/>
     <arg name="real_robot" default="false"/>
-    <arg name="use_mp" default="false"/>
+    <arg name="use_mp" default="true"/>
     <arg name="min_dispersion_planner" default="false"/>
     <arg name="odom" default="odom"/>
 

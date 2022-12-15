@@ -15,6 +15,9 @@
   <include file="$(find real_experiment_launch)/launch/throttle_imu.launch">
   </include>
   
+  <include file="$(find real_experiment_launch)/launch/uav_ugv_localization/atl_estimation_stereo_vio.launch">
+  </include>
+  
   <!-- If using LIDAR odometry -->
   <include file="$(find real_experiment_launch)/launch/drivers_for_faster_lio.launch">
     <arg name="robot" value="$(arg robot)" />

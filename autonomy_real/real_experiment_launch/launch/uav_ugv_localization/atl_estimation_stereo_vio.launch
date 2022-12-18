@@ -13,7 +13,7 @@
   <arg name="publish_body_camera_tf" default="false" />
 
   <!-- Use msckf_calib_gen to generate this yaml file when using unity sim -->
-  <arg name="calibration_file" default="$(find real_experiment_launch)/launch/uav_ugv_localization/msckf_config/msckf_calib.yaml" />
+  <arg name="calibration_file" default="$(find real_experiment_launch)/config/msckf_calib.yaml" />
 
 
   <!-- publish_tf -->

@@ -2,6 +2,6 @@
 
 <launch>
   <arg name="robot" default="quadrotor" />
-  <node pkg="tf2_ros" type="static_transform_publisher" name="init_odom_map_transform_pub" args="0 0 0 0 0 0 $(arg robot)/map $(arg robot)/odom" />
-  <node pkg="tf2_ros" type="static_transform_publisher" name="init_odom_lidarodom_transform_pub" args="0 0 0 1.57 0 0 camera_init $(arg robot)/map" />
+  <node pkg="tf2_ros" type="static_transform_publisher" name="atl_init_odom_map_transform_pub" args="0 0 0 0 0 0 $(arg robot)/map $(arg robot)/odom" />
+  <node pkg="tf2_ros" type="static_transform_publisher" name="atl_init_odom_lidarodom_transform_pub" args="0 0 0 1.57 0 0 camera_init $(arg robot)/map" />
 </launch>

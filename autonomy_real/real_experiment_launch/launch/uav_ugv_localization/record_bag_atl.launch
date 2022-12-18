@@ -4,12 +4,11 @@
   <node pkg="rosbag" type="record" name="recorder" args="
   -o $(arg dir)
   /Odometry
-  /os_node/imu_packets
+    /quadrotor/vio/odom
+    /os_node/imu_packets
   /os_node/lidar_packets
   /os_node/metadata
   /ovc/vectornav/imu
-  /ovc/left/image_raw
-  /ovc/right/image_raw
   /ovc/rgb/image_raw
   /tf
   /tf_static

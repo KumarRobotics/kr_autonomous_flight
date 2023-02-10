@@ -298,7 +298,10 @@ void LocalGlobalMapperNode::processCloud(
   // Reset global and storage maps if the robot is far from the map centers
   const auto diff = lidar_position_odom - global_center;
   const auto distance = diff.norm();
-  if (distance > std::min(global_map_dim_d_x_, global_map_dim_d_x_) / 2) {
+  const auto threshold = std::min(global_map_dim_d_x_, global_map_dim_d_x_) / 40;
+  ROS_INFO("[Mapper]: distance is %.2lf, threshold is %.2lf", distance, threshold);
+  if (distance > threshold) {
+    ROS_INFO("[Mapper]: resetting global and storage map");
     global_map_cx_ = lidar_position_odom(0, 0);
     global_map_cy_ = lidar_position_odom(1, 0);
     global_map_cz_ = lidar_position_odom(2, 0);
@@ -312,7 +315,7 @@ void LocalGlobalMapperNode::processCloud(
     storage_map_info_.origin.y = global_map_info_.origin.y;
     storage_map_info_.origin.z = global_map_info_.origin.z;
 
-    // Initialize maps.
+    // Reinitialize maps.
     globalMapInit();
     storageMapInit();
   }

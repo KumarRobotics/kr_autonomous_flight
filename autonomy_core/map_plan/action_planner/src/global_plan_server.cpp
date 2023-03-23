@@ -257,8 +257,8 @@ void GlobalPlanServer::process_goal() {
   }
 
   // record current odometry as start
-  start.pos = kr_planning_rviz_plugins::pose_to_eigen(odom_msg_->pose.pose);
-  goal.pos = kr_planning_rviz_plugins::pose_to_eigen(goal_->p_final);
+  start.pos = kr::pose_to_eigen(odom_msg_->pose.pose);
+  goal.pos = kr::pose_to_eigen(goal_->p_final);
 
   // call the planner
 
@@ -395,7 +395,7 @@ bool GlobalPlanServer::global_plan_process(
       }
 
       // publish global_path_msg_
-      global_path_msg_ = kr_planning_rviz_plugins::path_to_ros(global_path);
+      global_path_msg_ = kr::path_to_ros(global_path);
       global_path_msg_.header.frame_id = map_frame;
       path_pub_.publish(global_path_msg_);
     }
@@ -414,7 +414,7 @@ bool GlobalPlanServer::global_plan_process(
       }
 
       // publish
-      global_path_msg_ = kr_planning_rviz_plugins::path_to_ros(global_path);
+      global_path_msg_ = kr::path_to_ros(global_path);
       global_path_msg_.header.frame_id = map_frame;
       path_pub_.publish(global_path_msg_);
     }

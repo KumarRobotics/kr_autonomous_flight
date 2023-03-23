@@ -76,8 +76,7 @@ Visualization Manager:
       Show Arrows: true
       Show Axes: true
       Show Names: true
-      Tree:
-        {}
+      Tree: {}
       Update Interval: 0
       Value: false
     - Class: rviz/InteractiveMarkers
@@ -95,15 +94,14 @@ Visualization Manager:
           Enabled: true
           Marker Topic: /env_vis/env
           Name: Environment
-          Namespaces:
-            {}
+          Namespaces: {}
           Queue Size: 100
           Value: true
       Enabled: false
       Name: Env
     - Class: rviz/Group
       Displays:
-        - Class: planning_rviz_plugins/Path
+        - Class: kr_planning_rviz_plugins/Path
           Enabled: true
           LineColor: 204; 51; 204
           LineScale: 0.4000000059604645
@@ -114,7 +112,7 @@ Visualization Manager:
           Topic: /quadrotor/global_plan_server/path
           Unreliable: false
           Value: true
-        - Class: planning_rviz_plugins/Path
+        - Class: kr_planning_rviz_plugins/Path
           Enabled: true
           LineColor: 0; 255; 0
           LineScale: 0.800000011920929
@@ -153,7 +151,7 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
-        - Class: planning_rviz_plugins/Path
+        - Class: kr_planning_rviz_plugins/Path
           Enabled: true
           LineColor: 78; 154; 6
           LineScale: 0.800000011920929
@@ -167,7 +165,7 @@ Visualization Manager:
         - AccColor: 10; 200; 55
           AccScale: 0.014999999664723873
           AccVis: true
-          Class: planning_rviz_plugins/Trajectory
+          Class: kr_planning_rviz_plugins/Trajectory
           Enabled: true
           JrkColor: 200; 20; 55
           JrkScale: 0.014999999664723873
@@ -189,7 +187,7 @@ Visualization Manager:
           YawTriangleAngle: 0.699999988079071
           YawTriangleScale: 0.5
           YawVis: true
-        - Class: planning_rviz_plugins/Path
+        - Class: kr_planning_rviz_plugins/Path
           Enabled: true
           LineColor: 0; 170; 255
           LineScale: 0.5
@@ -222,7 +220,7 @@ Visualization Manager:
           Axis: Z
           BoundScale: 0.5
           Channel Name: intensity
-          Class: planning_rviz_plugins/VoxelMap
+          Class: kr_planning_rviz_plugins/VoxelMap
           Color: 239; 41; 41
           Color Transformer: AxisColor
           Decay Time: 0
@@ -255,7 +253,7 @@ Visualization Manager:
           Axis: Z
           BoundScale: 3
           Channel Name: intensity
-          Class: planning_rviz_plugins/VoxelMap
+          Class: kr_planning_rviz_plugins/VoxelMap
           Color: 252; 233; 79
           Color Transformer: FlatColor
           Decay Time: 0

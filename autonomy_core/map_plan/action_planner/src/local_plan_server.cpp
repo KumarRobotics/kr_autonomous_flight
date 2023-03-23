@@ -325,10 +325,10 @@ void LocalPlanServer::process_goal() {
   MPL::Waypoint3D start, goal;
   // instead of using current odometry as start, we use the given start position
   // for consistency between old and new trajectories in replan process
-  start.pos = kr_planning_rviz_plugins::pose_to_eigen(goal_->p_init);
-  start.vel = kr_planning_rviz_plugins::twist_to_eigen(goal_->v_init);
-  start.acc = kr_planning_rviz_plugins::twist_to_eigen(goal_->a_init);
-  start.jrk = kr_planning_rviz_plugins::twist_to_eigen(goal_->j_init);
+  start.pos = kr::pose_to_eigen(goal_->p_init);
+  start.vel = kr::twist_to_eigen(goal_->v_init);
+  start.acc = kr::twist_to_eigen(goal_->a_init);
+  start.jrk = kr::twist_to_eigen(goal_->j_init);
 
   // Important: define use position, velocity, acceleration or jerk as control
   // inputs, note that the lowest order "false" term will be used as control
@@ -342,10 +342,10 @@ void LocalPlanServer::process_goal() {
   // in trajectory_tracker)
   start.use_yaw = false;
 
-  goal.pos = kr_planning_rviz_plugins::pose_to_eigen(goal_->p_final);
-  goal.vel = kr_planning_rviz_plugins::twist_to_eigen(goal_->v_final);
-  goal.acc = kr_planning_rviz_plugins::twist_to_eigen(goal_->a_final);
-  goal.jrk = kr_planning_rviz_plugins::twist_to_eigen(goal_->j_final);
+  goal.pos = kr::pose_to_eigen(goal_->p_final);
+  goal.vel = kr::twist_to_eigen(goal_->v_final);
+  goal.acc = kr::twist_to_eigen(goal_->a_final);
+  goal.jrk = kr::twist_to_eigen(goal_->j_final);
   goal.use_yaw = start.use_yaw;
   goal.use_pos = start.use_pos;
   goal.use_vel = start.use_vel;
@@ -440,7 +440,7 @@ bool LocalPlanServer::local_plan_process(
   vec_Vec3f sg;
   sg.push_back(start.pos);
   sg.push_back(goal.pos);
-  kr_planning_msgs::Path sg_msg = kr_planning_rviz_plugins::path_to_ros(sg);
+  kr_planning_msgs::Path sg_msg = kr::path_to_ros(sg);
   std::string map_frame;  // set frame id
   map_frame = map.header.frame_id;
   sg_msg.header.frame_id = map_frame;
@@ -458,7 +458,7 @@ bool LocalPlanServer::local_plan_process(
   }
 
   // for visualization: publish expanded nodes as a point cloud
-  sensor_msgs::PointCloud expanded_ps = kr_planning_rviz_plugins::vec_to_cloud(
+  sensor_msgs::PointCloud expanded_ps = kr::vec_to_cloud(
       mp_planner_util_->getExpandedNodes());
   expanded_ps.header.frame_id = map_frame;
   expanded_cloud_pub.publish(expanded_ps);

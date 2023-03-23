@@ -272,10 +272,8 @@ void LocalGlobalMapperNode::processCloud(const sensor_msgs::PointCloud& cloud) {
   geometry_msgs::Pose pose_odom_lidar;
   getLidarPoses(cloud.header, &pose_map_lidar, &pose_odom_lidar);
 
-  const Eigen::Affine3d T_map_lidar =
-      kr_planning_rviz_plugins::toTF(pose_map_lidar);
-  const Eigen::Affine3d T_odom_lidar =
-      kr_planning_rviz_plugins::toTF(pose_odom_lidar);
+  const Eigen::Affine3d T_map_lidar = kr::toTF(pose_map_lidar);
+  const Eigen::Affine3d T_odom_lidar = kr::toTF(pose_odom_lidar);
 
   // This is the lidar position in the odom frame, used for raytracing &
   // cropping local map
@@ -295,8 +293,7 @@ void LocalGlobalMapperNode::processCloud(const sensor_msgs::PointCloud& cloud) {
   double min_range = 0.75;  // points within this distance will be discarded
   double min_range_squared;
   min_range_squared = min_range * min_range;
-  const auto pts =
-      kr_planning_rviz_plugins::cloud_to_vec_filter(cloud, min_range_squared);
+  const auto pts = kr::cloud_to_vec_filter(cloud, min_range_squared);
 
   timer.start();
   // local raytracing using lidar position in the map frame (not odom frame)

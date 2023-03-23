@@ -73,7 +73,7 @@ Visualization Manager:
       Axis: Z
       BoundScale: 0.10000000149011612
       Channel Name: intensity
-      Class: planning_rviz_plugins/VoxelMap
+      Class: kr_planning_rviz_plugins/VoxelMap
       Color: 164; 0; 0
       Color Transformer: FlatColor
       Decay Time: 0
@@ -168,13 +168,10 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          base_link:
-            {}
-          map:
-            {}
+          base_link: {}
+          map: {}
           vision:
-            odom:
-              {}
+            odom: {}
       Update Interval: 0
       Value: true
     - Alpha: 1

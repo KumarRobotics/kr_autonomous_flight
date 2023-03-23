@@ -5,7 +5,7 @@
  */
 void RePlanner::GlobalPathCb(const kr_planning_msgs::Path& path) {
   global_path_.clear();
-  global_path_ = kr_planning_rviz_plugins::ros_to_path(
+  global_path_ = kr::ros_to_path(
       path);  // extract the global path information
 }
 
@@ -283,7 +283,7 @@ void RePlanner::setup_replanner() {
   }
   auto global_result = global_plan_client_->getResult();
   if (global_result->success) {
-    global_path_ = kr_planning_rviz_plugins::ros_to_path(
+    global_path_ = kr::ros_to_path(
         global_result->path);  // extract the global path information
     ROS_WARN("initial global plan succeeded!");
   } else {
@@ -460,7 +460,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
                                 &local_tpgoal.a_init,
                                 &local_tpgoal.j_init);
   Vec3f start_pos;
-  start_pos = kr_planning_rviz_plugins::pose_to_eigen(local_tpgoal.p_init);
+  start_pos = kr::pose_to_eigen(local_tpgoal.p_init);
 
   // Replan step 1: Global plan
   // ########################################################################################################
@@ -772,7 +772,7 @@ vec_Vec3f RePlanner::PathCropIntersect(const vec_Vec3f& path) {
 
   // publish for visualization
   kr_planning_msgs::Path local_path_msg_ =
-      kr_planning_rviz_plugins::path_to_ros(cropped_path);
+      kr::path_to_ros(cropped_path);
   local_path_msg_.header.frame_id = map_frame_;
   cropped_path_pub_.publish(local_path_msg_);
 
@@ -817,7 +817,7 @@ vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f& path_original) {
   map_to_odom.orientation.z = transformStamped.transform.rotation.z;
 
   // TF transform from the map frame to odom frame
-  auto map_to_odom_tf = kr_planning_rviz_plugins::toTF(map_to_odom);
+  auto map_to_odom_tf = kr::toTF(map_to_odom);
   Vec3f waypoint_wrt_map;
 
   vec_Vec3f path_wrt_map;
@@ -829,7 +829,7 @@ vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f& path_original) {
 
   // publish transformed global path for visualization
   kr_planning_msgs::Path path_wrt_map_msg =
-      kr_planning_rviz_plugins::path_to_ros(path_wrt_map);
+      kr::path_to_ros(path_wrt_map);
   path_wrt_map_msg.header.frame_id = map_frame_;
   global_path_wrt_map_pub_.publish(path_wrt_map_msg);
   return path_wrt_map;

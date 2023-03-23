@@ -12,7 +12,8 @@ find_package(
              depth_image_proc
              sensor_msgs
              eigen_conversions
-             tf_conversions)
+             tf_conversions
+             motion_primitive_library)
              
 find_package(Boost REQUIRED COMPONENTS timer)
 

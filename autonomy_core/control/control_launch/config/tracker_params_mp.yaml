@@ -44,7 +44,7 @@ trajectory_planner:
   max_num: -1 # maxmum number of expansion, -1 means no limitation
   heuristic_weight: 50.0 # the larger heuristic_weight, the more emphasis on min time and the less emphasis on min control effort, recommended value: 50 for 2-D, 300 for 3-D
   vertical_semi_fov: 0.61 # vertical semi field of view (in rad), used for 3D planning only, value should lie in (0, pi/2), if 2D planning set it as 0
-  use_opt_planner: true # set true if using the optimization-based planner
+  use_opt_planner: false # set true if using the optimization-based planner
   optimization/bb_xy_size: 4.0 # xy half size of the intial polytope of flight corridor
   optimization/bb_z_up: 2.0 # z up size of the intial polytope of flight corridor
   optimization/bb_z_down: 2.0 # z down size of the intial polytope of flight corridor
@@ -74,7 +74,7 @@ stopping_policy:
 
 local_global_server:
   # local planning horizon will be from robot to the local voxel map boundary
-  waypoint_reach_xy_threshold: 7.0 # x-y distance threshold, within which intermidiate waypoint is regarded as reached 
+  waypoint_reach_xy_threshold: 10.0 # x-y distance threshold, within which intermidiate waypoint is regarded as reached 
   final_goal_reach_xy_threshold: 5.0 # within which final waypoint is regarded as reached, this should be smaller than waypoint_reach_threshold
   close_to_final_dist: 10.0 # distance-to-goal threshold, should be larger than final_goal_reach_xy_threshold, within which the velocity and acceleration checking will be turned on, -1 means no velocity checking at all
   local_plan_timeout_duration: 1.0 # local planner timeout in seconds
@@ -85,6 +85,6 @@ local_global_server:
   map_frame: "quadrotor/map" # SLAM reference frame (only for using two-reference-frame system, otherwise this should be set to be the same as odom_frame)
 
 state_machine:
-  local_replan_rate: 2.0 # local replan frequency, calling local planner every (1/local_replan_rate) seconds, (float 32)
+  local_replan_rate: 1.0 # local replan frequency, calling local planner every (1/local_replan_rate) seconds, (float 32)
   global_replan_rate_factor : 3 # global_replan_rate_factor = local replan frequency / global replan frequency, should be an integer and >= 1, (int)
   max_replan_trials: 100 # max allowed trials to re-enter replanner

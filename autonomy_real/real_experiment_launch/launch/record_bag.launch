@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-  <arg name="dir" default="/home/dcist/bags/falcon_pennovation"/>
+  <arg name="dir" default="/home/dcist/bags/map-merging-falcon-pennovation"/>
   <node pkg="rosbag" type="record" name="recorder" args="
   -o $(arg dir)
   /Odometry
@@ -34,6 +34,7 @@
     /quadrotor/local_plan_server/trajectory_planner/optimal_list
     /quadrotor/local_plan_server/trajectory_planner/kino_astar_list
     /quadrotor/local_plan_server/trajectory_planner/sikangpolyhedron
+    /ovc/rgb/image_raw_throttled
     "
     output="screen"/>
 </launch>

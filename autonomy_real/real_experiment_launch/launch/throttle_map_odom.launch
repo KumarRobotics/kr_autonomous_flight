@@ -16,5 +16,6 @@
 	  	<node name="odom_throttler" type="throttle" pkg="topic_tools" args="messages $(arg odom_topic) $(arg throttled_odom_hz) $(arg throttled_odom_topic)" />
 	  	<node name="local_map_throttler" type="throttle" pkg="topic_tools" args="messages $(arg local_map_topic) 0.5 $(arg local_map_topic)_throttled" />
 	  	<node name="global_map_throttler" type="throttle" pkg="topic_tools" args="messages $(arg global_map_topic) 0.1 $(arg global_map_topic)_throttled" />
+      <node name="rgb_throttler" type="throttle" pkg="topic_tools" args="messages /ovc/rgb/image_raw 10 /ovc/rgb/image_raw_throttled" />
 	</group>
 </launch>

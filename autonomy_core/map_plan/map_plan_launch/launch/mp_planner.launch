@@ -3,7 +3,7 @@
   <!-- use nice to set low priority for planner -->
   <!-- <arg name="prefix" value="nice -n 2"/> -->
   <!-- hard assigning threads to avoid computation spikes -->
-  <arg name="prefix" value="taskset -c 1,2"/>
+  <arg name="prefix" value="taskset -c 1,2,3"/>
   <arg name="odom" default="odom"/>
   <arg name="min_dispersion_planner" default="false"/>
   <arg name="planner_config" default="$(find control_launch)/config/tracker_params_mp.yaml"/>

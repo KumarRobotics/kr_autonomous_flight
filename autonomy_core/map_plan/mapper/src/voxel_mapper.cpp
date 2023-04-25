@@ -479,4 +479,175 @@ bool VoxelMapper::allocate(const Eigen::Vector3d& new_ori_d,
   }
 }
 
+bool VoxelMapper::reAllocate(const std::vector<signed char> old_map,
+                            const Eigen::Vector3d& new_ori_d,
+                           const Eigen::Vector3d& new_dim_d,
+                          int direction) {
+
+  static Eigen::Vector3i prev_origin = Eigen::Vector3i::Zero();
+
+  Eigen::Vector3i new_dim(new_dim_d(0) / res_,
+                          new_dim_d(1) / res_,
+                          new_dim_d(2) / res_);
+  Eigen::Vector3i new_ori(new_ori_d(0) / res_,
+                          new_ori_d(1) / res_,
+                          new_ori_d(2) / res_);
+
+  if (new_dim(2) == 0)  // 2d case, set the z dimension to be 1
+    new_dim(2) = 1;
+
+  // Check if new dimensions and origin are the same as before, in which case
+  // do not perform reallocation
+  if (new_dim == dim_ && new_ori == prev_origin) {
+    return false;
+  } else {
+    int size = new_dim(0) * new_dim(1) * new_dim(2);
+    std::vector<signed char> new_map(size, val_default_);
+
+    // Iterate through all elements in new map
+    Eigen::Vector3i new_vox;
+    int x_trim = ceil(new_dim(0) / 3);
+    int y_trim = ceil(new_dim(1) / 3);
+
+    for (new_vox(0) = 0; new_vox(0) < new_dim(0); new_vox(0)++) {
+      for (new_vox(1) = 0; new_vox(1) < new_dim(1); new_vox(1)++) {
+        for (new_vox(2) = 0; new_vox(2) < new_dim(2); new_vox(2)++) {
+          // Move old storage map voxels to new map
+          switch (direction)
+          {
+          case 1:   // RIGHT_BOTTOM
+            if (new_vox(0) < new_dim(0) - x_trim && new_vox(1) < new_dim(1) - y_trim) {
+              int old_vox_idx = new_vox(0) +
+                                new_dim(0) * new_vox(1) +
+                                new_dim(0) * new_dim(1) * new_vox(2);
+              int new_vox_trim_0 = new_vox(0) + x_trim;
+              int new_vox_trim_1 = new_vox(1) + y_trim;
+              int new_vox_idx = new_vox_trim_0 +
+                                new_dim(0) * new_vox_trim_1 +
+                                new_dim(0) * new_dim(1) * new_vox(2);
+
+              new_map[new_vox_idx] = old_map[old_vox_idx];
+            }
+            break;
+
+          case 2:   // RIGHT_TOP
+            if (new_vox(0) < new_dim(0) - x_trim && new_vox(1) > y_trim) {
+              int old_vox_idx = new_vox(0) +
+                                new_dim(0) * new_vox(1) +
+                                new_dim(0) * new_dim(1) * new_vox(2);
+              int new_vox_trim_0 = new_vox(0) + x_trim;
+              int new_vox_trim_1 = new_vox(1) - y_trim;
+              int new_vox_idx = new_vox_trim_0 +
+                                new_dim(0) * new_vox_trim_1 +
+                                new_dim(0) * new_dim(1) * new_vox(2);
+
+              new_map[new_vox_idx] = old_map[old_vox_idx];
+            }
+            break;
+
+          case 3:   // LEFT_BOTTOM
+            if (new_vox(0) > x_trim && new_vox(1) < new_dim(1) - y_trim) {
+              int old_vox_idx = new_vox(0) +
+                                new_dim(0) * new_vox(1) +
+                                new_dim(0) * new_dim(1) * new_vox(2);
+              int new_vox_trim_0 = new_vox(0) - x_trim;
+              int new_vox_trim_1 = new_vox(1) + y_trim;
+              int new_vox_idx = new_vox_trim_0 +
+                                new_dim(0) * new_vox_trim_1 +
+                                new_dim(0) * new_dim(1) * new_vox(2);
+
+              new_map[new_vox_idx] = old_map[old_vox_idx];
+            }
+            break;
+
+          case 4:   // LEFT_TOP
+            if (new_vox(0) > x_trim && new_vox(1) > y_trim) {
+              int old_vox_idx = new_vox(0) +
+                                new_dim(0) * new_vox(1) +
+                                new_dim(0) * new_dim(1) * new_vox(2);
+              int new_vox_trim_0 = new_vox(0) - x_trim;
+              int new_vox_trim_1 = new_vox(1) - y_trim;
+              int new_vox_idx = new_vox_trim_0 +
+                                new_dim(0) * new_vox_trim_1 +
+                                new_dim(0) * new_dim(1) * new_vox(2);
+
+              new_map[new_vox_idx] = old_map[old_vox_idx];
+            }
+            break;
+          
+          case 5:   // LEFT
+            if (new_vox(0) > x_trim) {
+              int old_vox_idx = new_vox(0) +
+                                new_dim(0) * new_vox(1) +
+                                new_dim(0) * new_dim(1) * new_vox(2);
+              int new_vox_trim = new_vox(0) - x_trim;
+              int new_vox_idx = new_vox_trim +
+                                new_dim(0) * new_vox(1) +
+                                new_dim(0) * new_dim(1) * new_vox(2);
+
+              new_map[new_vox_idx] = old_map[old_vox_idx];
+            }
+            break;
+
+          case 6:   // RIGHT
+            if (new_vox(0) < new_dim(0) - x_trim) {
+              int old_vox_idx = new_vox(0) +
+                                new_dim(0) * new_vox(1) +
+                                new_dim(0) * new_dim(1) * new_vox(2);
+              int new_vox_trim = new_vox(0) + x_trim;
+              int new_vox_idx = new_vox_trim +
+                                new_dim(0) * new_vox(1) +
+                                new_dim(0) * new_dim(1) * new_vox(2);
+
+              new_map[new_vox_idx] = old_map[old_vox_idx];
+            }
+            break;
+
+          case 7:   // TOP
+            if (new_vox(1) > y_trim) {
+              int old_vox_idx = new_vox(0) +
+                                new_dim(0) * new_vox(1) +
+                                new_dim(0) * new_dim(1) * new_vox(2);
+              int new_vox_trim = new_vox(1) - y_trim;
+              int new_vox_idx = new_vox(0) +
+                                new_dim(0) * new_vox_trim +
+                                new_dim(0) * new_dim(1) * new_vox(2);
+
+              new_map[new_vox_idx] = old_map[old_vox_idx];
+            }
+            break;
+
+          case 8:   // BOTTOM
+            if (new_vox(1) < new_dim(1) - y_trim) {
+              int old_vox_idx = new_vox(0) +
+                                new_dim(0) * new_vox(1) +
+                                new_dim(0) * new_dim(1) * new_vox(2);
+              int new_vox_trim = new_vox(1) + y_trim;
+              int new_vox_idx = new_vox(0) +
+                                new_dim(0) * new_vox_trim +
+                                new_dim(0) * new_dim(1) * new_vox(2);
+
+              new_map[new_vox_idx] = old_map[old_vox_idx];
+            }
+            break;
+
+          default:
+            break;
+          }
+          
+        }
+      }
+    }
+
+    origin_d_ = new_ori_d;
+    dim_ = new_dim;
+    prev_origin = new_ori;
+
+    map_.setMap(origin_d_, dim_, new_map, res_);
+    inflated_map_.setMap(origin_d_, dim_, new_map, res_);
+
+    return true;
+  }
+}
+
 }  // namespace mapper

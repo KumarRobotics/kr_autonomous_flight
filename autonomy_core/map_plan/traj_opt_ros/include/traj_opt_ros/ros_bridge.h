@@ -1,8 +1,8 @@
 // Copyright 2016 Michael Watterson
 #pragma once
 
-#include <planning_ros_msgs/SplineTrajectory.h>
-#include <planning_ros_msgs/Trajectory.h>
+#include <kr_planning_msgs/SplineTrajectory.h>
+#include <kr_planning_msgs/Trajectory.h>
 #include <ros/ros.h>
 
 #include <string>
@@ -14,7 +14,7 @@ namespace traj_opt {
 class TrajRosBridge {
  public:
   // make sure to run ros::init() before calling this function or it won't work
-  static void publish_msg(const planning_ros_msgs::SplineTrajectory &msg,
+  static void publish_msg(const kr_planning_msgs::SplineTrajectory &msg,
                           std::string frame_id = "map");
 
   static void publish_msg(const TrajData &data, std::string frame_id = "map");
@@ -28,13 +28,13 @@ class TrajRosBridge {
   ros::Publisher pub_;
 };
 
-planning_ros_msgs::SplineTrajectory SplineTrajectoryFromTrajData(
+kr_planning_msgs::SplineTrajectory SplineTrajectoryFromTrajData(
     const TrajData &data);
 
 TrajData TrajDataFromSplineTrajectory(
-    const planning_ros_msgs::SplineTrajectory &msg);
+    const kr_planning_msgs::SplineTrajectory &msg);
 
-planning_ros_msgs::SplineTrajectory SplineTrajectoryFromTrajectory(
-    const planning_ros_msgs::Trajectory &msg);
+kr_planning_msgs::SplineTrajectory SplineTrajectoryFromTrajectory(
+    const kr_planning_msgs::Trajectory &msg);
 
 }  // namespace traj_opt

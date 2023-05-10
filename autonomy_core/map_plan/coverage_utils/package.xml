@@ -10,7 +10,7 @@
 
 
     <depend>roscpp</depend>
-    <depend>planning_ros_msgs</depend>
+    <depend>kr_planning_msgs</depend>
 
 
     <buildtool_depend>catkin</buildtool_depend>

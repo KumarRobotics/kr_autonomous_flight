@@ -8,10 +8,10 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Twist.h>
 #include <kr_mav_msgs/PositionCommand.h>
-#include <planning_ros_msgs/Path.h>
-#include <planning_ros_msgs/PlanTwoPointAction.h>
-#include <planning_ros_msgs/VoxelMap.h>
-#include <planning_ros_utils/data_ros_utils.h>
+#include <kr_planning_msgs/Path.h>
+#include <kr_planning_msgs/PlanTwoPointAction.h>
+#include <kr_planning_msgs/VoxelMap.h>
+#include <kr_planning_rviz_plugins/data_ros_utils.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Temperature.h>
 #include <state_machine/ReplanAction.h>
@@ -68,10 +68,10 @@ class RePlanner {
       actionlib::SimpleActionClient<action_trackers::RunTrajectoryAction>>
       run_client_;
   std::unique_ptr<
-      actionlib::SimpleActionClient<planning_ros_msgs::PlanTwoPointAction>>
+      actionlib::SimpleActionClient<kr_planning_msgs::PlanTwoPointAction>>
       local_plan_client_;  // local plan action server client
   std::unique_ptr<
-      actionlib::SimpleActionClient<planning_ros_msgs::PlanTwoPointAction>>
+      actionlib::SimpleActionClient<kr_planning_msgs::PlanTwoPointAction>>
       global_plan_client_;  // global plan action server client
   boost::mutex mtx_;
 
@@ -118,7 +118,7 @@ class RePlanner {
   ros::Subscriber cmd_sub_;
   ros::Subscriber local_map_sub_;
   ros::Subscriber state_trigger_sub_;
-  planning_ros_msgs::VoxelMapConstPtr local_map_ptr_;
+  kr_planning_msgs::VoxelMapConstPtr local_map_ptr_;
 
   // epoch is to record how many steps have been executed, the duration of one
   // epoch is the execution time, which is 1.0/local_replan_rate_
@@ -176,7 +176,7 @@ class RePlanner {
   /**
    * @brief map callback, update local_map_ptr_
    */
-  void LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr& msg);
+  void LocalMapCb(const kr_planning_msgs::VoxelMap::ConstPtr& msg);
 
   /**
    * @brief state trigger callback, this will execute high-level commands such
@@ -192,7 +192,7 @@ class RePlanner {
   /**
    * @brief Goal done callback function
    */
-  void GlobalPathCb(const planning_ros_msgs::Path& path);
+  void GlobalPathCb(const kr_planning_msgs::Path& path);
 
   /**
    * @brief Execute the planned trajectory, during which epoch will be published

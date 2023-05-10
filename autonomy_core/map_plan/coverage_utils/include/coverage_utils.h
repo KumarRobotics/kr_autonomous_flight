@@ -1,5 +1,5 @@
 #pragma once
-#include <planning_ros_msgs/Path.h>
+#include <kr_planning_msgs/Path.h>
 #include <ros/ros.h>
 #include <utils.h>
 

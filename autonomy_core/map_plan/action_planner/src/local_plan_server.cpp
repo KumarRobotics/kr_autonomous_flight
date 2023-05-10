@@ -1,22 +1,21 @@
 #include <action_planner/ActionPlannerConfig.h>
 #include <actionlib/server/simple_action_server.h>
+#include <data_conversions.h>  // setMap, getMap, etc
 #include <eigen_conversions/eigen_msg.h>
+#include <kr_planning_msgs/PlanTwoPointAction.h>
+#include <kr_planning_rviz_plugins/data_ros_utils.h>
 #include <mpl_basis/trajectory.h>
 #include <mpl_collision/map_util.h>
 #include <mpl_planner/map_planner.h>
-#include <planning_ros_msgs/PlanTwoPointAction.h>
-#include <planning_ros_utils/data_ros_utils.h>
-#include <planning_ros_utils/primitive_ros_utils.h>
 #include <ros/console.h>
 #include <ros/ros.h>
 #include <traj_opt_ros/ros_bridge.h>
+#include <primitive_ros_utils.h>
 
 #include <boost/range/irange.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
-
-#include "data_conversions.h"  // setMap, getMap, etc
 
 #include <plan_manage/planner_manager.h>
 #include <traj_utils/planning_visualization.h>
@@ -63,14 +62,14 @@ class LocalPlanServer {
   double traj_total_time_;
 
   // current local map
-  planning_ros_msgs::VoxelMapConstPtr local_map_ptr_ = nullptr;
+  kr_planning_msgs::VoxelMapConstPtr local_map_ptr_ = nullptr;
 
   // actionlib
-  boost::shared_ptr<const planning_ros_msgs::PlanTwoPointGoal> goal_;
-  boost::shared_ptr<planning_ros_msgs::PlanTwoPointResult> result_;
+  boost::shared_ptr<const kr_planning_msgs::PlanTwoPointGoal> goal_;
+  boost::shared_ptr<kr_planning_msgs::PlanTwoPointResult> result_;
   // action lib
   std::unique_ptr<
-      actionlib::SimpleActionServer<planning_ros_msgs::PlanTwoPointAction>>
+      actionlib::SimpleActionServer<kr_planning_msgs::PlanTwoPointAction>>
       local_as_;
 
   bool debug_;
@@ -102,25 +101,25 @@ class LocalPlanServer {
   /**
    * @brief Record result (trajectory, status, etc)
    */
-  void process_result(const planning_ros_msgs::SplineTrajectory& traj_msg, bool solved);
+  void process_result(const kr_planning_msgs::SplineTrajectory& traj_msg, bool solved);
 
   /**
    * @brief map callback, update local_map_ptr_
    */
-  void localMapCB(const planning_ros_msgs::VoxelMap::ConstPtr& msg);
+  void localMapCB(const kr_planning_msgs::VoxelMap::ConstPtr& msg);
 
   /**
    * @brief Local planner warpper
    */
   bool local_plan_process(const MPL::Waypoint3D& start,
                           const MPL::Waypoint3D& goal,
-                          const planning_ros_msgs::VoxelMap& map);
+                          const kr_planning_msgs::VoxelMap& map);
 
   /**
    * @brief Local planner clear footprint
    */
-  planning_ros_msgs::VoxelMap clear_map_position(
-      const planning_ros_msgs::VoxelMap& local_map, const Vec3f& start);
+  kr_planning_msgs::VoxelMap clear_map_position(
+      const kr_planning_msgs::VoxelMap& local_map, const Vec3f& start);
 
   /**
    * @brief Local planner check if outside map
@@ -130,7 +129,7 @@ class LocalPlanServer {
 
 // map callback, update local_map_ptr_
 void LocalPlanServer::localMapCB(
-    const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
+    const kr_planning_msgs::VoxelMap::ConstPtr& msg) {
   ROS_WARN_ONCE("[Local planner:] Got the local voxel map!");
   local_map_ptr_ = msg;
   frame_id_ = local_map_ptr_->header.frame_id;
@@ -138,19 +137,19 @@ void LocalPlanServer::localMapCB(
 }
 
 LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
-  traj_pub = pnh_.advertise<planning_ros_msgs::Trajectory>("traj", 1, true);
+  traj_pub = pnh_.advertise<kr_planning_msgs::Trajectory>("traj", 1, true);
   local_map_sub_ =
       pnh_.subscribe("local_voxel_map", 2, &LocalPlanServer::localMapCB, this);
   local_as_ = std::make_unique<
-      actionlib::SimpleActionServer<planning_ros_msgs::PlanTwoPointAction>>(
+      actionlib::SimpleActionServer<kr_planning_msgs::PlanTwoPointAction>>(
       pnh_, "plan_local_trajectory", false);
 
   // set up visualization publisher for mpl planner
-  sg_pub = pnh_.advertise<planning_ros_msgs::Path>("start_goal", 1, true);
+  sg_pub = pnh_.advertise<kr_planning_msgs::Path>("start_goal", 1, true);
   expanded_cloud_pub =
       pnh_.advertise<sensor_msgs::PointCloud>("expanded_cloud", 1, true);
 
-  local_map_cleared_pub = pnh_.advertise<planning_ros_msgs::VoxelMap>(
+  local_map_cleared_pub = pnh_.advertise<kr_planning_msgs::VoxelMap>(
       "local_voxel_map_cleared", 1, true);
 
   // set up mpl planner
@@ -269,9 +268,9 @@ void LocalPlanServer::process_all() {
   }
 }
 
-void LocalPlanServer::process_result(const planning_ros_msgs::SplineTrajectory& traj_msg,
+void LocalPlanServer::process_result(const kr_planning_msgs::SplineTrajectory& traj_msg,
                                      bool solved) {
-  result_ = boost::make_shared<planning_ros_msgs::PlanTwoPointResult>();
+  result_ = boost::make_shared<kr_planning_msgs::PlanTwoPointResult>();
   result_->success = solved;  // set success status
   result_->policy_status = solved ? 1 : -1;
   ROS_WARN_STREAM("result_->success:" << result_->success);
@@ -282,7 +281,7 @@ void LocalPlanServer::process_result(const planning_ros_msgs::SplineTrajectory& 
     traj_opt::TrajRosBridge::publish_msg(result_->traj);
 
      
-    //planning_ros_msgs::SplineTrajectory
+    //kr_planning_msgs::SplineTrajectory
 
     // execution_time (set in replanner)
     // equals 1.0/local_replan_rate
@@ -397,7 +396,7 @@ void LocalPlanServer::process_result(const planning_ros_msgs::SplineTrajectory& 
   }
   
   // reset goal
-  goal_ = boost::shared_ptr<planning_ros_msgs::PlanTwoPointGoal>();
+  goal_ = boost::shared_ptr<kr_planning_msgs::PlanTwoPointGoal>();
   // abort if trajectory generation failed
   if (!solved && local_as_->isActive()) {
     ROS_WARN("Current local plan trail: trajectory generation failed!");
@@ -424,10 +423,10 @@ void LocalPlanServer::process_goal() {
   MPL::Waypoint3D start, goal;
   // instead of using current odometry as start, we use the given start position
   // for consistency between old and new trajectories in replan process
-  start.pos = pose_to_eigen(goal_->p_init);
-  start.vel = twist_to_eigen(goal_->v_init);
-  start.acc = twist_to_eigen(goal_->a_init);
-  start.jrk = twist_to_eigen(goal_->j_init);
+  start.pos = kr::pose_to_eigen(goal_->p_init);
+  start.vel = kr::twist_to_eigen(goal_->v_init);
+  start.acc = kr::twist_to_eigen(goal_->a_init);
+  start.jrk = kr::twist_to_eigen(goal_->j_init);
 
   // Important: define use position, velocity, acceleration or jerk as control
   // inputs, note that the lowest order "false" term will be used as control
@@ -441,17 +440,17 @@ void LocalPlanServer::process_goal() {
   // in trajectory_tracker)
   start.use_yaw = false;
 
-  goal.pos = pose_to_eigen(goal_->p_final);
-  goal.vel = twist_to_eigen(goal_->v_final);
-  goal.acc = twist_to_eigen(goal_->a_final);
-  goal.jrk = twist_to_eigen(goal_->j_final);
+  goal.pos = kr::pose_to_eigen(goal_->p_final);
+  goal.vel = kr::twist_to_eigen(goal_->v_final);
+  goal.acc = kr::twist_to_eigen(goal_->a_final);
+  goal.jrk = kr::twist_to_eigen(goal_->j_final);
   goal.use_yaw = start.use_yaw;
   goal.use_pos = start.use_pos;
   goal.use_vel = start.use_vel;
   goal.use_acc = start.use_acc;
   goal.use_jrk = start.use_jrk;
 
-  planning_ros_msgs::VoxelMap local_map_cleared;
+  kr_planning_msgs::VoxelMap local_map_cleared;
   local_map_cleared = clear_map_position(*local_map_ptr_, start.pos);
 
   if (pub_cleared_map_) {
@@ -473,7 +472,7 @@ void LocalPlanServer::process_goal() {
 
   // get the trajectory from local planner, and process result
   /***@yuwei: optimization based planner ***/
-  planning_ros_msgs::SplineTrajectory spline_msg;
+  kr_planning_msgs::SplineTrajectory spline_msg;
 
   if(use_opt_planner_){
 
@@ -484,10 +483,10 @@ void LocalPlanServer::process_goal() {
     Eigen::VectorXd durs = opt_traj_.getDurations();
 
     for (uint d = 0; d < 3; d++) {
-      planning_ros_msgs::Spline spline;
+      kr_planning_msgs::Spline spline;
       for (uint s = 0; s < piece_num; s++) {
 
-        planning_ros_msgs::Polynomial poly;
+        kr_planning_msgs::Polynomial poly;
 
         min_jerk::CoefficientMat coeff = opt_traj_[s].getCoeffMat(true);
 
@@ -506,7 +505,7 @@ void LocalPlanServer::process_goal() {
   }else{
 
     // covert traj to a ros message
-    planning_ros_msgs::Trajectory traj_msg = toTrajectoryROSMsg(mp_traj_);
+    kr_planning_msgs::Trajectory traj_msg = toTrajectoryROSMsg(mp_traj_);
     traj_msg.header.frame_id = frame_id_;
     traj_pub.publish(traj_msg); // only for visualizations
 
@@ -518,14 +517,14 @@ void LocalPlanServer::process_goal() {
 
 }
 
-planning_ros_msgs::VoxelMap LocalPlanServer::clear_map_position(
-    const planning_ros_msgs::VoxelMap& local_map_original, const Vec3f& start) {
+kr_planning_msgs::VoxelMap LocalPlanServer::clear_map_position(
+    const kr_planning_msgs::VoxelMap& local_map_original, const Vec3f& start) {
   // make a copy, not the most efficient way, but necessary because we need to
   // maintain both original and cleared maps
-  planning_ros_msgs::VoxelMap local_map_cleared;
+  kr_planning_msgs::VoxelMap local_map_cleared;
   local_map_cleared = local_map_original;
 
-  planning_ros_msgs::VoxelMap voxel_map;
+  kr_planning_msgs::VoxelMap voxel_map;
   
   // Replaced with corresponding parameter value from VoxelMsg.msg
   int8_t val_free = voxel_map.val_free;
@@ -576,12 +575,12 @@ bool LocalPlanServer::is_outside_map(const Eigen::Vector3i& pn,
 bool LocalPlanServer::local_plan_process(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
-    const planning_ros_msgs::VoxelMap& map) {
+    const kr_planning_msgs::VoxelMap& map) {
   // for visualization: publish a path connecting local start and local goal
   vec_Vec3f sg;
   sg.push_back(start.pos);
   sg.push_back(goal.pos);
-  planning_ros_msgs::Path sg_msg = path_to_ros(sg);
+  kr_planning_msgs::Path sg_msg = kr::path_to_ros(sg);
   std::string map_frame;  // set frame id
   map_frame = map.header.frame_id;
   sg_msg.header.frame_id = map_frame;
@@ -645,7 +644,7 @@ bool LocalPlanServer::local_plan_process(
 
     // for visualization: publish expanded nodes as a point cloud
     sensor_msgs::PointCloud expanded_ps =
-        vec_to_cloud(mp_planner_util_->getExpandedNodes());
+        kr::vec_to_cloud(mp_planner_util_->getExpandedNodes());
     expanded_ps.header.frame_id = map_frame;
     expanded_cloud_pub.publish(expanded_ps);
 

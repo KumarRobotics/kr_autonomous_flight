@@ -5,7 +5,6 @@ repositories:
     # url: http://github.com/KumarRobotics/msckf_vio.git
     # version: master
 
-  
   kr_mav_control:
     type: git
     url: http://github.com/KumarRobotics/kr_mav_control.git
@@ -40,3 +39,8 @@ repositories:
     type: git
     url: git@github.com:yuwei-wu/kr_demo_planner.git
     version: kr_auto_flight
+
+  motion_primitives:
+    type: git
+    url: git@github.com:ljarin/motion_primitives.git
+    version: master

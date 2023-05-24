@@ -9,9 +9,8 @@
   /os_node/lidar_packets
   /os_node/metadata
   /ovc/vectornav/mag 
-  /ovc/rgb/image_raw
-  /ovc/left/image_raw
-  /ovc/right/image_raw
+  /ovc/left/compressed
+  /ovc/right/compressed
   /tf
   /tf_static
   /quadrotor/local_plan_server/traj

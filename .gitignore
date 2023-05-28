@@ -9,7 +9,9 @@ waypoint_navigation_plugin/
 DecompROS/
 catkin_simple/
 kr_demo_planner/
+kr_planning_msgs/
 external/
+
 #===========
 # C++
 # ===========

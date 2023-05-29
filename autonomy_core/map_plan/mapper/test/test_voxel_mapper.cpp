@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <planning_ros_msgs/VoxelMap.h>
+#include <kr_planning_msgs/VoxelMap.h>
 #include <iostream>
 #include <cmath>
 #include <memory>
@@ -210,10 +210,10 @@ TEST_F(VoxelMapperTest, TestAllocateRelocate) {
   // True means that the relocating actually happened
   EXPECT_TRUE(p_test_mapper_->allocate(new_origin, new_dimensions));
 
-  planning_ros_msgs::VoxelMap relocated_map = p_test_mapper_->getMap();
+  kr_planning_msgs::VoxelMap relocated_map = p_test_mapper_->getMap();
 
   // Create the ground truth voxel map to compare it to the relocated map
-  planning_ros_msgs::VoxelMap gt_voxel_map;
+  kr_planning_msgs::VoxelMap gt_voxel_map;
 
   // new map should have 300 voxels in x, 300 voxels in the y, and 20 in z
   int dim_x = 150 / resolution_;
@@ -261,8 +261,8 @@ TEST_F(VoxelMapperTest, TestAllocateRelocate) {
  */
 TEST_F(VoxelMapperTest, TestSetMapUknown) {
   p_test_mapper_->setMapUnknown();
-  planning_ros_msgs::VoxelMap vox_map = p_test_mapper_->getMap();
-  planning_ros_msgs::VoxelMap inflated_vox_map =
+  kr_planning_msgs::VoxelMap vox_map = p_test_mapper_->getMap();
+  kr_planning_msgs::VoxelMap inflated_vox_map =
                                   p_test_mapper_->getInflatedMap();
   for (auto &voxel : vox_map.data) {
     EXPECT_EQ(voxel, val_unknown_);
@@ -278,8 +278,8 @@ TEST_F(VoxelMapperTest, TestSetMapUknown) {
  */
 TEST_F(VoxelMapperTest, TestSetMapFree) {
   p_test_mapper_->setMapFree();
-  planning_ros_msgs::VoxelMap vox_map = p_test_mapper_->getMap();
-  planning_ros_msgs::VoxelMap inflated_vox_map =
+  kr_planning_msgs::VoxelMap vox_map = p_test_mapper_->getMap();
+  kr_planning_msgs::VoxelMap inflated_vox_map =
                                   p_test_mapper_->getInflatedMap();
   for (auto &voxel : vox_map.data) {
     EXPECT_EQ(voxel, val_free_);
@@ -324,10 +324,10 @@ TEST_F(VoxelMapperTest, TestDecayLocalCloud) {
     p_test_mapper_->decayLocalCloud(position, max_range);
   }
 
-  planning_ros_msgs::VoxelMap decayed_map = p_test_mapper_->getMap();
+  kr_planning_msgs::VoxelMap decayed_map = p_test_mapper_->getMap();
 
   // Create the ground truth voxel map to compare it to the decayed map
-  planning_ros_msgs::VoxelMap gt_voxel_map;
+  kr_planning_msgs::VoxelMap gt_voxel_map;
   int dim_x = x_dim_ / resolution_;
   int dim_y = y_dim_ / resolution_;
   int dim_z = z_dim_ / resolution_;
@@ -407,14 +407,14 @@ TEST_F(VoxelMapperTest, TestAddCloud) {
 
   p_test_mapper_->addCloud(lidar_points, t_map_lidar, neighbors, false,
                             max_range);
-  planning_ros_msgs::VoxelMap processed_map = p_test_mapper_->getMap();
-  planning_ros_msgs::VoxelMap processed_inflated_map;
+  kr_planning_msgs::VoxelMap processed_map = p_test_mapper_->getMap();
+  kr_planning_msgs::VoxelMap processed_inflated_map;
   processed_inflated_map = p_test_mapper_->getInflatedMap();
 
   // Create the ground truth voxel maps to compare to the normal map and the
   // inflated map
-  planning_ros_msgs::VoxelMap gt_voxel_map;
-  planning_ros_msgs::VoxelMap gt_inflated_voxel_map;
+  kr_planning_msgs::VoxelMap gt_voxel_map;
+  kr_planning_msgs::VoxelMap gt_inflated_voxel_map;
   int x_dim = x_dim_ / resolution_;
   int y_dim = y_dim_ / resolution_;
   int z_dim = z_dim_ / resolution_;
@@ -483,8 +483,8 @@ TEST_F(VoxelMapperTest, TestAddCloud) {
  * will just compare the maps to each other after being created.
  */
 TEST_F(VoxelMapperTest, TestGetInflatedMap) {
-  planning_ros_msgs::VoxelMap normal_map = p_test_mapper_->getMap();
-  planning_ros_msgs::VoxelMap inflated_map = p_test_mapper_->getInflatedMap();
+  kr_planning_msgs::VoxelMap normal_map = p_test_mapper_->getMap();
+  kr_planning_msgs::VoxelMap inflated_map = p_test_mapper_->getInflatedMap();
 
   int num_voxels = 3200000;
   ASSERT_EQ(normal_map.data.size(), num_voxels);
@@ -516,11 +516,11 @@ TEST_F(VoxelMapperTest, TestGetInflatedLocalMap) {
   Eigen::Vector3d origin(75, 25, 2.5);    // Prev origin was (-100, -100, -5)
   Eigen::Vector3d dimensions(100, 100, 10);   // Prev dimen was (200, 200, 10)
 
-  planning_ros_msgs::VoxelMap local_map;
+  kr_planning_msgs::VoxelMap local_map;
   local_map = p_test_mapper_->getInflatedLocalMap(origin, dimensions);
 
   // Create the ground truth voxel map to compare it to the local map
-  planning_ros_msgs::VoxelMap gt_voxel_map;
+  kr_planning_msgs::VoxelMap gt_voxel_map;
   int dim_x = dimensions(0) / resolution_;
   int dim_y = dimensions(1) / resolution_;
   int dim_z = dimensions(2) / resolution_;
@@ -825,11 +825,11 @@ TEST_F(VoxelMapperTest, TestgetInflatedOccMap) {
   p_test_mapper_->addCloud(scan_points, t_map_lidar, vec_Vec3i(), false, 180);
 
   // Should consider vertical space between [-1.0, 3.5]
-  planning_ros_msgs::VoxelMap sliced_map =
+  kr_planning_msgs::VoxelMap sliced_map =
     p_test_mapper_->getInflatedOccMap(1.25, 2.25);
 
   // Create the ground truth voxel map
-  planning_ros_msgs::VoxelMap gt_slice;
+  kr_planning_msgs::VoxelMap gt_slice;
   int x_dim = x_dim_ / resolution_;
   int y_dim = y_dim_ / resolution_;
   gt_slice.data.resize(x_dim * y_dim, val_free_);

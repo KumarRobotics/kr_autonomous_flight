@@ -7,9 +7,9 @@ find_package(Boost REQUIRED COMPONENTS timer)
 find_package(
   catkin REQUIRED
   COMPONENTS kr_mav_msgs
-             planning_ros_utils
+             kr_planning_rviz_plugins
              traj_opt_ros
-             planning_ros_msgs
+             kr_planning_msgs
              actionlib
              sensor_msgs
              actionlib_msgs

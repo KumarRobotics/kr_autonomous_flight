@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <planning_ros_msgs/VoxelMap.h>
+#include <kr_planning_msgs/VoxelMap.h>
 #include <iostream>
 #include <cmath>
 #include "mpl_collision/map_util.h"
@@ -53,7 +53,7 @@ TEST(MapUtilTest, TestIsOutside) {
 
   // Create a base map for the MapUtil object with val_free as the default value
   std::vector<signed char> base_map(dim(0) * dim(1) * dim(2),
-                                    planning_ros_msgs::VoxelMap::val_free);
+                                    kr_planning_msgs::VoxelMap::val_free);
 
   // Initialize the MapUtil object with the previously created map
   test_map.setMap(origin, dim, base_map, resolution);
@@ -101,7 +101,7 @@ TEST(MapUtilTest, TestIsFree) {
 
   // Create a base map for the MapUtil object with val_free as the default value
   std::vector<signed char> base_map(dim(0) * dim(1) * dim(2),
-                                    planning_ros_msgs::VoxelMap::val_free);
+                                    kr_planning_msgs::VoxelMap::val_free);
 
   vec_Vec3i non_free_voxels;
   non_free_voxels.push_back(Vec3i(176, 91, 6));
@@ -111,7 +111,7 @@ TEST(MapUtilTest, TestIsFree) {
   non_free_voxels.push_back(Vec3i(123, 158, 16));
   for (auto &vox : non_free_voxels) {
     int idx = vox(0) + dim(0) * vox(1) + dim(0) * dim(1) * vox(2);
-    base_map[idx] = planning_ros_msgs::VoxelMap::val_occ;
+    base_map[idx] = kr_planning_msgs::VoxelMap::val_occ;
   }
 
   // Initialize the MapUtil object with the previously created map
@@ -166,7 +166,7 @@ TEST(MapUtilTest, TestIsOccupied) {
 
   // Create a base map for the MapUtil object with val_occ as the default value
   std::vector<signed char> base_map(dim(0) * dim(1) * dim(2),
-                                    planning_ros_msgs::VoxelMap::val_occ);
+                                    kr_planning_msgs::VoxelMap::val_occ);
 
   vec_Vec3i non_occ_voxels;
   non_occ_voxels.push_back(Vec3i(176, 91, 6));
@@ -176,7 +176,7 @@ TEST(MapUtilTest, TestIsOccupied) {
   non_occ_voxels.push_back(Vec3i(123, 158, 16));
   for (auto &vox : non_occ_voxels) {
     int idx = vox(0) + dim(0) * vox(1) + dim(0) * dim(1) * vox(2);
-    base_map[idx] = planning_ros_msgs::VoxelMap::val_free;
+    base_map[idx] = kr_planning_msgs::VoxelMap::val_free;
   }
 
   // Initialize the MapUtil object with the previously created map
@@ -232,7 +232,7 @@ TEST(MapUtilTest, TestIsUnknown) {
   // Create a base map for the MapUtil object with val_unknown as the
   // default value
   std::vector<signed char> base_map(dim(0) * dim(1) * dim(2),
-                                    planning_ros_msgs::VoxelMap::val_unknown);
+                                    kr_planning_msgs::VoxelMap::val_unknown);
 
   vec_Vec3i non_unknown_voxels;
   non_unknown_voxels.push_back(Vec3i(176, 91, 6));
@@ -242,7 +242,7 @@ TEST(MapUtilTest, TestIsUnknown) {
   non_unknown_voxels.push_back(Vec3i(123, 158, 16));
   for (auto &vox : non_unknown_voxels) {
     int idx = vox(0) + dim(0) * vox(1) + dim(0) * dim(1) * vox(2);
-    base_map[idx] = planning_ros_msgs::VoxelMap::val_occ;
+    base_map[idx] = kr_planning_msgs::VoxelMap::val_occ;
   }
 
   // Initialize the MapUtil object with the previously created map
@@ -379,7 +379,7 @@ TEST(MapUtilTest, TestGetCloud) {
 
   // Create a base map for the MapUtil object with val_free as the default value
   std::vector<signed char> base_map(dim(0) * dim(1) * dim(2),
-                                    planning_ros_msgs::VoxelMap::val_free);
+                                    kr_planning_msgs::VoxelMap::val_free);
 
   vec_Vec3i occ_voxels;
   vec_Vec3f occ_cloud;
@@ -399,7 +399,7 @@ TEST(MapUtilTest, TestGetCloud) {
   occ_cloud.push_back(Vec3f(26.75, -31.25, -2.75));
   for (auto &vox : occ_voxels) {
     int idx = vox(0) + dim(0) * vox(1) + dim(0) * dim(1) * vox(2);
-    base_map[idx] = planning_ros_msgs::VoxelMap::val_occ;
+    base_map[idx] = kr_planning_msgs::VoxelMap::val_occ;
   }
 
   // Initialize the MapUtil object with the previously created map
@@ -434,7 +434,7 @@ TEST(MapUtilTest, TestGetFreeCloud) {
 
   // Create a base map for the MapUtil object with val_occ as the default value
   std::vector<signed char> base_map(dim(0) * dim(1) * dim(2),
-                                    planning_ros_msgs::VoxelMap::val_occ);
+                                    kr_planning_msgs::VoxelMap::val_occ);
 
   vec_Vec3i free_voxels;
   vec_Vec3f free_cloud;
@@ -454,7 +454,7 @@ TEST(MapUtilTest, TestGetFreeCloud) {
   free_cloud.push_back(Vec3f(26.75, -31.25, -2.75));
   for (auto &vox : free_voxels) {
     int idx = vox(0) + dim(0) * vox(1) + dim(0) * dim(1) * vox(2);
-    base_map[idx] = planning_ros_msgs::VoxelMap::val_free;
+    base_map[idx] = kr_planning_msgs::VoxelMap::val_free;
   }
 
   // Initialize the MapUtil object with the previously created map
@@ -489,7 +489,7 @@ TEST(MapUtilTest, TestGetUnkwownCloud) {
 
   // Create a base map for the MapUtil object with val_free as the default value
   std::vector<signed char> base_map(dim(0) * dim(1) * dim(2),
-                                    planning_ros_msgs::VoxelMap::val_free);
+                                    kr_planning_msgs::VoxelMap::val_free);
 
   vec_Vec3i unknown_voxels;
   vec_Vec3f unknown_cloud;
@@ -509,7 +509,7 @@ TEST(MapUtilTest, TestGetUnkwownCloud) {
   unknown_cloud.push_back(Vec3f(26.75, -31.25, -2.75));
   for (auto &vox : unknown_voxels) {
     int idx = vox(0) + dim(0) * vox(1) + dim(0) * dim(1) * vox(2);
-    base_map[idx] = planning_ros_msgs::VoxelMap::val_unknown;
+    base_map[idx] = kr_planning_msgs::VoxelMap::val_unknown;
   }
 
   // Initialize the MapUtil object with the previously created map

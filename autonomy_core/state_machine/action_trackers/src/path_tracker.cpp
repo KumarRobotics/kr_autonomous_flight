@@ -2,7 +2,7 @@
 #include <actionlib/server/simple_action_server.h>
 #include <angles/angles.h>
 #include <kr_trackers_manager/Tracker.h>
-#include <planning_ros_utils/data_ros_utils.h>
+#include <kr_planning_rviz_plugins/data_ros_utils.h>
 #include <ros/ros.h>
 #include <std_msgs/Float64MultiArray.h>
 
@@ -95,7 +95,7 @@ void ActionPathTracker::Initialize(const ros::NodeHandle& nh) {
   des_max_sub =
       nh_->subscribe("des_max", 1, &ActionPathTracker::desMaxCB, this);
 
-  project_goal_pub = nh_->advertise<planning_ros_msgs::Path>("sg", 1, true);
+  project_goal_pub = nh_->advertise<kr_planning_msgs::Path>("sg", 1, true);
 
   active_ = false;
 
@@ -268,7 +268,7 @@ PositionCommand::ConstPtr ActionPathTracker::update(
       // sg.push_back(direction_goal);
       sg.push_back(outer_projected_goal);
 
-      planning_ros_msgs::Path path = path_to_ros(sg);
+      kr_planning_msgs::Path path = path_to_ros(sg);
       path.header.frame_id = msg->header.frame_id;
       project_goal_pub.publish(path);
     }

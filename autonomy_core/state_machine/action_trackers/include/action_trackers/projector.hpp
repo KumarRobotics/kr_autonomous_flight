@@ -1,7 +1,7 @@
 #pragma once
 
 #include <action_trackers/decompros.h>
-#include <planning_ros_utils/data_ros_utils.h>
+#include <kr_planning_rviz_plugins/data_ros_utils.h>
 
 #include <boost/circular_buffer.hpp>
 

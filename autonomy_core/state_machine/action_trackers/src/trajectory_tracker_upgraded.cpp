@@ -10,7 +10,7 @@
 #include <kr_trackers_manager/Tracker.h>
 
 // planning ros msgs stuff
-#include <planning_ros_msgs/SplineTrajectory.h>
+#include <kr_planning_msgs/SplineTrajectory.h>
 
 // traj_opt stuff
 #include <action_trackers/traj_to_quad_cmd.h>
@@ -564,7 +564,7 @@ void ActionTrajectoryTracker::trajCB() {
     traj_epoch.pop_back();
   }
   // extract trajectory msg from goal->traj
-  planning_ros_msgs::SplineTrajectory msg = goal->traj;
+  kr_planning_msgs::SplineTrajectory msg = goal->traj;
   boost::shared_ptr<traj_opt::Trajectory> sp =
       boost::make_shared<traj_opt::MsgTrajectory>(
           traj_opt::TrajDataFromSplineTrajectory(msg));

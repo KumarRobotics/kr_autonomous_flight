@@ -24,8 +24,8 @@
   <depend>kr_trackers_manager</depend>
 
   <depend>mapper</depend>
-  <depend>planning_ros_utils</depend>
-  <depend>planning_ros_msgs</depend>
+  <depend>kr_planning_rviz_plugins</depend>
+  <depend>kr_planning_msgs</depend>
   <depend>traj_opt_ros</depend>
   <depend>motion_primitive_library</depend>
 

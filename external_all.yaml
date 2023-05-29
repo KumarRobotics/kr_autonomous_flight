@@ -1,5 +1,4 @@
 repositories:
-
   msckf_vio:
     type: git
     url: http://github.com/KumarRobotics/msckf_vio.git
@@ -24,3 +23,8 @@ repositories:
     type: git
     url: https://github.com/KumarRobotics/waypoint_navigation_plugin.git
     version: master
+
+  kr_planning_msgs:
+    type: git
+    url: https://github.com/KumarRobotics/kr_planning_msgs.git
+    version: main

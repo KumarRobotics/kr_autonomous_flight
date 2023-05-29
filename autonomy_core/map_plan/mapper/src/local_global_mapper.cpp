@@ -8,11 +8,11 @@ LocalGlobalMapperNode::LocalGlobalMapperNode(const ros::NodeHandle& nh)
       cloud_name_, 1, &LocalGlobalMapperNode::cloudCallback, this);
 
   global_map_pub =
-      nh_.advertise<planning_ros_msgs::VoxelMap>("global_voxel_map", 1, true);
+      nh_.advertise<kr_planning_msgs::VoxelMap>("global_voxel_map", 1, true);
   storage_map_pub =
-      nh_.advertise<planning_ros_msgs::VoxelMap>("storage_voxel_map", 1, true);
+      nh_.advertise<kr_planning_msgs::VoxelMap>("storage_voxel_map", 1, true);
   local_map_pub =
-      nh_.advertise<planning_ros_msgs::VoxelMap>("local_voxel_map", 1, true);
+      nh_.advertise<kr_planning_msgs::VoxelMap>("local_voxel_map", 1, true);
 
   time_pub = nh_.advertise<sensor_msgs::Temperature>("/timing/mapper", 1);
 
@@ -191,7 +191,7 @@ void LocalGlobalMapperNode::cropLocalMap(
   local_origin_map(2) = storage_map_info_.origin.z;
 
   // core function: crop local map from the storage map
-  planning_ros_msgs::VoxelMap local_voxel_map =
+  kr_planning_msgs::VoxelMap local_voxel_map =
       storage_voxel_mapper_->getInflatedLocalMap(local_origin_map, local_dim_d);
 
   // Transform local map by moving its origin. This is because we want the
@@ -262,8 +262,7 @@ void LocalGlobalMapperNode::getLidarPoses(
   }
 }
 
-void LocalGlobalMapperNode::processCloud(
-    const sensor_msgs::PointCloud& cloud) {
+void LocalGlobalMapperNode::processCloud(const sensor_msgs::PointCloud& cloud) {
   if ((storage_voxel_mapper_ == nullptr) || (global_voxel_mapper_ == nullptr)) {
     ROS_WARN("voxel mapper not initialized!");
     return;
@@ -273,8 +272,8 @@ void LocalGlobalMapperNode::processCloud(
   geometry_msgs::Pose pose_odom_lidar;
   getLidarPoses(cloud.header, &pose_map_lidar, &pose_odom_lidar);
 
-  const Eigen::Affine3d T_map_lidar = toTF(pose_map_lidar);
-  const Eigen::Affine3d T_odom_lidar = toTF(pose_odom_lidar);
+  const Eigen::Affine3d T_map_lidar = kr::toTF(pose_map_lidar);
+  const Eigen::Affine3d T_odom_lidar = kr::toTF(pose_odom_lidar);
 
   // This is the lidar position in the odom frame, used for raytracing &
   // cropping local map
@@ -294,7 +293,7 @@ void LocalGlobalMapperNode::processCloud(
   double min_range = 0.75;  // points within this distance will be discarded
   double min_range_squared;
   min_range_squared = min_range * min_range;
-  const auto pts = cloud_to_vec_filter(cloud, min_range_squared);
+  const auto pts = kr::cloud_to_vec_filter(cloud, min_range_squared);
 
   timer.start();
   // local raytracing using lidar position in the map frame (not odom frame)
@@ -305,7 +304,7 @@ void LocalGlobalMapperNode::processCloud(
 
   // get and publish storage map (this is very slow)
   if (pub_storage_map_) {
-    planning_ros_msgs::VoxelMap storage_map =
+    kr_planning_msgs::VoxelMap storage_map =
         storage_voxel_mapper_->getInflatedMap();
     storage_map.header.frame_id = map_frame_;
     storage_map_pub.publish(storage_map);
@@ -339,7 +338,7 @@ void LocalGlobalMapperNode::processCloud(
               static_cast<double>(timer.elapsed().wall) / 1e6);
 
     counter_ = 0;
-    planning_ros_msgs::VoxelMap global_map =
+    kr_planning_msgs::VoxelMap global_map =
         global_voxel_mapper_->getInflatedMap();
     global_map.header.frame_id = map_frame_;
     global_map_pub.publish(global_map);

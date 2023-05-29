@@ -4,11 +4,11 @@ project(jps3d)
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(catkin REQUIRED
-            COMPONENTS planning_ros_msgs)
+            COMPONENTS kr_planning_msgs)
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED)
 
-catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} CATKIN_DEPENDS planning_ros_msgs)
+catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} CATKIN_DEPENDS kr_planning_msgs)
 
 add_library(${PROJECT_NAME} src/graph_search.cpp src/jps_planner.cpp
                             src/map_util.cpp)

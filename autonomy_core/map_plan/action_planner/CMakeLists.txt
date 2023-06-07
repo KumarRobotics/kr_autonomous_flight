@@ -37,7 +37,8 @@ target_link_libraries(global_plan_server PUBLIC ${PROJECT_NAME} Boost::timer)
 add_dependencies(global_plan_server ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
 
-add_executable(local_plan_server src/local_plan_server.cpp)
+add_executable(local_plan_server src/local_plan_server.cpp src/local_plan_server_planner_details.cpp)
+target_include_directories(local_plan_server PUBLIC include)
 target_link_libraries(local_plan_server PUBLIC ${PROJECT_NAME} Boost::timer)
 add_dependencies(local_plan_server ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})

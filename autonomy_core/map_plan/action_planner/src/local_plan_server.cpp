@@ -29,6 +29,12 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
     case 1:
       planner_type_ = new LocalPlanServer::OptPlanner(this);
       break;
+    case 2:
+      planner_type_ = new LocalPlanServer::DispersionPlanner(this);
+      break;
+    default:
+      ROS_ERROR("Invalid planner type id: %d", planner_type_id);
+      break;
   }
 
   planner_type_->setup();
@@ -197,7 +203,42 @@ void LocalPlanServer::process_result(
       num_goals = 1;
     }
 
-    result = planner_type_->process_result(endt, num_goals);
+    for (int i = 0; i < num_goals; i++) {
+      geometry_msgs::Pose p_fin;
+      geometry_msgs::Twist v_fin, a_fin, j_fin;
+
+      MPL::Waypoint3D pt_f =
+          planner_type_->evaluate(endt * static_cast<double>(i + 1));
+      // check if evaluation is successful, if not, set result.success to be
+      // false! (if failure case, a null Waypoint is returned)
+      if ((pt_f.pos(0) == 0) && (pt_f.pos(1) == 0) && (pt_f.pos(2) == 0) &&
+          (pt_f.vel(0) == 0) && (pt_f.vel(1) == 0) && (pt_f.vel(2) == 0)) {
+        result.success = 0;
+        ROS_WARN_STREAM(
+            "waypoint evaluation failed, set result.success to be false");
+        ROS_WARN_STREAM("trajectory total time:" << traj_total_time_);
+        ROS_WARN_STREAM("evaluating at:" << endt * static_cast<double>(i + 1));
+      }
+
+      p_fin.position.x = pt_f.pos(0), p_fin.position.y = pt_f.pos(1),
+      p_fin.position.z = pt_f.pos(2);
+      p_fin.orientation.w = 1, p_fin.orientation.z = 0;
+      v_fin.linear.x = pt_f.vel(0), v_fin.linear.y = pt_f.vel(1),
+      v_fin.linear.z = pt_f.vel(2);
+      v_fin.angular.z = 0;
+      a_fin.linear.x = pt_f.acc(0), a_fin.linear.y = pt_f.acc(1),
+      a_fin.linear.z = pt_f.acc(2);
+      a_fin.angular.z = 0;
+      result.p_stop.push_back(p_fin);
+      result.v_stop.push_back(v_fin);
+      result.a_stop.push_back(a_fin);
+      result.j_stop.push_back(j_fin);
+    }
+
+    MPL::Waypoint3D pt = planner_type_->evaluate(traj_total_time_);
+    result.traj_end.position.x = pt.pos(0);
+    result.traj_end.position.y = pt.pos(1);
+    result.traj_end.position.z = pt.pos(2);
     // record trajectory in result
     result.success = solved;  // set success status
     result.policy_status = solved ? 1 : -1;

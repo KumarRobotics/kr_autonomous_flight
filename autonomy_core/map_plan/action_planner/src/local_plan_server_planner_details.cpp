@@ -1,6 +1,9 @@
 
 #include <action_planner/local_plan_server.h>
 
+//
+// Opt Planner
+//
 void LocalPlanServer::OptPlanner::setup() {
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
   ROS_WARN("[LocalPlanServer:] Optimization planner mode!!!!!");
@@ -16,6 +19,66 @@ void LocalPlanServer::OptPlanner::setup() {
   // usage for 2D case, this needed to be changed in both planner util as well
   // as map util, which requires the slicing map function
 }
+
+void LocalPlanServer::OptPlanner::plan(const MPL::Waypoint3D& start,
+                                       const MPL::Waypoint3D& goal,
+                                       const kr_planning_msgs::VoxelMap& map) {
+  ROS_WARN("[LocalPlanServer] trigger opt_planner!!!!!");
+  setMap(mp_map_util_, map);
+  Eigen::MatrixXd startState(3, 3), endState(3, 3);
+  startState << start.pos(0), start.vel(0), start.acc(0), start.pos(1),
+      start.vel(1), start.acc(1), start.pos(2), start.vel(2), start.acc(2);
+  endState << goal.pos(0), goal.vel(0), goal.acc(0), goal.pos(1), goal.vel(1),
+      goal.acc(1), goal.pos(2), goal.vel(2), goal.acc(2);
+
+  bool valid = planner_manager_->localPlanner(startState, endState);
+  if (valid) {
+    opt_traj_ = planner_manager_->local_data_.traj_;
+    local_plan_server_->traj_total_time_ = opt_traj_.getTotalDuration();
+    ROS_WARN("[LocalPlanServer] planning success ! !!!!!");
+  }
+
+  kr_planning_msgs::SplineTrajectory spline_msg;
+  spline_msg.header.frame_id = local_plan_server_->frame_id_;
+  spline_msg.dimensions = 3;
+
+  int piece_num = opt_traj_.getPieceNum();
+  Eigen::VectorXd durs = opt_traj_.getDurations();
+
+  for (uint d = 0; d < 3; d++) {
+    kr_planning_msgs::Spline spline;
+    for (uint s = 0; s < piece_num; s++) {
+      kr_planning_msgs::Polynomial poly;
+
+      min_jerk::CoefficientMat coeff = opt_traj_[s].getCoeffMat(true);
+
+      for (uint c = 0; c < 6; c++) {
+        poly.coeffs.push_back(coeff(d, 5 - c));
+      }
+      poly.dt = durs[s];
+      poly.degree = 5;
+      spline.segs.push_back(poly);
+    }
+    spline.segments = piece_num;
+    spline.t_total = local_plan_server_->traj_total_time_;
+    spline_msg.data.push_back(spline);
+  }
+  local_plan_server_->process_result(spline_msg, valid);
+}
+
+MPL::Waypoint3D LocalPlanServer::OptPlanner::evaluate(double t) {
+  MPL::Waypoint3D waypoint;
+
+  waypoint.pos = opt_traj_.getPos(t);
+  waypoint.vel = opt_traj_.getVel(t);
+  waypoint.acc = opt_traj_.getAcc(t);
+
+  return waypoint;
+}
+
+//
+// MPL Planner
+//
 
 void LocalPlanServer::MPLPlanner::setup() {
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
@@ -100,51 +163,6 @@ void LocalPlanServer::MPLPlanner::setup() {
   mp_planner_util_->setLPAstar(false);  // Use Astar
 }
 
-void LocalPlanServer::OptPlanner::plan(const MPL::Waypoint3D& start,
-                                       const MPL::Waypoint3D& goal,
-                                       const kr_planning_msgs::VoxelMap& map) {
-  ROS_WARN("[LocalPlanServer] trigger opt_planner!!!!!");
-  setMap(mp_map_util_, map);
-  Eigen::MatrixXd startState(3, 3), endState(3, 3);
-  startState << start.pos(0), start.vel(0), start.acc(0), start.pos(1),
-      start.vel(1), start.acc(1), start.pos(2), start.vel(2), start.acc(2);
-  endState << goal.pos(0), goal.vel(0), goal.acc(0), goal.pos(1), goal.vel(1),
-      goal.acc(1), goal.pos(2), goal.vel(2), goal.acc(2);
-
-  bool valid = planner_manager_->localPlanner(startState, endState);
-  if (valid) {
-    opt_traj_ = planner_manager_->local_data_.traj_;
-    local_plan_server_->traj_total_time_ = opt_traj_.getTotalDuration();
-    ROS_WARN("[LocalPlanServer] planning success ! !!!!!");
-  }
-
-  kr_planning_msgs::SplineTrajectory spline_msg;
-  spline_msg.header.frame_id = local_plan_server_->frame_id_;
-  spline_msg.dimensions = 3;
-
-  int piece_num = opt_traj_.getPieceNum();
-  Eigen::VectorXd durs = opt_traj_.getDurations();
-
-  for (uint d = 0; d < 3; d++) {
-    kr_planning_msgs::Spline spline;
-    for (uint s = 0; s < piece_num; s++) {
-      kr_planning_msgs::Polynomial poly;
-
-      min_jerk::CoefficientMat coeff = opt_traj_[s].getCoeffMat(true);
-
-      for (uint c = 0; c < 6; c++) {
-        poly.coeffs.push_back(coeff(d, 5 - c));
-      }
-      poly.dt = durs[s];
-      poly.degree = 5;
-      spline.segs.push_back(poly);
-    }
-    spline.segments = piece_num;
-    spline.t_total = local_plan_server_->traj_total_time_;
-    spline_msg.data.push_back(spline);
-  }
-  local_plan_server_->process_result(spline_msg, valid);
-}
 void LocalPlanServer::MPLPlanner::plan(const MPL::Waypoint3D& start,
                                        const MPL::Waypoint3D& goal,
                                        const kr_planning_msgs::VoxelMap& map) {
@@ -188,93 +206,21 @@ void LocalPlanServer::MPLPlanner::plan(const MPL::Waypoint3D& start,
   local_plan_server_->process_result(spline_msg, valid);
 }
 
-kr_planning_msgs::PlanTwoPointResult
-LocalPlanServer::OptPlanner::process_result(double endt, int num_goals) {
-  Eigen::Vector3d pos, vel, acc;
-  kr_planning_msgs::PlanTwoPointResult result;
-
-  pos.setZero(), vel.setZero(), acc.setZero();
-
-  for (int i = 0; i < num_goals; i++) {
-    geometry_msgs::Pose p_fin;
-    geometry_msgs::Twist v_fin, a_fin, j_fin;
-
-    double t_cur = endt * static_cast<double>(i + 1);
-
-    pos = opt_traj_.getPos(t_cur);
-    vel = opt_traj_.getVel(t_cur);
-    acc = opt_traj_.getAcc(t_cur);
-
-    // check if evaluation is successful, if not, set result.success to be
-    // false! (if failure case, a null Waypoint is returned)
-    if (pos == Eigen::Vector3d::Zero() && vel == Eigen::Vector3d::Zero()) {
-      result.success = 0;
-      ROS_WARN_STREAM(
-          "waypoint evaluation failed, set result.success to be false");
-      ROS_WARN_STREAM(
-          "trajectory total time:" << local_plan_server_->traj_total_time_);
-      ROS_WARN_STREAM("evaluating at:" << endt * static_cast<double>(i + 1));
-    }
-
-    p_fin.position.x = pos(0), p_fin.position.y = pos(1),
-    p_fin.position.z = pos(2);
-    p_fin.orientation.w = 1, p_fin.orientation.z = 0;
-    v_fin.linear.x = vel(0), v_fin.linear.y = vel(1), v_fin.linear.z = vel(2);
-    v_fin.angular.z = 0;
-    a_fin.linear.x = acc(0), a_fin.linear.y = acc(1), a_fin.linear.z = acc(2);
-    a_fin.angular.z = 0;
-    result.p_stop.push_back(p_fin);
-    result.v_stop.push_back(v_fin);
-    result.a_stop.push_back(a_fin);
-    result.j_stop.push_back(j_fin);
-  }
-
-  pos = opt_traj_.getPos(local_plan_server_->traj_total_time_);
-  result.traj_end.position.x = pos(0);
-  result.traj_end.position.y = pos(1);
-  result.traj_end.position.z = pos(2);
-  return result;
+MPL::Waypoint3D LocalPlanServer::MPLPlanner::evaluate(double t) {
+  return mp_traj_.evaluate(t);
 }
 
-kr_planning_msgs::PlanTwoPointResult
-LocalPlanServer::MPLPlanner::process_result(double endt, int num_goals) {
-  kr_planning_msgs::PlanTwoPointResult result;
+//
+// Min Dispersion Planner
+//
 
-  for (int i = 0; i < num_goals; i++) {
-    geometry_msgs::Pose p_fin;
-    geometry_msgs::Twist v_fin, a_fin, j_fin;
+void LocalPlanServer::DispersionPlanner::setup() {}
 
-    MPL::Waypoint3D pt_f = mp_traj_.evaluate(endt * static_cast<double>(i + 1));
-    // check if evaluation is successful, if not, set result.success to be
-    // false! (if failure case, a null Waypoint is returned)
-    if ((pt_f.pos(0) == 0) && (pt_f.pos(1) == 0) && (pt_f.pos(2) == 0) &&
-        (pt_f.vel(0) == 0) && (pt_f.vel(1) == 0) && (pt_f.vel(2) == 0)) {
-      result.success = 0;
-      ROS_WARN_STREAM(
-          "waypoint evaluation failed, set result.success to be false");
-      ROS_WARN_STREAM(
-          "trajectory total time:" << local_plan_server_->traj_total_time_);
-      ROS_WARN_STREAM("evaluating at:" << endt * static_cast<double>(i + 1));
-    }
+void LocalPlanServer::DispersionPlanner::plan(
+    const MPL::Waypoint3D& start,
+    const MPL::Waypoint3D& goal,
+    const kr_planning_msgs::VoxelMap& map){};
 
-    p_fin.position.x = pt_f.pos(0), p_fin.position.y = pt_f.pos(1),
-    p_fin.position.z = pt_f.pos(2);
-    p_fin.orientation.w = 1, p_fin.orientation.z = 0;
-    v_fin.linear.x = pt_f.vel(0), v_fin.linear.y = pt_f.vel(1),
-    v_fin.linear.z = pt_f.vel(2);
-    v_fin.angular.z = 0;
-    a_fin.linear.x = pt_f.acc(0), a_fin.linear.y = pt_f.acc(1),
-    a_fin.linear.z = pt_f.acc(2);
-    a_fin.angular.z = 0;
-    result.p_stop.push_back(p_fin);
-    result.v_stop.push_back(v_fin);
-    result.a_stop.push_back(a_fin);
-    result.j_stop.push_back(j_fin);
-  }
-
-  MPL::Waypoint3D pt = mp_traj_.evaluate(local_plan_server_->traj_total_time_);
-  result.traj_end.position.x = pt.pos(0);
-  result.traj_end.position.y = pt.pos(1);
-  result.traj_end.position.z = pt.pos(2);
-  return result;
+MPL::Waypoint3D LocalPlanServer::DispersionPlanner::evaluate(double t) {
+  return MPL::Waypoint3D();
 }

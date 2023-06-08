@@ -36,8 +36,7 @@ class LocalPlanServer {
                       const MPL::Waypoint3D& goal,
                       const kr_planning_msgs::VoxelMap& map) = 0;
 
-    virtual kr_planning_msgs::PlanTwoPointResult process_result(
-        double endt, int num_goals) = 0;
+    virtual MPL::Waypoint3D evaluate(double t) = 0;
 
     LocalPlanServer* local_plan_server_;
   };
@@ -51,8 +50,7 @@ class LocalPlanServer {
     void plan(const MPL::Waypoint3D& start,
               const MPL::Waypoint3D& goal,
               const kr_planning_msgs::VoxelMap& map);
-    kr_planning_msgs::PlanTwoPointResult process_result(double endt,
-                                                        int num_goals);
+    MPL::Waypoint3D evaluate(double t);
 
    private:
     MPL::Trajectory3D mp_traj_;
@@ -73,13 +71,26 @@ class LocalPlanServer {
     void plan(const MPL::Waypoint3D& start,
               const MPL::Waypoint3D& goal,
               const kr_planning_msgs::VoxelMap& map);
-    kr_planning_msgs::PlanTwoPointResult process_result(double endt,
-                                                        int num_goals);
+    MPL::Waypoint3D evaluate(double t);
 
    private:
     opt_planner::PlannerManager::Ptr planner_manager_;
     min_jerk::Trajectory opt_traj_;
     std::shared_ptr<MPL::VoxelMapUtil> mp_map_util_;
+  };
+
+  class DispersionPlanner : public PlannerType {
+   public:
+    explicit DispersionPlanner(LocalPlanServer* local_plan_server)
+        : PlannerType(local_plan_server) {}
+
+    void setup();
+    void plan(const MPL::Waypoint3D& start,
+              const MPL::Waypoint3D& goal,
+              const kr_planning_msgs::VoxelMap& map);
+    MPL::Waypoint3D evaluate(double t);
+
+   private:
   };
 
  private:

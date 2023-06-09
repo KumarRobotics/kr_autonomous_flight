@@ -13,8 +13,6 @@
   <arg name="lidar_cloud_topic" default="/falcon4/os1_cloud_node/points" />
   <!-- robot odometry topic name -->
   <arg name="gt_odom" default="ground_truth/odom"/> 
-  <!-- use dispersion based motion planning algorithm (only for internal use) --> 
-  <arg name="min_dispersion_planner" default="false" />
   <!-- if use onboard sensing, set it to be true and set odom to be ukf_odom /> -->
   <arg name="onboard_sensing" default="false"/>
   
@@ -24,8 +22,8 @@
   <!-- robot takeoff height /> -->
   <arg name="takeoff_height" default="1.0"/>
   <!-- robot initial spawn positions -->
-  <arg name="x" default="0.0"/>
-  <arg name="y" default="0.0"/>
+  <arg name="x" default="10.0"/>
+  <arg name="y" default="10.0"/>
   <arg name="z" default="1.0"/>
   <arg name="yaw" default="-0.0"/>
   <!-- control gains config file -->
@@ -90,7 +88,6 @@
     <arg name="lidar_frame" value="$(arg lidar_frame)"/>
     <arg name="lidar_cloud_topic" value="$(arg lidar_cloud_topic)" />
     <arg name="mass" value="$(arg mass)" />
-    <arg name="min_dispersion_planner" value="$(arg min_dispersion_planner)" />
     <arg name="takeoff_height" value="$(arg takeoff_height)" />
     <arg name="gains_file" value="$(arg gains_file)"/>
   </include>

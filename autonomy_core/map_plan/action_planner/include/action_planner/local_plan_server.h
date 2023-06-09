@@ -1,9 +1,14 @@
+#ifndef ACTION_PLANNER_LOCAL_PLAN_SERVER_H_
+#define ACTION_PLANNER_LOCAL_PLAN_SERVER_H_
+
 #include <action_planner/ActionPlannerConfig.h>
 #include <actionlib/server/simple_action_server.h>
 #include <data_conversions.h>  // setMap, getMap, etc
 #include <eigen_conversions/eigen_msg.h>
 #include <kr_planning_msgs/PlanTwoPointAction.h>
 #include <kr_planning_rviz_plugins/data_ros_utils.h>
+#include <motion_primitives/graph_search.h>
+#include <motion_primitives/utils.h>
 #include <mpl_basis/trajectory.h>
 #include <mpl_collision/map_util.h>
 #include <mpl_planner/map_planner.h>
@@ -59,7 +64,7 @@ class LocalPlanServer {
     bool debug_;
     bool verbose_;
     double tol_pos_, goal_tol_vel_, goal_tol_acc_;
-    bool use_3d_local_;  // it is for 2D mp planner
+    bool use_3d_local_;
     ros::Publisher expanded_cloud_pub;
   };
   class OptPlanner : public PlannerType {
@@ -91,6 +96,10 @@ class LocalPlanServer {
     MPL::Waypoint3D evaluate(double t);
 
    private:
+    double tol_pos_, tol_vel_;
+    std::string heuristic_;
+    std::shared_ptr<motion_primitives::MotionPrimitiveGraph> graph_;
+    std::vector<std::shared_ptr<motion_primitives::MotionPrimitive>> dispersion_traj_;
   };
 
  private:
@@ -156,3 +165,4 @@ class LocalPlanServer {
    */
   bool is_outside_map(const Eigen::Vector3i& pn, const Eigen::Vector3i& dim);
 };
+#endif  // ACTION_PLANNER_LOCAL_PLAN_SERVER_H_

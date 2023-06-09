@@ -214,13 +214,181 @@ MPL::Waypoint3D LocalPlanServer::MPLPlanner::evaluate(double t) {
 // Min Dispersion Planner
 //
 
-void LocalPlanServer::DispersionPlanner::setup() {}
+void LocalPlanServer::DispersionPlanner::setup() {
+  local_plan_server_->traj_planner_nh_.param(
+      "trajectory_planner/tol_pos", tol_pos_, 0.5);
+  ROS_INFO_STREAM("Position tolerance: " << tol_pos_);
+  local_plan_server_->traj_planner_nh_.param(
+      "trajectory_planner/global_goal_tol_vel", tol_vel_, 1.5);
+  local_plan_server_->traj_planner_nh_.param<std::string>(
+      "heuristic", heuristic_, "min_time");
+
+  std::string graph_file;
+  local_plan_server_->traj_planner_nh_.param(
+      "graph_file",
+      graph_file,
+      std::string("/home/laura/medium_faster20.json"));
+  ROS_INFO("Reading graph file %s", graph_file.c_str());
+  graph_ = std::make_shared<motion_primitives::MotionPrimitiveGraph>(
+      motion_primitives::read_motion_primitive_graph(graph_file));
+}
 
 void LocalPlanServer::DispersionPlanner::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
-    const kr_planning_msgs::VoxelMap& map){};
+    const kr_planning_msgs::VoxelMap& map) {
+  Eigen::Vector3d start_state(start.pos);
+  const kr_planning_msgs::SplineTrajectory last_traj =
+      local_plan_server_->goal_->last_traj;
+  double eval_time = local_plan_server_->goal_->eval_time;
+  int planner_start_index = -1;
+  bool compute_first_mp = last_traj.data.size() > 0;
+  if (!compute_first_mp)
+    ROS_WARN("Missing last trajectory (stopping policy may have run)");
+  int seg_num = -1;
+  double finished_segs_time = 0;
+  std::shared_ptr<motion_primitives::MotionPrimitive> mp;
+
+  // If we received a last trajectory, we want to use it to create a new
+  // trajectory that starts on with the segment of the old trajectory that
+  // we are flying on, at the requested eval time (which is a little bit in
+  // the future of where its currently flying). With a slight abuse of
+  // notation, I will refer to this as the "current segment"
+  if (compute_first_mp) {
+    // Figure out which segment of the last trajectory is the current
+    // segment
+    for (int i = 0; i < last_traj.data[0].segments; i++) {
+      auto seg = last_traj.data[0].segs[i];
+      finished_segs_time += seg.dt;
+      if (finished_segs_time > eval_time) {
+        finished_segs_time -= seg.dt;
+        seg_num = i;
+        break;
+      }
+    }
+    // todo(laura) what to do if eval time is past the end of the traj
+    if (seg_num == -1) seg_num = last_traj.data[0].segments - 1;
+    ROS_INFO_STREAM("Seg num " << seg_num);
+
+    // The planner will start at the end of the current segment, so we get
+    // its end index.
+    planner_start_index = last_traj.data[0].segs[seg_num].end_index;
+
+    mp = motion_primitives::recover_mp_from_SplineTrajectory(
+        last_traj, graph_, seg_num);
+    start_state = mp->end_state_;
+    ROS_INFO_STREAM("Planner adjusted start: " << mp->end_state_.transpose());
+  }
+
+  motion_primitives::GraphSearch::Option options = {
+      .start_state = start_state,
+      .goal_state = goal.pos,
+      .distance_threshold = tol_pos_,
+      .parallel_expand = true,
+      .heuristic = heuristic_,
+      .access_graph = false,
+      .start_index = planner_start_index};
+  if (graph_->spatial_dim() == 2)
+    options.fixed_z = local_plan_server_->goal_->p_init.position.z;
+  //   if (msg->check_vel) options.velocity_threshold = tol_vel;
+  if (planner_start_index == -1 ||
+      planner_start_index >= graph_->num_tiled_states())
+    options.access_graph = true;
+  // TODO(laura) why should planner_start_index >= graph_->num_tiled_states()
+  // ever happen except when switching graphs, but checking if
+  // graph_index_!=last_graph.graph_index didn't work
+
+  motion_primitives::GraphSearch gs(*graph_, map, options);
+  const auto start_time = ros::Time::now();
+
+  auto [path, nodes] = gs.Search();
+  bool planner_start_too_close_to_goal =
+      motion_primitives::StatePosWithin(options.start_state,
+                                        options.goal_state,
+                                        graph_->spatial_dim(),
+                                        options.distance_threshold);
+  if (path.empty()) {
+    if (!planner_start_too_close_to_goal) {
+      ROS_ERROR("Graph search failed, aborting action server.");
+      local_plan_server_->process_result(kr_planning_msgs::SplineTrajectory(),
+                                         false);
+      return;
+    }
+  }
+  if (compute_first_mp) {
+    // To our planned trajectory, we add a cropped motion primitive that is
+    // in the middle of the last_traj segment that we are evaluating at
+
+    Eigen::VectorXd cropped_start(graph_->state_dim());
+    Eigen::MatrixXd cropped_poly_coeffs;
+
+    double shift_time = 0;
+    // We need to shift the motion primitive to start at the eval_time. If
+    // we are the first segment, it might have been itself a cropped motion
+    // primitive, so the shift_time is a little more complicated.
+    // finished_segs_time is the total time of all the segments before the
+    // current segment.
+    if (seg_num == 0)
+      shift_time = eval_time;
+    else
+      shift_time = eval_time - finished_segs_time;
+
+    cropped_poly_coeffs = motion_primitives::GraphSearch::shift_polynomial(
+        mp->poly_coeffs_, shift_time);
+
+    // Use the polynomial coefficients to get the new start, which is
+    // hopefully the same as the planning query requested start.
+    for (int i = 0; i < graph_->spatial_dim(); i++) {
+      cropped_start(i) = cropped_poly_coeffs(i, cropped_poly_coeffs.cols() - 1);
+      cropped_start(graph_->spatial_dim() + i) =
+          cropped_poly_coeffs(i, cropped_poly_coeffs.cols() - 2);
+      if (graph_->control_space_dim() > 2) {
+        cropped_start(2 * graph_->spatial_dim() + i) =
+            cropped_poly_coeffs(i, cropped_poly_coeffs.cols() - 3);
+      }
+    }
+    ROS_INFO_STREAM("Cropped start " << cropped_start.transpose());
+
+    auto first_mp =
+        graph_->createMotionPrimitivePtrFromGraph(cropped_start, start.pos);
+    // auto first_mp = graph_->createMotionPrimitivePtrFromGraph(
+    //     cropped_start, path[0]->start_state_);
+
+    double new_seg_time = mp->traj_time_ - shift_time;
+    first_mp->populate(0,
+                       new_seg_time,
+                       cropped_poly_coeffs,
+                       last_traj.data[0].segs[seg_num].start_index,
+                       last_traj.data[0].segs[seg_num].end_index);
+    // Add the cropped motion primitive to the beginning of the planned
+    // trajectory
+    path.insert(path.begin(), first_mp);
+  }
+
+  ROS_INFO("Graph search succeeded.");
+
+  const auto total_time = (ros::Time::now() - start_time).toSec();
+  ROS_INFO("Finished planning. Planning time %f s", total_time);
+
+//TODO:fix header
+  auto spline_msg = motion_primitives::path_to_spline_traj_msg(
+      path, std_msgs::Header(), local_plan_server_->goal_->p_init.position.z);
+
+  ROS_INFO_STREAM("path size: " << path.size());
+  dispersion_traj_ = path;
+  //   const auto visited_marray = StatesToMarkerArray(
+  //       gs.GetVisitedStates(), gs.spatial_dim(), voxel_map.header);
+  //   visited_pub_.publish(visited_marray);
+
+  local_plan_server_->process_result(spline_msg, true);
+};
 
 MPL::Waypoint3D LocalPlanServer::DispersionPlanner::evaluate(double t) {
-  return MPL::Waypoint3D();
+  MPL::Waypoint3D waypoint;
+
+  waypoint.pos = motion_primitives::getState(dispersion_traj_, t, 0);
+  waypoint.vel = motion_primitives::getState(dispersion_traj_, t, 1);
+  waypoint.acc = motion_primitives::getState(dispersion_traj_, t, 2);
+
+  return waypoint;
 }

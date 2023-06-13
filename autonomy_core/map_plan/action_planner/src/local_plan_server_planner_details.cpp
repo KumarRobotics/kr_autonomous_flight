@@ -12,17 +12,17 @@ void LocalPlanServer::OptPlanner::setup() {
 
   /* initialize main modules */
   planner_manager_.reset(new opt_planner::PlannerManager);
-  planner_manager_->initPlanModules(local_plan_server_->traj_planner_nh_,
-                                    mp_map_util_);
+  planner_manager_->initPlanModules(nh_, mp_map_util_);
 
   // TODO(xu:) not differentiating between 2D and 3D, causing extra resource
   // usage for 2D case, this needed to be changed in both planner util as well
   // as map util, which requires the slicing map function
 }
 
-void LocalPlanServer::OptPlanner::plan(const MPL::Waypoint3D& start,
-                                       const MPL::Waypoint3D& goal,
-                                       const kr_planning_msgs::VoxelMap& map) {
+kr_planning_msgs::SplineTrajectory LocalPlanServer::OptPlanner::plan(
+    const MPL::Waypoint3D& start,
+    const MPL::Waypoint3D& goal,
+    const kr_planning_msgs::VoxelMap& map) {
   ROS_WARN("[LocalPlanServer] trigger opt_planner!!!!!");
   setMap(mp_map_util_, map);
   Eigen::MatrixXd startState(3, 3), endState(3, 3);
@@ -34,12 +34,14 @@ void LocalPlanServer::OptPlanner::plan(const MPL::Waypoint3D& start,
   bool valid = planner_manager_->localPlanner(startState, endState);
   if (valid) {
     opt_traj_ = planner_manager_->local_data_.traj_;
-    local_plan_server_->traj_total_time_ = opt_traj_.getTotalDuration();
+    traj_total_time_ = opt_traj_.getTotalDuration();
     ROS_WARN("[LocalPlanServer] planning success ! !!!!!");
+  } else {
+    return kr_planning_msgs::SplineTrajectory();
   }
 
   kr_planning_msgs::SplineTrajectory spline_msg;
-  spline_msg.header.frame_id = local_plan_server_->frame_id_;
+  spline_msg.header.frame_id = frame_id_;
   spline_msg.dimensions = 3;
 
   int piece_num = opt_traj_.getPieceNum();
@@ -60,10 +62,10 @@ void LocalPlanServer::OptPlanner::plan(const MPL::Waypoint3D& start,
       spline.segs.push_back(poly);
     }
     spline.segments = piece_num;
-    spline.t_total = local_plan_server_->traj_total_time_;
+    spline.t_total = traj_total_time_;
     spline_msg.data.push_back(spline);
   }
-  local_plan_server_->process_result(spline_msg, valid);
+  return spline_msg;
 }
 
 MPL::Waypoint3D LocalPlanServer::OptPlanner::evaluate(double t) {
@@ -87,44 +89,40 @@ void LocalPlanServer::MPLPlanner::setup() {
 
   // set up visualization publisher for mpl planner
   expanded_cloud_pub =
-      local_plan_server_->pnh_.advertise<sensor_msgs::PointCloud>(
-          "expanded_cloud", 1, true);
+      nh_.advertise<sensor_msgs::PointCloud>("expanded_cloud", 1, true);
 
   // set up mpl planner
-  local_plan_server_->traj_planner_nh_.param("debug", debug_, false);
-  local_plan_server_->traj_planner_nh_.param("verbose", verbose_, false);
+  nh_.param("debug", debug_, false);
+  nh_.param("verbose", verbose_, false);
 
   double dt;
   double W, v_fov;
   int ndt, max_num;
-  local_plan_server_->traj_planner_nh_.param("tol_pos", tol_pos_, 0.5);
-  local_plan_server_->traj_planner_nh_.param(
-      "global_goal_tol_vel", goal_tol_vel_, 0.5);
-  local_plan_server_->traj_planner_nh_.param(
-      "global_goal_tol_acc", goal_tol_acc_, 0.5);
+  nh_.param("tol_pos", tol_pos_, 0.5);
+  nh_.param("global_goal_tol_vel", goal_tol_vel_, 0.5);
+  nh_.param("global_goal_tol_acc", goal_tol_acc_, 0.5);
   /// Execution time for each primitive
-  local_plan_server_->traj_planner_nh_.param("dt", dt, 1.0);
-  local_plan_server_->traj_planner_nh_.param("ndt", ndt, -1);
-  local_plan_server_->traj_planner_nh_.param("max_num", max_num, -1);
-  local_plan_server_->traj_planner_nh_.param("heuristic_weight", W, 10.0);
-  local_plan_server_->traj_planner_nh_.param("vertical_semi_fov", v_fov, 0.392);
+  nh_.param("dt", dt, 1.0);
+  nh_.param("ndt", ndt, -1);
+  nh_.param("max_num", max_num, -1);
+  nh_.param("heuristic_weight", W, 10.0);
+  nh_.param("vertical_semi_fov", v_fov, 0.392);
 
   mp_map_util_ = std::make_shared<MPL::VoxelMapUtil>();
 
-  local_plan_server_->traj_planner_nh_.param(
-      "use_3d_local", use_3d_local_, false);
+  nh_.param("use_3d_local", use_3d_local_, false);
 
   double vz_max, az_max, jz_max, uz_max;
-  local_plan_server_->traj_planner_nh_.param("max_v_z", vz_max, 2.0);
-  local_plan_server_->traj_planner_nh_.param("max_a_z", az_max, 1.0);
-  local_plan_server_->traj_planner_nh_.param("max_j_z", jz_max, 1.0);
-  local_plan_server_->traj_planner_nh_.param("max_u_z", uz_max, 1.0);
+  nh_.param("max_v_z", vz_max, 2.0);
+  nh_.param("max_a_z", az_max, 1.0);
+  nh_.param("max_j_z", jz_max, 1.0);
+  nh_.param("max_u_z", uz_max, 1.0);
 
   double v_max, a_max, j_max, u_max;
-  local_plan_server_->traj_planner_nh_.param("max_v", v_max, 2.0);
-  local_plan_server_->traj_planner_nh_.param("max_a", a_max, 1.0);
-  local_plan_server_->traj_planner_nh_.param("max_j", j_max, 1.0);
-  local_plan_server_->traj_planner_nh_.param("max_u", u_max, 1.0);
+  nh_.param("max_v", v_max, 2.0);
+  nh_.param("max_a", a_max, 1.0);
+  nh_.param("max_j", j_max, 1.0);
+  nh_.param("max_u", u_max, 1.0);
 
   // Important: set motion primitive control inputs
   vec_E<VecDf> U;
@@ -163,13 +161,14 @@ void LocalPlanServer::MPLPlanner::setup() {
   mp_planner_util_->setLPAstar(false);  // Use Astar
 }
 
-void LocalPlanServer::MPLPlanner::plan(const MPL::Waypoint3D& start,
-                                       const MPL::Waypoint3D& goal,
-                                       const kr_planning_msgs::VoxelMap& map) {
+kr_planning_msgs::SplineTrajectory LocalPlanServer::MPLPlanner::plan(
+    const MPL::Waypoint3D& start,
+    const MPL::Waypoint3D& goal,
+    const kr_planning_msgs::VoxelMap& map) {
   ROS_WARN("[LocalPlanServer] trigger mp_planner!!!!!");
 
   setMap(mp_map_util_, map);
-  if (local_plan_server_->goal_->check_vel) {
+  if (action_server_goal_.check_vel) {
     // Tolerance for goal region, -1 means no limitation
     mp_planner_util_->setTol(tol_pos_, goal_tol_vel_, goal_tol_acc_);
   } else {
@@ -191,19 +190,21 @@ void LocalPlanServer::MPLPlanner::plan(const MPL::Waypoint3D& start,
 
   if (valid) {
     mp_traj_ = mp_planner_util_->getTraj();
-    local_plan_server_->traj_total_time_ = mp_traj_.getTotalTime();
+    traj_total_time_ = mp_traj_.getTotalTime();
     ROS_WARN("[LocalPlanServer] planning success ! !!!!!");
+  } else {
+    return kr_planning_msgs::SplineTrajectory();
   }
 
   // for visualization: publish expanded nodes as a point cloud
   sensor_msgs::PointCloud expanded_ps =
       kr::vec_to_cloud(mp_planner_util_->getExpandedNodes());
-  expanded_ps.header.frame_id = local_plan_server_->frame_id_;
+  expanded_ps.header.frame_id = frame_id_;
   expanded_cloud_pub.publish(expanded_ps);
   kr_planning_msgs::Trajectory traj_msg = toTrajectoryROSMsg(mp_traj_);
-  traj_msg.header.frame_id = local_plan_server_->frame_id_;
+  traj_msg.header.frame_id = frame_id_;
   auto spline_msg = traj_opt::SplineTrajectoryFromTrajectory(traj_msg);
-  local_plan_server_->process_result(spline_msg, valid);
+  return spline_msg;
 }
 
 MPL::Waypoint3D LocalPlanServer::MPLPlanner::evaluate(double t) {
@@ -215,32 +216,31 @@ MPL::Waypoint3D LocalPlanServer::MPLPlanner::evaluate(double t) {
 //
 
 void LocalPlanServer::DispersionPlanner::setup() {
-  local_plan_server_->traj_planner_nh_.param(
-      "trajectory_planner/tol_pos", tol_pos_, 0.5);
+  nh_.param("trajectory_planner/tol_pos", tol_pos_, 0.5);
   ROS_INFO_STREAM("Position tolerance: " << tol_pos_);
-  local_plan_server_->traj_planner_nh_.param(
-      "trajectory_planner/global_goal_tol_vel", tol_vel_, 1.5);
-  local_plan_server_->traj_planner_nh_.param<std::string>(
-      "heuristic", heuristic_, "min_time");
+  nh_.param("trajectory_planner/global_goal_tol_vel", tol_vel_, 1.5);
+  nh_.param<std::string>("heuristic", heuristic_, "min_time");
 
   std::string graph_file;
-  local_plan_server_->traj_planner_nh_.param(
-      "graph_file",
-      graph_file,
-      std::string("/home/laura/medium_faster20.json"));
+  nh_.param("graph_file",
+            graph_file,
+            std::string("/home/laura/medium_faster20.json"));
   ROS_INFO("Reading graph file %s", graph_file.c_str());
   graph_ = std::make_shared<motion_primitives::MotionPrimitiveGraph>(
       motion_primitives::read_motion_primitive_graph(graph_file));
+  visited_pub_ =
+      nh_.advertise<visualization_msgs::MarkerArray>("visited", 1, true);
 }
 
-void LocalPlanServer::DispersionPlanner::plan(
+kr_planning_msgs::SplineTrajectory LocalPlanServer::DispersionPlanner::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map) {
+  // TODO cleanup if(compute_first_mp) blocks
   Eigen::Vector3d start_state(start.pos);
   const kr_planning_msgs::SplineTrajectory last_traj =
-      local_plan_server_->goal_->last_traj;
-  double eval_time = local_plan_server_->goal_->eval_time;
+      action_server_goal_.last_traj;
+  double eval_time = action_server_goal_.eval_time;
   int planner_start_index = -1;
   bool compute_first_mp = last_traj.data.size() > 0;
   if (!compute_first_mp)
@@ -289,7 +289,7 @@ void LocalPlanServer::DispersionPlanner::plan(
       .access_graph = false,
       .start_index = planner_start_index};
   if (graph_->spatial_dim() == 2)
-    options.fixed_z = local_plan_server_->goal_->p_init.position.z;
+    options.fixed_z = action_server_goal_.p_init.position.z;
   //   if (msg->check_vel) options.velocity_threshold = tol_vel;
   if (planner_start_index == -1 ||
       planner_start_index >= graph_->num_tiled_states())
@@ -307,13 +307,9 @@ void LocalPlanServer::DispersionPlanner::plan(
                                         options.goal_state,
                                         graph_->spatial_dim(),
                                         options.distance_threshold);
-  if (path.empty()) {
-    if (!planner_start_too_close_to_goal) {
-      ROS_ERROR("Graph search failed, aborting action server.");
-      local_plan_server_->process_result(kr_planning_msgs::SplineTrajectory(),
-                                         false);
-      return;
-    }
+  if (path.empty() && !planner_start_too_close_to_goal) {
+    ROS_ERROR("Graph search failed, aborting action server.");
+    return kr_planning_msgs::SplineTrajectory();
   }
   if (compute_first_mp) {
     // To our planned trajectory, we add a cropped motion primitive that is
@@ -370,17 +366,20 @@ void LocalPlanServer::DispersionPlanner::plan(
   const auto total_time = (ros::Time::now() - start_time).toSec();
   ROS_INFO("Finished planning. Planning time %f s", total_time);
 
-//TODO:fix header
   auto spline_msg = motion_primitives::path_to_spline_traj_msg(
-      path, std_msgs::Header(), local_plan_server_->goal_->p_init.position.z);
+      path, map.header, action_server_goal_.p_init.position.z);
+  traj_total_time_ = 0;
+  for (auto spline : spline_msg.data) {
+    traj_total_time_ += spline.t_total;
+  }
 
   ROS_INFO_STREAM("path size: " << path.size());
   dispersion_traj_ = path;
-  //   const auto visited_marray = StatesToMarkerArray(
-  //       gs.GetVisitedStates(), gs.spatial_dim(), voxel_map.header);
-  //   visited_pub_.publish(visited_marray);
+  const auto visited_marray = motion_primitives::StatesToMarkerArray(
+      gs.GetVisitedStates(), gs.spatial_dim(), map.header);
+  visited_pub_.publish(visited_marray);
 
-  local_plan_server_->process_result(spline_msg, true);
+  return spline_msg;
 };
 
 MPL::Waypoint3D LocalPlanServer::DispersionPlanner::evaluate(double t) {

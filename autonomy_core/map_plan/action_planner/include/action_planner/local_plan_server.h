@@ -19,13 +19,10 @@
 #include <traj_opt_ros/ros_bridge.h>
 #include <traj_utils/planning_visualization.h>
 
-#include <boost/range/irange.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 #include <chrono>
-
-using boost::irange;
+#include <string>
 
 class LocalPlanServer {
  public:
@@ -34,27 +31,45 @@ class LocalPlanServer {
   bool aborted_;
   class PlannerType {
    public:
-    explicit PlannerType(LocalPlanServer* local_plan_server)
-        : local_plan_server_(local_plan_server) {}
+    explicit PlannerType(
+        const ros::NodeHandle& nh,
+        const std::string& frame_id,
+        const kr_planning_msgs::PlanTwoPointGoal& action_server_goal =
+            kr_planning_msgs::PlanTwoPointGoal())
+        : nh_(nh),
+          frame_id_(frame_id),
+          action_server_goal_(action_server_goal) {}
     virtual void setup() = 0;
-    virtual void plan(const MPL::Waypoint3D& start,
-                      const MPL::Waypoint3D& goal,
-                      const kr_planning_msgs::VoxelMap& map) = 0;
+    virtual kr_planning_msgs::SplineTrajectory plan(
+        const MPL::Waypoint3D& start,
+        const MPL::Waypoint3D& goal,
+        const kr_planning_msgs::VoxelMap& map) = 0;
 
     virtual MPL::Waypoint3D evaluate(double t) = 0;
+    double getTotalTrajTime() { return traj_total_time_; }
 
-    LocalPlanServer* local_plan_server_;
+    ros::NodeHandle nh_;
+    std::string frame_id_;
+    double traj_total_time_;
+    // If replanning, some planners requires the previous trajectory which is
+    // contained in the action server goal
+    const kr_planning_msgs::PlanTwoPointGoal action_server_goal_;
   };
 
   class MPLPlanner : public PlannerType {
    public:
-    explicit MPLPlanner(LocalPlanServer* local_plan_server)
-        : PlannerType(local_plan_server) {}
+    explicit MPLPlanner(
+        const ros::NodeHandle& nh,
+        const std::string& frame_id,
+        const kr_planning_msgs::PlanTwoPointGoal& action_server_goal =
+            kr_planning_msgs::PlanTwoPointGoal())
+        : PlannerType(nh, frame_id, action_server_goal) {}
 
     void setup();
-    void plan(const MPL::Waypoint3D& start,
-              const MPL::Waypoint3D& goal,
-              const kr_planning_msgs::VoxelMap& map);
+    kr_planning_msgs::SplineTrajectory plan(
+        const MPL::Waypoint3D& start,
+        const MPL::Waypoint3D& goal,
+        const kr_planning_msgs::VoxelMap& map);
     MPL::Waypoint3D evaluate(double t);
 
    private:
@@ -69,13 +84,19 @@ class LocalPlanServer {
   };
   class OptPlanner : public PlannerType {
    public:
-    explicit OptPlanner(LocalPlanServer* local_plan_server)
-        : PlannerType(local_plan_server) {}
+    explicit OptPlanner(
+        const ros::NodeHandle& nh,
+        const std::string& frame_id,
+        const kr_planning_msgs::PlanTwoPointGoal& action_server_goal =
+            kr_planning_msgs::PlanTwoPointGoal())
+        : PlannerType(nh, frame_id, action_server_goal) {}
 
+    // TODO, be able to pass initial search-based path in
     void setup();
-    void plan(const MPL::Waypoint3D& start,
-              const MPL::Waypoint3D& goal,
-              const kr_planning_msgs::VoxelMap& map);
+    kr_planning_msgs::SplineTrajectory plan(
+        const MPL::Waypoint3D& start,
+        const MPL::Waypoint3D& goal,
+        const kr_planning_msgs::VoxelMap& map);
     MPL::Waypoint3D evaluate(double t);
 
    private:
@@ -86,23 +107,31 @@ class LocalPlanServer {
 
   class DispersionPlanner : public PlannerType {
    public:
-    explicit DispersionPlanner(LocalPlanServer* local_plan_server)
-        : PlannerType(local_plan_server) {}
+    explicit DispersionPlanner(
+        const ros::NodeHandle& nh,
+        const std::string& frame_id,
+        const kr_planning_msgs::PlanTwoPointGoal& action_server_goal =
+            kr_planning_msgs::PlanTwoPointGoal())
+        : PlannerType(nh, frame_id, action_server_goal) {}
 
     void setup();
-    void plan(const MPL::Waypoint3D& start,
-              const MPL::Waypoint3D& goal,
-              const kr_planning_msgs::VoxelMap& map);
+    kr_planning_msgs::SplineTrajectory plan(
+        const MPL::Waypoint3D& start,
+        const MPL::Waypoint3D& goal,
+        const kr_planning_msgs::VoxelMap& map);
     MPL::Waypoint3D evaluate(double t);
 
    private:
     double tol_pos_, tol_vel_;
     std::string heuristic_;
     std::shared_ptr<motion_primitives::MotionPrimitiveGraph> graph_;
-    std::vector<std::shared_ptr<motion_primitives::MotionPrimitive>> dispersion_traj_;
+    std::vector<std::shared_ptr<motion_primitives::MotionPrimitive>>
+        dispersion_traj_;
+    ros::Publisher visited_pub_;
   };
 
  private:
+  // TODO(laura) what is the difference btw the node handles
   ros::NodeHandle pnh_;
   ros::NodeHandle traj_planner_nh_;
   ros::Subscriber local_map_sub_;
@@ -119,7 +148,7 @@ class LocalPlanServer {
   kr_planning_msgs::VoxelMapConstPtr local_map_ptr_ = nullptr;
 
   // actionlib
-  boost::shared_ptr<const kr_planning_msgs::PlanTwoPointGoal> goal_;
+  kr_planning_msgs::PlanTwoPointGoal goal_;
   // action lib
   std::unique_ptr<
       actionlib::SimpleActionServer<kr_planning_msgs::PlanTwoPointAction>>
@@ -146,8 +175,7 @@ class LocalPlanServer {
   /**
    * @brief Record result (trajectory, status, etc)
    */
-  void process_result(const kr_planning_msgs::SplineTrajectory& traj_msg,
-                      bool solved);
+  void process_result(const kr_planning_msgs::SplineTrajectory& traj_msg);
 
   /**
    * @brief map callback, update local_map_ptr_

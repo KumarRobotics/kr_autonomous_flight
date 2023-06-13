@@ -24,13 +24,16 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
 
   switch (planner_type_id) {
     case 0:
-      planner_type_ = new LocalPlanServer::MPLPlanner(this);
+      planner_type_ =
+          new LocalPlanServer::MPLPlanner(traj_planner_nh_, frame_id_, goal_);
       break;
     case 1:
-      planner_type_ = new LocalPlanServer::OptPlanner(this);
+      planner_type_ =
+          new LocalPlanServer::OptPlanner(traj_planner_nh_, frame_id_, goal_);
       break;
     case 2:
-      planner_type_ = new LocalPlanServer::DispersionPlanner(this);
+      planner_type_ = new LocalPlanServer::DispersionPlanner(
+          traj_planner_nh_, frame_id_, goal_);
       break;
     default:
       ROS_ERROR("Invalid planner type id: %d", planner_type_id);
@@ -43,11 +46,11 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
 }
 void LocalPlanServer::goalCB() {
   auto start_timer = std::chrono::high_resolution_clock::now();
-  goal_ = local_as_->acceptNewGoal();
   // check_vel is true if local planner reaches global goal
 
   aborted_ = false;
-  if (goal_ == NULL) {
+  auto goal_ptr = local_as_->acceptNewGoal();
+  if (goal_ptr == NULL) {
     ROS_WARN("+++++++++++++++++++++++++++++++++++");
     ROS_WARN("[LocalPlanServer:] Goal is null!!!!!");
     ROS_WARN("+++++++++++++++++++++++++++++++++++");
@@ -56,6 +59,7 @@ void LocalPlanServer::goalCB() {
     ROS_WARN("[LocalPlanServer:] local map is not received!!!!!");
     ROS_WARN("+++++++++++++++++++++++++++++++++++");
   } else {
+    goal_ = *goal_ptr;
     process_goal();
   }
   auto end_timer = std::chrono::high_resolution_clock::now();
@@ -78,10 +82,10 @@ void LocalPlanServer::process_goal() {
   MPL::Waypoint3D start, goal;
   // instead of using current odometry as start, we use the given start position
   // for consistency between old and new trajectories in replan process
-  start.pos = kr::pose_to_eigen(goal_->p_init);
-  start.vel = kr::twist_to_eigen(goal_->v_init);
-  start.acc = kr::twist_to_eigen(goal_->a_init);
-  start.jrk = kr::twist_to_eigen(goal_->j_init);
+  start.pos = kr::pose_to_eigen(goal_.p_init);
+  start.vel = kr::twist_to_eigen(goal_.v_init);
+  start.acc = kr::twist_to_eigen(goal_.a_init);
+  start.jrk = kr::twist_to_eigen(goal_.j_init);
 
   // Important: define use position, velocity, acceleration or jerk as control
   // inputs, note that the lowest order "false" term will be used as control
@@ -95,10 +99,10 @@ void LocalPlanServer::process_goal() {
   // in trajectory_tracker)
   start.use_yaw = false;
 
-  goal.pos = kr::pose_to_eigen(goal_->p_final);
-  goal.vel = kr::twist_to_eigen(goal_->v_final);
-  goal.acc = kr::twist_to_eigen(goal_->a_final);
-  goal.jrk = kr::twist_to_eigen(goal_->j_final);
+  goal.pos = kr::pose_to_eigen(goal_.p_final);
+  goal.vel = kr::twist_to_eigen(goal_.v_final);
+  goal.acc = kr::twist_to_eigen(goal_.a_final);
+  goal.jrk = kr::twist_to_eigen(goal_.j_final);
   goal.use_yaw = start.use_yaw;
   goal.use_pos = start.use_pos;
   goal.use_vel = start.use_vel;
@@ -121,7 +125,7 @@ void LocalPlanServer::process_goal() {
   sg_msg.header.frame_id = frame_id_;
   sg_pub.publish(sg_msg);
 
-  planner_type_->plan(start, goal, local_map_cleared);
+  process_result(planner_type_->plan(start, goal, local_map_cleared));
 }
 
 kr_planning_msgs::VoxelMap LocalPlanServer::clear_map_position(
@@ -180,7 +184,8 @@ bool LocalPlanServer::is_outside_map(const Eigen::Vector3i& pn,
 }
 
 void LocalPlanServer::process_result(
-    const kr_planning_msgs::SplineTrajectory& traj_msg, bool solved) {
+    const kr_planning_msgs::SplineTrajectory& traj_msg) {
+  bool solved = traj_msg.data.size() > 0;
   if (!solved) {
     // local plan fails
     aborted_ = true;
@@ -196,7 +201,7 @@ void LocalPlanServer::process_result(
     // execution_time, get corresponding waypoints and record in result
     // (result_->p_stop etc.) (evaluate the whole traj if execution_time is not
     // set (i.e. not in replan mode))
-    double endt = goal_->execution_time.toSec();
+    double endt = goal_.execution_time.toSec();
     int num_goals = 5;
     if (endt <= 0) {
       endt = traj_total_time_;
@@ -250,16 +255,16 @@ void LocalPlanServer::process_result(
     // execution_time (set in replanner)
     // equals 1.0/local_replan_rate
     result.execution_time =
-        goal_->execution_time;  // execution_time (set in replanner)
+        goal_.execution_time;  // execution_time (set in replanner)
                                 // equals 1.0/local_replan_rate
 
-    result.epoch = goal_->epoch;
+    result.epoch = goal_.epoch;
     result.traj_end.orientation.w = 1.0;
     result.traj_end.orientation.z = 0;
   }
 
   // reset goal
-  goal_ = boost::shared_ptr<kr_planning_msgs::PlanTwoPointGoal>();
+  goal_ = kr_planning_msgs::PlanTwoPointGoal();
   // abort if trajectory generation failed
   if (!solved && local_as_->isActive()) {
     ROS_WARN("Current local plan trial: trajectory generation failed!");

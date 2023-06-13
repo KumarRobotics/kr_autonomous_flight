@@ -1,6 +1,6 @@
 #include <action_planner/ActionPlannerConfig.h>
 #include <actionlib/server/simple_action_server.h>
-#include <data_conversions.h>  // setMap, getMap, etc
+#include <action_planner/data_conversions.h>  // setMap, getMap, etc
 #include <eigen_conversions/eigen_msg.h>
 #include <jps/jps_planner.h>  // jps related
 #include <jps/map_util.h>     // jps related
@@ -8,7 +8,7 @@
 #include <kr_planning_msgs/VoxelMap.h>
 #include <kr_planning_rviz_plugins/data_ros_utils.h>
 #include <nav_msgs/Odometry.h>  // odometry
-#include <primitive_ros_utils.h>
+#include <action_planner/primitive_ros_utils.h>
 #include <ros/ros.h>
 #include <traj_opt_ros/ros_bridge.h>
 

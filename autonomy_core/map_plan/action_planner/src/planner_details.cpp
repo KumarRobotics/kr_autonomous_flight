@@ -1,10 +1,10 @@
 
-#include <action_planner/local_plan_server.h>
+#include <action_planner/planner_details.h>
 
 //
 // Opt Planner
 //
-void LocalPlanServer::OptPlanner::setup() {
+void OptPlanner::setup() {
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
   ROS_WARN("[LocalPlanServer:] Optimization planner mode!!!!!");
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
@@ -19,7 +19,7 @@ void LocalPlanServer::OptPlanner::setup() {
   // as map util, which requires the slicing map function
 }
 
-kr_planning_msgs::SplineTrajectory LocalPlanServer::OptPlanner::plan(
+kr_planning_msgs::SplineTrajectory OptPlanner::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map) {
@@ -68,7 +68,7 @@ kr_planning_msgs::SplineTrajectory LocalPlanServer::OptPlanner::plan(
   return spline_msg;
 }
 
-MPL::Waypoint3D LocalPlanServer::OptPlanner::evaluate(double t) {
+MPL::Waypoint3D OptPlanner::evaluate(double t) {
   MPL::Waypoint3D waypoint;
 
   waypoint.pos = opt_traj_.getPos(t);
@@ -82,7 +82,7 @@ MPL::Waypoint3D LocalPlanServer::OptPlanner::evaluate(double t) {
 // MPL Planner
 //
 
-void LocalPlanServer::MPLPlanner::setup() {
+void MPLPlanner::setup() {
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
   ROS_WARN("[LocalPlanServer:] MPL planner mode!!!!!");
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
@@ -161,7 +161,7 @@ void LocalPlanServer::MPLPlanner::setup() {
   mp_planner_util_->setLPAstar(false);  // Use Astar
 }
 
-kr_planning_msgs::SplineTrajectory LocalPlanServer::MPLPlanner::plan(
+kr_planning_msgs::SplineTrajectory MPLPlanner::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map) {
@@ -207,7 +207,7 @@ kr_planning_msgs::SplineTrajectory LocalPlanServer::MPLPlanner::plan(
   return spline_msg;
 }
 
-MPL::Waypoint3D LocalPlanServer::MPLPlanner::evaluate(double t) {
+MPL::Waypoint3D MPLPlanner::evaluate(double t) {
   return mp_traj_.evaluate(t);
 }
 
@@ -215,7 +215,7 @@ MPL::Waypoint3D LocalPlanServer::MPLPlanner::evaluate(double t) {
 // Min Dispersion Planner
 //
 
-void LocalPlanServer::DispersionPlanner::setup() {
+void DispersionPlanner::setup() {
   nh_.param("trajectory_planner/tol_pos", tol_pos_, 0.5);
   ROS_INFO_STREAM("Position tolerance: " << tol_pos_);
   nh_.param("trajectory_planner/global_goal_tol_vel", tol_vel_, 1.5);
@@ -232,7 +232,7 @@ void LocalPlanServer::DispersionPlanner::setup() {
       nh_.advertise<visualization_msgs::MarkerArray>("visited", 1, true);
 }
 
-kr_planning_msgs::SplineTrajectory LocalPlanServer::DispersionPlanner::plan(
+kr_planning_msgs::SplineTrajectory DispersionPlanner::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map) {
@@ -382,7 +382,7 @@ kr_planning_msgs::SplineTrajectory LocalPlanServer::DispersionPlanner::plan(
   return spline_msg;
 };
 
-MPL::Waypoint3D LocalPlanServer::DispersionPlanner::evaluate(double t) {
+MPL::Waypoint3D DispersionPlanner::evaluate(double t) {
   MPL::Waypoint3D waypoint;
 
   waypoint.pos = motion_primitives::getState(dispersion_traj_, t, 0);

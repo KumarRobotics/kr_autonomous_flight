@@ -24,16 +24,13 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
 
   switch (planner_type_id) {
     case 0:
-      planner_type_ =
-          new LocalPlanServer::MPLPlanner(traj_planner_nh_, frame_id_, goal_);
+      planner_type_ = new MPLPlanner(traj_planner_nh_, frame_id_, goal_);
       break;
     case 1:
-      planner_type_ =
-          new LocalPlanServer::OptPlanner(traj_planner_nh_, frame_id_, goal_);
+      planner_type_ = new OptPlanner(traj_planner_nh_, frame_id_, goal_);
       break;
     case 2:
-      planner_type_ = new LocalPlanServer::DispersionPlanner(
-          traj_planner_nh_, frame_id_, goal_);
+      planner_type_ = new DispersionPlanner(traj_planner_nh_, frame_id_, goal_);
       break;
     default:
       ROS_ERROR("Invalid planner type id: %d", planner_type_id);
@@ -256,7 +253,7 @@ void LocalPlanServer::process_result(
     // equals 1.0/local_replan_rate
     result.execution_time =
         goal_.execution_time;  // execution_time (set in replanner)
-                                // equals 1.0/local_replan_rate
+                               // equals 1.0/local_replan_rate
 
     result.epoch = goal_.epoch;
     result.traj_end.orientation.w = 1.0;

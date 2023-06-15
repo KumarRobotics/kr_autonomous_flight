@@ -1,13 +1,5 @@
 #include <action_planner/local_plan_server.h>
 
-// map callback, update local_map_ptr_
-void LocalPlanServer::localMapCB(
-    const kr_planning_msgs::VoxelMap::ConstPtr& msg) {
-  ROS_WARN_ONCE("[Local planner:] Got the local voxel map!");
-  local_map_ptr_ = msg;
-  frame_id_ = local_map_ptr_->header.frame_id;
-}
-
 LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   local_map_sub_ =
       pnh_.subscribe("local_voxel_map", 2, &LocalPlanServer::localMapCB, this);
@@ -41,6 +33,15 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   local_as_->registerGoalCallback(boost::bind(&LocalPlanServer::goalCB, this));
   local_as_->start();
 }
+
+// map callback, update local_map_ptr_
+void LocalPlanServer::localMapCB(
+    const kr_planning_msgs::VoxelMap::ConstPtr& msg) {
+  ROS_WARN_ONCE("[Local planner:] Got the local voxel map!");
+  local_map_ptr_ = msg;
+  frame_id_ = local_map_ptr_->header.frame_id;
+}
+
 void LocalPlanServer::goalCB() {
   auto start_timer = std::chrono::high_resolution_clock::now();
   // check_vel is true if local planner reaches global goal

@@ -22,15 +22,8 @@
         </include>
     </group>
 
-    <group ns="$(arg robot)" unless="$(arg use_mp)">
-        <include file="$(find map_plan_launch)/launch/planner.launch">
-        </include>
-    </group>
-
-    <group ns="$(arg robot)" if="$(arg use_mp)">
-        <include file="$(find map_plan_launch)/launch/mp_planner.launch">
-            <arg name="planner_config" value="$(arg planner_config)" />
-            <arg name="odom" value="$(arg odom)" />
-        </include>
-    </group>
+    <include file="$(find map_plan_launch)/launch/mp_planner.launch">
+        <arg name="planner_config" value="$(arg planner_config)" />
+        <arg name="odom" value="$(arg odom)" />
+    </include>
 </launch>

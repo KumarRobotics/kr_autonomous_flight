@@ -28,10 +28,9 @@ find_package(
 generate_dynamic_reconfigure_options(cfg/ActionPlanner.cfg)
 
 catkin_package(CATKIN_DEPENDS dynamic_reconfigure kr_planning_msgs)
-include_directories(include)
+include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_library(planners src/planner_details.cpp src/data_conversions.cpp src/primitive_ros_utils.cpp)
-target_include_directories(planners PUBLIC src ${catkin_INCLUDE_DIRS})
 target_link_libraries(planners PUBLIC ${catkin_LIBRARIES})
 
 add_executable(global_plan_server src/global_plan_server.cpp)
@@ -40,7 +39,6 @@ add_dependencies(global_plan_server ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
 
 add_executable(local_plan_server src/local_plan_server.cpp )
-target_include_directories(local_plan_server PUBLIC)
 target_link_libraries(local_plan_server PUBLIC Boost::timer planners)
 add_dependencies(local_plan_server ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})

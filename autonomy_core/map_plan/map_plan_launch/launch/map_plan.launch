@@ -20,10 +20,11 @@
             <arg name="mapper_config" value="$(arg mapper_config)"/>
             <arg name="cloud" value="$(arg cloud)"/>
         </include>
-    </group>
-
     <include file="$(find map_plan_launch)/launch/mp_planner.launch">
         <arg name="planner_config" value="$(arg planner_config)" />
         <arg name="odom" value="$(arg odom)" />
     </include>
+
+    </group>
+
 </launch>

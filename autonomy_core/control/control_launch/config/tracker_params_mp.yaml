@@ -60,7 +60,6 @@ trajectory_planner:
   search/w_time: 3.0 # time weight
   search/use_jerk: false # set false now
   search/time_res: 0.15 # time resolution to index the path
-  map_frame: "quadrotor/map"
 
 stopping_policy:
   acc_xy_des: 4.0 # stopping policy x-y maximum acceleration

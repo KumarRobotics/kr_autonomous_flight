@@ -286,8 +286,9 @@ kr_planning_msgs::SplineTrajectory DispersionPlanner::plan(
       .heuristic = heuristic_,
       .access_graph = false,
       .start_index = planner_start_index};
-  if (graph_->spatial_dim() == 2)
-    options.fixed_z = action_server_goal_.p_init.position.z;
+  if (graph_->spatial_dim() == 2) {
+    options.fixed_z = start.pos(2);
+  }
   //   if (msg->check_vel) options.velocity_threshold = tol_vel;
   if (planner_start_index == -1 ||
       planner_start_index >= graph_->num_tiled_states())
@@ -365,7 +366,7 @@ kr_planning_msgs::SplineTrajectory DispersionPlanner::plan(
   ROS_INFO("Finished planning. Planning time %f s", total_time);
 
   auto spline_msg = motion_primitives::path_to_spline_traj_msg(
-      path, map.header, action_server_goal_.p_init.position.z);
+      path, map.header, options.fixed_z);
   traj_total_time_ = 0;
   for (auto spline : spline_msg.data) {
     traj_total_time_ += spline.t_total;

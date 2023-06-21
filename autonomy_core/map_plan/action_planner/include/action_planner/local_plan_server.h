@@ -3,7 +3,7 @@
 
 #include <action_planner/ActionPlannerConfig.h>
 #include <action_planner/data_conversions.h>  // setMap, getMap, etc
-#include <action_planner/planner_details.h> // PlannerType
+#include <action_planner/planner_details.h>   // PlannerType
 #include <actionlib/server/simple_action_server.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <kr_planning_msgs/PlanTwoPointAction.h>
@@ -38,9 +38,7 @@ class LocalPlanServer {
   // current local map
   kr_planning_msgs::VoxelMapConstPtr local_map_ptr_ = nullptr;
 
-  // actionlib
-  kr_planning_msgs::PlanTwoPointGoal goal_;
-  // action lib
+  // action server
   std::unique_ptr<
       actionlib::SimpleActionServer<kr_planning_msgs::PlanTwoPointAction>>
       local_as_;
@@ -60,13 +58,15 @@ class LocalPlanServer {
    * @brief Call planner after setting planner start and goal and specify params
    * (use jrk, acc or vel)
    */
-  void process_goal();
+  void process_goal(const kr_planning_msgs::PlanTwoPointGoal& goal);
 
   /***@yuwei***/
   /**
    * @brief Record result (trajectory, status, etc)
    */
-  void process_result(const kr_planning_msgs::SplineTrajectory& traj_msg);
+  void process_result(const kr_planning_msgs::SplineTrajectory& traj_msg,
+                      ros::Duration execution_time,
+                      int epoch);
 
   /**
    * @brief map callback, update local_map_ptr_

@@ -16,10 +16,10 @@ def publisher():
     msg.header.stamp = rospy.Time.now()
     msg.goal.p_init.position.x = 5.0
     msg.goal.p_init.position.y = 8.0
-    msg.goal.p_init.position.z = 0.0
+    msg.goal.p_init.position.z = 1.0
     msg.goal.p_final.position.x = 19.0
     msg.goal.p_final.position.y = 8.0
-    msg.goal.p_final.position.z = 0.0
+    msg.goal.p_final.position.z = 1.0
 
     start_and_goal = MarkerArray()
     start = Marker()

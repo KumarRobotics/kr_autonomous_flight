@@ -1,27 +1,23 @@
 #ifndef ACTION_PLANNER_PLANNER_DETAILS_H_
 #define ACTION_PLANNER_PLANNER_DETAILS_H_
 
+#include <action_planner/data_conversions.h>
+#include <action_planner/primitive_ros_utils.h>
 #include <kr_planning_msgs/PlanTwoPointAction.h>
+#include <kr_planning_rviz_plugins/data_ros_utils.h>  //vec_to_cloud
 #include <motion_primitives/graph_search.h>
 #include <motion_primitives/utils.h>
 #include <mpl_basis/trajectory.h>
 #include <mpl_collision/map_util.h>
 #include <mpl_planner/map_planner.h>
 #include <plan_manage/planner_manager.h>
-#include <action_planner/data_conversions.h>
-#include <action_planner/primitive_ros_utils.h>
 #include <traj_opt_ros/ros_bridge.h>
 #include <traj_utils/planning_visualization.h>
-#include <kr_planning_rviz_plugins/data_ros_utils.h> //vec_to_cloud
 
 class PlannerType {
  public:
-  explicit PlannerType(
-      const ros::NodeHandle& nh,
-      const std::string& frame_id,
-      const kr_planning_msgs::PlanTwoPointGoal& action_server_goal =
-          kr_planning_msgs::PlanTwoPointGoal())
-      : nh_(nh), frame_id_(frame_id), action_server_goal_(action_server_goal) {}
+  explicit PlannerType(const ros::NodeHandle& nh, const std::string& frame_id)
+      : nh_(nh), frame_id_(frame_id) {}
   virtual void setup() = 0;
   virtual kr_planning_msgs::SplineTrajectory plan(
       const MPL::Waypoint3D& start,
@@ -29,6 +25,9 @@ class PlannerType {
       const kr_planning_msgs::VoxelMap& map) = 0;
 
   virtual MPL::Waypoint3D evaluate(double t) = 0;
+  void setGoal(const kr_planning_msgs::PlanTwoPointGoal& goal) {
+    action_server_goal_ = goal;
+  }
   double getTotalTrajTime() { return traj_total_time_; }
 
   ros::NodeHandle nh_;
@@ -36,17 +35,13 @@ class PlannerType {
   double traj_total_time_;
   // If replanning, some planners requires the previous trajectory which is
   // contained in the action server goal
-  const kr_planning_msgs::PlanTwoPointGoal action_server_goal_;
+  kr_planning_msgs::PlanTwoPointGoal action_server_goal_;
 };
 
 class MPLPlanner : public PlannerType {
  public:
-  explicit MPLPlanner(
-      const ros::NodeHandle& nh,
-      const std::string& frame_id,
-      const kr_planning_msgs::PlanTwoPointGoal& action_server_goal =
-          kr_planning_msgs::PlanTwoPointGoal())
-      : PlannerType(nh, frame_id, action_server_goal) {}
+  explicit MPLPlanner(const ros::NodeHandle& nh, const std::string& frame_id)
+      : PlannerType(nh, frame_id) {}
 
   void setup();
   kr_planning_msgs::SplineTrajectory plan(
@@ -67,12 +62,8 @@ class MPLPlanner : public PlannerType {
 };
 class OptPlanner : public PlannerType {
  public:
-  explicit OptPlanner(
-      const ros::NodeHandle& nh,
-      const std::string& frame_id,
-      const kr_planning_msgs::PlanTwoPointGoal& action_server_goal =
-          kr_planning_msgs::PlanTwoPointGoal())
-      : PlannerType(nh, frame_id, action_server_goal) {}
+  explicit OptPlanner(const ros::NodeHandle& nh, const std::string& frame_id)
+      : PlannerType(nh, frame_id) {}
 
   // TODO, be able to pass initial search-based path in
   void setup();
@@ -90,12 +81,9 @@ class OptPlanner : public PlannerType {
 
 class DispersionPlanner : public PlannerType {
  public:
-  explicit DispersionPlanner(
-      const ros::NodeHandle& nh,
-      const std::string& frame_id,
-      const kr_planning_msgs::PlanTwoPointGoal& action_server_goal =
-          kr_planning_msgs::PlanTwoPointGoal())
-      : PlannerType(nh, frame_id, action_server_goal) {}
+  explicit DispersionPlanner(const ros::NodeHandle& nh,
+                             const std::string& frame_id)
+      : PlannerType(nh, frame_id) {}
 
   void setup();
   kr_planning_msgs::SplineTrajectory plan(

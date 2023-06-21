@@ -13,6 +13,7 @@ void OptPlanner::setup() {
   /* initialize main modules */
   planner_manager_.reset(new opt_planner::PlannerManager);
   planner_manager_->initPlanModules(nh_, mp_map_util_);
+  planner_manager_->frame_id_ = frame_id_;
 
   // TODO(xu:) not differentiating between 2D and 3D, causing extra resource
   // usage for 2D case, this needed to be changed in both planner util as well
@@ -207,9 +208,7 @@ kr_planning_msgs::SplineTrajectory MPLPlanner::plan(
   return spline_msg;
 }
 
-MPL::Waypoint3D MPLPlanner::evaluate(double t) {
-  return mp_traj_.evaluate(t);
-}
+MPL::Waypoint3D MPLPlanner::evaluate(double t) { return mp_traj_.evaluate(t); }
 
 //
 // Min Dispersion Planner

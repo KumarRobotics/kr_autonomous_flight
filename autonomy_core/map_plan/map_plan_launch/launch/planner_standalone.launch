@@ -3,6 +3,7 @@
     <arg name="robot" default="$(optenv ROBOT_NAME quadrotor)"/>
     <arg name="odom" default="odom"/>
     <arg name="planner_config" default="$(find control_launch)/config/tracker_params_mp.yaml"/>
+    <arg name="viz" default="true"/>
 
     <node pkg="action_planner"
       type="local_plan_server"
@@ -12,8 +13,10 @@
       <remap from="~local_voxel_map" to="/voxel_map"/>
     </node>
 
+<group if="$(arg viz)">
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find map_plan_launch)/rviz/planner_standalone.rviz -f map" respawn="false" output="screen">
     </node>
+    </group>
 
     <include file="$(find kr_planning_msgs_utils)/launch/image_to_map.launch">
     </include>

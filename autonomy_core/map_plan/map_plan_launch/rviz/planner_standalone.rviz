@@ -8,7 +8,8 @@ Panels:
         - /Status1
         - /SplineTrajectory1
         - /MarkerArray1
-        - /MarkerArray1/Status1
+        - /Marker1
+        - /PolyhedronArray1
       Splitter Ratio: 0.5211267471313477
     Tree Height: 746
   - Class: rviz/Selection
@@ -111,6 +112,28 @@ Visualization Manager:
         "": true
       Queue Size: 100
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /local_plan_server/trajectory_planner/kino_astar_list
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Alpha: 0.20000000298023224
+      BoundColor: 255; 0; 0
+      Class: decomp_rviz_plugins/PolyhedronArray
+      Enabled: true
+      MeshColor: 0; 170; 255
+      Name: PolyhedronArray
+      Queue Size: 10
+      Scale: 0.10000000149011612
+      State: Mesh
+      Topic: /local_plan_server/trajectory_planner/sikangpolyhedron
+      Unreliable: false
+      Value: true
+      VsColor: 0; 255; 0
+      VsScale: 1
   Enabled: true
   Global Options:
     Background Color: 189; 234; 201
@@ -144,7 +167,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 19.44475746154785
+      Distance: 40.22694778442383
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -160,9 +183,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8547976016998291
+      Pitch: 0.8697975873947144
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 3.6817398071289062
+      Yaw: 3.6667392253875732
     Saved: ~
 Window Geometry:
   Displays:

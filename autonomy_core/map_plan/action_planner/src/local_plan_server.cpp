@@ -11,6 +11,12 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
 
   local_map_cleared_pub_ = pnh_.advertise<kr_planning_msgs::VoxelMap>(
       "local_voxel_map_cleared", 1, true);
+  local_as_->registerGoalCallback(boost::bind(&LocalPlanServer::goalCB, this));
+  while (local_map_ptr_ == nullptr) {
+    ROS_WARN("[Local plan server]: Waiting for local map...");
+    ros::Duration(0.1).sleep();
+    ros::spinOnce();
+  }
   int planner_type_id;
   traj_planner_nh_.param("planner_type", planner_type_id, 0);
 
@@ -30,7 +36,6 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   }
 
   planner_type_->setup();
-  local_as_->registerGoalCallback(boost::bind(&LocalPlanServer::goalCB, this));
   local_as_->start();
 }
 

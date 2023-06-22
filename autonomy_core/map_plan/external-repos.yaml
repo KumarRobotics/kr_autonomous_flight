@@ -1,0 +1,6 @@
+repositories:
+  kr_planning_msgs:
+    type: git
+    url: https://github.com/KumarRobotics/kr_planning_msgs.git
+    version: main
+

@@ -10,6 +10,7 @@ Panels:
         - /MarkerArray1
         - /Marker1
         - /PolyhedronArray1
+        - /Axes1
       Splitter Ratio: 0.5211267471313477
     Tree Height: 746
   - Class: rviz/Selection
@@ -94,9 +95,9 @@ Visualization Manager:
       Class: kr_planning_rviz_plugins/SplineTrajectory
       Enabled: true
       Name: SplineTrajectory
-      Num of samples: 100
+      Num of samples: 1000
       PosColor: 204; 51; 204
-      PosScale: 0.10000000149011612
+      PosScale: 0.15000000596046448
       Queue Size: 10
       Topic: /local_plan_server/trajectory
       Unreliable: false
@@ -134,6 +135,15 @@ Visualization Manager:
       Value: true
       VsColor: 0; 255; 0
       VsScale: 1
+    - Alpha: 1
+      Class: rviz/Axes
+      Enabled: true
+      Length: 1
+      Name: Axes
+      Radius: 0.20000000298023224
+      Reference Frame: <Fixed Frame>
+      Show Trail: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 189; 234; 201
@@ -167,7 +177,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 40.22694778442383
+      Distance: 43.301109313964844
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -183,9 +193,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8697975873947144
+      Pitch: 0.694797933101654
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 3.6667392253875732
+      Yaw: 1.1967377662658691
     Saved: ~
 Window Geometry:
   Displays:

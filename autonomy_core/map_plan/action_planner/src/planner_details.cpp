@@ -235,7 +235,14 @@ kr_planning_msgs::SplineTrajectory DispersionPlanner::plan(
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map) {
   // TODO cleanup if(compute_first_mp) blocks
-  Eigen::Vector3d start_state(start.pos);
+
+  // TODO harcoded for 2D
+  Eigen::VectorXd start_state(graph_->state_dim());
+  start_state << start.pos(0), start.pos(1), start.vel(0), start.vel(1),
+      start.acc(0), start.acc(1);
+  Eigen::VectorXd goal_state(graph_->state_dim());
+  goal_state << goal.pos(0), goal.pos(1), goal.vel(0), goal.vel(1),
+      goal.acc(0), goal.acc(1);
   const kr_planning_msgs::SplineTrajectory last_traj =
       action_server_goal_.last_traj;
   double eval_time = action_server_goal_.eval_time;
@@ -280,12 +287,13 @@ kr_planning_msgs::SplineTrajectory DispersionPlanner::plan(
 
   motion_primitives::GraphSearch::Option options = {
       .start_state = start_state,
-      .goal_state = goal.pos,
+      .goal_state = goal_state,
       .distance_threshold = tol_pos_,
       .parallel_expand = true,
       .heuristic = heuristic_,
       .access_graph = false,
-      .start_index = planner_start_index};
+      .start_index = planner_start_index,
+      .step_size = .2};
   if (graph_->spatial_dim() == 2) {
     options.fixed_z = start.pos(2);
   }

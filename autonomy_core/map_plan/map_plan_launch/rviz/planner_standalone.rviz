@@ -144,6 +144,14 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Show Trail: false
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /local_plan_server/trajectory_planner/visited
+      Name: MarkerArray
+      Namespaces:
+        pos: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 189; 234; 201
@@ -177,7 +185,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 43.301109313964844
+      Distance: 25.08283233642578
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -193,9 +201,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.694797933101654
+      Pitch: 0.43979817628860474
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 1.1967377662658691
+      Yaw: 0.631738007068634
     Saved: ~
 Window Geometry:
   Displays:

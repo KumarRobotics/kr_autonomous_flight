@@ -241,8 +241,8 @@ kr_planning_msgs::SplineTrajectory DispersionPlanner::plan(
   start_state << start.pos(0), start.pos(1), start.vel(0), start.vel(1),
       start.acc(0), start.acc(1);
   Eigen::VectorXd goal_state(graph_->state_dim());
-  goal_state << goal.pos(0), goal.pos(1), goal.vel(0), goal.vel(1),
-      goal.acc(0), goal.acc(1);
+  goal_state << goal.pos(0), goal.pos(1), goal.vel(0), goal.vel(1), goal.acc(0),
+      goal.acc(1);
   const kr_planning_msgs::SplineTrajectory last_traj =
       action_server_goal_.last_traj;
   double eval_time = action_server_goal_.eval_time;
@@ -383,7 +383,7 @@ kr_planning_msgs::SplineTrajectory DispersionPlanner::plan(
   ROS_INFO_STREAM("path size: " << path.size());
   dispersion_traj_ = path;
   const auto visited_marray = motion_primitives::StatesToMarkerArray(
-      gs.GetVisitedStates(), gs.spatial_dim(), map.header);
+      gs.GetVisitedStates(), gs.spatial_dim(), map.header, 0.1, false, options.fixed_z);
   visited_pub_.publish(visited_marray);
 
   return spline_msg;

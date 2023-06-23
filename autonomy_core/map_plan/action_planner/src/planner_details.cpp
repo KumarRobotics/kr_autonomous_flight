@@ -2,9 +2,9 @@
 #include <action_planner/planner_details.h>
 
 //
-// Opt Planner
+// Double Description Planner
 //
-void OptPlanner::setup() {
+void OptPlanner::DoubleDescription::setup() {
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
   ROS_WARN("[LocalPlanServer:] Optimization planner mode!!!!!");
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
@@ -19,7 +19,7 @@ void OptPlanner::setup() {
   // as map util, which requires the slicing map function
 }
 
-kr_planning_msgs::SplineTrajectory OptPlanner::plan(
+kr_planning_msgs::SplineTrajectory OptPlanner::DoubleDescription::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map) {
@@ -31,11 +31,11 @@ kr_planning_msgs::SplineTrajectory OptPlanner::plan(
   endState << goal.pos(0), goal.vel(0), goal.acc(0), goal.pos(1), goal.vel(1),
       goal.acc(1), goal.pos(2), goal.vel(2), goal.acc(2);
 
-  bool valid = planner_manager_->localPlanner(startState, endState);
+  bool valid =
+      planner_manager_->localPlanner(startState, endState, search_path_);
   if (valid) {
     opt_traj_ = planner_manager_->local_data_.traj_;
     traj_total_time_ = opt_traj_.getTotalDuration();
-    ROS_WARN("[LocalPlanServer] planning success ! !!!!!");
   } else {
     return kr_planning_msgs::SplineTrajectory();
   }
@@ -68,7 +68,7 @@ kr_planning_msgs::SplineTrajectory OptPlanner::plan(
   return spline_msg;
 }
 
-MPL::Waypoint3D OptPlanner::evaluate(double t) {
+MPL::Waypoint3D OptPlanner::DoubleDescription::evaluate(double t) {
   MPL::Waypoint3D waypoint;
 
   waypoint.pos = opt_traj_.getPos(t);
@@ -82,7 +82,7 @@ MPL::Waypoint3D OptPlanner::evaluate(double t) {
 // MPL Planner
 //
 
-void MPLPlanner::setup() {
+void SearchPlanner::UniformSampling::setup() {
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
   ROS_WARN("[LocalPlanServer:] MPL planner mode!!!!!");
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
@@ -156,12 +156,12 @@ void MPLPlanner::setup() {
   mp_planner_util_->setTmax(ndt * dt);  // Set max time horizon of planning
   mp_planner_util_->setMaxNum(
       max_num);  // Set maximum allowed expansion, -1 means no limitation
-  mp_planner_util_->setU(U);  // 2D discretization if false, 3D if true
-  mp_planner_util_->setW(W);  // 2D discretization if false, 3D if true
+  mp_planner_util_->setU(U);
+  mp_planner_util_->setW(W);
   mp_planner_util_->setLPAstar(false);  // Use Astar
 }
 
-kr_planning_msgs::SplineTrajectory MPLPlanner::plan(
+kr_planning_msgs::SplineTrajectory SearchPlanner::UniformSampling::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map) {
@@ -191,7 +191,6 @@ kr_planning_msgs::SplineTrajectory MPLPlanner::plan(
   if (valid) {
     mp_traj_ = mp_planner_util_->getTraj();
     traj_total_time_ = mp_traj_.getTotalTime();
-    ROS_WARN("[LocalPlanServer] planning success ! !!!!!");
   } else {
     return kr_planning_msgs::SplineTrajectory();
   }
@@ -207,13 +206,15 @@ kr_planning_msgs::SplineTrajectory MPLPlanner::plan(
   return spline_msg;
 }
 
-MPL::Waypoint3D MPLPlanner::evaluate(double t) { return mp_traj_.evaluate(t); }
+MPL::Waypoint3D SearchPlanner::UniformSampling::evaluate(double t) {
+  return mp_traj_.evaluate(t);
+}
 
 //
 // Min Dispersion Planner
 //
 
-void DispersionPlanner::setup() {
+void SearchPlanner::Dispersion::setup() {
   nh_.param("trajectory_planner/tol_pos", tol_pos_, 0.5);
   ROS_INFO_STREAM("Position tolerance: " << tol_pos_);
   nh_.param("trajectory_planner/global_goal_tol_vel", tol_vel_, 1.5);
@@ -230,7 +231,7 @@ void DispersionPlanner::setup() {
       nh_.advertise<visualization_msgs::MarkerArray>("visited", 1, true);
 }
 
-kr_planning_msgs::SplineTrajectory DispersionPlanner::plan(
+kr_planning_msgs::SplineTrajectory SearchPlanner::Dispersion::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map) {
@@ -375,21 +376,22 @@ kr_planning_msgs::SplineTrajectory DispersionPlanner::plan(
 
   auto spline_msg = motion_primitives::path_to_spline_traj_msg(
       path, map.header, options.fixed_z);
-  traj_total_time_ = 0;
-  for (auto spline : spline_msg.data) {
-    traj_total_time_ += spline.t_total;
-  }
-
-  ROS_INFO_STREAM("path size: " << path.size());
+  traj_total_time_ = spline_msg.data.back().t_total;
   dispersion_traj_ = path;
-  const auto visited_marray = motion_primitives::StatesToMarkerArray(
-      gs.GetVisitedStates(), gs.spatial_dim(), map.header, 0.1, false, options.fixed_z);
+  const auto visited_marray =
+      motion_primitives::StatesToMarkerArray(gs.GetVisitedStates(),
+                                             gs.spatial_dim(),
+                                             map.header,
+                                             0.1,
+                                             false,
+                                             options.fixed_z);
   visited_pub_.publish(visited_marray);
 
   return spline_msg;
 };
 
-MPL::Waypoint3D DispersionPlanner::evaluate(double t) {
+MPL::Waypoint3D SearchPlanner::Dispersion::evaluate(double t) {
+  // TODO(Laura) may be broken
   MPL::Waypoint3D waypoint;
 
   waypoint.pos = motion_primitives::getState(dispersion_traj_, t, 0);
@@ -397,4 +399,79 @@ MPL::Waypoint3D DispersionPlanner::evaluate(double t) {
   waypoint.acc = motion_primitives::getState(dispersion_traj_, t, 2);
 
   return waypoint;
+}
+
+void CompositePlanner::setup() {
+  int search_planner_type_id, opt_planner_type_id;
+  nh_.param("search_planner_type", search_planner_type_id, -1);
+  nh_.param("opt_planner_type", opt_planner_type_id, -1);
+  search_traj_pub_ = nh_.advertise<kr_planning_msgs::SplineTrajectory>(
+      "search_trajectory", 1, true);
+
+  switch (search_planner_type_id) {
+    case 0:
+      search_planner_type_ = new SearchPlanner::UniformSampling(nh_, frame_id_);
+      break;
+    case 1:
+      search_planner_type_ = new SearchPlanner::Dispersion(nh_, frame_id_);
+      break;
+    // case 2:
+    //   search_planner_type_ = new SearchPlanner::Geometric(nh_,
+    //   frame_id_); break;
+    // case 3:
+    //   search_planner_type_ = new
+    //   SearchPlanner::StraightLine(nh_, frame_id_); break;
+    default:
+      ROS_ERROR("No search planner selected; cannot continue");
+      return;
+  }
+
+  switch (opt_planner_type_id) {
+    case 0:
+      opt_planner_type_ = new OptPlanner::DoubleDescription(nh_, frame_id_);
+      break;
+    default:
+      ROS_ERROR("No opt planner selected; will use search planner only.");
+      break;
+  }
+
+  if (search_planner_type_ != nullptr) {
+    search_planner_type_->setup();
+  }
+  if (opt_planner_type_ != nullptr) {
+    opt_planner_type_->setup();
+  }
+}
+
+kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
+    const MPL::Waypoint3D& start,
+    const MPL::Waypoint3D& goal,
+    const kr_planning_msgs::VoxelMap& map) {
+  auto result = search_planner_type_->plan(start, goal, map);
+  search_traj_pub_.publish(result);
+  if (opt_planner_type_ != nullptr) {
+    auto path = search_planner_type_->SamplePath();
+    // Double description initialization traj must fully reach the end or it
+    // will fail.
+    // TODO (Laura) consider whether should actually calculate the BVP instead
+    path.push_back(goal.pos);
+    opt_planner_type_->setSearchPath(path);
+    result = opt_planner_type_->plan(start, goal, map);
+  }
+  return result;
+}
+
+MPL::Waypoint3D CompositePlanner::evaluate(double t) {
+  if (opt_planner_type_ != nullptr) {
+    return opt_planner_type_->evaluate(t);
+  }
+  return search_planner_type_->evaluate(t);
+}
+
+std::vector<Eigen::Vector3d> PlannerType::SamplePath() {
+  std::vector<Eigen::Vector3d> result(traj_total_time_ / path_sampling_dt_ + 1);
+  for (int i = 0; i < result.size(); i++) {
+    result[i] = evaluate(path_sampling_dt_ * i).pos;
+  }
+  return result;
 }

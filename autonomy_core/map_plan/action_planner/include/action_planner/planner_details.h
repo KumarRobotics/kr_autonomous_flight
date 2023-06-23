@@ -29,18 +29,67 @@ class PlannerType {
     action_server_goal_ = goal;
   }
   double getTotalTrajTime() { return traj_total_time_; }
+  void setSearchPath(const std::vector<Eigen::Vector3d>& search_path) {
+    search_path_ = search_path;
+  }
+  std::vector<Eigen::Vector3d> SamplePath();
 
   ros::NodeHandle nh_;
   std::string frame_id_;
   double traj_total_time_;
+  //TODO(Laura) pass as param
+  double path_sampling_dt_ = 0.15;
+  // TODO(Laura) not sure if this is the best way to pass the search path
+  std::vector<Eigen::Vector3d> search_path_;
   // If replanning, some planners requires the previous trajectory which is
   // contained in the action server goal
   kr_planning_msgs::PlanTwoPointGoal action_server_goal_;
 };
 
-class MPLPlanner : public PlannerType {
+class CompositePlanner : public PlannerType {
  public:
-  explicit MPLPlanner(const ros::NodeHandle& nh, const std::string& frame_id)
+  explicit CompositePlanner(const ros::NodeHandle& nh,
+                            const std::string& frame_id)
+      : PlannerType(nh, frame_id) {}
+  void setup();
+  kr_planning_msgs::SplineTrajectory plan(
+      const MPL::Waypoint3D& start,
+      const MPL::Waypoint3D& goal,
+      const kr_planning_msgs::VoxelMap& map);
+  MPL::Waypoint3D evaluate(double t);
+
+ private:
+  PlannerType* search_planner_type_;
+  PlannerType* opt_planner_type_;
+  ros::Publisher search_traj_pub_;
+};
+
+namespace OptPlanner {
+class DoubleDescription : public PlannerType {
+ public:
+  explicit DoubleDescription(const ros::NodeHandle& nh,
+                             const std::string& frame_id)
+      : PlannerType(nh, frame_id) {}
+
+  void setup();
+  kr_planning_msgs::SplineTrajectory plan(
+      const MPL::Waypoint3D& start,
+      const MPL::Waypoint3D& goal,
+      const kr_planning_msgs::VoxelMap& map);
+  MPL::Waypoint3D evaluate(double t);
+
+ private:
+  opt_planner::PlannerManager::Ptr planner_manager_;
+  min_jerk::Trajectory opt_traj_;
+  std::shared_ptr<MPL::VoxelMapUtil> mp_map_util_;
+};
+}  // namespace OptPlanner
+
+namespace SearchPlanner {
+class UniformSampling : public PlannerType {
+ public:
+  explicit UniformSampling(const ros::NodeHandle& nh,
+                           const std::string& frame_id)
       : PlannerType(nh, frame_id) {}
 
   void setup();
@@ -60,29 +109,10 @@ class MPLPlanner : public PlannerType {
   bool use_3d_local_;
   ros::Publisher expanded_cloud_pub;
 };
-class OptPlanner : public PlannerType {
+
+class Dispersion : public PlannerType {
  public:
-  explicit OptPlanner(const ros::NodeHandle& nh, const std::string& frame_id)
-      : PlannerType(nh, frame_id) {}
-
-  // TODO, be able to pass initial search-based path in
-  void setup();
-  kr_planning_msgs::SplineTrajectory plan(
-      const MPL::Waypoint3D& start,
-      const MPL::Waypoint3D& goal,
-      const kr_planning_msgs::VoxelMap& map);
-  MPL::Waypoint3D evaluate(double t);
-
- private:
-  opt_planner::PlannerManager::Ptr planner_manager_;
-  min_jerk::Trajectory opt_traj_;
-  std::shared_ptr<MPL::VoxelMapUtil> mp_map_util_;
-};
-
-class DispersionPlanner : public PlannerType {
- public:
-  explicit DispersionPlanner(const ros::NodeHandle& nh,
-                             const std::string& frame_id)
+  explicit Dispersion(const ros::NodeHandle& nh, const std::string& frame_id)
       : PlannerType(nh, frame_id) {}
 
   void setup();
@@ -100,5 +130,6 @@ class DispersionPlanner : public PlannerType {
       dispersion_traj_;
   ros::Publisher visited_pub_;
 };
+}  // namespace SearchPlanner
 
 #endif  // ACTION_PLANNER_PLANNER_DETAILS_H_

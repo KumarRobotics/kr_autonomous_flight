@@ -11,6 +11,8 @@ Panels:
         - /Marker1
         - /PolyhedronArray1
         - /Axes1
+        - /MarkerArray2
+        - /SplineTrajectory2
       Splitter Ratio: 0.5211267471313477
     Tree Height: 746
   - Class: rviz/Selection
@@ -97,7 +99,7 @@ Visualization Manager:
       Name: SplineTrajectory
       Num of samples: 1000
       PosColor: 204; 51; 204
-      PosScale: 0.15000000596046448
+      PosScale: 0.20000000298023224
       Queue Size: 10
       Topic: /local_plan_server/trajectory
       Unreliable: false
@@ -118,7 +120,7 @@ Visualization Manager:
       Marker Topic: /local_plan_server/trajectory_planner/kino_astar_list
       Name: Marker
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Alpha: 0.20000000298023224
@@ -149,9 +151,25 @@ Visualization Manager:
       Marker Topic: /local_plan_server/trajectory_planner/visited
       Name: MarkerArray
       Namespaces:
-        pos: true
+        {}
       Queue Size: 100
       Value: true
+    - AccColor: 10; 200; 55
+      AccScale: 0.019999999552965164
+      AccVis: false
+      Class: kr_planning_rviz_plugins/SplineTrajectory
+      Enabled: true
+      Name: SplineTrajectory
+      Num of samples: 100
+      PosColor: 204; 51; 204
+      PosScale: 0.10000000149011612
+      Queue Size: 10
+      Topic: /local_plan_server/trajectory_planner/search_trajectory
+      Unreliable: false
+      Value: true
+      VelColor: 85; 85; 255
+      VelScale: 0.019999999552965164
+      VelVis: false
   Enabled: true
   Global Options:
     Background Color: 189; 234; 201
@@ -185,7 +203,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 25.08283233642578
+      Distance: 36.87562942504883
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -193,17 +211,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 12.252294540405273
-        Y: 5.749456405639648
-        Z: 2.255819797515869
+        X: 10.107710838317871
+        Y: 2.5894775390625
+        Z: 3.9785733222961426
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.43979817628860474
+      Pitch: 0.7347981333732605
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 0.631738007068634
+      Yaw: 5.769919395446777
     Saved: ~
 Window Geometry:
   Displays:

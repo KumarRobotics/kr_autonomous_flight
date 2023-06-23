@@ -27,6 +27,7 @@ class LocalPlanServer {
   ros::NodeHandle traj_planner_nh_;
   ros::Subscriber local_map_sub_;
   ros::Publisher local_map_cleared_pub_;
+  ros::Publisher traj_pub_;
 
   // visualization messages pub
   ros::Publisher sg_pub;

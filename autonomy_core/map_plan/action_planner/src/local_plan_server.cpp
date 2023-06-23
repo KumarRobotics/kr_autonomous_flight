@@ -11,30 +11,16 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
 
   local_map_cleared_pub_ = pnh_.advertise<kr_planning_msgs::VoxelMap>(
       "local_voxel_map_cleared", 1, true);
+  traj_pub_ =
+      pnh_.advertise<kr_planning_msgs::SplineTrajectory>("trajectory", 1, true);
   local_as_->registerGoalCallback(boost::bind(&LocalPlanServer::goalCB, this));
   while (local_map_ptr_ == nullptr) {
     ROS_WARN("[Local plan server]: Waiting for local map...");
     ros::Duration(0.1).sleep();
     ros::spinOnce();
   }
-  int planner_type_id;
-  traj_planner_nh_.param("planner_type", planner_type_id, 0);
 
-  switch (planner_type_id) {
-    case 0:
-      planner_type_ = new MPLPlanner(traj_planner_nh_, frame_id_);
-      break;
-    case 1:
-      planner_type_ = new OptPlanner(traj_planner_nh_, frame_id_);
-      break;
-    case 2:
-      planner_type_ = new DispersionPlanner(traj_planner_nh_, frame_id_);
-      break;
-    default:
-      ROS_ERROR("Invalid planner type id: %d", planner_type_id);
-      break;
-  }
-
+  planner_type_ = new CompositePlanner(traj_planner_nh_, frame_id_);
   planner_type_->setup();
   local_as_->start();
 }
@@ -202,6 +188,7 @@ void LocalPlanServer::process_result(
       local_as_->setAborted();
     }
   }
+  ROS_WARN("[LocalPlanServer] planning success ! !!!!!");
 
   kr_planning_msgs::PlanTwoPointResult result;
   if (solved) {
@@ -258,7 +245,7 @@ void LocalPlanServer::process_result(
 
     result.traj = traj_msg;
     result.traj.header.frame_id = frame_id_;
-    traj_opt::TrajRosBridge::publish_msg(result.traj);
+    traj_pub_.publish(traj_msg);
 
     // execution_time (set in replanner)
     // equals 1.0/local_replan_rate

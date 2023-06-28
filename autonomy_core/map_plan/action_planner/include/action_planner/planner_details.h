@@ -123,12 +123,13 @@ class Dispersion : public PlannerType {
   MPL::Waypoint3D evaluate(double t);
 
  private:
-  double tol_pos_, tol_vel_;
+  double tol_pos_;
   std::string heuristic_;
   std::shared_ptr<motion_primitives::MotionPrimitiveGraph> graph_;
   std::vector<std::shared_ptr<motion_primitives::MotionPrimitive>>
       dispersion_traj_;
   ros::Publisher visited_pub_;
+  motion_primitives::GraphSearch::Option options_;
 };
 }  // namespace SearchPlanner
 

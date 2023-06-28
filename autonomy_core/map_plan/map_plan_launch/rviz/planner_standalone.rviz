@@ -120,7 +120,7 @@ Visualization Manager:
       Marker Topic: /local_plan_server/trajectory_planner/kino_astar_list
       Name: Marker
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 0.20000000298023224
@@ -151,7 +151,7 @@ Visualization Manager:
       Marker Topic: /local_plan_server/trajectory_planner/visited
       Name: MarkerArray
       Namespaces:
-        {}
+        pos: true
       Queue Size: 100
       Value: true
     - AccColor: 10; 200; 55
@@ -161,8 +161,8 @@ Visualization Manager:
       Enabled: true
       Name: SplineTrajectory
       Num of samples: 100
-      PosColor: 204; 51; 204
-      PosScale: 0.10000000149011612
+      PosColor: 114; 159; 207
+      PosScale: 0.20000000298023224
       Queue Size: 10
       Topic: /local_plan_server/trajectory_planner/search_trajectory
       Unreliable: false
@@ -203,7 +203,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 36.87562942504883
+      Distance: 18.97081184387207
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -211,17 +211,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 10.107710838317871
-        Y: 2.5894775390625
-        Z: 3.9785733222961426
+        X: -3.3090574741363525
+        Y: 6.014548301696777
+        Z: 4.285130977630615
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7347981333732605
+      Pitch: 0.9847980737686157
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 5.769919395446777
+      Yaw: 3.874922037124634
     Saved: ~
 Window Geometry:
   Displays:

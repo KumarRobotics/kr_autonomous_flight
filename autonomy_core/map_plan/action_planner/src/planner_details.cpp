@@ -74,7 +74,6 @@ MPL::Waypoint3D OptPlanner::DoubleDescription::evaluate(double t) {
   waypoint.pos = opt_traj_.getPos(t);
   waypoint.vel = opt_traj_.getVel(t);
   waypoint.acc = opt_traj_.getAcc(t);
-
   return waypoint;
 }
 
@@ -215,15 +214,12 @@ MPL::Waypoint3D SearchPlanner::UniformSampling::evaluate(double t) {
 //
 
 void SearchPlanner::Dispersion::setup() {
-  nh_.param("trajectory_planner/tol_pos", tol_pos_, 0.5);
+  nh_.param("tol_pos", tol_pos_, 0.5);
   ROS_INFO_STREAM("Position tolerance: " << tol_pos_);
-  nh_.param("trajectory_planner/global_goal_tol_vel", tol_vel_, 1.5);
   nh_.param<std::string>("heuristic", heuristic_, "min_time");
 
   std::string graph_file;
-  nh_.param("graph_file",
-            graph_file,
-            std::string("/home/laura/medium_faster20.json"));
+  nh_.param<std::string>("dispersion/graph_file", graph_file, "");
   ROS_INFO("Reading graph file %s", graph_file.c_str());
   graph_ = std::make_shared<motion_primitives::MotionPrimitiveGraph>(
       motion_primitives::read_motion_primitive_graph(graph_file));
@@ -286,35 +282,35 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Dispersion::plan(
     ROS_INFO_STREAM("Planner adjusted start: " << mp->end_state_.transpose());
   }
 
-  motion_primitives::GraphSearch::Option options = {
-      .start_state = start_state,
-      .goal_state = goal_state,
-      .distance_threshold = tol_pos_,
-      .parallel_expand = true,
-      .heuristic = heuristic_,
-      .access_graph = false,
-      .start_index = planner_start_index,
-      .step_size = .2};
+  options_ = {.start_state = start_state,
+              .goal_state = goal_state,
+              .distance_threshold = tol_pos_,
+              .parallel_expand = true,
+              .heuristic = heuristic_,
+              .access_graph = false,
+              .start_index = planner_start_index,
+              .step_size = .2};
   if (graph_->spatial_dim() == 2) {
-    options.fixed_z = start.pos(2);
+    options_.fixed_z = start.pos(2);
   }
-  //   if (msg->check_vel) options.velocity_threshold = tol_vel;
+  //   if (msg->check_vel) options_.velocity_threshold = tol_vel;
   if (planner_start_index == -1 ||
-      planner_start_index >= graph_->num_tiled_states())
-    options.access_graph = true;
+      planner_start_index >= graph_->num_tiled_states()) {
+    options_.access_graph = true;
+  }
   // TODO(laura) why should planner_start_index >= graph_->num_tiled_states()
   // ever happen except when switching graphs, but checking if
   // graph_index_!=last_graph.graph_index didn't work
 
-  motion_primitives::GraphSearch gs(*graph_, map, options);
+  motion_primitives::GraphSearch gs(*graph_, map, options_);
   const auto start_time = ros::Time::now();
 
   auto [path, nodes] = gs.Search();
   bool planner_start_too_close_to_goal =
-      motion_primitives::StatePosWithin(options.start_state,
-                                        options.goal_state,
+      motion_primitives::StatePosWithin(options_.start_state,
+                                        options_.goal_state,
                                         graph_->spatial_dim(),
-                                        options.distance_threshold);
+                                        options_.distance_threshold);
   if (path.empty() && !planner_start_too_close_to_goal) {
     ROS_ERROR("Graph search failed, aborting action server.");
     return kr_planning_msgs::SplineTrajectory();
@@ -375,7 +371,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Dispersion::plan(
   ROS_INFO("Finished planning. Planning time %f s", total_time);
 
   auto spline_msg = motion_primitives::path_to_spline_traj_msg(
-      path, map.header, options.fixed_z);
+      path, map.header, options_.fixed_z);
   traj_total_time_ = spline_msg.data.back().t_total;
   dispersion_traj_ = path;
   const auto visited_marray =
@@ -384,19 +380,19 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Dispersion::plan(
                                              map.header,
                                              0.1,
                                              false,
-                                             options.fixed_z);
+                                             options_.fixed_z);
   visited_pub_.publish(visited_marray);
 
   return spline_msg;
 };
 
 MPL::Waypoint3D SearchPlanner::Dispersion::evaluate(double t) {
-  // TODO(Laura) may be broken
   MPL::Waypoint3D waypoint;
 
-  waypoint.pos = motion_primitives::getState(dispersion_traj_, t, 0);
-  waypoint.vel = motion_primitives::getState(dispersion_traj_, t, 1);
-  waypoint.acc = motion_primitives::getState(dispersion_traj_, t, 2);
+  waypoint.pos =
+      motion_primitives::getState(dispersion_traj_, t, 0, options_.fixed_z);
+  waypoint.vel = motion_primitives::getState(dispersion_traj_, t, 1, 0);
+  waypoint.acc = motion_primitives::getState(dispersion_traj_, t, 2, 0);
 
   return waypoint;
 }

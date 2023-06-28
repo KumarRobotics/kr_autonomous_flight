@@ -25,10 +25,10 @@ trajectory_planner:
   max_j: 2.0 # x-y-direction maximum jerk, recommended value: for 2-D 3, for 3-D 2
   max_u: 2.0 # x-y-direction control inputs increase / decrease step, must be smaller than max_j, recommended value: for 2-D 3, for 3-D 1, for each axis jerk increment choice is -max_u, 0, max_u
   use_3d_local: false # local planner operates in 3D (true) or 2D (false)
-  search_planner_type: 1 # 0: MPL, 1: dispersion planner
+  search_planner_type: 0 # 0: MPL, 1: dispersion planner
   opt_planner_type: 0 # 0: Double Description
   #TODO(Laura) fix path
-  dispersion/graph_file: "/home/laura/autonomy_ws/src/motion_primitives/motion_primitives_py/motion_primitives_py/data/lattices/testing/30.json"
+  dispersion/graph_file: ""
 
   use_3d_global: false # global planner operates in 3D (true, in this case use_3d_local has to be set as true) or 2D (false)
   z_cost_factor: 1 # global map z cost factor, this also influences the vertical semi field of view of global planner into 45-degree / z_cost_factor  (cost_along_z = z_cost_factor * cost_along_x_or_y)

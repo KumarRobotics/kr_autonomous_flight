@@ -180,6 +180,7 @@ void LocalPlanServer::process_result(
     ros::Duration execution_time,
     int epoch) {
   bool solved = traj_msg.data.size() > 0;
+
   if (!solved) {
     // local plan fails
     aborted_ = true;
@@ -187,11 +188,10 @@ void LocalPlanServer::process_result(
       ROS_WARN("Current local plan trial failed!");
       local_as_->setAborted();
     }
-  }
-  ROS_WARN("[LocalPlanServer] planning success ! !!!!!");
+  } else {
+    ROS_WARN("[LocalPlanServer] Planning success!!!!!!");
+    kr_planning_msgs::PlanTwoPointResult result;
 
-  kr_planning_msgs::PlanTwoPointResult result;
-  if (solved) {
     // evaluate trajectory for 5 steps, each step duration equals
     // execution_time, get corresponding waypoints and record in result
     // (result_->p_stop etc.) (evaluate the whole traj if execution_time is not
@@ -256,16 +256,9 @@ void LocalPlanServer::process_result(
     result.epoch = epoch;
     result.traj_end.orientation.w = 1.0;
     result.traj_end.orientation.z = 0;
-  }
-
-  // abort if trajectory generation failed
-  if (!solved && local_as_->isActive()) {
-    ROS_WARN("Current local plan trial: trajectory generation failed!");
-    local_as_->setAborted();
-  }
-
-  if (local_as_->isActive()) {
-    local_as_->setSucceeded(result);
+    if (local_as_->isActive()) {
+      local_as_->setSucceeded(result);
+    }
   }
 }
 

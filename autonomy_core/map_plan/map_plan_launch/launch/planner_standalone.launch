@@ -18,9 +18,9 @@
       </node>
     </group>
 
-    <!-- <include file="$(find kr_planning_msgs_utils)/launch/image_to_map.launch">
-    </include> -->
+    <include file="$(find kr_planning_msgs_utils)/launch/image_to_map.launch">
+    </include>
 
-    <include file="$(find param_env)/launch/structure_map.launch"/>
+    <!-- <include file="$(find param_env)/launch/structure_map.launch"/> -->
 
 </launch>

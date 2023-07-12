@@ -13,6 +13,7 @@
 #include <plan_manage/planner_manager.h>
 #include <traj_opt_ros/ros_bridge.h>
 #include <traj_utils/planning_visualization.h>
+#include <gcopter/planner.hpp>
 
 class PlannerType {
  public:
@@ -83,6 +84,28 @@ class DoubleDescription : public PlannerType {
   min_jerk::Trajectory opt_traj_;
   std::shared_ptr<MPL::VoxelMapUtil> mp_map_util_;
 };
+
+
+
+class GCOPTER : public PlannerType {
+ public:
+  explicit GCOPTER(const ros::NodeHandle& nh,
+                   const std::string& frame_id)
+      : PlannerType(nh, frame_id) {}
+
+  void setup();
+  kr_planning_msgs::SplineTrajectory plan(
+      const MPL::Waypoint3D& start,
+      const MPL::Waypoint3D& goal,
+      const kr_planning_msgs::VoxelMap& map);
+  MPL::Waypoint3D evaluate(double t);
+
+ private:
+  gcopter::GcopterPlanner::Ptr planner_manager_;
+  Trajectory<5> opt_traj_;
+};
+
+
 }  // namespace OptPlanner
 
 namespace SearchPlanner {

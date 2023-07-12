@@ -11,6 +11,7 @@
       output="screen">
       <rosparam file="$(arg planner_config)"/>
       <remap from="~local_voxel_map" to="/voxel_map"/>
+      <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
     </node>
 
     <group if="$(arg viz)">

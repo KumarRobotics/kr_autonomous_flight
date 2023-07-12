@@ -77,6 +77,79 @@ MPL::Waypoint3D OptPlanner::DoubleDescription::evaluate(double t) {
   return waypoint;
 }
 
+
+void OptPlanner::GCOPTER::setup() {
+  ROS_WARN("+++++++++++++++++++++++++++++++++++");
+  ROS_WARN("[LocalPlanServer:] GCOPTER Optimization planner mode!!!!!");
+  ROS_WARN("+++++++++++++++++++++++++++++++++++");
+
+  /* initialize main modules */
+  ros::NodeHandle nh = ros::NodeHandle("~");
+  planner_manager_.reset(new gcopter::GcopterPlanner(nh, frame_id_));
+}
+
+kr_planning_msgs::SplineTrajectory OptPlanner::GCOPTER::plan(
+    const MPL::Waypoint3D& start,
+    const MPL::Waypoint3D& goal,
+    const kr_planning_msgs::VoxelMap& map) {
+  ROS_WARN("[LocalPlanServer] trigger opt_planner!!!!!");
+
+  Eigen::MatrixXd startState(3, 3), endState(3, 3);
+  startState << start.pos(0), start.vel(0), start.acc(0), start.pos(1),
+      start.vel(1), start.acc(1), start.pos(2), start.vel(2), start.acc(2);
+  endState << goal.pos(0), goal.vel(0), goal.acc(0), goal.pos(1), goal.vel(1),
+      goal.acc(1), goal.pos(2), goal.vel(2), goal.acc(2);
+
+  planner_manager_->setMap(map);
+
+  bool valid =
+      planner_manager_->plan(startState, endState, search_path_);
+  if (valid) {
+    opt_traj_ = planner_manager_->getTraj();
+    traj_total_time_ = opt_traj_.getTotalDuration();
+  } else {
+    return kr_planning_msgs::SplineTrajectory();
+  }
+
+  kr_planning_msgs::SplineTrajectory spline_msg;
+  spline_msg.header.frame_id = frame_id_;
+  spline_msg.dimensions = 3;
+
+  int piece_num = opt_traj_.getPieceNum();
+  Eigen::VectorXd durs = opt_traj_.getDurations();
+
+  for (uint d = 0; d < 3; d++) {
+    kr_planning_msgs::Spline spline;
+    for (uint s = 0; s < piece_num; s++) {
+      kr_planning_msgs::Polynomial poly;
+
+      auto coeff = opt_traj_[s].normalizePosCoeffMat();
+
+      for (uint c = 0; c < 6; c++) {
+        poly.coeffs.push_back(coeff(d, 5 - c));
+      }
+      poly.dt = durs[s];
+      poly.degree = 5;
+      spline.segs.push_back(poly);
+    }
+    spline.segments = piece_num;
+    spline.t_total = traj_total_time_;
+    spline_msg.data.push_back(spline);
+  }
+  return spline_msg;
+}
+
+MPL::Waypoint3D OptPlanner::GCOPTER::evaluate(double t) {
+  MPL::Waypoint3D waypoint;
+
+  waypoint.pos = opt_traj_.getPos(t);
+  waypoint.vel = opt_traj_.getVel(t);
+  waypoint.acc = opt_traj_.getAcc(t);
+  return waypoint;
+}
+
+
+
 //
 // MPL Planner
 //
@@ -426,6 +499,8 @@ void CompositePlanner::setup() {
     case 0:
       opt_planner_type_ = new OptPlanner::DoubleDescription(nh_, frame_id_);
       break;
+    case 1:
+      opt_planner_type_ = new OptPlanner::GCOPTER(nh_, frame_id_);
     default:
       ROS_ERROR("No opt planner selected; will use search planner only.");
       break;

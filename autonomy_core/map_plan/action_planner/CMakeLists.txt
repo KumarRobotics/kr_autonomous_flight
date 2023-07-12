@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 project(action_planner)
 
 set(CMAKE_CXX_STANDARD 17)
+find_package(ompl REQUIRED)
+
 find_package(Boost REQUIRED COMPONENTS timer)
 find_package(
   catkin REQUIRED
@@ -23,22 +25,23 @@ find_package(
              opt_planner
              decomp_ros_utils
              decomp_ros_msgs
-             motion_primitives)
+             motion_primitives
+             gcopter)
 
 generate_dynamic_reconfigure_options(cfg/ActionPlanner.cfg)
 
-catkin_package(CATKIN_DEPENDS dynamic_reconfigure kr_planning_msgs)
-include_directories(include ${catkin_INCLUDE_DIRS})
+catkin_package(CATKIN_DEPENDS dynamic_reconfigure kr_planning_msgs gcopter)
+include_directories(include ${catkin_INCLUDE_DIRS} ${OMPL_INCLUDE_DIRS})
 
 add_library(planners src/planner_details.cpp src/data_conversions.cpp src/primitive_ros_utils.cpp)
-target_link_libraries(planners PUBLIC ${catkin_LIBRARIES})
+target_link_libraries(planners PUBLIC ${catkin_LIBRARIES} ${OMPL_LIBRARIES})
 
 add_executable(global_plan_server src/global_plan_server.cpp)
-target_link_libraries(global_plan_server PUBLIC planners Boost::timer)
+target_link_libraries(global_plan_server PUBLIC planners Boost::timer ${OMPL_LIBRARIES})
 add_dependencies(global_plan_server ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
 
 add_executable(local_plan_server src/local_plan_server.cpp )
-target_link_libraries(local_plan_server PUBLIC Boost::timer planners)
+target_link_libraries(local_plan_server PUBLIC Boost::timer planners ${OMPL_LIBRARIES})
 add_dependencies(local_plan_server ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})

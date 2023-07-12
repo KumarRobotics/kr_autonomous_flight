@@ -170,6 +170,54 @@ Visualization Manager:
       VelColor: 85; 85; 255
       VelScale: 0.019999999552965164
       VelVis: false
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /visualizer/trajectory
+      Name: Marker
+      Namespaces:
+        trajectory: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /visualizer/mesh
+      Name: Marker
+      Namespaces:
+        mesh: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /visualizer/edge
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /visualizer/waypoints
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /visualizer/spheres
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /visualizer/route
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 189; 234; 201
@@ -203,7 +251,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 18.97081184387207
+      Distance: 29.508264541625977
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -211,17 +259,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -3.3090574741363525
-        Y: 6.014548301696777
-        Z: 4.285130977630615
+        X: 4.131352424621582
+        Y: 2.562002420425415
+        Z: 5.00485897064209
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9847980737686157
+      Pitch: 0.8997980952262878
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 3.874922037124634
+      Yaw: 4.014925956726074
     Saved: ~
 Window Geometry:
   Displays:

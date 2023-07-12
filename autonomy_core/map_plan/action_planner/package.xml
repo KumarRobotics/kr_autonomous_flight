@@ -34,6 +34,7 @@
   <depend>decomp_ros_utils</depend>
   <depend>decomp_ros_msgs</depend>
   <depend>motion_primitives</depend>
+  <depend>gcopter</depend>
 
   <export>
   </export>

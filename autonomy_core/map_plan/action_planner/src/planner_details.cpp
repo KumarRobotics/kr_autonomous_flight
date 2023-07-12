@@ -501,6 +501,7 @@ void CompositePlanner::setup() {
       break;
     case 1:
       opt_planner_type_ = new OptPlanner::GCOPTER(nh_, frame_id_);
+      break;
     default:
       ROS_ERROR("No opt planner selected; will use search planner only.");
       break;

@@ -132,7 +132,8 @@ class LocalGlobalMapperNode {
 
   double local_max_raycast_, global_max_raycast_;  // maximum raycasting range
   double occ_map_height_;
-  Eigen::Vector3d local_ori_offset_;
+  Eigen::Vector3d local_ori_offset_{ Eigen::Vector3d::Zero() };
+  bool local_ignore_offset_;
   bool pub_storage_map_ =
       false;  // don't set this as true unless you're debugging, it's very slow
 

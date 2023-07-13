@@ -46,7 +46,7 @@ LocalGlobalMapperNode::LocalGlobalMapperNode(const ros::NodeHandle& nh)
 
   // origin is the left lower corner of the voxel map, therefore, adding
   // this offset make the map centered around the given position
-  local_ori_offset_ = -local_dim_d / 2;
+  if (!local_ignore_offset_) local_ori_offset_ = -local_dim_d / 2;
 
   // Initialize maps.
   globalMapInit();
@@ -100,6 +100,9 @@ void LocalGlobalMapperNode::initParams() {
   nh_.param("local/range_z", local_map_dim_d_z_, 10.0);
   nh_.param("local/max_raycast_range", local_max_raycast_, 20.0);
   nh_.param("local/decay_times_to_empty", local_decay_times_to_empty_, 0);
+  // For planner standalone, we don't want to move the origin of the local map,
+  // otherwise leave this as false for standard operation.
+  nh_.param("local/ignore_offset", local_ignore_offset_, false);
 }
 
 void LocalGlobalMapperNode::globalMapInit() {

@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /VoxelMap1
         - /SplineTrajectory1
         - /MarkerArray1
         - /Marker1
@@ -14,6 +15,7 @@ Panels:
         - /MarkerArray2
         - /SplineTrajectory2
         - /Path1
+        - /PointCloud21
       Splitter Ratio: 0.5211267471313477
     Tree Height: 482
   - Class: rviz/Selection
@@ -62,15 +64,15 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
+        Max Value: 10.125
+        Min Value: 1.125
         Value: true
       Axis: Z
       BoundScale: 0.10000000149011612
       Channel Name: intensity
       Class: kr_planning_rviz_plugins/VoxelMap
-      Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color: 173; 127; 168
+      Color Transformer: FlatColor
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -84,10 +86,10 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.10000000149011612
+      Size (m): 0.25
       State: Occupied
       Style: Boxes
-      Topic: /voxel_map
+      Topic: /mapper/local_voxel_map
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -113,7 +115,7 @@ Visualization Manager:
       Marker Topic: /start_and_goal
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -230,6 +232,34 @@ Visualization Manager:
       Topic: /local_plan_server/trajectory_planner/path
       Unreliable: false
       Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 114; 159; 207
+      Color Transformer: FlatColor
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Min Color: 0; 0; 0
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.25
+      Style: Boxes
+      Topic: /cloud
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 189; 234; 201
@@ -263,7 +293,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 29.508264541625977
+      Distance: 45.23582077026367
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -271,17 +301,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 4.131352424621582
-        Y: 2.562002420425415
-        Z: 5.00485897064209
+        X: 9.449174880981445
+        Y: 1.7765841484069824
+        Z: 9.579349517822266
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.4947975873947144
+      Pitch: 0.7197962403297424
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 3.5599234104156494
+      Yaw: 2.7299163341522217
     Saved: ~
 Window Geometry:
   Displays:
@@ -302,4 +332,4 @@ Window Geometry:
     collapsed: false
   Width: 1386
   X: 176
-  Y: 170
+  Y: 0

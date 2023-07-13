@@ -3,6 +3,7 @@
 
 #include <action_planner/data_conversions.h>
 #include <action_planner/primitive_ros_utils.h>
+#include <jps/jps_planner.h>
 #include <kr_planning_msgs/PlanTwoPointAction.h>
 #include <kr_planning_rviz_plugins/data_ros_utils.h>  //vec_to_cloud
 #include <motion_primitives/graph_search.h>
@@ -13,7 +14,11 @@
 #include <plan_manage/planner_manager.h>
 #include <traj_opt_ros/ros_bridge.h>
 #include <traj_utils/planning_visualization.h>
+
 #include <gcopter/planner.hpp>
+#include <memory>
+#include <string>
+#include <vector>
 
 class PlannerType {
  public:
@@ -38,7 +43,7 @@ class PlannerType {
   ros::NodeHandle nh_;
   std::string frame_id_;
   double traj_total_time_;
-  //TODO(Laura) pass as param
+  // TODO(Laura) pass as param
   double path_sampling_dt_ = 0.15;
   // TODO(Laura) not sure if this is the best way to pass the search path
   std::vector<Eigen::Vector3d> search_path_;
@@ -85,12 +90,9 @@ class DoubleDescription : public PlannerType {
   std::shared_ptr<MPL::VoxelMapUtil> mp_map_util_;
 };
 
-
-
 class GCOPTER : public PlannerType {
  public:
-  explicit GCOPTER(const ros::NodeHandle& nh,
-                   const std::string& frame_id)
+  explicit GCOPTER(const ros::NodeHandle& nh, const std::string& frame_id)
       : PlannerType(nh, frame_id) {}
 
   void setup();
@@ -105,14 +107,13 @@ class GCOPTER : public PlannerType {
   Trajectory<5> opt_traj_;
 };
 
-
 }  // namespace OptPlanner
 
 namespace SearchPlanner {
-class UniformSampling : public PlannerType {
+class UniformInputSampling : public PlannerType {
  public:
-  explicit UniformSampling(const ros::NodeHandle& nh,
-                           const std::string& frame_id)
+  explicit UniformInputSampling(const ros::NodeHandle& nh,
+                                const std::string& frame_id)
       : PlannerType(nh, frame_id) {}
 
   void setup();
@@ -153,6 +154,26 @@ class Dispersion : public PlannerType {
       dispersion_traj_;
   ros::Publisher visited_pub_;
   motion_primitives::GraphSearch::Option options_;
+};
+
+class Geometric : public PlannerType {
+ public:
+  explicit Geometric(const ros::NodeHandle& nh, const std::string& frame_id)
+      : PlannerType(nh, frame_id) {}
+
+  void setup();
+  kr_planning_msgs::SplineTrajectory plan(
+      const MPL::Waypoint3D& start,
+      const MPL::Waypoint3D& goal,
+      const kr_planning_msgs::VoxelMap& map);
+  MPL::Waypoint3D evaluate(double t);
+
+ private:
+  std::shared_ptr<JPS::JPSPlanner3D> jps_3d_util_;
+  std::shared_ptr<JPS::VoxelMapUtil> jps_3d_map_util_;
+  bool verbose_{true};
+  kr_planning_msgs::SplineTrajectory spline_traj_;
+  ros::Publisher path_pub_;
 };
 }  // namespace SearchPlanner
 

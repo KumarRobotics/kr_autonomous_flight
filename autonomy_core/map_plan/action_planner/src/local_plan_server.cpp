@@ -114,7 +114,6 @@ void LocalPlanServer::process_goal(
   kr_planning_msgs::Path sg_msg = kr::path_to_ros(sg);
   sg_msg.header.frame_id = frame_id_;
   sg_pub.publish(sg_msg);
-
   process_result(planner_type_->plan(start, goal, local_map_cleared),
                  as_goal.execution_time,
                  as_goal.epoch);
@@ -190,6 +189,7 @@ void LocalPlanServer::process_result(
     }
   } else {
     ROS_WARN("[LocalPlanServer] Planning success!!!!!!");
+    traj_pub_.publish(traj_msg);
     kr_planning_msgs::PlanTwoPointResult result;
 
     // evaluate trajectory for 5 steps, each step duration equals
@@ -245,7 +245,6 @@ void LocalPlanServer::process_result(
 
     result.traj = traj_msg;
     result.traj.header.frame_id = frame_id_;
-    traj_pub_.publish(traj_msg);
 
     // execution_time (set in replanner)
     // equals 1.0/local_replan_rate

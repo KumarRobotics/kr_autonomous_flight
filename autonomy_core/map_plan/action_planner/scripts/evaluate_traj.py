@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 import rospy
-from kr_planning_msgs.msg import SplineTrajectory
+# from kr_planning_msgs.msg import SplineTrajectory
 from kr_planning_msgs.msg import PlanTwoPointAction, PlanTwoPointGoal
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import pandas as pd
 from copy import deepcopy
 from visualization_msgs.msg import MarkerArray, Marker
 from actionlib import SimpleActionClient
 
 filename = '/home/laura/autonomy_ws/src/kr_autonomous_flight/autonomy_core/map_plan/action_planner/scripts/map_balls_start_goal.csv'
+
 
 def differentiate(p, segment_time):
     v = np.zeros(p.size - 1)
@@ -37,6 +38,7 @@ def evaluate(msg, t, deriv_num):
                 break
             dt += poly.dt
     return result
+
 
 class Evaluater:
     def __init__(self):
@@ -127,11 +129,15 @@ class Evaluater:
         print(self.traj_jerk)
         print(self.traj_compute_time)
         print("success rate: " + str(np.sum(self.success)/self.success.size))
+        print("avg traj time: " + str(np.sum(self.traj_time[self.success]) / np.sum(self.success)))
+        print("avg traj cost: " + str(np.sum(self.traj_cost[self.success]) / np.sum(self.success)))
+        print("avg traj jerk: " + str(np.sum(self.traj_jerk[self.success]) / np.sum(self.success)))
+        print("avg compute time: " + str(np.sum(self.traj_compute_time[self.success]) / np.sum(self.success)))
 
 
 def subscriber():
     rospy.init_node('evaluate_traj')
-    e = Evaluater()
+    Evaluater()
 
     # spin() simply keeps python from exiting until this node is stopped
     # rospy.spin()

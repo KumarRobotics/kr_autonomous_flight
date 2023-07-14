@@ -35,6 +35,7 @@ class LocalPlanServer {
   boost::mutex map_mtx, traj_mtx;  // TODO(xu): do we need this?
 
   double traj_total_time_;
+  float computation_time_;
 
   // current local map
   kr_planning_msgs::VoxelMapConstPtr local_map_ptr_ = nullptr;

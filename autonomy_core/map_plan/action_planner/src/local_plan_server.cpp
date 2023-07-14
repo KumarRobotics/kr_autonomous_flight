@@ -54,6 +54,7 @@ void LocalPlanServer::goalCB() {
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
       end_timer - start_timer);
   ROS_INFO("Local goalCB took %f ms", duration.count() / 1000.0);
+  computation_time_ = duration.count() / 1000.0;
   planner_type_->setGoal(*goal_ptr);
 }
 
@@ -255,6 +256,7 @@ void LocalPlanServer::process_result(
     result.epoch = epoch;
     result.traj_end.orientation.w = 1.0;
     result.traj_end.orientation.z = 0;
+    result.computation_time = computation_time_;
     if (local_as_->isActive()) {
       local_as_->setSucceeded(result);
     }

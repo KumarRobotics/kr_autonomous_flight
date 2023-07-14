@@ -80,10 +80,10 @@ class Evaluater:
             msg = PlanTwoPointGoal()
             msg.p_init.position.x = self.start_goals['xi'][i]
             msg.p_init.position.y = self.start_goals['yi'][i]
-            msg.p_init.position.z = 3
+            msg.p_init.position.z = 5
             msg.p_final.position.x = self.start_goals['xf'][i]
             msg.p_final.position.y = self.start_goals['yf'][i]
-            msg.p_final.position.z = 3
+            msg.p_final.position.z = 5
 
             # do you want velocity initial and final to be zero?
 
@@ -126,6 +126,7 @@ class Evaluater:
         print(self.traj_cost)
         print(self.traj_jerk)
         print(self.traj_compute_time)
+        print("success rate: " + str(np.sum(self.success)/self.success.size))
 
 
 def subscriber():

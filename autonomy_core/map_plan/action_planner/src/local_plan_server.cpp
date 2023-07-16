@@ -3,6 +3,9 @@
 LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   local_map_sub_ =
       pnh_.subscribe("local_voxel_map", 2, &LocalPlanServer::localMapCB, this);
+  local_no_infla_map_sub_ =
+      pnh_.subscribe("local_noinfla_voxel_map", 2, &LocalPlanServer::localMapCBNoInfla, this);
+
   local_as_ = std::make_unique<
       actionlib::SimpleActionServer<kr_planning_msgs::PlanTwoPointAction>>(
       pnh_, "plan_local_trajectory", false);
@@ -14,8 +17,8 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   traj_pub_ =
       pnh_.advertise<kr_planning_msgs::SplineTrajectory>("trajectory", 1, true);
   local_as_->registerGoalCallback(boost::bind(&LocalPlanServer::goalCB, this));
-  while (local_map_ptr_ == nullptr) {
-    ROS_WARN("[Local plan server]: Waiting for local map...");
+  while (local_map_ptr_ == nullptr || local_nofla_map_ptr_ == nullptr) {
+    ROS_WARN("[Local plan server]: Waiting for local map either inflated or not...");
     ros::Duration(0.1).sleep();
     ros::spinOnce();
   }
@@ -33,6 +36,14 @@ void LocalPlanServer::localMapCB(
   frame_id_ = local_map_ptr_->header.frame_id;
 }
 
+// map callback, update local_map_ptr_
+void LocalPlanServer::localMapCBNoInfla(
+    const kr_planning_msgs::VoxelMap::ConstPtr& msg) {
+  ROS_WARN_ONCE("[Local planner:] Got the local voxel map without inflation!!!");
+  local_nofla_map_ptr_ = msg;
+  frame_id_ = local_nofla_map_ptr_->header.frame_id;
+}
+
 void LocalPlanServer::goalCB() {
   auto start_timer = std::chrono::high_resolution_clock::now();
   // check_vel is true if local planner reaches global goal
@@ -47,7 +58,11 @@ void LocalPlanServer::goalCB() {
     ROS_WARN("+++++++++++++++++++++++++++++++++++");
     ROS_WARN("[LocalPlanServer:] local map is not received!!!!!");
     ROS_WARN("+++++++++++++++++++++++++++++++++++");
-  } else {
+  } else if (local_nofla_map_ptr_ == nullptr){
+    ROS_WARN("+++++++++++++++++++++++++++++++++++");
+    ROS_WARN("[LocalPlanServer:] local no inflation map is not received!!!!!");
+    ROS_WARN("+++++++++++++++++++++++++++++++++++");
+  } else{
     process_goal(*goal_ptr);
   }
   auto end_timer = std::chrono::high_resolution_clock::now();
@@ -100,8 +115,9 @@ void LocalPlanServer::process_goal(
   goal.use_acc = start.use_acc;
   goal.use_jrk = start.use_jrk;
 
-  kr_planning_msgs::VoxelMap local_map_cleared;
+  kr_planning_msgs::VoxelMap local_map_cleared, local_no_infla_map_cleared;
   local_map_cleared = clear_map_position(*local_map_ptr_, start.pos);
+  local_no_infla_map_cleared = clear_map_position(*local_nofla_map_ptr_ , start.pos);
 
   if (pub_cleared_map_) {
     local_map_cleared_pub_.publish(local_map_cleared);
@@ -115,7 +131,7 @@ void LocalPlanServer::process_goal(
   kr_planning_msgs::Path sg_msg = kr::path_to_ros(sg);
   sg_msg.header.frame_id = frame_id_;
   sg_pub.publish(sg_msg);
-  process_result(planner_type_->plan(start, goal, local_map_cleared),
+  process_result(planner_type_->plan(start, goal, local_map_cleared, local_no_infla_map_cleared),
                  as_goal.execution_time,
                  as_goal.epoch);
 }

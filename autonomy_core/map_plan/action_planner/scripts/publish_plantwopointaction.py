@@ -24,10 +24,10 @@ def publisher():
         msg.header.stamp = rospy.Time.now()
         msg.goal.p_init.position.x = start_goal['xi'][i]
         msg.goal.p_init.position.y = start_goal['yi'][i]
-        msg.goal.p_init.position.z = 1
+        msg.goal.p_init.position.z = 5
         msg.goal.p_final.position.x = start_goal['xf'][i]
         msg.goal.p_final.position.y = start_goal['yf'][i]
-        msg.goal.p_final.position.z = 1
+        msg.goal.p_final.position.z = 5
         
         #do you want velocity initial and final to be zero?
 

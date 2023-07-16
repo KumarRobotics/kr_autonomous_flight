@@ -25,7 +25,7 @@ class LocalPlanServer {
   // TODO(laura) what is the difference btw the node handles
   ros::NodeHandle pnh_;
   ros::NodeHandle traj_planner_nh_;
-  ros::Subscriber local_map_sub_;
+  ros::Subscriber local_map_sub_, local_no_infla_map_sub_;
   ros::Publisher local_map_cleared_pub_;
   ros::Publisher traj_pub_;
 
@@ -39,6 +39,7 @@ class LocalPlanServer {
 
   // current local map
   kr_planning_msgs::VoxelMapConstPtr local_map_ptr_ = nullptr;
+  kr_planning_msgs::VoxelMapConstPtr local_nofla_map_ptr_ = nullptr;
 
   // action server
   std::unique_ptr<
@@ -74,6 +75,11 @@ class LocalPlanServer {
    * @brief map callback, update local_map_ptr_
    */
   void localMapCB(const kr_planning_msgs::VoxelMap::ConstPtr& msg);
+ 
+  /**
+   * @brief map no inflation callback, update local_nofla_map_ptr_
+   */
+  void localMapCBNoInfla(const kr_planning_msgs::VoxelMap::ConstPtr& msg);
 
   /**
    * @brief Local planner clear footprint

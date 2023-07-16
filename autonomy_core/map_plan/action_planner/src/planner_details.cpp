@@ -604,7 +604,26 @@ kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
     // TODO(Laura) consider whether should actually calculate the BVP instead
     path.push_back(goal.pos);
     opt_planner_type_->setSearchPath(path);
-    result = opt_planner_type_->plan(start, goal, map);
+    result = opt_planner_type_->plan(start, goal, map); 
+  }
+  return result;
+}
+
+kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
+    const MPL::Waypoint3D& start,
+    const MPL::Waypoint3D& goal,
+    const kr_planning_msgs::VoxelMap& map, 
+    const kr_planning_msgs::VoxelMap& map_no_inflation) {
+  auto result = search_planner_type_->plan(start, goal, map);
+  search_traj_pub_.publish(result);
+  if (opt_planner_type_ != nullptr) {
+    auto path = search_planner_type_->SamplePath();
+    // Double description initialization traj must fully reach the end or it
+    // will fail.
+    // TODO(Laura) consider whether should actually calculate the BVP instead
+    path.push_back(goal.pos);
+    opt_planner_type_->setSearchPath(path);
+    result = opt_planner_type_->plan(start, goal, map_no_inflation); //TODO:(Yifei) only use no infla for gcopter planner, not dd planner
   }
   return result;
 }

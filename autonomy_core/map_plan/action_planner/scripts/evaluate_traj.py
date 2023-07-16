@@ -83,6 +83,8 @@ class Evaluater:
             msg.p_init.position.x = self.start_goals['xi'][i]
             msg.p_init.position.y = self.start_goals['yi'][i]
             msg.p_init.position.z = 5
+            msg.v_init.linear.x = 2
+            msg.v_init.linear.y = 2
             msg.p_final.position.x = self.start_goals['xf'][i]
             msg.p_final.position.y = self.start_goals['yf'][i]
             msg.p_final.position.z = 5
@@ -113,9 +115,11 @@ class Evaluater:
             self.client.wait_for_result(rospy.Duration.from_sec(5.0))
 
             result = self.client.get_result()
+            #TODO(Laura) check if the path is collision free and feasible
             if result:
                 self.success[i] = result.success
-                self.traj_compute_time[i] = result.computation_time
+                if 0 < result.computation_time < 1000:
+                    self.traj_compute_time[i] = result.computation_time
                 if result.success:
                     self.traj_time[i] = result.traj.data[0].t_total
                     self.traj_cost[i] = self.computeCost(result.traj, self.rho)

@@ -29,14 +29,13 @@ class PlannerType {
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map) = 0;
-  virtual kr_planning_msgs::SplineTrajectory plan (
+  virtual kr_planning_msgs::SplineTrajectory plan(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map,
       const kr_planning_msgs::VoxelMap& map_no_inflation) {
-        kr_planning_msgs::SplineTrajectory traj;
-        return traj;
-      }
+    return kr_planning_msgs::SplineTrajectory{};
+  }
 
   virtual MPL::Waypoint3D evaluate(double t) = 0;
   void setGoal(const kr_planning_msgs::PlanTwoPointGoal& goal) {
@@ -66,11 +65,11 @@ class CompositePlanner : public PlannerType {
                             const std::string& frame_id)
       : PlannerType(nh, frame_id) {}
   void setup();
-kr_planning_msgs::SplineTrajectory plan (
+  kr_planning_msgs::SplineTrajectory plan(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map);
-kr_planning_msgs::SplineTrajectory plan (
+  kr_planning_msgs::SplineTrajectory plan(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map,

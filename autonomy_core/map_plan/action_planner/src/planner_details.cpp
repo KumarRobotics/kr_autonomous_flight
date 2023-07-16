@@ -245,7 +245,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::UniformInputSampling::plan(
   }
 
   mp_planner_util_->reset();
-  // start and new_goal contain full informaiton about
+  // start and new_goal contain full information about
   // position/velocity/acceleration
   bool valid = false;
   if (!use_3d_local_) {
@@ -488,8 +488,10 @@ kr_planning_msgs::SplineTrajectory path_to_spline_traj(
     double distance = vec_between.norm();
     for (int dim = 0; dim < 3; dim++) {
       kr_planning_msgs::Polynomial seg;
-      seg.degree = 5; //Chosen a little arbitrarily
+      seg.degree = 5;  // Chosen a little arbitrarily
       seg.dt = distance / velocity;
+      // TODO(Laura) Replace with e.g. trapezoidal velocity profile instead of
+      // constant velocity
       seg.coeffs = {pt0(dim), vec_between(dim), 0, 0, 0, 0};
       spline_traj.data.at(dim).segments++;
       spline_traj.data.at(dim).segs.push_back(seg);
@@ -597,14 +599,15 @@ kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
     const kr_planning_msgs::VoxelMap& map) {
   auto result = search_planner_type_->plan(start, goal, map);
   search_traj_pub_.publish(result);
-  if (opt_planner_type_ != nullptr) {
+  // Only run opt planner if search is successful for evaluation purposes.
+  if (result.data.size() > 0 && opt_planner_type_ != nullptr) {
     auto path = search_planner_type_->SamplePath();
     // Double description initialization traj must fully reach the end or it
     // will fail.
     // TODO(Laura) consider whether should actually calculate the BVP instead
     path.push_back(goal.pos);
     opt_planner_type_->setSearchPath(path);
-    result = opt_planner_type_->plan(start, goal, map); 
+    result = opt_planner_type_->plan(start, goal, map);
   }
   return result;
 }
@@ -612,7 +615,7 @@ kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
 kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
-    const kr_planning_msgs::VoxelMap& map, 
+    const kr_planning_msgs::VoxelMap& map,
     const kr_planning_msgs::VoxelMap& map_no_inflation) {
   auto result = search_planner_type_->plan(start, goal, map);
   search_traj_pub_.publish(result);
@@ -623,7 +626,8 @@ kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
     // TODO(Laura) consider whether should actually calculate the BVP instead
     path.push_back(goal.pos);
     opt_planner_type_->setSearchPath(path);
-    result = opt_planner_type_->plan(start, goal, map_no_inflation); //TODO:(Yifei) only use no infla for gcopter planner, not dd planner
+    result = opt_planner_type_->plan(start, goal, map_no_inflation);
+    // TODO:(Yifei) only use no infla for gcopter planner, not dd planner
   }
   return result;
 }

@@ -19,6 +19,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <chrono>
 
 class PlannerType {
  public:
@@ -33,7 +34,9 @@ class PlannerType {
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map,
-      const kr_planning_msgs::VoxelMap& map_no_inflation) {
+      const kr_planning_msgs::VoxelMap& map_no_inflation,
+      float* compute_time_front_end,
+      float* compute_time_back_end) {
     return kr_planning_msgs::SplineTrajectory{};
   }
 
@@ -73,7 +76,9 @@ class CompositePlanner : public PlannerType {
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map,
-      const kr_planning_msgs::VoxelMap& map_no_inflation);
+      const kr_planning_msgs::VoxelMap& map_no_inflation,
+      float* compute_time_front_end,
+      float* compute_time_back_end);
   MPL::Waypoint3D evaluate(double t);
 
  private:

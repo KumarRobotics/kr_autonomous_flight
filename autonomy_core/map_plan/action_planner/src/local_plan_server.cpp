@@ -131,7 +131,7 @@ void LocalPlanServer::process_goal(
   kr_planning_msgs::Path sg_msg = kr::path_to_ros(sg);
   sg_msg.header.frame_id = frame_id_;
   sg_pub.publish(sg_msg);
-  process_result(planner_type_->plan(start, goal, local_map_cleared, local_no_infla_map_cleared),
+  process_result(planner_type_->plan(start, goal, local_map_cleared, local_no_infla_map_cleared, &compute_time_front_end_, &compute_time_back_end_),
                  as_goal.execution_time,
                  as_goal.epoch);
 }
@@ -273,6 +273,8 @@ void LocalPlanServer::process_result(
     result.traj_end.orientation.w = 1.0;
     result.traj_end.orientation.z = 0;
     result.computation_time = computation_time_;
+    result.compute_time_front_end = compute_time_front_end_;
+    result.compute_time_back_end = compute_time_back_end_;
     if (local_as_->isActive()) {
       local_as_->setSucceeded(result);
     }

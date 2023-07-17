@@ -9,7 +9,7 @@ from copy import deepcopy
 from visualization_msgs.msg import MarkerArray, Marker
 from actionlib import SimpleActionClient
 
-filename = '/home/laura/autonomy_ws/src/kr_autonomous_flight/autonomy_core/map_plan/action_planner/scripts/map_balls_start_goal.csv'
+filename = '/home/yifei/ws/src/kr_autonomous_flight/autonomy_core/map_plan/action_planner/scripts/map_balls_start_goal.csv'
 
 
 def differentiate(p, segment_time):
@@ -54,16 +54,24 @@ class Evaluater:
         self.traj_cost = np.zeros(self.start_goals.shape[0])
         self.traj_jerk = np.zeros(self.start_goals.shape[0])
         self.traj_compute_time = np.zeros(self.start_goals.shape[0])
+        self.compute_time_front = np.zeros(self.start_goals.shape[0])
+        self.compute_time_back = np.zeros(self.start_goals.shape[0])
         self.rho = 50  # TODO(Laura) pull from param or somewhere
 
         self.publisher()
 
     def computeJerk(self, traj):
-        jerk = 0
+        # creae empty array for time
+        t_vec = np.array([])
+        # create empty array for jerk norm sq
+        jerk_sq = np.array([])
+        # jerk = 0
         dt = .01
         for t in np.arange(0, traj.data[0].t_total, dt):
-            jerk += np.linalg.norm(evaluate(traj, t, 3)) * dt
-        return jerk
+            t_vec = np.append(t_vec, t)
+            jerk_sq = np.append(jerk_sq, (np.linalg.norm(evaluate(traj, t, 3)))**2 )
+        return np.sqrt(np.trapz(jerk_sq, t_vec))/traj.data[0].t_total
+        
 
     def computeCost(self, traj, rho):
         time = traj.data[0].t_total
@@ -83,8 +91,8 @@ class Evaluater:
             msg.p_init.position.x = self.start_goals['xi'][i]
             msg.p_init.position.y = self.start_goals['yi'][i]
             msg.p_init.position.z = 5
-            msg.v_init.linear.x = 2
-            msg.v_init.linear.y = 2
+            # msg.v_init.linear.x = 2
+            # msg.v_init.linear.y = 2
             msg.p_final.position.x = self.start_goals['xf'][i]
             msg.p_final.position.y = self.start_goals['yf'][i]
             msg.p_final.position.z = 5
@@ -120,6 +128,8 @@ class Evaluater:
                 self.success[i] = result.success
                 if 0 < result.computation_time < 1000:
                     self.traj_compute_time[i] = result.computation_time
+                    self.compute_time_front[i] = result.compute_time_front_end
+                    self.compute_time_back[i] = result.compute_time_back_end
                 if result.success:
                     self.traj_time[i] = result.traj.data[0].t_total
                     self.traj_cost[i] = self.computeCost(result.traj, self.rho)
@@ -128,15 +138,20 @@ class Evaluater:
             else:
                 print("Action server failure " + str(i))
         print(self.success)
-        print(self.traj_time)
-        print(self.traj_cost)
-        print(self.traj_jerk)
-        print(self.traj_compute_time)
+        print("Traj Time", self.traj_time)
+        print("Traj Cost",self.traj_cost)
+        print("Jerk", self.traj_jerk)
+        print("Compute Time", self.traj_compute_time)
+        print("Compute Time Front", self.compute_time_front)
+        print("Compute Time Back", self.compute_time_back)
+
         print("success rate: " + str(np.sum(self.success)/self.success.size))
         print("avg traj time: " + str(np.sum(self.traj_time[self.success]) / np.sum(self.success)))
         print("avg traj cost: " + str(np.sum(self.traj_cost[self.success]) / np.sum(self.success)))
         print("avg traj jerk: " + str(np.sum(self.traj_jerk[self.success]) / np.sum(self.success)))
         print("avg compute time: " + str(np.sum(self.traj_compute_time[self.success]) / np.sum(self.success)))
+        print("avg compute time front: " + str(np.sum(self.compute_time_front[self.success]) / np.sum(self.success)))
+        print("avg compute time back: " + str(np.sum(self.compute_time_back[self.success]) / np.sum(self.success)))
 
 
 def subscriber():

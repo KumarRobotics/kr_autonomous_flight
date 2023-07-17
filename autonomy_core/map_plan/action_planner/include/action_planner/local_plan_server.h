@@ -36,6 +36,8 @@ class LocalPlanServer {
 
   double traj_total_time_;
   float computation_time_;
+  float compute_time_front_end_;
+  float compute_time_back_end_;
 
   // current local map
   kr_planning_msgs::VoxelMapConstPtr local_map_ptr_ = nullptr;

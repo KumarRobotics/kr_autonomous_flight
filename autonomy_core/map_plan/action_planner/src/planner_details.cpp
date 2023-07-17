@@ -616,9 +616,21 @@ kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map,
-    const kr_planning_msgs::VoxelMap& map_no_inflation) {
+    const kr_planning_msgs::VoxelMap& map_no_inflation,
+    float* compute_time_front_end,
+    float* compute_time_back_end) {
+
+  auto start_timer = std::chrono::high_resolution_clock::now();
   auto result = search_planner_type_->plan(start, goal, map);
+  auto end_timer = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+      end_timer - start_timer);
+  
+  *compute_time_front_end = duration.count() / 1000.0;
+
   search_traj_pub_.publish(result);
+
+  start_timer = std::chrono::high_resolution_clock::now();
   if (opt_planner_type_ != nullptr) {
     auto path = search_planner_type_->SamplePath();
     // Double description initialization traj must fully reach the end or it
@@ -629,6 +641,11 @@ kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
     result = opt_planner_type_->plan(start, goal, map_no_inflation);
     // TODO:(Yifei) only use no infla for gcopter planner, not dd planner
   }
+  end_timer = std::chrono::high_resolution_clock::now();
+  duration = std::chrono::duration_cast<std::chrono::microseconds>(
+      end_timer - start_timer);
+  *compute_time_back_end = duration.count() / 1000.0;
+  
   return result;
 }
 

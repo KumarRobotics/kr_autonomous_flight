@@ -1,20 +1,25 @@
 #!/usr/bin/env python3
 import rospy
-from kr_planning_msgs.msg import PlanTwoPointActionGoal
+from kr_planning_msgs.msg import PlanTwoPointActionGoal, VoxelMap
 from visualization_msgs.msg import MarkerArray, Marker
 from copy import deepcopy
 from random import randrange, seed, uniform
 import pandas as pd
+import numpy as np
 filename = '/home/yifei/ws/src/kr_autonomous_flight/autonomy_core/map_plan/action_planner/scripts/map_balls_start_goal.csv'
-def publisher():
+
+
+def semi_main():
     print("reading "+filename)
     start_goal = pd.read_csv(filename)
     path_pub = rospy.Publisher('/local_plan_server/plan_local_trajectory/goal', PlanTwoPointActionGoal, queue_size=10)
+    #subscribe to voxel map
+    # voxel_map = rospy.Subscriber('/mapper/local_voxel_map', VoxelMap, queue_size=1)
     rospy.init_node('publish_two_point_action')
     start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10)
     rospy.init_node('publish_two_point_action')
 
-    rate = rospy.Rate(0.5)  #
+    rate = rospy.Rate(0.2)  #TODO: Make this run everytime we receive a new map, not finished yet
     for i in range(start_goal.shape[0]):
         if rospy.is_shutdown():
             break
@@ -22,11 +27,11 @@ def publisher():
         msg = PlanTwoPointActionGoal()
         msg.header.frame_id = "map"
         msg.header.stamp = rospy.Time.now()
-        msg.goal.p_init.position.x = start_goal['xi'][i]
-        msg.goal.p_init.position.y = start_goal['yi'][i]
+        msg.goal.p_init.position.x = 1.25
+        msg.goal.p_init.position.y = 1.25
         msg.goal.p_init.position.z = 5
-        msg.goal.p_final.position.x = start_goal['xf'][i]
-        msg.goal.p_final.position.y = start_goal['yf'][i]
+        msg.goal.p_final.position.x = 20-1.25
+        msg.goal.p_final.position.y = 10-1.25
         msg.goal.p_final.position.z = 5
         
         #do you want velocity initial and final to be zero?
@@ -54,6 +59,6 @@ def publisher():
 if __name__ == '__main__':
     try:
         seed(237)
-        publisher()
+        semi_main()
     except rospy.ROSInterruptException:
         pass

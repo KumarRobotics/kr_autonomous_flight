@@ -101,9 +101,11 @@ class LocalGlobalMapperNode {
   ros::Publisher global_map_pub;
   ros::Publisher storage_map_pub;
   ros::Publisher local_map_pub;
+  ros::Publisher local_map_no_inflation_pub;
 
   // ros::Publisher global_occ_map_pub;
-  ros::Publisher local_voxel_map_pub;
+  // ros::Publisher local_voxel_map_pub; #Yifei commented out this, not used anywhere
+
   // ros::Publisher local_cloud_pub;
 
   bool real_robot_;         // define it's real-robot experiment or not

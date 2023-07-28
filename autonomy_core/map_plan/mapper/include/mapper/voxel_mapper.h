@@ -97,6 +97,13 @@ class VoxelMapper {
   kr_planning_msgs::VoxelMap getInflatedMap();
 
   /**
+   * @brief Crop a local voxel map from the global not inflated voxel map
+   * @param ori The origin of the local voxel map (most negative corner)
+   * @param dim the range of the local voxel map in world units
+   */
+  kr_planning_msgs::VoxelMap getLocalMap(const Eigen::Vector3d& ori_d, 
+                                          const Eigen::Vector3d& dim_d);
+  /**
    * @brief Crop a local voxel map from the global inflated voxel map
    * @param ori The origin of the local voxel map (most negative corner)
    * @param dim the range of the local voxel map in world units

@@ -13,6 +13,8 @@ LocalGlobalMapperNode::LocalGlobalMapperNode(const ros::NodeHandle& nh)
       nh_.advertise<kr_planning_msgs::VoxelMap>("storage_voxel_map", 1, true);
   local_map_pub =
       nh_.advertise<kr_planning_msgs::VoxelMap>("local_voxel_map", 1, true);
+  local_map_no_inflation_pub =
+      nh_.advertise<kr_planning_msgs::VoxelMap>("local_voxel_no_inflation_map", 1, true);
 
   time_pub = nh_.advertise<sensor_msgs::Temperature>("/timing/mapper", 1);
 
@@ -210,6 +212,15 @@ void LocalGlobalMapperNode::cropLocalMap(
   // compensate for the drift)
   local_voxel_map.header.frame_id = map_frame_;
   local_map_pub.publish(local_voxel_map);
+
+  // do the same for the non inflated local map
+  kr_planning_msgs::VoxelMap local_voxel_map_non_inflated =
+      storage_voxel_mapper_->getLocalMap(local_origin_map, local_dim_d);
+  local_voxel_map_non_inflated.origin.x = local_origin_odom(0);
+  local_voxel_map_non_inflated.origin.y = local_origin_odom(1);
+  local_voxel_map_non_inflated.origin.z = local_origin_odom(2);
+  local_voxel_map_non_inflated.header.frame_id = map_frame_;
+  local_map_no_inflation_pub.publish(local_voxel_map_non_inflated);
 }
 
 void LocalGlobalMapperNode::getLidarPoses(

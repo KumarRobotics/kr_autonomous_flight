@@ -41,7 +41,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: Local
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -220,8 +220,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: -9999
-            Min Value: 9999
+            Max Value: 3.125
+            Min Value: 1.125
             Value: true
           Axis: Z
           BoundScale: 0.5
@@ -523,7 +523,7 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
-    - Alpha: 1
+    - Alpha: 0.10000000149011612
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
         Max Value: 10
@@ -567,7 +567,7 @@ Visualization Manager:
       Channel Name: intensity
       Class: kr_planning_rviz_plugins/VoxelMap
       Color: 255; 255; 255
-      Color Transformer: ""
+      Color Transformer: Intensity
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -577,7 +577,7 @@ Visualization Manager:
       MeshHeight: 0.5
       Min Color: 0; 0; 0
       Name: VoxelMap
-      Position Transformer: ""
+      Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
@@ -622,7 +622,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 66.48322296142578
+      Distance: 18.81653594970703
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -638,9 +638,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.3097965717315674
+      Pitch: 0.9297969341278076
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 2.5403923988342285
+      Yaw: 3.000394821166992
     Saved: ~
 Window Geometry:
   Displays:

@@ -24,8 +24,13 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   }
 
   planner_type_ = new CompositePlanner(traj_planner_nh_, frame_id_);
+  ROS_WARN("[Local planner:] planner instance created!");
+
   planner_type_->setup();
+  ROS_WARN("[Local planner:] setup-ed!");
+
   local_as_->start();
+  ROS_WARN("[Local planner:] Initialized!");
 }
 
 // map callback, update local_map_ptr_

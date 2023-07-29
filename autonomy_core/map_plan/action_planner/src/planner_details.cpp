@@ -86,6 +86,7 @@ void OptPlanner::GCOPTER::setup() {
   /* initialize main modules */
   ros::NodeHandle nh = ros::NodeHandle("~");
   planner_manager_.reset(new gcopter::GcopterPlanner(nh, frame_id_));
+  ROS_WARN("[LocalPlanServer:] GCOPTER setup complete");
 }
 
 kr_planning_msgs::SplineTrajectory OptPlanner::GCOPTER::plan(
@@ -628,9 +629,12 @@ kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
   
   *compute_time_front_end = duration.count() / 1000.0;
 
+  //if result is empty, then just return an empty SplineTrajectory
+  if (result.data.size() == 0) return kr_planning_msgs::SplineTrajectory(); //maybe just return result :(
   search_traj_pub_.publish(result);
 
   start_timer = std::chrono::high_resolution_clock::now();
+  
   if (opt_planner_type_ != nullptr) {
     auto path = search_planner_type_->SamplePath();
     // Double description initialization traj must fully reach the end or it

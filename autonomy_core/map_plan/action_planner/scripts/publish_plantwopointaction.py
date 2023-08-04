@@ -30,9 +30,14 @@ def semi_main():
         msg.goal.p_init.position.x = 1.25
         msg.goal.p_init.position.y = 1.25
         msg.goal.p_init.position.z = 5
-        msg.goal.v_init.linear.x = 1
-        msg.goal.v_init.linear.y = 1
-        msg.goal.v_init.linear.z = 1
+        #random initial velocity
+        msg.goal.v_init.linear.x = uniform(0,3)
+        msg.goal.v_init.linear.y = uniform(-3,3)
+        msg.goal.v_init.linear.z = uniform(-3,3)
+        # msg.goal.a_init.linear.x = uniform(-1,1)
+        # msg.goal.a_init.linear.y = uniform(-1,1)
+        # msg.goal.a_init.linear.z = uniform(-1,1)
+
         msg.goal.p_final.position.x = 20-1.25
         msg.goal.p_final.position.y = 10-1.25
         msg.goal.p_final.position.z = 5

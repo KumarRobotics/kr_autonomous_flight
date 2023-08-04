@@ -470,8 +470,8 @@ bool RePlanner::PlanTrajectory(int horizon) {
   // send goal to global plan server to replan (new goal will preempt old goals)
   if (global_replan_rate_factor_ > 1) {
     // calling global replan slower than calling local replan
-    ROS_INFO_STREAM("local replan rate is " << global_replan_rate_factor_
-                                            << "x global replan rate");
+    ROS_INFO_STREAM("[LG_replan_server]: Local replan rate is " << global_replan_rate_factor_
+                                            << "times global replan rate");
     if ((global_plan_counter_ % global_replan_rate_factor_) == 0) {
       global_plan_client_->sendGoal(global_tpgoal);
       // this is just for visualization purposes
@@ -508,6 +508,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
 
   // Replan step 3: local plan
   // ##########################################################################################################
+  ROS_INFO_STREAM("[LG_replan_server]:local replan rate is " << local_replan_rate_ << " Hz, horizon is " << horizon);
   // set vars
   local_tpgoal.avoid_obstacles = avoid_obstacle_;
   local_tpgoal.execution_time = ros::Duration(1.0 / local_replan_rate_);

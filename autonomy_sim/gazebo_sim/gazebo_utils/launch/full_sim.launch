@@ -22,8 +22,8 @@
   <!-- robot takeoff height /> -->
   <arg name="takeoff_height" default="1.0"/>
   <!-- robot initial spawn positions -->
-  <arg name="x" default="10.0"/>
-  <arg name="y" default="10.0"/>
+  <arg name="x" default="8.0"/>
+  <arg name="y" default="0.0"/>
   <arg name="z" default="1.0"/>
   <arg name="yaw" default="-0.0"/>
   <!-- control gains config file -->

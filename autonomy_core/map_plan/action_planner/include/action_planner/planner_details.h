@@ -192,6 +192,30 @@ class Geometric : public PlannerType {
   kr_planning_msgs::SplineTrajectory spline_traj_;
   ros::Publisher path_pub_;
 };
+
+
+class PathThrough : public PlannerType {
+ public:
+  explicit PathThrough(const ros::NodeHandle& nh, const std::string& frame_id)
+      : PlannerType(nh, frame_id) {}
+
+  void setup();
+  kr_planning_msgs::SplineTrajectory plan(
+      const MPL::Waypoint3D& start,
+      const MPL::Waypoint3D& goal,
+      const kr_planning_msgs::VoxelMap& map);
+  MPL::Waypoint3D evaluate(double t);
+
+ private:
+  void highLevelPlannerCB(const kr_planning_msgs::Path& path);
+  bool verbose_{true};
+  kr_planning_msgs::SplineTrajectory spline_traj_;
+  ros::Publisher path_pub_;
+  ros::Subscriber high_level_planner_sub_;
+  kr_planning_msgs::Path path_ = kr_planning_msgs::Path();
+
+};
+
 }  // namespace SearchPlanner
 
 #endif  // ACTION_PLANNER_PLANNER_DETAILS_H_

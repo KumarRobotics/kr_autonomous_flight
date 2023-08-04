@@ -30,6 +30,9 @@ def semi_main():
         msg.goal.p_init.position.x = 1.25
         msg.goal.p_init.position.y = 1.25
         msg.goal.p_init.position.z = 5
+        msg.goal.v_init.linear.x = 1
+        msg.goal.v_init.linear.y = 1
+        msg.goal.v_init.linear.z = 1
         msg.goal.p_final.position.x = 20-1.25
         msg.goal.p_final.position.y = 10-1.25
         msg.goal.p_final.position.z = 5

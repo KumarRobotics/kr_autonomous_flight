@@ -545,6 +545,52 @@ MPL::Waypoint3D SearchPlanner::Geometric::evaluate(double t) {
   return waypoint;
 }
 
+void SearchPlanner::PathThrough::setup() {
+  path_pub_ = nh_.advertise<kr_planning_msgs::Path>("path", 1, true);
+  high_level_planner_sub_ = nh_.subscribe(
+      "/quadrotor/global_plan_server/path", 1, &SearchPlanner::PathThrough::highLevelPlannerCB, this);
+}
+
+void SearchPlanner::PathThrough::highLevelPlannerCB(
+    const kr_planning_msgs::Path& path) {
+  path_ = path;
+  ROS_INFO_STREAM("[Local Plan Search: Passing through global plan!");
+}
+
+kr_planning_msgs::SplineTrajectory SearchPlanner::PathThrough::plan(
+    const MPL::Waypoint3D& start,
+    const MPL::Waypoint3D& goal,
+    const kr_planning_msgs::VoxelMap& map) {
+  (void) map;
+  if (path_.waypoints.empty()) {
+    ROS_WARN("No path received yet!");
+    return kr_planning_msgs::SplineTrajectory();
+  }
+  kr_planning_msgs::Path path = path_;
+  path.header.frame_id = frame_id_;
+  path.header.stamp = ros::Time::now();
+  path_pub_.publish(path);
+
+  double velocity;
+  nh_.param("max_v", velocity, 2.0);
+  spline_traj_ = path_to_spline_traj(path, velocity);
+  spline_traj_.header.frame_id = frame_id_;
+  spline_traj_.header.stamp = ros::Time::now();
+  traj_total_time_ = spline_traj_.data[0].t_total;
+  
+  return spline_traj_;
+}
+
+MPL::Waypoint3D SearchPlanner::PathThrough::evaluate(double t) {
+  MPL::Waypoint3D waypoint;
+
+  // A little ugly to use this method for evaluation
+  waypoint.pos = kr::SplineTrajectoryVisual::evaluate(spline_traj_, t, 0);
+  waypoint.vel = kr::SplineTrajectoryVisual::evaluate(spline_traj_, t, 1);
+  waypoint.acc = kr::SplineTrajectoryVisual::evaluate(spline_traj_, t, 2);
+  return waypoint;
+}
+
 void CompositePlanner::setup() {
   int search_planner_type_id, opt_planner_type_id;
   nh_.param("search_planner_type", search_planner_type_id, -1);
@@ -563,9 +609,9 @@ void CompositePlanner::setup() {
     case 2:
       search_planner_type_ = new SearchPlanner::Geometric(nh_, frame_id_);
       break;
-    // case 3:
-    //   search_planner_type_ = new
-    //   SearchPlanner::StraightLine(nh_, frame_id_); break;
+    case 3:
+      search_planner_type_ = new SearchPlanner::PathThrough(nh_, frame_id_); 
+      break;
     // case 4:
     //   search_planner_type_ = new
     //   SearchPlanner::SingleBVP(nh_, frame_id_); break;

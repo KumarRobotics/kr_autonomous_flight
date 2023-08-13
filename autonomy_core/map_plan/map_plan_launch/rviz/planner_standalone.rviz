@@ -14,6 +14,7 @@ Panels:
         - /MarkerArray2
         - /SplineTrajectory2
         - /Path1
+        - /Marker8
       Splitter Ratio: 0.5211267471313477
     Tree Height: 482
   - Class: rviz/Selection
@@ -96,7 +97,7 @@ Visualization Manager:
       AccScale: 0.019999999552965164
       AccVis: false
       Class: kr_planning_rviz_plugins/SplineTrajectory
-      Enabled: true
+      Enabled: false
       Name: SplineTrajectory
       Num of samples: 1000
       PosColor: 204; 51; 204
@@ -104,7 +105,7 @@ Visualization Manager:
       Queue Size: 10
       Topic: /local_plan_server/trajectory
       Unreliable: false
-      Value: true
+      Value: false
       VelColor: 85; 85; 255
       VelScale: 0.019999999552965164
       VelVis: false
@@ -113,7 +114,7 @@ Visualization Manager:
       Marker Topic: /start_and_goal
       Name: MarkerArray
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -263,6 +264,14 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /optimized_traj_samples_viz
+      Name: Marker
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 189; 234; 201
@@ -296,7 +305,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 24.071929931640625
+      Distance: 82.43587493896484
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -304,17 +313,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 10.34391975402832
-        Y: 6.494593620300293
-        Z: 9.583311080932617
+        X: 2.133138418197632
+        Y: -0.0007395371794700623
+        Z: 1.593908429145813
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9147969484329224
+      Pitch: 0.6047972440719604
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 3.679940938949585
+      Yaw: 3.159940242767334
     Saved: ~
 Window Geometry:
   Displays:

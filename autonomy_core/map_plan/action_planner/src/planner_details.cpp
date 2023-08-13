@@ -5,6 +5,21 @@
 //
 // Double Description Planner
 //
+void OptPlanner::iLQR_Planner::setup () {
+
+}
+kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
+      const MPL::Waypoint3D& start,
+      const MPL::Waypoint3D& goal,
+      const kr_planning_msgs::VoxelMap& map){
+  return kr_planning_msgs::TrajectoryDiscretized();
+}
+
+MPL::Waypoint3D OptPlanner::iLQR_Planner::evaluate(double t){
+  return MPL::Waypoint3D();
+}
+
+
 void OptPlanner::DoubleDescription::setup() {
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
   ROS_WARN("[LocalPlanServer:] Optimization planner mode!!!!!");
@@ -95,9 +110,11 @@ kr_planning_msgs::SplineTrajectory OptPlanner::GCOPTER::plan(
     const kr_planning_msgs::VoxelMap& map) {
   ROS_WARN("[LocalPlanServer] trigger opt_planner!!!!!");
 
+  ROS_WARN_STREAM("[GCOPTER]: Vel Norm:"<<start.vel.norm());
+  ROS_WARN_STREAM("[GCOPTER]: Acc Norm:"<<start.acc.norm());
   Eigen::MatrixXd startState(3, 3), endState(3, 3);
-  startState << start.pos(0), start.vel(0), start.acc(0), start.pos(1),
-      start.vel(1), start.acc(1), start.pos(2), start.vel(2), start.acc(2);
+  startState << start.pos(0), start.vel(0), 0.0, start.pos(1),
+      start.vel(1), 0.0, start.pos(2), start.vel(2), 0.0;
   endState << goal.pos(0), goal.vel(0), goal.acc(0), goal.pos(1), goal.vel(1),
       goal.acc(1), goal.pos(2), goal.vel(2), goal.acc(2);
 
@@ -626,6 +643,8 @@ void CompositePlanner::setup() {
       break;
     case 1:
       opt_planner_type_ = new OptPlanner::GCOPTER(nh_, frame_id_);
+    case 2:
+      opt_planner_type_ = new OptPlanner::iLQR_Planner(nh_, frame_id_);
       break;
     default:
       ROS_ERROR("No opt planner selected; will use search planner only.");
@@ -666,6 +685,10 @@ kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
     const kr_planning_msgs::VoxelMap& map_no_inflation,
     float* compute_time_front_end,
     float* compute_time_back_end) {
+
+  ROS_INFO_STREAM("Composite Planner: pos" << start.pos.transpose() << " to " << goal.pos.transpose());
+  ROS_INFO_STREAM("Composite Planner: vel" << start.vel.transpose() << " to " << goal.vel.transpose());
+  ROS_INFO_STREAM("Composite Planner: acc" << start.acc.transpose() << " to " << goal.acc.transpose());
 
   auto start_timer = std::chrono::high_resolution_clock::now();
   auto result = search_planner_type_->plan(start, goal, map);

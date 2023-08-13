@@ -21,5 +21,6 @@
   <depend>depth_image_proc</depend>
   <depend>tf_conversions</depend>
   <depend>eigen_conversions</depend>
+  <depend>motion_primitive_library</depend>
 
 </package>

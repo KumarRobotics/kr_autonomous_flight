@@ -35,6 +35,7 @@
   <depend>decomp_ros_msgs</depend>
   <depend>motion_primitives</depend>
   <depend>gcopter</depend>
+  <depend>kr_ilqr_optimizer</depend>
 
   <export>
   </export>

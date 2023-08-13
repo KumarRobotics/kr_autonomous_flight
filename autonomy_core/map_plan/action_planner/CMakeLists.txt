@@ -3,6 +3,7 @@ project(action_planner)
 
 set(CMAKE_CXX_STANDARD 17)
 
+
 find_package(Boost REQUIRED COMPONENTS timer)
 find_package(
   catkin REQUIRED
@@ -25,11 +26,13 @@ find_package(
              decomp_ros_utils
              decomp_ros_msgs
              motion_primitives
-             gcopter)
+             gcopter
+             kr_ilqr_optimizer
+            )
 
 generate_dynamic_reconfigure_options(cfg/ActionPlanner.cfg)
 
-catkin_package(CATKIN_DEPENDS dynamic_reconfigure kr_planning_msgs gcopter)
+catkin_package(CATKIN_DEPENDS dynamic_reconfigure kr_planning_msgs gcopter kr_ilqr_optimizer)
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_library(planners src/planner_details.cpp src/data_conversions.cpp src/primitive_ros_utils.cpp)

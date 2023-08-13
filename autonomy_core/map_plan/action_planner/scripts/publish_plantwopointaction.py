@@ -19,28 +19,34 @@ def semi_main():
     start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10)
     rospy.init_node('publish_two_point_action')
 
-    rate = rospy.Rate(0.2)  #TODO: Make this run everytime we receive a new map, not finished yet
-    for i in range(start_goal.shape[0]):
+    rate = rospy.Rate(1)  #TODO: Make this run everytime we receive a new map, not finished yet
+    i = 0
+    while True:
+    # for i in range(start_goal.shape[0]):
         if rospy.is_shutdown():
             break
         print(i)
         msg = PlanTwoPointActionGoal()
         msg.header.frame_id = "map"
         msg.header.stamp = rospy.Time.now()
-        msg.goal.p_init.position.x = 1.25
-        msg.goal.p_init.position.y = 1.25
-        msg.goal.p_init.position.z = 5
+        msg.goal.p_init.position.x = 0
+        msg.goal.p_init.position.y = uniform(0,10)
+        msg.goal.p_init.position.z = uniform(0,5)
         #random initial velocity
         msg.goal.v_init.linear.x = uniform(0,3)
-        msg.goal.v_init.linear.y = uniform(-3,3)
-        msg.goal.v_init.linear.z = uniform(-3,3)
-        # msg.goal.a_init.linear.x = uniform(-1,1)
-        # msg.goal.a_init.linear.y = uniform(-1,1)
-        # msg.goal.a_init.linear.z = uniform(-1,1)
+        msg.goal.v_init.linear.y = uniform(-1,1)
+        msg.goal.v_init.linear.z = uniform(-1,1)
+        msg.goal.a_init.linear.x = uniform(-1,1)
+        msg.goal.a_init.linear.y = uniform(-1,1)
+        msg.goal.a_init.linear.z = uniform(-1,1)
+        print("initial position")
+        print(msg.goal.p_init.position)
+        print("initial velocity")
+        print(msg.goal.v_init.linear)
 
-        msg.goal.p_final.position.x = 20-1.25
-        msg.goal.p_final.position.y = 10-1.25
-        msg.goal.p_final.position.z = 5
+        msg.goal.p_final.position.x = 20
+        msg.goal.p_final.position.y = uniform(0,10)
+        msg.goal.p_final.position.z = uniform(0,10)
         
         #do you want velocity initial and final to be zero?
 
@@ -63,6 +69,7 @@ def semi_main():
         path_pub.publish(msg)
         start_and_goal_pub.publish(start_and_goal)
         rate.sleep()
+        i += 1
 
 if __name__ == '__main__':
     try:

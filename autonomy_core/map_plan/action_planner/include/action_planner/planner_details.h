@@ -30,14 +30,14 @@ class PlannerType {
   explicit PlannerType(const ros::NodeHandle& nh, const std::string& frame_id)
       : nh_(nh), frame_id_(frame_id) {}
   virtual void setup() = 0;
-  virtual kr_planning_msgs::SplineTrajectory plan(
+    virtual kr_planning_msgs::SplineTrajectory plan(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map) {
         std::logic_error("Function not yet implemented");
         return kr_planning_msgs::SplineTrajectory();
       }
-    virtual kr_planning_msgs::SplineTrajectory plan(
+  virtual kr_planning_msgs::SplineTrajectory plan(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map,
@@ -47,7 +47,7 @@ class PlannerType {
         std::logic_error("Function not yet implemented");
         return kr_planning_msgs::SplineTrajectory();
         }
-virtual kr_planning_msgs::TrajectoryDiscretized plan_discrete(
+  virtual kr_planning_msgs::TrajectoryDiscretized plan_discrete(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map) {
@@ -74,6 +74,7 @@ virtual kr_planning_msgs::TrajectoryDiscretized plan_discrete(
   double path_sampling_dt_ = 0.15;
   // TODO(Laura) not sure if this is the best way to pass the search path
   std::vector<Eigen::Vector3d> search_path_;
+  kr_planning_msgs::SplineTrajectory search_path_msg_;
   // If replanning, some planners requires the previous trajectory which is
   // contained in the action server goal
   kr_planning_msgs::PlanTwoPointGoal action_server_goal_;

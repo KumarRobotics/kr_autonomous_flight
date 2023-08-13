@@ -6,13 +6,19 @@
 // Double Description Planner
 //
 void OptPlanner::iLQR_Planner::setup () {
+  ROS_INFO("[LocalPlanServer]::SETTING UP iLQR PLANNER");
+  bool subscribe_to_traj = false;
+  bool publish_optimized_traj = false;
+  bool publish_viz = true;
+  sampler_.reset(new SplineTrajSampler(subscribe_to_traj, publish_optimized_traj, publish_viz));
 
 }
 kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map){
-  return kr_planning_msgs::TrajectoryDiscretized();
+
+        return sampler_->sample_and_refine_trajectory(boost::make_shared<kr_planning_msgs::SplineTrajectory const>(search_path_msg_));
 }
 
 MPL::Waypoint3D OptPlanner::iLQR_Planner::evaluate(double t){
@@ -701,6 +707,7 @@ kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
   //if result is empty, then just return an empty SplineTrajectory
   if (result.data.size() == 0) return kr_planning_msgs::SplineTrajectory(); //maybe just return result :(
   search_traj_pub_.publish(result);
+  search_path_msg_ = result;
 
   start_timer = std::chrono::high_resolution_clock::now();
   

@@ -26,7 +26,7 @@ trajectory_planner:
   max_u: 2.0 # x-y-direction control inputs increase / decrease step, must be smaller than max_j, recommended value: for 2-D 3, for 3-D 1, for each axis jerk increment choice is -max_u, 0, max_u
   use_3d_local: true # local planner operates in 3D (true) or 2D (false)
   search_planner_type: 0 # 0: MPL, 1: dispersion planner, 2: JPS (geometric) 3: pass through from global planner
-  opt_planner_type: -1 # -1: no planner 0: Double Description 1: gcopter 2: iLQR(Altro)
+  opt_planner_type: 2 # -1: no planner 0: Double Description 1: gcopter 2: iLQR(Altro)
   #TODO(Laura) fix path
   dispersion/graph_file: "/home/yifei/Documents/optimal_ctrl/80.json"
 

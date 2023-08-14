@@ -23,10 +23,10 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
     ros::spinOnce();
   }
 
-  planner_type_ = new CompositePlanner(traj_planner_nh_, frame_id_);
+  planner_ = new CompositePlanner(traj_planner_nh_, frame_id_);
   ROS_WARN("[Local planner:] planner instance created!");
 
-  planner_type_->setup();
+  planner_->setup();
   ROS_WARN("[Local planner:] setup-ed!");
 
   local_as_->start();
@@ -75,7 +75,7 @@ void LocalPlanServer::goalCB() {
       end_timer - start_timer);
   ROS_INFO("Local goalCB took %f ms", duration.count() / 1000.0);
   computation_time_ = duration.count() / 1000.0;
-  planner_type_->setGoal(*goal_ptr);
+  planner_->setGoal(*goal_ptr);
 }
 
 void LocalPlanServer::process_goal(
@@ -136,7 +136,7 @@ void LocalPlanServer::process_goal(
   kr_planning_msgs::Path sg_msg = kr::path_to_ros(sg);
   sg_msg.header.frame_id = frame_id_;
   sg_pub.publish(sg_msg);
-  process_result(planner_type_->plan(start, goal, local_map_cleared, local_no_infla_map_cleared, &compute_time_front_end_, &compute_time_back_end_),
+  process_result(planner_->plan_composite(start, goal, local_map_cleared, local_no_infla_map_cleared, &compute_time_front_end_, &compute_time_back_end_),
                  as_goal.execution_time,
                  as_goal.epoch);
 }
@@ -197,9 +197,10 @@ bool LocalPlanServer::is_outside_map(const Eigen::Vector3i& pn,
 }
 
 void LocalPlanServer::process_result(
-    const kr_planning_msgs::SplineTrajectory& traj_msg,
+    const std::pair< kr_planning_msgs::SplineTrajectory, kr_planning_msgs::TrajectoryDiscretized> & traj_combined,
     ros::Duration execution_time,
     int epoch) {
+  kr_planning_msgs::SplineTrajectory traj_msg = traj_combined.first;
   bool solved = traj_msg.data.size() > 0;
 
   if (!solved) {
@@ -230,7 +231,7 @@ void LocalPlanServer::process_result(
       geometry_msgs::Twist v_fin, a_fin, j_fin;
 
       MPL::Waypoint3D pt_f =
-          planner_type_->evaluate(endt * static_cast<double>(i + 1));
+          planner_->evaluate(endt * static_cast<double>(i + 1));
       // check if evaluation is successful, if not, set result.success to be
       // false! (if failure case, a null Waypoint is returned)
       if ((pt_f.pos(0) == 0) && (pt_f.pos(1) == 0) && (pt_f.pos(2) == 0) &&
@@ -257,7 +258,7 @@ void LocalPlanServer::process_result(
       result.j_stop.push_back(j_fin);
     }
 
-    MPL::Waypoint3D pt = planner_type_->evaluate(traj_total_time_);
+    MPL::Waypoint3D pt = planner_->evaluate(traj_total_time_);
     result.traj_end.position.x = pt.pos(0);
     result.traj_end.position.y = pt.pos(1);
     result.traj_end.position.z = pt.pos(2);

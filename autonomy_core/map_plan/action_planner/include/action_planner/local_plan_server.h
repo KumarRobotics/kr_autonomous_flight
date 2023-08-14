@@ -50,7 +50,7 @@ class LocalPlanServer {
 
   bool pub_cleared_map_ = false;
   bool set_vis_ = false;
-  PlannerType* planner_type_;
+  CompositePlanner* planner_;
 
   std::string frame_id_;
 
@@ -69,7 +69,7 @@ class LocalPlanServer {
   /**
    * @brief Record result (trajectory, status, etc)
    */
-  void process_result(const kr_planning_msgs::SplineTrajectory& traj_msg,
+  void process_result(const std::pair< kr_planning_msgs::SplineTrajectory, kr_planning_msgs::TrajectoryDiscretized> & traj_combined,
                       ros::Duration execution_time,
                       int epoch);
 

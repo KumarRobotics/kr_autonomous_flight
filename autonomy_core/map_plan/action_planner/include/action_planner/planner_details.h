@@ -30,30 +30,37 @@ class PlannerType {
   explicit PlannerType(const ros::NodeHandle& nh, const std::string& frame_id)
       : nh_(nh), frame_id_(frame_id) {}
   virtual void setup() = 0;
+    //always called by individual planner
     virtual kr_planning_msgs::SplineTrajectory plan(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map) {
-        std::logic_error("Function not yet implemented");
+        ROS_ERROR("[Plannner Details]:plan discrete not implemented");
+        // std::logic_error("Function not yet implemented");
         return kr_planning_msgs::SplineTrajectory();
       }
-  virtual kr_planning_msgs::SplineTrajectory plan(
+    virtual kr_planning_msgs::TrajectoryDiscretized plan_discrete(
+      const MPL::Waypoint3D& start,
+      const MPL::Waypoint3D& goal,
+      const kr_planning_msgs::VoxelMap& map) {
+        ROS_ERROR("[Plannner Details]:plan discrete not implemented");
+        // std::logic_error("Function not yet implemented");
+        return kr_planning_msgs::TrajectoryDiscretized();
+        }//this does not have to be implemented
+
+
+      //always called by composite planner
+  virtual std::pair<kr_planning_msgs::SplineTrajectory,kr_planning_msgs::TrajectoryDiscretized> plan_composite(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map,
       const kr_planning_msgs::VoxelMap& map_no_inflation,
       float* compute_time_front_end,
       float* compute_time_back_end) {
-        std::logic_error("Function not yet implemented");
-        return kr_planning_msgs::SplineTrajectory();
+        ROS_ERROR("[Plannner Details]:plan composite not implemented");
+        // std::logic_error("Function not yet implemented");
+        return std::make_pair(kr_planning_msgs::SplineTrajectory(),kr_planning_msgs::TrajectoryDiscretized());
         }
-  virtual kr_planning_msgs::TrajectoryDiscretized plan_discrete(
-      const MPL::Waypoint3D& start,
-      const MPL::Waypoint3D& goal,
-      const kr_planning_msgs::VoxelMap& map) {
-        std::logic_error("Function not yet implemented");
-        return kr_planning_msgs::TrajectoryDiscretized();
-        }//this does not have to be implemented
 
 
 
@@ -74,7 +81,7 @@ class PlannerType {
   double path_sampling_dt_ = 0.15;
   // TODO(Laura) not sure if this is the best way to pass the search path
   std::vector<Eigen::Vector3d> search_path_;
-  kr_planning_msgs::SplineTrajectory search_path_msg_;
+  boost::shared_ptr<kr_planning_msgs::SplineTrajectory const> search_path_msg_;
   // If replanning, some planners requires the previous trajectory which is
   // contained in the action server goal
   kr_planning_msgs::PlanTwoPointGoal action_server_goal_;
@@ -86,11 +93,11 @@ class CompositePlanner : public PlannerType {
                             const std::string& frame_id)
       : PlannerType(nh, frame_id) {}
   void setup();
-  kr_planning_msgs::SplineTrajectory plan(
-      const MPL::Waypoint3D& start,
-      const MPL::Waypoint3D& goal,
-      const kr_planning_msgs::VoxelMap& map);
-  kr_planning_msgs::SplineTrajectory plan(
+  // kr_planning_msgs::SplineTrajectory plan(
+  //     const MPL::Waypoint3D& start,
+  //     const MPL::Waypoint3D& goal,
+  //     const kr_planning_msgs::VoxelMap& map);
+  std::pair<kr_planning_msgs::SplineTrajectory,kr_planning_msgs::TrajectoryDiscretized>  plan_composite(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map,

@@ -18,7 +18,7 @@ kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map){
 
-        return sampler_->sample_and_refine_trajectory(boost::make_shared<kr_planning_msgs::SplineTrajectory const>(search_path_msg_));
+        return sampler_->sample_and_refine_trajectory(search_path_msg_);
 }
 
 MPL::Waypoint3D OptPlanner::iLQR_Planner::evaluate(double t){
@@ -665,26 +665,26 @@ void CompositePlanner::setup() {
   }
 }
 
-kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
-    const MPL::Waypoint3D& start,
-    const MPL::Waypoint3D& goal,
-    const kr_planning_msgs::VoxelMap& map) {
-  auto result = search_planner_type_->plan(start, goal, map);
-  search_traj_pub_.publish(result);
-  // Only run opt planner if search is successful for evaluation purposes.
-  if (result.data.size() > 0 && opt_planner_type_ != nullptr) {
-    auto path = search_planner_type_->SamplePath();
-    // Double description initialization traj must fully reach the end or it
-    // will fail.
-    // TODO(Laura) consider whether should actually calculate the BVP instead
-    path.push_back(goal.pos);
-    opt_planner_type_->setSearchPath(path);
-    result = opt_planner_type_->plan(start, goal, map);
-  }
-  return result;
-}
+// kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
+//     const MPL::Waypoint3D& start,
+//     const MPL::Waypoint3D& goal,
+//     const kr_planning_msgs::VoxelMap& map) {
+//   auto result = search_planner_type_->plan(start, goal, map);
+//   search_traj_pub_.publish(result);
+//   // Only run opt planner if search is successful for evaluation purposes.
+//   if (result.data.size() > 0 && opt_planner_type_ != nullptr) {
+//     auto path = search_planner_type_->SamplePath();
+//     // Double description initialization traj must fully reach the end or it
+//     // will fail.
+//     // TODO(Laura) consider whether should actually calculate the BVP instead
+//     path.push_back(goal.pos);
+//     opt_planner_type_->setSearchPath(path);
+//     result = opt_planner_type_->plan(start, goal, map);
+//   }
+//   return result;
+// }
 
-kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
+std::pair<kr_planning_msgs::SplineTrajectory,kr_planning_msgs::TrajectoryDiscretized>  CompositePlanner::plan_composite(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map,
@@ -697,7 +697,8 @@ kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
   ROS_INFO_STREAM("Composite Planner: acc" << start.acc.transpose() << " to " << goal.acc.transpose());
 
   auto start_timer = std::chrono::high_resolution_clock::now();
-  auto result = search_planner_type_->plan(start, goal, map);
+  kr_planning_msgs::SplineTrajectory result = search_planner_type_->plan(start, goal, map);
+  kr_planning_msgs::TrajectoryDiscretized result_discretized;
   auto end_timer = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
       end_timer - start_timer);
@@ -705,9 +706,9 @@ kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
   *compute_time_front_end = duration.count() / 1000.0;
 
   //if result is empty, then just return an empty SplineTrajectory
-  if (result.data.size() == 0) return kr_planning_msgs::SplineTrajectory(); //maybe just return result :(
+  if (result.data.size() == 0) return std::make_pair(kr_planning_msgs::SplineTrajectory(),result_discretized); //maybe just return result :(
   search_traj_pub_.publish(result);
-  search_path_msg_ = result;
+  search_path_msg_ = boost::make_shared<kr_planning_msgs::SplineTrajectory const>(result);
 
   start_timer = std::chrono::high_resolution_clock::now();
   
@@ -719,6 +720,7 @@ kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
     path.push_back(goal.pos);
     opt_planner_type_->setSearchPath(path);
     result = opt_planner_type_->plan(start, goal, map_no_inflation);
+    result_discretized = opt_planner_type_->plan_discrete(start, goal, map_no_inflation);
     // TODO:(Yifei) only use no infla for gcopter planner, not dd planner
   }
   end_timer = std::chrono::high_resolution_clock::now();
@@ -726,7 +728,7 @@ kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
       end_timer - start_timer);
   *compute_time_back_end = duration.count() / 1000.0;
   
-  return result;
+  return std::make_pair(result,result_discretized);
 }
 
 MPL::Waypoint3D CompositePlanner::evaluate(double t) {

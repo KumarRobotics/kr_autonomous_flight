@@ -81,7 +81,7 @@ class PlannerType {
   double path_sampling_dt_ = 0.15;
   // TODO(Laura) not sure if this is the best way to pass the search path
   std::vector<Eigen::Vector3d> search_path_;
-  boost::shared_ptr<kr_planning_msgs::SplineTrajectory const> search_path_msg_;
+  kr_planning_msgs::SplineTrajectory search_path_msg_;
   // If replanning, some planners requires the previous trajectory which is
   // contained in the action server goal
   kr_planning_msgs::PlanTwoPointGoal action_server_goal_;

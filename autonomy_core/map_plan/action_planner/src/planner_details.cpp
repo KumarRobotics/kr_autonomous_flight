@@ -6,18 +6,18 @@
 // Double Description Planner
 //
 void OptPlanner::iLQR_Planner::setup () {
-  ROS_INFO("[LocalPlanServer]::SETTING UP iLQR PLANNER");
+  ROS_INFO("[iLQR]::SETTING UP iLQR PLANNER");
   bool subscribe_to_traj = false;
   bool publish_optimized_traj = false;
-  bool publish_viz = true;
-  sampler_.reset(new SplineTrajSampler(subscribe_to_traj, publish_optimized_traj, publish_viz));
+  bool publish_viz = true;                                                         //N sample, time limit
+  sampler_.reset(new SplineTrajSampler(subscribe_to_traj, publish_optimized_traj, publish_viz, 40, 10));
 
 }
 kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map){
-
+        ROS_WARN("[iLQR] Discrete Planning!!!!!");
         return sampler_->sample_and_refine_trajectory(search_path_msg_);
 }
 
@@ -708,11 +708,12 @@ std::pair<kr_planning_msgs::SplineTrajectory,kr_planning_msgs::TrajectoryDiscret
   //if result is empty, then just return an empty SplineTrajectory
   if (result.data.size() == 0) return std::make_pair(kr_planning_msgs::SplineTrajectory(),result_discretized); //maybe just return result :(
   search_traj_pub_.publish(result);
-  search_path_msg_ = boost::make_shared<kr_planning_msgs::SplineTrajectory const>(result);
+  
 
   start_timer = std::chrono::high_resolution_clock::now();
   
   if (opt_planner_type_ != nullptr) {
+    opt_planner_type_->search_path_msg_ = result;
     auto path = search_planner_type_->SamplePath();
     // Double description initialization traj must fully reach the end or it
     // will fail.

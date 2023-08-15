@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+    <arg name="mapper_config" default="$(find map_plan_launch)/config/mapper.yaml"/>
+
+    <include file="$(find map_plan_launch)/launch/mapper.launch">
+        <arg name="odom_frame" value="map"/>
+        <arg name="map_frame" value="map"/>
+        <arg name="mapper_config" value="$(arg mapper_config)"/>
+        <arg name="cloud" value="cloud"/>
+    </include>
+</launch>

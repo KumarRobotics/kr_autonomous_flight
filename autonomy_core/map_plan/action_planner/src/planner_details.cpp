@@ -5,26 +5,25 @@
 //
 // Double Description Planner
 //
-void OptPlanner::iLQR_Planner::setup () {
+void OptPlanner::iLQR_Planner::setup() {
   ROS_INFO("[iLQR]::SETTING UP iLQR PLANNER");
   bool subscribe_to_traj = false;
   bool publish_optimized_traj = false;
-  bool publish_viz = true;                                                         //N sample, time limit
-  sampler_.reset(new SplineTrajSampler(subscribe_to_traj, publish_optimized_traj, publish_viz, 40, 10));
-
+  bool publish_viz = true;  // N sample, time limit
+  sampler_.reset(new SplineTrajSampler(
+      subscribe_to_traj, publish_optimized_traj, publish_viz, 40, 10));
 }
 kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
-      const MPL::Waypoint3D& start,
-      const MPL::Waypoint3D& goal,
-      const kr_planning_msgs::VoxelMap& map){
-        ROS_WARN("[iLQR] Discrete Planning!!!!!");
-        return sampler_->sample_and_refine_trajectory(search_path_msg_);
+    const MPL::Waypoint3D& start,
+    const MPL::Waypoint3D& goal,
+    const kr_planning_msgs::VoxelMap& map) {
+  ROS_WARN("[iLQR] Discrete Planning!!!!!");
+  return sampler_->sample_and_refine_trajectory(search_path_msg_);
 }
 
-MPL::Waypoint3D OptPlanner::iLQR_Planner::evaluate(double t){
+MPL::Waypoint3D OptPlanner::iLQR_Planner::evaluate(double t) {
   return MPL::Waypoint3D();
 }
-
 
 void OptPlanner::DoubleDescription::setup() {
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
@@ -116,11 +115,11 @@ kr_planning_msgs::SplineTrajectory OptPlanner::GCOPTER::plan(
     const kr_planning_msgs::VoxelMap& map) {
   ROS_WARN("[LocalPlanServer] trigger opt_planner!!!!!");
 
-  ROS_WARN_STREAM("[GCOPTER]: Vel Norm:"<<start.vel.norm());
-  ROS_WARN_STREAM("[GCOPTER]: Acc Norm:"<<start.acc.norm());
+  ROS_WARN_STREAM("[GCOPTER]: Vel Norm:" << start.vel.norm());
+  ROS_WARN_STREAM("[GCOPTER]: Acc Norm:" << start.acc.norm());
   Eigen::MatrixXd startState(3, 3), endState(3, 3);
-  startState << start.pos(0), start.vel(0), 0.0, start.pos(1),
-      start.vel(1), 0.0, start.pos(2), start.vel(2), 0.0;
+  startState << start.pos(0), start.vel(0), 0.0, start.pos(1), start.vel(1),
+      0.0, start.pos(2), start.vel(2), 0.0;
   endState << goal.pos(0), goal.vel(0), goal.acc(0), goal.pos(1), goal.vel(1),
       goal.acc(1), goal.pos(2), goal.vel(2), goal.acc(2);
 
@@ -400,6 +399,14 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Dispersion::plan(
   const auto start_time = ros::Time::now();
 
   auto [path, nodes] = gs.Search();
+  const auto visited_marray =
+      motion_primitives::StatesToMarkerArray(gs.GetVisitedStates(),
+                                             gs.spatial_dim(),
+                                             map.header,
+                                             0.1,
+                                             false,
+                                             options_.fixed_z);
+  visited_pub_.publish(visited_marray);
   bool planner_start_too_close_to_goal =
       motion_primitives::StatePosWithin(options_.start_state,
                                         options_.goal_state,
@@ -468,14 +475,6 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Dispersion::plan(
       path, map.header, options_.fixed_z);
   traj_total_time_ = spline_msg.data.back().t_total;
   dispersion_traj_ = path;
-  const auto visited_marray =
-      motion_primitives::StatesToMarkerArray(gs.GetVisitedStates(),
-                                             gs.spatial_dim(),
-                                             map.header,
-                                             0.1,
-                                             false,
-                                             options_.fixed_z);
-  visited_pub_.publish(visited_marray);
 
   return spline_msg;
 }
@@ -570,8 +569,11 @@ MPL::Waypoint3D SearchPlanner::Geometric::evaluate(double t) {
 
 void SearchPlanner::PathThrough::setup() {
   path_pub_ = nh_.advertise<kr_planning_msgs::Path>("path", 1, true);
-  high_level_planner_sub_ = nh_.subscribe(
-      "/quadrotor/global_plan_server/path", 1, &SearchPlanner::PathThrough::highLevelPlannerCB, this);
+  high_level_planner_sub_ =
+      nh_.subscribe("/quadrotor/global_plan_server/path",
+                    1,
+                    &SearchPlanner::PathThrough::highLevelPlannerCB,
+                    this);
 }
 
 void SearchPlanner::PathThrough::highLevelPlannerCB(
@@ -584,7 +586,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::PathThrough::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map) {
-  (void) map;
+  (void)map;
   if (path_.waypoints.empty()) {
     ROS_WARN("No path received yet!");
     return kr_planning_msgs::SplineTrajectory();
@@ -600,7 +602,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::PathThrough::plan(
   spline_traj_.header.frame_id = frame_id_;
   spline_traj_.header.stamp = ros::Time::now();
   traj_total_time_ = spline_traj_.data[0].t_total;
-  
+
   return spline_traj_;
 }
 
@@ -633,7 +635,7 @@ void CompositePlanner::setup() {
       search_planner_type_ = new SearchPlanner::Geometric(nh_, frame_id_);
       break;
     case 3:
-      search_planner_type_ = new SearchPlanner::PathThrough(nh_, frame_id_); 
+      search_planner_type_ = new SearchPlanner::PathThrough(nh_, frame_id_);
       break;
     // case 4:
     //   search_planner_type_ = new
@@ -684,34 +686,33 @@ void CompositePlanner::setup() {
 //   return result;
 // }
 
-std::pair<kr_planning_msgs::SplineTrajectory,kr_planning_msgs::TrajectoryDiscretized>  CompositePlanner::plan_composite(
+std::pair<kr_planning_msgs::SplineTrajectory,
+          kr_planning_msgs::TrajectoryDiscretized>
+CompositePlanner::plan_composite(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map,
     const kr_planning_msgs::VoxelMap& map_no_inflation,
     float* compute_time_front_end,
     float* compute_time_back_end) {
-
-  ROS_INFO_STREAM("Composite Planner: pos" << start.pos.transpose() << " to " << goal.pos.transpose());
-  ROS_INFO_STREAM("Composite Planner: vel" << start.vel.transpose() << " to " << goal.vel.transpose());
-  ROS_INFO_STREAM("Composite Planner: acc" << start.acc.transpose() << " to " << goal.acc.transpose());
-
   auto start_timer = std::chrono::high_resolution_clock::now();
-  kr_planning_msgs::SplineTrajectory result = search_planner_type_->plan(start, goal, map);
+  kr_planning_msgs::SplineTrajectory result =
+      search_planner_type_->plan(start, goal, map);
   kr_planning_msgs::TrajectoryDiscretized result_discretized;
   auto end_timer = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
       end_timer - start_timer);
-  
+
   *compute_time_front_end = duration.count() / 1000.0;
 
-  //if result is empty, then just return an empty SplineTrajectory
-  if (result.data.size() == 0) return std::make_pair(kr_planning_msgs::SplineTrajectory(),result_discretized); //maybe just return result :(
+  // if result is empty, then just return an empty SplineTrajectory
+  if (result.data.size() == 0)
+    return std::make_pair(kr_planning_msgs::SplineTrajectory(),
+                          result_discretized);  // maybe just return result :(
   search_traj_pub_.publish(result);
-  
 
   start_timer = std::chrono::high_resolution_clock::now();
-  
+
   if (opt_planner_type_ != nullptr) {
     opt_planner_type_->search_path_msg_ = result;
     auto path = search_planner_type_->SamplePath();
@@ -721,15 +722,16 @@ std::pair<kr_planning_msgs::SplineTrajectory,kr_planning_msgs::TrajectoryDiscret
     path.push_back(goal.pos);
     opt_planner_type_->setSearchPath(path);
     result = opt_planner_type_->plan(start, goal, map_no_inflation);
-    result_discretized = opt_planner_type_->plan_discrete(start, goal, map_no_inflation);
+    result_discretized =
+        opt_planner_type_->plan_discrete(start, goal, map_no_inflation);
     // TODO:(Yifei) only use no infla for gcopter planner, not dd planner
   }
   end_timer = std::chrono::high_resolution_clock::now();
-  duration = std::chrono::duration_cast<std::chrono::microseconds>(
-      end_timer - start_timer);
+  duration = std::chrono::duration_cast<std::chrono::microseconds>(end_timer -
+                                                                   start_timer);
   *compute_time_back_end = duration.count() / 1000.0;
-  
-  return std::make_pair(result,result_discretized);
+
+  return std::make_pair(result, result_discretized);
 }
 
 MPL::Waypoint3D CompositePlanner::evaluate(double t) {

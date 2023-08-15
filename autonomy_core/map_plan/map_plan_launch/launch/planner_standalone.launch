@@ -18,12 +18,38 @@
       output="screen"
       respawn="true">
       <rosparam file="$(arg planner_config)"/>
+      <param name="trajectory_planner/search_planner_type" value="0"/>
       <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
       <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
 
       <!-- <remap from="~local_voxel_map" to="/voxel_map"/> -->
       <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
     </node>
+
+    <node pkg="action_planner"
+      type="local_plan_server"
+      name="local_plan_server2"
+      output="screen"
+      respawn="true">
+      <rosparam file="$(arg planner_config)"/>
+      <param name="trajectory_planner/search_planner_type" value="1"/>
+      <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
+      <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
+      <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
+    </node>
+
+    <node pkg="action_planner"
+      type="local_plan_server"
+      name="local_plan_server3"
+      output="screen"
+      respawn="true">
+      <rosparam file="$(arg planner_config)"/>
+      <param name="trajectory_planner/search_planner_type" value="2"/>
+      <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
+      <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
+      <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
+    </node>
+
 
     <group if="$(arg viz)">
       <node pkg="rviz" type="rviz" name="rviz" args="-d $(find map_plan_launch)/rviz/planner_standalone.rviz -f map" respawn="false" output="screen">

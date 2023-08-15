@@ -8,8 +8,9 @@ import pandas as pd
 from copy import deepcopy
 from visualization_msgs.msg import MarkerArray, Marker
 from actionlib import SimpleActionClient
+from std_srvs.srv import Empty
 
-filename = '/home/yifei/ws/src/kr_autonomous_flight/autonomy_core/map_plan/action_planner/scripts/map_balls_start_goal.csv'
+filename = '/home/laura/autonomy_ws/src/kr_autonomous_flight/autonomy_core/map_plan/action_planner/scripts/map_balls_start_goal.csv'
 
 
 def differentiate(p, segment_time):
@@ -46,6 +47,8 @@ class Evaluater:
         self.start_goals = pd.read_csv(filename)
         # self.path_pub = rospy.Publisher('/local_plan_server/plan_local_trajectory/goal', PlanTwoPointActionGoal, queue_size=10, latch=True)
         self.client = SimpleActionClient('/local_plan_server/plan_local_trajectory', PlanTwoPointAction)
+        self.client2 = SimpleActionClient('/local_plan_server2/plan_local_trajectory', PlanTwoPointAction)
+        self.client3 = SimpleActionClient('/local_plan_server3/plan_local_trajectory', PlanTwoPointAction)
 
         self.start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10, latch=True)
         # rospy.Subscriber("/local_plan_server/trajectory", SplineTrajectory, self.callback)
@@ -79,23 +82,48 @@ class Evaluater:
         return cost
 
     def publisher(self):
-        print("waiting for server indefinitely")
+        print("waiting for map server")
+        rospy.wait_for_service('/image_to_map')
+        map_client = rospy.ServiceProxy('/image_to_map', Empty)
+        map_client()
+
+        print("waiting for action server")
         self.client.wait_for_server()
 
-        for i in range(self.start_goals.shape[0]):
+        # for i in range(self.start_goals.shape[0]):
+        #     if rospy.is_shutdown():
+        #         break
+
+        #     print(i)
+        #     msg = PlanTwoPointGoal()
+        #     msg.p_init.position.x = self.start_goals['xi'][i]
+        #     msg.p_init.position.y = self.start_goals['yi'][i]
+        #     msg.p_init.position.z = 5
+        #     # msg.v_init.linear.x = 2
+        #     # msg.v_init.linear.y = 2
+        #     msg.p_final.position.x = self.start_goals['xf'][i]
+        #     msg.p_final.position.y = self.start_goals['yf'][i]
+        #     msg.p_final.position.z = 5
+
+        for i in range(10):
+            print(i)
             if rospy.is_shutdown():
                 break
-
-            print(i)
+            if (i > 0):
+                map_client()
+                #TODO(Laura): actually send map ?
+                rospy.sleep(2)
             msg = PlanTwoPointGoal()
-            msg.p_init.position.x = self.start_goals['xi'][i]
-            msg.p_init.position.y = self.start_goals['yi'][i]
+            msg.p_init.position.x = 1.25
+            msg.p_init.position.y = 1.25
             msg.p_init.position.z = 5
             # msg.v_init.linear.x = 2
             # msg.v_init.linear.y = 2
-            msg.p_final.position.x = self.start_goals['xf'][i]
-            msg.p_final.position.y = self.start_goals['yf'][i]
+            msg.p_final.position.x = 20  +  2
+            msg.p_final.position.y = 10 - 1.25
             msg.p_final.position.z = 5
+
+
 
             # do you want velocity initial and final to be zero?
 
@@ -119,8 +147,12 @@ class Evaluater:
             # self.path_pub.publish(msg)
             self.start_and_goal_pub.publish(start_and_goal)
             self.client.send_goal(msg)
+            self.client2.send_goal(msg)
+            self.client3.send_goal(msg)
             # Waits for the server to finish performing the action.
             self.client.wait_for_result(rospy.Duration.from_sec(5.0))
+            self.client2.wait_for_result(rospy.Duration.from_sec(5.0))
+            self.client3.wait_for_result(rospy.Duration.from_sec(5.0))
 
             result = self.client.get_result()
             #TODO(Laura) check if the path is collision free and feasible
@@ -137,6 +169,8 @@ class Evaluater:
 
             else:
                 print("Action server failure " + str(i))
+            input("Press Enter to continue...")
+
         print(self.success)
         print("Traj Time", self.traj_time)
         print("Traj Cost",self.traj_cost)

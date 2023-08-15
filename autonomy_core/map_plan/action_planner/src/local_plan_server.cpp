@@ -3,8 +3,8 @@
 LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   local_map_sub_ =
       pnh_.subscribe("local_voxel_map", 2, &LocalPlanServer::localMapCB, this);
-  local_no_infla_map_sub_ =
-      pnh_.subscribe("local_noinfla_voxel_map", 2, &LocalPlanServer::localMapCBNoInfla, this);
+  local_no_infla_map_sub_ = pnh_.subscribe(
+      "local_noinfla_voxel_map", 2, &LocalPlanServer::localMapCBNoInfla, this);
 
   local_as_ = std::make_unique<
       actionlib::SimpleActionServer<kr_planning_msgs::PlanTwoPointAction>>(
@@ -18,7 +18,9 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
       pnh_.advertise<kr_planning_msgs::SplineTrajectory>("trajectory", 1, true);
   local_as_->registerGoalCallback(boost::bind(&LocalPlanServer::goalCB, this));
   while (local_map_ptr_ == nullptr || local_nofla_map_ptr_ == nullptr) {
-    ROS_WARN("[Local plan server]: Waiting for local map either inflated or not...");
+    ROS_WARN_THROTTLE(
+        4,
+        "[Local plan server]: Waiting for local map either inflated or not...");
     ros::Duration(0.1).sleep();
     ros::spinOnce();
   }
@@ -44,7 +46,8 @@ void LocalPlanServer::localMapCB(
 // map callback, update local_map_ptr_
 void LocalPlanServer::localMapCBNoInfla(
     const kr_planning_msgs::VoxelMap::ConstPtr& msg) {
-  ROS_WARN_ONCE("[Local planner:] Got the local voxel map without inflation!!!");
+  ROS_WARN_ONCE(
+      "[Local planner:] Got the local voxel map without inflation!!!");
   local_nofla_map_ptr_ = msg;
   frame_id_ = local_nofla_map_ptr_->header.frame_id;
 }
@@ -63,11 +66,11 @@ void LocalPlanServer::goalCB() {
     ROS_WARN("+++++++++++++++++++++++++++++++++++");
     ROS_WARN("[LocalPlanServer:] local map is not received!!!!!");
     ROS_WARN("+++++++++++++++++++++++++++++++++++");
-  } else if (local_nofla_map_ptr_ == nullptr){
+  } else if (local_nofla_map_ptr_ == nullptr) {
     ROS_WARN("+++++++++++++++++++++++++++++++++++");
     ROS_WARN("[LocalPlanServer:] local no inflation map is not received!!!!!");
     ROS_WARN("+++++++++++++++++++++++++++++++++++");
-  } else{
+  } else {
     process_goal(*goal_ptr);
   }
   auto end_timer = std::chrono::high_resolution_clock::now();
@@ -122,7 +125,8 @@ void LocalPlanServer::process_goal(
 
   kr_planning_msgs::VoxelMap local_map_cleared, local_no_infla_map_cleared;
   local_map_cleared = clear_map_position(*local_map_ptr_, start.pos);
-  local_no_infla_map_cleared = clear_map_position(*local_nofla_map_ptr_ , start.pos);
+  local_no_infla_map_cleared =
+      clear_map_position(*local_nofla_map_ptr_, start.pos);
 
   if (pub_cleared_map_) {
     local_map_cleared_pub_.publish(local_map_cleared);
@@ -136,7 +140,12 @@ void LocalPlanServer::process_goal(
   kr_planning_msgs::Path sg_msg = kr::path_to_ros(sg);
   sg_msg.header.frame_id = frame_id_;
   sg_pub.publish(sg_msg);
-  process_result(planner_->plan_composite(start, goal, local_map_cleared, local_no_infla_map_cleared, &compute_time_front_end_, &compute_time_back_end_),
+  process_result(planner_->plan_composite(start,
+                                          goal,
+                                          local_map_cleared,
+                                          local_no_infla_map_cleared,
+                                          &compute_time_front_end_,
+                                          &compute_time_back_end_),
                  as_goal.execution_time,
                  as_goal.epoch);
 }
@@ -203,38 +212,41 @@ kr_planning_msgs::SplineTrajectory SplineTrajfromDiscrete(
   kr_planning_msgs::SplineTrajectory traj_msg;
   traj_msg.header = traj_dis_msg.header;
   traj_msg.dimensions = 3;
-  //prepare polynomial fit time vector
+  // prepare polynomial fit time vector
   Eigen::VectorXd time_vec = Eigen::ArrayXd::LinSpaced(degree_plus1, 0, 1);
-  //create time matrix by taking this to different powers
+  // create time matrix by taking this to different powers
   Eigen::MatrixXd time_mat = Eigen::MatrixXd::Zero(degree_plus1, degree_plus1);
   for (int i = 0; i < degree_plus1; i++) {
     time_mat.col(i) = time_vec.array().pow(i);
   }
   kr_planning_msgs::Spline spline;
-  for (int dim = 0; dim < 3; dim ++) traj_msg.data.push_back(spline);
+  for (int dim = 0; dim < 3; dim++) traj_msg.data.push_back(spline);
   ROS_INFO("Time matrix is %f", time_mat);
-  for (int traj_idx = 0; traj_idx < traj_dis_msg.pos.size(); traj_idx+=degree_plus1) {
+  for (int traj_idx = 0; traj_idx < traj_dis_msg.pos.size();
+       traj_idx += degree_plus1) {
     if (traj_idx + degree_plus1 >= traj_dis_msg.pos.size()) {
-      for (int dim = 0; dim < 3; dim ++) traj_msg.data[dim].t_total = traj_dis_msg.t[traj_idx-1];
+      for (int dim = 0; dim < 3; dim++)
+        traj_msg.data[dim].t_total = traj_dis_msg.t[traj_idx - 1];
       break;
     }
-    Eigen::MatrixXd pos_mat= Eigen::MatrixXd::Zero(degree_plus1, 3);
+    Eigen::MatrixXd pos_mat = Eigen::MatrixXd::Zero(degree_plus1, 3);
 
-      //create a vector of positions
+    // create a vector of positions
     for (int j = 0; j < degree_plus1; j++) {
-      pos_mat(j,0) = traj_dis_msg.pos[traj_idx + j].x;
-      pos_mat(j,1) = traj_dis_msg.pos[traj_idx + j].y;
-      pos_mat(j,2) = traj_dis_msg.pos[traj_idx + j].z;
+      pos_mat(j, 0) = traj_dis_msg.pos[traj_idx + j].x;
+      pos_mat(j, 1) = traj_dis_msg.pos[traj_idx + j].y;
+      pos_mat(j, 2) = traj_dis_msg.pos[traj_idx + j].z;
     }
-    //solve for coefficients
+    // solve for coefficients
     Eigen::MatrixXd coeff_mat = time_mat.inverse() * pos_mat;
-    //input into the new message
+    // input into the new message
     for (int dim = 0; dim < 3; dim++) {
       traj_msg.data[dim].segments++;
       kr_planning_msgs::Polynomial p;
       p.basis = p.STANDARD;
       Eigen::VectorXd coeff_dim = coeff_mat.col(dim);
-      std::vector<float> std_vector(coeff_dim.data(), coeff_dim.data() + coeff_dim.size());
+      std::vector<float> std_vector(coeff_dim.data(),
+                                    coeff_dim.data() + coeff_dim.size());
       p.coeffs = std_vector;
       p.degree = degree_plus1 - 1;
       p.dt = dt;
@@ -247,7 +259,8 @@ kr_planning_msgs::SplineTrajectory SplineTrajfromDiscrete(
 }
 
 void LocalPlanServer::process_result(
-    const std::pair< kr_planning_msgs::SplineTrajectory, kr_planning_msgs::TrajectoryDiscretized> & traj_combined,
+    const std::pair<kr_planning_msgs::SplineTrajectory,
+                    kr_planning_msgs::TrajectoryDiscretized>& traj_combined,
     ros::Duration execution_time,
     int epoch) {
   kr_planning_msgs::SplineTrajectory traj_msg = traj_combined.first;
@@ -262,6 +275,7 @@ void LocalPlanServer::process_result(
     aborted_ = true;
     if (local_as_->isActive()) {
       ROS_WARN("Current local plan trial failed!");
+      traj_pub_.publish(kr_planning_msgs::SplineTrajectory());
       local_as_->setAborted();
     }
   } else {

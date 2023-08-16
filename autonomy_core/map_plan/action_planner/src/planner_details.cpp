@@ -651,6 +651,7 @@ void CompositePlanner::setup() {
       break;
     case 1:
       opt_planner_type_ = new OptPlanner::GCOPTER(nh_, frame_id_);
+      break;
     case 2:
       opt_planner_type_ = new OptPlanner::iLQR_Planner(nh_, frame_id_);
       break;

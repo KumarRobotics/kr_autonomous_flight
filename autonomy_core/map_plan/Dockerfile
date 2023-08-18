@@ -1,11 +1,15 @@
 FROM kumarrobotics/autonomy:control
 
-RUN apt-get update \
-    && apt-get install -y \
+RUN apt-get update && \
+    apt-get install -y \
     ros-noetic-image-pipeline \
     ros-noetic-image-geometry \
     libqt5widgets5 \
-    libnlopt-dev
+    libnlopt-dev \
+    libsdl-dev \
+    libsdl-image1.2-dev \
+    ros-noetic-image-geometry \
+    ros-noetic-depth-image-proc
 
 RUN mkdir -p /root/map_plan_ws/src
 WORKDIR /root/map_plan_ws

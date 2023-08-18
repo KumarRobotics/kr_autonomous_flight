@@ -26,7 +26,7 @@
       <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
     </node>
 
-    <node pkg="action_planner"
+    <!-- <node pkg="action_planner"
       type="local_plan_server"
       name="local_plan_server2"
       output="screen"
@@ -48,7 +48,7 @@
       <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
       <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
       <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
-    </node>
+    </node> -->
 
 
     <group if="$(arg viz)">

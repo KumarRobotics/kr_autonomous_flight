@@ -10,7 +10,7 @@ from visualization_msgs.msg import MarkerArray, Marker
 from actionlib import SimpleActionClient
 from std_srvs.srv import Empty
 
-filename = '/home/laura/autonomy_ws/src/kr_autonomous_flight/autonomy_core/map_plan/action_planner/scripts/map_balls_start_goal.csv'
+# filename = '/home/laura/autonomy_ws/src/kr_autonomous_flight/autonomy_core/map_plan/action_planner/scripts/map_balls_start_goal.csv'
 
 
 def differentiate(p, segment_time):
@@ -43,8 +43,8 @@ def evaluate(msg, t, deriv_num):
 
 class Evaluater:
     def __init__(self):
-        print("reading "+filename)
-        self.start_goals = pd.read_csv(filename)
+        # print("reading "+filename)
+        # self.start_goals = pd.read_csv(filename)
         # self.path_pub = rospy.Publisher('/local_plan_server/plan_local_trajectory/goal', PlanTwoPointActionGoal, queue_size=10, latch=True)
         self.client = SimpleActionClient('/local_plan_server/plan_local_trajectory', PlanTwoPointAction)
         self.client2 = SimpleActionClient('/local_plan_server2/plan_local_trajectory', PlanTwoPointAction)
@@ -52,13 +52,14 @@ class Evaluater:
 
         self.start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10, latch=True)
         # rospy.Subscriber("/local_plan_server/trajectory", SplineTrajectory, self.callback)
-        self.success = np.zeros(self.start_goals.shape[0], dtype=bool)
-        self.traj_time = np.zeros(self.start_goals.shape[0])
-        self.traj_cost = np.zeros(self.start_goals.shape[0])
-        self.traj_jerk = np.zeros(self.start_goals.shape[0])
-        self.traj_compute_time = np.zeros(self.start_goals.shape[0])
-        self.compute_time_front = np.zeros(self.start_goals.shape[0])
-        self.compute_time_back = np.zeros(self.start_goals.shape[0])
+        self.num_trials = 10
+        self.success = np.zeros(self.num_trials, dtype=bool)
+        self.traj_time = np.zeros(self.num_trials)
+        self.traj_cost = np.zeros(self.num_trials)
+        self.traj_jerk = np.zeros(self.num_trials)
+        self.traj_compute_time = np.zeros(self.num_trials)
+        self.compute_time_front = np.zeros(self.num_trials)
+        self.compute_time_back = np.zeros(self.num_trials)
         self.rho = 50  # TODO(Laura) pull from param or somewhere
 
         self.publisher()
@@ -105,7 +106,7 @@ class Evaluater:
         #     msg.p_final.position.y = self.start_goals['yf'][i]
         #     msg.p_final.position.z = 5
 
-        for i in range(10):
+        for i in range(self.num_trials):
             print(i)
             if rospy.is_shutdown():
                 break
@@ -119,7 +120,7 @@ class Evaluater:
             msg.p_init.position.z = 5
             # msg.v_init.linear.x = 2
             # msg.v_init.linear.y = 2
-            msg.p_final.position.x = 20  +  2
+            msg.p_final.position.x = 19.5
             msg.p_final.position.y = 10 - 1.25
             msg.p_final.position.z = 5
 

@@ -11,14 +11,28 @@ void OptPlanner::iLQR_Planner::setup() {
   bool publish_optimized_traj = false;
   bool publish_viz = true;  // N sample, time limit
   sampler_.reset(new SplineTrajSampler(
-      subscribe_to_traj, publish_optimized_traj, publish_viz, 40, 10));
+      subscribe_to_traj, publish_optimized_traj, publish_viz, 60));
+
+  mp_map_util_ = std::make_shared<MPL::VoxelMapUtil>();
+  poly_generator_.reset(new opt_planner::PlannerManager);
+  poly_generator_->initPlanModules(nh_, mp_map_util_, frame_id_);
 }
 kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map) {
   ROS_WARN("[iLQR] Discrete Planning!!!!!");
-  return sampler_->sample_and_refine_trajectory(search_path_msg_);
+  std::vector<Eigen::MatrixXd> hPolys;
+  Eigen::MatrixXd inner_pts;  // (4, N -1)
+  Eigen::VectorXd allo_ts;
+  setMap(mp_map_util_, map);
+  if (!poly_generator_->getSikangConst(
+          search_path_, inner_pts, allo_ts, hPolys)) {
+    ROS_ERROR("[iLQR]: corridor generation fails!\n");
+    return kr_planning_msgs::TrajectoryDiscretized();
+  }
+  return sampler_->sample_and_refine_trajectory(
+      search_path_msg_, hPolys, allo_ts);
 }
 
 MPL::Waypoint3D OptPlanner::iLQR_Planner::evaluate(double t) {

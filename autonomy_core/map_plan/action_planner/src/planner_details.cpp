@@ -12,27 +12,14 @@ void OptPlanner::iLQR_Planner::setup() {
   bool publish_viz = true;  // N sample, time limit
   sampler_.reset(new SplineTrajSampler(
       subscribe_to_traj, publish_optimized_traj, publish_viz, 60));
-
-  mp_map_util_ = std::make_shared<MPL::VoxelMapUtil>();
-  poly_generator_.reset(new opt_planner::PlannerManager);
-  poly_generator_->initPlanModules(nh_, mp_map_util_, frame_id_);
 }
 kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map) {
   ROS_WARN("[iLQR] Discrete Planning!!!!!");
-  std::vector<Eigen::MatrixXd> hPolys;
-  Eigen::MatrixXd inner_pts;  // (4, N -1)
-  Eigen::VectorXd allo_ts;
-  setMap(mp_map_util_, map);
-  if (!poly_generator_->getSikangConst(
-          search_path_, inner_pts, allo_ts, hPolys)) {
-    ROS_ERROR("[iLQR]: corridor generation fails!\n");
-    return kr_planning_msgs::TrajectoryDiscretized();
-  }
   return sampler_->sample_and_refine_trajectory(
-      search_path_msg_, hPolys, allo_ts);
+      search_path_msg_, this->hPolys, this->allo_ts);
 }
 
 MPL::Waypoint3D OptPlanner::iLQR_Planner::evaluate(double t) {
@@ -637,6 +624,10 @@ void CompositePlanner::setup() {
   search_traj_pub_ = nh_.advertise<kr_planning_msgs::SplineTrajectory>(
       "search_trajectory", 1, true);
 
+  poly_gen_map_util_ = std::make_shared<MPL::VoxelMapUtil>();
+  poly_generator_.reset(new opt_planner::PlannerManager);
+  poly_generator_->initPlanModules(nh_, poly_gen_map_util_, frame_id_);
+
   switch (search_planner_type_id) {
     case 0:
       search_planner_type_ =
@@ -682,25 +673,6 @@ void CompositePlanner::setup() {
   }
 }
 
-// kr_planning_msgs::SplineTrajectory CompositePlanner::plan(
-//     const MPL::Waypoint3D& start,
-//     const MPL::Waypoint3D& goal,
-//     const kr_planning_msgs::VoxelMap& map) {
-//   auto result = search_planner_type_->plan(start, goal, map);
-//   search_traj_pub_.publish(result);
-//   // Only run opt planner if search is successful for evaluation purposes.
-//   if (result.data.size() > 0 && opt_planner_type_ != nullptr) {
-//     auto path = search_planner_type_->SamplePath();
-//     // Double description initialization traj must fully reach the end or it
-//     // will fail.
-//     // TODO(Laura) consider whether should actually calculate the BVP instead
-//     path.push_back(goal.pos);
-//     opt_planner_type_->setSearchPath(path);
-//     result = opt_planner_type_->plan(start, goal, map);
-//   }
-//   return result;
-// }
-
 std::pair<kr_planning_msgs::SplineTrajectory,
           kr_planning_msgs::TrajectoryDiscretized>
 CompositePlanner::plan_composite(
@@ -717,13 +689,12 @@ CompositePlanner::plan_composite(
   auto end_timer = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
       end_timer - start_timer);
-
+  auto empty_result =
+      std::make_pair(kr_planning_msgs::SplineTrajectory(), result_discretized);
   *compute_time_front_end = duration.count() / 1000.0;
 
   // if result is empty, then just return an empty SplineTrajectory
-  if (result.data.size() == 0)
-    return std::make_pair(kr_planning_msgs::SplineTrajectory(),
-                          result_discretized);  // maybe just return result :(
+  if (result.data.size() == 0) return empty_result;
   search_traj_pub_.publish(result);
 
   start_timer = std::chrono::high_resolution_clock::now();
@@ -736,6 +707,21 @@ CompositePlanner::plan_composite(
     // TODO(Laura) consider whether should actually calculate the BVP instead
     path.push_back(goal.pos);
     opt_planner_type_->setSearchPath(path);
+
+    // before planning, generate polytopes
+    std::vector<Eigen::MatrixXd> hPolys;
+    Eigen::MatrixXd inner_pts;  // (4, N -1)
+    Eigen::VectorXd allo_ts;
+    setMap(poly_gen_map_util_, map_no_inflation);
+    if (!poly_generator_->getSikangConst(
+            opt_planner_type_->search_path_, inner_pts, allo_ts, hPolys)) {
+      ROS_ERROR("[Local Planner]:orridor generation fails!\n");
+      return empty_result;
+    }
+
+    opt_planner_type_->hPolys = hPolys;
+    opt_planner_type_->allo_ts = allo_ts;
+    // now do optimization
     result = opt_planner_type_->plan(start, goal, map_no_inflation);
     result_discretized =
         opt_planner_type_->plan_discrete(start, goal, map_no_inflation);

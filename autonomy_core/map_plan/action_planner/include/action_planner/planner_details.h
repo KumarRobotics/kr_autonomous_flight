@@ -35,7 +35,8 @@ class PlannerType {
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map) {
-    ROS_ERROR("[Plannner Details]:plan discrete not implemented");
+    ROS_WARN(
+        "[Plannner Details]:plan discrete not implemented for this planner");
     // std::logic_error("Function not yet implemented");
     return kr_planning_msgs::SplineTrajectory();
   }
@@ -43,7 +44,8 @@ class PlannerType {
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map) {
-    ROS_ERROR("[Plannner Details]:plan discrete not implemented");
+    ROS_WARN(
+        "[Plannner Details]:plan discrete not implemented for this planner");
     // std::logic_error("Function not yet implemented");
     return kr_planning_msgs::TrajectoryDiscretized();
   }  // this does not have to be implemented
@@ -84,6 +86,8 @@ class PlannerType {
   // If replanning, some planners requires the previous trajectory which is
   // contained in the action server goal
   kr_planning_msgs::PlanTwoPointGoal action_server_goal_;
+  std::vector<Eigen::MatrixXd> hPolys;  // opt needs to have these
+  Eigen::VectorXd allo_ts;
 };
 
 class CompositePlanner : public PlannerType {
@@ -110,6 +114,8 @@ class CompositePlanner : public PlannerType {
   PlannerType* search_planner_type_;
   PlannerType* opt_planner_type_;
   ros::Publisher search_traj_pub_;
+  opt_planner::PlannerManager::Ptr poly_generator_;
+  std::shared_ptr<MPL::VoxelMapUtil> poly_gen_map_util_;
 };
 
 namespace OptPlanner {
@@ -130,8 +136,6 @@ class iLQR_Planner : public PlannerType {
   SplineTrajSampler::Ptr sampler_;
   // currently initialized another planner just to get polytopes, maybe consider
   // moving only that function out
-  opt_planner::PlannerManager::Ptr poly_generator_;
-  std::shared_ptr<MPL::VoxelMapUtil> mp_map_util_;
 };
 
 class DoubleDescription : public PlannerType {

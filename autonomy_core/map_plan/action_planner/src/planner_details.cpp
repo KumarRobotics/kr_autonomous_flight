@@ -126,7 +126,7 @@ kr_planning_msgs::SplineTrajectory OptPlanner::GCOPTER::plan(
 
   planner_manager_->setMap(map);
 
-  bool valid = planner_manager_->plan(startState, endState, search_path_);
+  bool valid = planner_manager_->plan(startState, endState, search_path_, hPolys);
   if (valid) {
     opt_traj_ = planner_manager_->getTraj();
     traj_total_time_ = opt_traj_.getTotalDuration();

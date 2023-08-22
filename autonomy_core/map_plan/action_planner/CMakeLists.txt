@@ -28,6 +28,7 @@ find_package(
              decomp_ros_msgs
              motion_primitives
              gcopter
+             kr_tracker_msgs
             )
 
 generate_dynamic_reconfigure_options(cfg/ActionPlanner.cfg)

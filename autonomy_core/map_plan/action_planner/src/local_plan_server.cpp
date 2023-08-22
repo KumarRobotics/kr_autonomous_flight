@@ -25,6 +25,11 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
     ros::spinOnce();
   }
 
+  /**@yuwei : for falcon 250 interface**/
+  pnh_.param("poly_srv_name", poly_srv_name_, std::string(" "));
+  //trajectory boardcast
+  traj_goal_pub_ = pnh_.advertise<kr_tracker_msgs::PolyTrackerActionGoal>("tracker_cmd", 10, true);
+
   planner_ = new CompositePlanner(traj_planner_nh_, frame_id_);
   ROS_WARN("[Local planner:] planner instance created!");
 
@@ -140,6 +145,7 @@ void LocalPlanServer::process_goal(
   kr_planning_msgs::Path sg_msg = kr::path_to_ros(sg);
   sg_msg.header.frame_id = frame_id_;
   sg_pub.publish(sg_msg);
+
   process_result(planner_->plan_composite(start,
                                           goal,
                                           local_map_cleared,
@@ -258,6 +264,11 @@ kr_planning_msgs::SplineTrajectory SplineTrajfromDiscrete(
   return traj_msg;
 }
 
+
+
+
+
+
 void LocalPlanServer::process_result(
     const std::pair<kr_planning_msgs::SplineTrajectory,
                     kr_planning_msgs::TrajectoryDiscretized>& traj_combined,
@@ -281,8 +292,49 @@ void LocalPlanServer::process_result(
   } else {
     ROS_WARN("[LocalPlanServer] Planning success!!!!!!");
     traj_pub_.publish(traj_msg);
-    kr_planning_msgs::PlanTwoPointResult result;
 
+
+    /////////////////////////////////////////////////////////////////////////////////////////////
+    // get the trajectory
+    kr_tracker_msgs::PolyTrackerActionGoal traj_act_msg;
+
+    traj_act_msg.goal.order = traj_msg.data[0].segs[0].degree;
+    traj_act_msg.goal.set_yaw = false;
+    
+    int piece_num = traj_msg.data[0].segments;
+
+    traj_act_msg.goal.t_start = ros::Time::now(); // spline_traj_.header.stamp
+    traj_act_msg.goal.seg_x.resize(piece_num);
+    traj_act_msg.goal.seg_y.resize(piece_num);
+    traj_act_msg.goal.seg_z.resize(piece_num);
+
+    std::cout << " piece_num  " << piece_num << std::endl;
+
+    for (int i = 0; i < piece_num; ++i)
+    {
+      for (uint c = 0; c <= traj_act_msg.goal.order; c++) {
+
+        
+
+        traj_act_msg.goal.seg_x[i].coeffs.push_back(traj_msg.data[0].segs[i].coeffs[c]);
+        traj_act_msg.goal.seg_y[i].coeffs.push_back(traj_msg.data[1].segs[i].coeffs[c]);
+        traj_act_msg.goal.seg_z[i].coeffs.push_back(traj_msg.data[2].segs[i].coeffs[c]);
+      }
+
+      traj_act_msg.goal.seg_x[i].dt = traj_msg.data[0].segs[i].dt;
+      traj_act_msg.goal.seg_x[i].degree = traj_msg.data[0].segs[i].degree;
+    }
+
+    // publish the trajectory
+    traj_goal_pub_.publish(traj_act_msg);
+    std_srvs::Trigger trg;
+    ros::service::call(poly_srv_name_, trg);
+    /////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+    kr_planning_msgs::PlanTwoPointResult result;
     // evaluate trajectory for 5 steps, each step duration equals
     // execution_time, get corresponding waypoints and record in result
     // (result_->p_stop etc.) (evaluate the whole traj if execution_time is not

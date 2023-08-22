@@ -15,6 +15,11 @@
 #include <chrono>
 #include <string>
 
+#include "kr_tracker_msgs/PolyTrackerAction.h"
+#include <kr_tracker_msgs/Transition.h>
+#include <std_srvs/Trigger.h>
+
+
 class LocalPlanServer {
  public:
   explicit LocalPlanServer(const ros::NodeHandle& nh);
@@ -28,6 +33,7 @@ class LocalPlanServer {
   ros::Subscriber local_map_sub_, local_no_infla_map_sub_;
   ros::Publisher local_map_cleared_pub_;
   ros::Publisher traj_pub_;
+  ros::Publisher traj_goal_pub_;
 
   // visualization messages pub
   ros::Publisher sg_pub;
@@ -52,7 +58,9 @@ class LocalPlanServer {
   bool set_vis_ = false;
   CompositePlanner* planner_;
 
-  std::string frame_id_;
+  std::string frame_id_, poly_srv_name_;
+
+
 
   /**
    * @brief Goal callback function, prevent concurrent planner modes

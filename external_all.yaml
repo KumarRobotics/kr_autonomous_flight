@@ -8,7 +8,7 @@ repositories:
   kr_mav_control:
     type: git
     url: http://github.com/KumarRobotics/kr_mav_control.git
-    version: master
+    version: poly
 
   mrsl_quadrotor:
     type: git
@@ -38,9 +38,17 @@ repositories:
   DoubleDescription:
     type: git
     url: git@github.com:yuwei-wu/DoubleDescription.git
-    version: kr_auto_flight
+    version: laura_dev
+
+  map_generator:
+    type: git
+    url: git@github.com:yuwei-wu/map_generator.git
+    version: vicon_map
 
   motion_primitives:
     type: git
     url: git@github.com:ljarin/motion_primitives.git
     version: master
+    
+    
+    

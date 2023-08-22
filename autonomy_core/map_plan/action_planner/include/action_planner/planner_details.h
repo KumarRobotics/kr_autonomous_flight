@@ -264,6 +264,34 @@ class PathThrough : public PlannerType {
   kr_planning_msgs::Path path_ = kr_planning_msgs::Path();
 };
 
+
+//SST
+class Sampling : public PlannerType {
+ public:
+  explicit Sampling(const ros::NodeHandle& nh, const std::string& frame_id)
+      : PlannerType(nh, frame_id) {}
+
+  void setup();
+  kr_planning_msgs::SplineTrajectory plan(
+      const MPL::Waypoint3D& start,
+      const MPL::Waypoint3D& goal,
+      const kr_planning_msgs::VoxelMap& map);
+  MPL::Waypoint3D evaluate(double t);
+
+ private:
+
+  gcopter::GcopterPlanner::Ptr sstplanner_;
+  bool verbose_{true};
+  vec_Vecf<3> path_;
+  kr_planning_msgs::SplineTrajectory spline_traj_;
+  ros::Publisher path_pub_;
+
+};
+
+
+
+
+
 }  // namespace SearchPlanner
 
 #endif  // ACTION_PLANNER_PLANNER_DETAILS_H_

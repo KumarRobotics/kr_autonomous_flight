@@ -82,7 +82,6 @@
       output="screen"
       respawn="true">
       <rosparam file="$(arg planner_config)"/>
-      <param name="trajectory_planner/search_planner_type" value="0"/>
       <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
       <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
       <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />

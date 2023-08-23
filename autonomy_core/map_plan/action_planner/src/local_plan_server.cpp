@@ -211,27 +211,27 @@ bool LocalPlanServer::is_outside_map(const Eigen::Vector3i& pn,
   return pn(0) < 0 || pn(0) >= dim(0) || pn(1) < 0 || pn(1) >= dim(1) ||
          pn(2) < 0 || pn(2) >= dim(2);
 }
-Eigen::MatrixXd compute_bvp_pva(Eigen::VectorXd state1,  // p0 v0 a0, size 9
-                                Eigen::VectorXd state2) {
-  using namespace Eigen;
-  MatrixXd coef(6, 3);
-  const Vector3d p0 = state1.head(3);
-  const Vector3d pf = state2.head(3);
-  const Vector3d v0 = state1.segment(3, 3);
-  const Vector3d vf = state2.segment(3, 3);
-  const Vector3d a0 = state1.tail(3);
-  const Vector3d af = state2.tail(3);
+Eigen::MatrixXd compute_bvp_pva(const Eigen::VectorXd& state1,
+                                const Eigen::VectorXd& state2,
+                                double T) {
+  Eigen::Vector3d p0 = state1.head<3>();
+  Eigen::Vector3d v0 = state1.segment<3>(3);
+  Eigen::Vector3d a0 = state1.tail<3>();
+  Eigen::Vector3d pf = state2.head<3>();
+  Eigen::Vector3d vf = state2.segment<3>(3);
+  Eigen::Vector3d af = state2.tail<3>();
 
-  MatrixXd time_mat(6, 6);
-  time_mat << 1, 0, 0, 0, 0, 0,  // p0
-      0, 1, 0, 0, 0, 0,          // v0
-      0, 0, 2, 0, 0, 0,          // a0
-      1, 1, 1, 1, 1, 1,          // pf
-      0, 1, 2, 3, 4, 5,          // vf
-      0, 0, 2, 6, 12, 20;        // af
-  MatrixXd pva_mat(6, 3);
+  Eigen::MatrixXd time_mat(6, 6);
+  time_mat << 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, T,
+      std::pow(T, 2), std::pow(T, 3), std::pow(T, 4), std::pow(T, 5), 0, 1,
+      2 * T, 3 * std::pow(T, 2), 4 * std::pow(T, 3), 5 * std::pow(T, 4), 0, 0,
+      2, 6 * T, 12 * std::pow(T, 2), 20 * std::pow(T, 3);
+
+  Eigen::MatrixXd pva_mat(6, 3);
   pva_mat << p0, v0, a0, pf, vf, af;
-  coef = time_mat.inverse() * pva_mat;
+
+  Eigen::MatrixXd coef = time_mat.inverse() * pva_mat;
+
   return coef;
 }
 
@@ -277,11 +277,10 @@ Eigen::MatrixXd computeShotTraj(Eigen::VectorXd state1,  // p0 v0 a0, size 9
   return coef.transpose();
 }
 void normalizePosCoeffMat(double duration, Eigen::MatrixXd& coeffMat) {
-  // Eigen::MatrixXd nPosCoeffsMat;  // not used
-  double t = 1.0;
-  for (int i = 0; i < coeffMat.cols(); i++) {
-    coeffMat.col(i) = coeffMat.col(i) * t;
-    t *= duration;
+  double multiplier = 1.0;
+  for (int i = 0; i < coeffMat.rows(); i++) {
+    coeffMat.row(i) = coeffMat.row(i) * multiplier;
+    multiplier *= duration;
   }
 }
 
@@ -314,14 +313,15 @@ kr_planning_msgs::SplineTrajectory SplineTrajfromDiscreteTwoPoints(
         traj_dis_msg.vel[traj_idx + 1].x, traj_dis_msg.vel[traj_idx + 1].y,
         traj_dis_msg.vel[traj_idx + 1].z, traj_dis_msg.acc[traj_idx + 1].x,
         traj_dis_msg.acc[traj_idx + 1].y, traj_dis_msg.acc[traj_idx + 1].z;
-    std::cout << "state1: " << state1 << std::endl;
-    std::cout << "state2: " << state2 << std::endl;
+    std::cout << "state1: \n" << state1.transpose() << std::endl;
+    std::cout << "state2: \n" << state2.transpose() << std::endl;
     // solve for coefficients
     Eigen::MatrixXd coeff_mat = compute_bvp_pva(state1,  // p0 v0 a0, size 9
-                                                state2);
+                                                state2,
+                                                dt);
 
     // 1.0);  // #this is because the whole thing is a unit coeff
-    // normalizePosCoeffMat(dt, coeff_mat);
+    normalizePosCoeffMat(dt, coeff_mat);
     //
     // input into the new message
     for (int dim = 0; dim < 3; dim++) {
@@ -408,7 +408,7 @@ void LocalPlanServer::process_result(
   kr_planning_msgs::TrajectoryDiscretized traj_dis_msg = traj_combined.second;
   bool solved = traj_msg.data.size() > 0;
   if (!solved && traj_dis_msg.pos.size() > 0) {
-    traj_msg = SplineTrajfromDiscrete(traj_dis_msg);
+    traj_msg = SplineTrajfromDiscreteTwoPoints(traj_dis_msg);
     solved = true;
   }
   if (!solved) {

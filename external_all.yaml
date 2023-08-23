@@ -49,6 +49,20 @@ repositories:
     type: git
     url: git@github.com:ljarin/motion_primitives.git
     version: master
-    
-    
-    
+
+  gcopter:
+    type: git
+    url: git@github.com:yuwei-wu/GCOPTER.git
+    version: laura_bench
+
+  #below for benchmark new repos
+  kr_ilqr_optimizer:
+    type: git
+    url: git@github.com:KumarRobotics/kr_ilqr_optimizer.git
+    version: bug_fix
+  
+  altro:
+    type: git
+    url: git@github.com:shaoyifei96/altro.git
+    version: ros
+  

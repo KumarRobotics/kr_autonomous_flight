@@ -1,5 +1,16 @@
 ![alt text](https://github.com/KumarRobotics/kr_autonomous_flight/blob/master/docs/falcon4-compressed.jpg)
 
+# Branch Notice: 
+## Prereq
+clone this repo 
+vcs import < external_all.yaml # pull dependency
+vcs import < motion_primitives/deps_ssh.repos # pull dependency of motion primitives for dispersion stuff
+rosdep install --from-paths src --ignore-src -r -y
+sudo apt install libspdlog-dev
+
+
+
+
 This is the autonomous flight code stack used at KumarRobotics, providing a complete solution for GPS-denied quadcopter autonomy. It has been tested extensively in challenging urban and rural (under forest canopy) environments.
 
 ![Docker Build Base](https://github.com/kumarrobotics/kr_autonomous_flight/actions/workflows/docker-build-base.yaml/badge.svg)

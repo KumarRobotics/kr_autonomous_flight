@@ -148,12 +148,12 @@ class Evaluater:
             # self.path_pub.publish(msg)
             self.start_and_goal_pub.publish(start_and_goal)
             self.client.send_goal(msg)
-            self.client2.send_goal(msg)
-            self.client3.send_goal(msg)
+            # self.client2.send_goal(msg)
+            # self.client3.send_goal(msg)
             # Waits for the server to finish performing the action.
-            self.client.wait_for_result(rospy.Duration.from_sec(5.0))
-            self.client2.wait_for_result(rospy.Duration.from_sec(5.0))
-            self.client3.wait_for_result(rospy.Duration.from_sec(5.0))
+            self.client.wait_for_result(rospy.Duration.from_sec(3.0))
+            # self.client2.wait_for_result(rospy.Duration.from_sec(5.0))
+            # self.client3.wait_for_result(rospy.Duration.from_sec(5.0))
 
             result = self.client.get_result()
             #TODO(Laura) check if the path is collision free and feasible

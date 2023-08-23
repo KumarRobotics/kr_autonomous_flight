@@ -36,6 +36,7 @@
   <depend>motion_primitives</depend>
   <depend>gcopter</depend>
   <depend>kr_ilqr_optimizer</depend>
+  <depend>kr_trackers_msgs</depend>
 
   <export>
   </export>

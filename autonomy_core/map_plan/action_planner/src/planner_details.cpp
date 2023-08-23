@@ -10,8 +10,11 @@ void OptPlanner::iLQR_Planner::setup() {
   bool subscribe_to_traj = false;
   bool publish_optimized_traj = false;
   bool publish_viz = true;  // N sample, time limit
-  sampler_.reset(new SplineTrajSampler(
-      subscribe_to_traj, publish_optimized_traj, publish_viz, 60));
+  sampler_.reset(
+      new SplineTrajSampler(subscribe_to_traj,
+                            publish_optimized_traj,
+                            publish_viz,
+                            51));  // good if multiple of 5, then add 1
 }
 kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
     const MPL::Waypoint3D& start,
@@ -126,7 +129,8 @@ kr_planning_msgs::SplineTrajectory OptPlanner::GCOPTER::plan(
 
   planner_manager_->setMap(map);
 
-  bool valid = planner_manager_->plan(startState, endState, search_path_, hPolys);
+  bool valid =
+      planner_manager_->plan(startState, endState, search_path_, hPolys);
   if (valid) {
     opt_traj_ = planner_manager_->getTraj();
     traj_total_time_ = opt_traj_.getTotalDuration();
@@ -647,8 +651,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Sampling::plan(
     ROS_WARN("Failed to plan a SST path!");
   } else {
     path_.clear();
-    for (auto &wp: route)
-    {
+    for (auto& wp : route) {
       path_.push_back(wp);
     }
 
@@ -676,7 +679,6 @@ MPL::Waypoint3D SearchPlanner::Sampling::evaluate(double t) {
   return waypoint;
 }
 
-
 void CompositePlanner::setup() {
   int search_planner_type_id, opt_planner_type_id;
   nh_.param("search_planner_type", search_planner_type_id, -1);
@@ -702,8 +704,9 @@ void CompositePlanner::setup() {
     case 3:
       search_planner_type_ = new SearchPlanner::PathThrough(nh_, frame_id_);
       break;
-    case 4: 
-      search_planner_type_ = new SearchPlanner::Sampling(nh_, frame_id_); // SST
+    case 4:
+      search_planner_type_ =
+          new SearchPlanner::Sampling(nh_, frame_id_);  // SST
       break;
     // case 4:
     //   search_planner_type_ = new
@@ -778,7 +781,7 @@ CompositePlanner::plan_composite(
     setMap(poly_gen_map_util_, map_no_inflation);
     if (!poly_generator_->getSikangConst(
             opt_planner_type_->search_path_, inner_pts, allo_ts, hPolys)) {
-      ROS_ERROR("[Local Planner]:orridor generation fails!\n");
+      ROS_ERROR("[Local Planner]:Corridor generation fails!\n");
       return empty_result;
     }
 

@@ -27,8 +27,9 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
 
   /**@yuwei : for falcon 250 interface**/
   pnh_.param("poly_srv_name", poly_srv_name_, std::string(" "));
-  //trajectory boardcast
-  traj_goal_pub_ = pnh_.advertise<kr_tracker_msgs::PolyTrackerActionGoal>("tracker_cmd", 10, true);
+  // trajectory boardcast
+  traj_goal_pub_ = pnh_.advertise<kr_tracker_msgs::PolyTrackerActionGoal>(
+      "tracker_cmd", 10, true);
 
   planner_ = new CompositePlanner(traj_planner_nh_, frame_id_);
   ROS_WARN("[Local planner:] planner instance created!");
@@ -210,8 +211,139 @@ bool LocalPlanServer::is_outside_map(const Eigen::Vector3i& pn,
   return pn(0) < 0 || pn(0) >= dim(0) || pn(1) < 0 || pn(1) >= dim(1) ||
          pn(2) < 0 || pn(2) >= dim(2);
 }
+Eigen::MatrixXd compute_bvp_pva(Eigen::VectorXd state1,  // p0 v0 a0, size 9
+                                Eigen::VectorXd state2) {
+  using namespace Eigen;
+  MatrixXd coef(6, 3);
+  const Vector3d p0 = state1.head(3);
+  const Vector3d pf = state2.head(3);
+  const Vector3d v0 = state1.segment(3, 3);
+  const Vector3d vf = state2.segment(3, 3);
+  const Vector3d a0 = state1.tail(3);
+  const Vector3d af = state2.tail(3);
 
-kr_planning_msgs::SplineTrajectory SplineTrajfromDiscrete(
+  MatrixXd time_mat(6, 6);
+  time_mat << 1, 0, 0, 0, 0, 0,  // p0
+      0, 1, 0, 0, 0, 0,          // v0
+      0, 0, 2, 0, 0, 0,          // a0
+      1, 1, 1, 1, 1, 1,          // pf
+      0, 1, 2, 3, 4, 5,          // vf
+      0, 0, 2, 6, 12, 20;        // af
+  MatrixXd pva_mat(6, 3);
+  pva_mat << p0, v0, a0, pf, vf, af;
+  coef = time_mat.inverse() * pva_mat;
+  return coef;
+}
+
+Eigen::MatrixXd computeShotTraj(Eigen::VectorXd state1,  // p0 v0 a0, size 9
+                                Eigen::VectorXd state2,
+                                double time_to_goal) {
+  /* ---------- get coefficient ---------- */
+  using namespace Eigen;
+  const Vector3d p0 = state1.head(3);
+  const Vector3d dp = state2.head(3) - p0;
+  const Vector3d v0 = state1.segment(3, 3);
+  const Vector3d dv = state2.segment(3, 3) - v0;
+  const Vector3d a0 = state1.tail(3);
+  // order = 5;
+  double t_d = time_to_goal;
+  MatrixXd coef(3, 6);
+  double t_d_2 = t_d * t_d;
+  double t_d_3 = t_d_2 * t_d;
+  double t_d_4 = t_d_3 * t_d;
+  const Vector3d delta_p = dp - v0 * t_d - 0.5 * a0 * t_d_2;
+  const Vector3d delta_v = dv - a0 * t_d;
+  const Vector3d delta_a = state2.tail(3) - a0;
+  Vector3d a = 1.0 / 120.0 *
+               (720.0 / (t_d_4 * t_d) * delta_p - 360.0 / t_d_4 * delta_v +
+                60.0 / t_d_3 * delta_a);
+  Vector3d b = 1.0 / 24.0 *
+               (-360.0 / t_d_4 * delta_p + 168.0 / t_d_3 * delta_v -
+                24.0 / t_d_2 * delta_a);
+  Vector3d c =
+      1.0 / 6.0 *
+      (60.0 / t_d_3 * delta_p - 24.0 / t_d_2 * delta_v + 3.0 / t_d * delta_a);
+  Vector3d d = 0.5 * a0;
+  Vector3d e = v0;
+  Vector3d f = p0;
+  // 1/24 *  * t^4  +  1/6 * alpha * t^3 + 1/2 * beta * t^2 + v0
+  // a*t^4 + b*t^3 + c*t^2 + v0*t + p0
+  coef.col(5) = a;
+  coef.col(4) = b;
+  coef.col(3) = c;
+  coef.col(2) = d;
+  coef.col(1) = e;
+  coef.col(0) = f;
+  return coef.transpose();
+}
+void normalizePosCoeffMat(double duration, Eigen::MatrixXd& coeffMat) {
+  // Eigen::MatrixXd nPosCoeffsMat;  // not used
+  double t = 1.0;
+  for (int i = 0; i < coeffMat.cols(); i++) {
+    coeffMat.col(i) = coeffMat.col(i) * t;
+    t *= duration;
+  }
+}
+
+kr_planning_msgs::SplineTrajectory SplineTrajfromDiscreteTwoPoints(
+    const kr_planning_msgs::TrajectoryDiscretized& traj_dis_msg) {
+  int degree_plus1 = 6;
+  double dt = traj_dis_msg.t[1] - traj_dis_msg.t[0];
+  kr_planning_msgs::SplineTrajectory traj_msg;
+  traj_msg.header = traj_dis_msg.header;
+  traj_msg.dimensions = 3;
+  // prepare polynomial fit time vector
+  kr_planning_msgs::Spline spline;
+  for (int dim = 0; dim < 3; dim++) {
+    traj_msg.data.push_back(spline);
+    traj_msg.data[dim].t_total = traj_dis_msg.t[traj_dis_msg.t.size() - 1];
+  }
+  // calc coeff
+  for (int traj_idx = 0; traj_idx < traj_dis_msg.pos.size() - 1; traj_idx++) {
+    // Eigen::MatrixXd pos_mat = Eigen::MatrixXd::Zero(degree_plus1, 3);
+    // create a vector of pos, vel, acc for traj_idx and next point
+    Eigen::VectorXd state1(9);
+    Eigen::VectorXd state2(9);
+    state1 << traj_dis_msg.pos[traj_idx].x, traj_dis_msg.pos[traj_idx].y,
+        traj_dis_msg.pos[traj_idx].z, traj_dis_msg.vel[traj_idx].x,
+        traj_dis_msg.vel[traj_idx].y, traj_dis_msg.vel[traj_idx].z,
+        traj_dis_msg.acc[traj_idx].x, traj_dis_msg.acc[traj_idx].y,
+        traj_dis_msg.acc[traj_idx].z;
+    state2 << traj_dis_msg.pos[traj_idx + 1].x,
+        traj_dis_msg.pos[traj_idx + 1].y, traj_dis_msg.pos[traj_idx + 1].z,
+        traj_dis_msg.vel[traj_idx + 1].x, traj_dis_msg.vel[traj_idx + 1].y,
+        traj_dis_msg.vel[traj_idx + 1].z, traj_dis_msg.acc[traj_idx + 1].x,
+        traj_dis_msg.acc[traj_idx + 1].y, traj_dis_msg.acc[traj_idx + 1].z;
+    std::cout << "state1: " << state1 << std::endl;
+    std::cout << "state2: " << state2 << std::endl;
+    // solve for coefficients
+    Eigen::MatrixXd coeff_mat = compute_bvp_pva(state1,  // p0 v0 a0, size 9
+                                                state2);
+
+    // 1.0);  // #this is because the whole thing is a unit coeff
+    // normalizePosCoeffMat(dt, coeff_mat);
+    //
+    // input into the new message
+    for (int dim = 0; dim < 3; dim++) {
+      traj_msg.data[dim].segments++;
+      kr_planning_msgs::Polynomial p;
+      p.basis = p.STANDARD;
+      Eigen::VectorXd coeff_dim = coeff_mat.col(dim);
+      std::vector<float> std_vector(coeff_dim.data(),
+                                    coeff_dim.data() + coeff_dim.size());
+      p.coeffs = std_vector;
+      p.degree = degree_plus1 - 1;
+      p.dt = dt;
+      // p.start_index = traj_idx;
+      traj_msg.data[dim].segs.push_back(p);
+    }
+  }
+
+  return traj_msg;
+}
+kr_planning_msgs::SplineTrajectory
+SplineTrajfromDiscrete(  // this method will make beginning and end have an
+                         // nonzero velocity issue
     const kr_planning_msgs::TrajectoryDiscretized& traj_dis_msg) {
   int degree_plus1 = 6;
   double dt = traj_dis_msg.t[degree_plus1 - 1];
@@ -227,14 +359,17 @@ kr_planning_msgs::SplineTrajectory SplineTrajfromDiscrete(
   }
   kr_planning_msgs::Spline spline;
   for (int dim = 0; dim < 3; dim++) traj_msg.data.push_back(spline);
-  ROS_INFO("Time matrix is %f", time_mat);
-  for (int traj_idx = 0; traj_idx < traj_dis_msg.pos.size();
-       traj_idx += degree_plus1) {
-    if (traj_idx + degree_plus1 >= traj_dis_msg.pos.size()) {
-      for (int dim = 0; dim < 3; dim++)
-        traj_msg.data[dim].t_total = traj_dis_msg.t[traj_idx - 1];
-      break;
-    }
+  // ROS_INFO("Time matrix is %f", time_mat);
+  for (int traj_idx = 0;
+       traj_idx + (degree_plus1 - 1) < traj_dis_msg.pos.size();  // in range
+       traj_idx += (degree_plus1 - 1)) {
+    // this is to have 1 repeat point to make sure things connect
+    for (int dim = 0; dim < 3; dim++)
+      traj_msg.data[dim].t_total = traj_dis_msg.t[traj_idx + degree_plus1];
+    // if (traj_idx + (degree_plus1-1) >= traj_dis_msg.pos.size()) {
+
+    //   break;
+    // }
     Eigen::MatrixXd pos_mat = Eigen::MatrixXd::Zero(degree_plus1, 3);
 
     // create a vector of positions
@@ -264,11 +399,6 @@ kr_planning_msgs::SplineTrajectory SplineTrajfromDiscrete(
   return traj_msg;
 }
 
-
-
-
-
-
 void LocalPlanServer::process_result(
     const std::pair<kr_planning_msgs::SplineTrajectory,
                     kr_planning_msgs::TrajectoryDiscretized>& traj_combined,
@@ -293,32 +423,30 @@ void LocalPlanServer::process_result(
     ROS_WARN("[LocalPlanServer] Planning success!!!!!!");
     traj_pub_.publish(traj_msg);
 
-
     /////////////////////////////////////////////////////////////////////////////////////////////
     // get the trajectory
     kr_tracker_msgs::PolyTrackerActionGoal traj_act_msg;
 
     traj_act_msg.goal.order = traj_msg.data[0].segs[0].degree;
     traj_act_msg.goal.set_yaw = false;
-    
+
     int piece_num = traj_msg.data[0].segments;
 
-    traj_act_msg.goal.t_start = ros::Time::now(); // spline_traj_.header.stamp
+    traj_act_msg.goal.t_start = ros::Time::now();  // spline_traj_.header.stamp
     traj_act_msg.goal.seg_x.resize(piece_num);
     traj_act_msg.goal.seg_y.resize(piece_num);
     traj_act_msg.goal.seg_z.resize(piece_num);
 
     std::cout << " piece_num  " << piece_num << std::endl;
 
-    for (int i = 0; i < piece_num; ++i)
-    {
+    for (int i = 0; i < piece_num; ++i) {
       for (uint c = 0; c <= traj_act_msg.goal.order; c++) {
-
-        
-
-        traj_act_msg.goal.seg_x[i].coeffs.push_back(traj_msg.data[0].segs[i].coeffs[c]);
-        traj_act_msg.goal.seg_y[i].coeffs.push_back(traj_msg.data[1].segs[i].coeffs[c]);
-        traj_act_msg.goal.seg_z[i].coeffs.push_back(traj_msg.data[2].segs[i].coeffs[c]);
+        traj_act_msg.goal.seg_x[i].coeffs.push_back(
+            traj_msg.data[0].segs[i].coeffs[c]);
+        traj_act_msg.goal.seg_y[i].coeffs.push_back(
+            traj_msg.data[1].segs[i].coeffs[c]);
+        traj_act_msg.goal.seg_z[i].coeffs.push_back(
+            traj_msg.data[2].segs[i].coeffs[c]);
       }
 
       traj_act_msg.goal.seg_x[i].dt = traj_msg.data[0].segs[i].dt;
@@ -330,9 +458,6 @@ void LocalPlanServer::process_result(
     std_srvs::Trigger trg;
     ros::service::call(poly_srv_name_, trg);
     /////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
 
     kr_planning_msgs::PlanTwoPointResult result;
     // evaluate trajectory for 5 steps, each step duration equals

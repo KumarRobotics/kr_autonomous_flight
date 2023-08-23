@@ -35,8 +35,7 @@ class PlannerType {
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map) {
-    ROS_WARN(
-        "[Plannner Details]:plan discrete not implemented for this planner");
+    ROS_WARN("[Plannner Details]:plan spline not implemented for this planner");
     // std::logic_error("Function not yet implemented");
     return kr_planning_msgs::SplineTrajectory();
   }

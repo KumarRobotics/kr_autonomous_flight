@@ -13,6 +13,7 @@
 
   <arg name="random_map" default="true"/>
   <arg name="vicon_map" default="false"/>
+  <arg name="file_map" default="false"/>
 
 
   <arg name="initial_position/x" default="0.0"/>
@@ -116,9 +117,13 @@
       </include>
     </group>
 
-    <!-- <include file="$(find kr_planning_msgs_utils)/launch/image_to_map.launch">
+    <!-- file map -->
+    <group if="$(arg file_map)">
+    <include file="$(find kr_planning_msgs_utils)/launch/image_to_map.launch">
+    <!-- <remap from="~cloud" to="/global_cloud"/> -->
     </include>
- -->
+    </group>
+
 
   <!-- <arg name="global_map_topic" default="/global_cloud"/>
   <arg name="global_semantics_topic" default="/global_semantics"/>

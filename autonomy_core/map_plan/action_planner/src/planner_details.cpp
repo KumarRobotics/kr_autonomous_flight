@@ -122,8 +122,8 @@ kr_planning_msgs::SplineTrajectory OptPlanner::GCOPTER::plan(
   ROS_WARN_STREAM("[GCOPTER]: Vel Norm:" << start.vel.norm());
   ROS_WARN_STREAM("[GCOPTER]: Acc Norm:" << start.acc.norm());
   Eigen::MatrixXd startState(3, 3), endState(3, 3);
-  startState << start.pos(0), start.vel(0), 0.0, start.pos(1), start.vel(1),
-      0.0, start.pos(2), start.vel(2), 0.0;
+  startState << start.pos(0), start.vel(0), start.acc(0), start.pos(1),
+      start.vel(1), start.acc(1), start.pos(2), start.vel(2), start.acc(2);
   endState << goal.pos(0), goal.vel(0), goal.acc(0), goal.pos(1), goal.vel(1),
       goal.acc(1), goal.pos(2), goal.vel(2), goal.acc(2);
 
@@ -645,30 +645,78 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Sampling::plan(
     const kr_planning_msgs::VoxelMap& map) {
   spline_traj_ = kr_planning_msgs::SplineTrajectory();
 
+  Eigen::MatrixXd startState(3, 3), endState(3, 3);
+  startState << start.pos(0), start.vel(0), start.acc(0), start.pos(1),
+      start.vel(1), start.acc(1), start.pos(2), start.vel(2), start.acc(2);
+  endState << goal.pos(0), goal.vel(0), goal.acc(0), goal.pos(1), goal.vel(1),
+      goal.acc(1), goal.pos(2), goal.vel(2), goal.acc(2);
+
+
   sstplanner_->setMap(map);
-  std::vector<Eigen::Vector3d> route;
-  if (!sstplanner_->planfrontend(start.pos, goal.pos, route)) {
+  std::vector<Eigen::VectorXd> route;
+
+  if (!sstplanner_->planfrontend(startState, endState, route)) {
     ROS_WARN("Failed to plan a SST path!");
   } else {
     path_.clear();
     for (auto& wp : route) {
-      path_.push_back(wp);
+      path_.push_back(wp.head(3));
     }
+    path_.push_back(goal.pos);
 
     kr_planning_msgs::Path path = kr::path_to_ros(path_);
     path.header.frame_id = frame_id_;
     path.header.stamp = ros::Time::now();
     path_pub_.publish(path);
 
-    double velocity;
-    nh_.param("max_v", velocity, 2.0);
-    spline_traj_ = path_to_spline_traj(path, velocity);
+
+    //@yuwei: constant velocity
+    // double velocity;
+    // nh_.param("max_v", velocity, 2.0);
+    // spline_traj_ = path_to_spline_traj(path, velocity);
+    spline_traj_.dimensions = 3;
+    int piece_num = route.size();
+
+    for (uint d = 0; d < 3; d++) {
+      kr_planning_msgs::Spline spline;
+      double total_time = 0.0;
+
+      for (uint s = 0; s < piece_num; s++) {
+        kr_planning_msgs::Polynomial poly;
+
+        double dt = route.at(s)(9);
+
+        Eigen::Matrix<double, 3, 3> coeff;
+        coeff.col(0) = route.at(s).head(3); //position
+        coeff.col(1) = route.at(s).segment(3, 3) * dt; //vel
+        coeff.col(2) = 0.5 * route.at(s).segment(6, 3) * dt * dt; //vel
+
+        for (uint c = 0; c < 3; c++) {
+          poly.coeffs.push_back(coeff(d, c));
+        }
+        poly.dt = dt;
+        poly.degree = 2;
+        spline.segs.push_back(poly);
+        total_time += poly.dt;
+
+      }
+      spline.segments = piece_num;
+      spline.t_total = total_time;
+      spline_traj_.data.push_back(spline);
+    }
+
     spline_traj_.header.frame_id = frame_id_;
     spline_traj_.header.stamp = ros::Time::now();
     traj_total_time_ = spline_traj_.data[0].t_total;
   }
   return spline_traj_;
 }
+
+
+
+
+
+
 MPL::Waypoint3D SearchPlanner::Sampling::evaluate(double t) {
   MPL::Waypoint3D waypoint;
 

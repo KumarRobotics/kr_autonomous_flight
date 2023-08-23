@@ -408,7 +408,7 @@ void LocalPlanServer::process_result(
   kr_planning_msgs::TrajectoryDiscretized traj_dis_msg = traj_combined.second;
   bool solved = traj_msg.data.size() > 0;
   if (!solved && traj_dis_msg.pos.size() > 0) {
-    traj_msg = SplineTrajfromDiscreteTwoPoints(traj_dis_msg);
+    traj_msg = SplineTrajfromDiscrete(traj_dis_msg);
     solved = true;
   }
   if (!solved) {

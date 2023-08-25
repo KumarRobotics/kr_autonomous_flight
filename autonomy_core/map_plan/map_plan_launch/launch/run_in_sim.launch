@@ -103,9 +103,6 @@
         <arg name="b_num" value="10.0"/>
         <arg name="init_state_x" default="$(arg initial_position/x)"/>
         <arg name="init_state_y" default="$(arg initial_position/y)"/>
-
-
-        
       </include>
     </group>
 

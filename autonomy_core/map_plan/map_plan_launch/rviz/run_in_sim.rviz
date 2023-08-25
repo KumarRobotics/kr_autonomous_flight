@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /Axes1
       Splitter Ratio: 0.5211267471313477
     Tree Height: 1616
   - Class: rviz/Selection
@@ -133,7 +134,7 @@ Visualization Manager:
     - Alpha: 1
       Class: rviz/Axes
       Enabled: true
-      Length: 10
+      Length: 15
       Name: Axes
       Radius: 0.10000000149011612
       Reference Frame: <Fixed Frame>
@@ -357,7 +358,7 @@ Visualization Manager:
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
         Max Value: 3.4600000381469727
-        Min Value: -0.5466891527175903
+        Min Value: -0.14000000059604645
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -414,7 +415,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 52.84367370605469
+      Distance: 45.83279800415039
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -422,8 +423,8 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -10.207674026489258
-        Y: -1.3502752780914307
+        X: -0.8342232704162598
+        Y: -10.054780960083008
         Z: 0
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
@@ -432,7 +433,7 @@ Visualization Manager:
       Near Clip Distance: 0.009999999776482582
       Pitch: 1.5697963237762451
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 3.1203997135162354
+      Yaw: 4.715404510498047
     Saved: ~
 Window Geometry:
   Displays:
@@ -453,4 +454,4 @@ Window Geometry:
     collapsed: false
   Width: 2415
   X: 4819
-  Y: 285
+  Y: 79

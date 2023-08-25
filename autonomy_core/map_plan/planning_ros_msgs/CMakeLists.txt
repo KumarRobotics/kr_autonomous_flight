@@ -19,10 +19,11 @@ add_message_files(
   SplineTrajectory.msg
   Trajectory.msg
   TrajectoryCommand.msg
+  TrajectoryPoints.msg
   StateTransition.msg
   VoxelMap.msg)
 
-add_action_files(DIRECTORY action FILES PlanPath.action PlanTwoPoint.action)
+add_action_files(DIRECTORY action FILES PlanLocalPath.action PlanPath.action PlanTwoPoint.action)
 
 generate_messages(DEPENDENCIES geometry_msgs nav_msgs actionlib_msgs)
 

@@ -55,6 +55,8 @@ class PathRePlanner {
 
     ROS_INFO("Number of pose_goals: %zu", pose_goals.size());
 
+    std::cout << " goal position is : " << pose_goal.position.x << " " pose_goal.position.y << " " pose_goal.position.z << " " << std::endl;
+
     if (!finished_replanning && current_cmd_) {
       // this is current pose?
       geometry_msgs::Pose pose_start;

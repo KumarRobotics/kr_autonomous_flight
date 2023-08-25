@@ -10,6 +10,7 @@
 #include <kr_mav_msgs/PositionCommand.h>
 #include <planning_ros_msgs/Path.h>
 #include <planning_ros_msgs/PlanTwoPointAction.h>
+#include <planning_ros_msgs/PlanLocalPathAction.h>
 #include <planning_ros_msgs/VoxelMap.h>
 #include <planning_ros_utils/data_ros_utils.h>
 #include <ros/ros.h>
@@ -68,7 +69,7 @@ class RePlanner {
       actionlib::SimpleActionClient<action_trackers::RunTrajectoryAction>>
       run_client_;
   std::unique_ptr<
-      actionlib::SimpleActionClient<planning_ros_msgs::PlanTwoPointAction>>
+      actionlib::SimpleActionClient<planning_ros_msgs::PlanLocalPathAction>>
       local_plan_client_;  // local plan action server client
   std::unique_ptr<
       actionlib::SimpleActionClient<planning_ros_msgs::PlanTwoPointAction>>

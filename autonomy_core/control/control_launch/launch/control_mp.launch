@@ -25,7 +25,7 @@
 				<remap from="~odom" to="odom"/>
 				<remap from="~cmd" to="position_cmd"/>
 				<remap from="~des_max" to="des_max"/>
-				<param name="mass" value="(arg mass)"/>
+				<param name="mass" value="$(arg mass)"/>
 			</node>
 			<node pkg="nodelet" type="nodelet" args="load kr_mav_controllers/SO3ControlNodelet $(arg manager)" name="so3_control" required="true" output="screen">
 				<rosparam file="$(arg gains_file)"/>

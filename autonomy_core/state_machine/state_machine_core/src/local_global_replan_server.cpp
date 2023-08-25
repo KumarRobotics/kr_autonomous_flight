@@ -316,7 +316,7 @@ void RePlanner::setup_replanner() {
   // Initial plan step 3: local plan
   // ##########################################################################################################
   // set goal
-  planning_ros_msgs::PlanTwoPointGoal local_tpgoal;
+  planning_ros_msgs::PlanLocalPathGoal local_tpgoal;
   state_machine::VecToPose(
       cmd_pos_, &local_tpgoal.p_init);  // use current position command as the
                                         // start position for local planner
@@ -338,6 +338,15 @@ void RePlanner::setup_replanner() {
   local_tpgoal.p_final.position.x = local_goal(0);
   local_tpgoal.p_final.position.y = local_goal(1);
   local_tpgoal.p_final.position.z = local_goal(2);
+
+  // Yuwei TODO: set the local cropped JPS path
+  geometry_msgs::Point pt;
+  for (unsigned int i = 0; i < path_cropped_wrt_odom.size(); i++) {
+    pt.x = path_cropped_wrt_odom.at(i)(0);
+    pt.y = path_cropped_wrt_odom.at(i)(1);
+    pt.z = path_cropped_wrt_odom.at(i)(2);
+    local_tpgoal.path.waypoints.push_back(pt);
+  }
 
   // send goal to local trajectory plan action server
   local_plan_client_->sendGoal(local_tpgoal);
@@ -448,7 +457,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
   global_tpgoal.avoid_obstacles = avoid_obstacle_;
 
   // set local goal
-  planning_ros_msgs::PlanTwoPointGoal local_tpgoal;
+  planning_ros_msgs::PlanLocalPathGoal local_tpgoal;
   double eval_time =
       double(horizon) /
       local_replan_rate_;  // calculate evaluation time, i.e., beginning of
@@ -521,6 +530,16 @@ bool RePlanner::PlanTrajectory(int horizon) {
   local_tpgoal.p_final.position.y = local_goal(1);
   local_tpgoal.p_final.position.z = local_goal(2);
 
+  // Yuwei TODO: set the local cropped JPS path
+  int path_size = path_cropped_wrt_odom.size();
+  geometry_msgs::Point pt;
+  for (unsigned int i = 0; i < path_cropped_wrt_odom.size(); i++) {
+    pt.x = path_cropped_wrt_odom.at(i)(0);
+    pt.y = path_cropped_wrt_odom.at(i)(1);
+    pt.z = path_cropped_wrt_odom.at(i)(2);
+    local_tpgoal.path.waypoints.push_back(pt);
+  }
+
   timer.start();
   // send goal to local trajectory plan action server
   local_plan_client_->sendGoal(local_tpgoal);
@@ -572,7 +591,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
     }
   }
 
-  if (failed_local_trials_ >= max_local_trials_ - 1) {
+  if (failed_local_trials_ >= max_local_trials_ ) {
     AbortReplan();
     return false;
   }
@@ -754,11 +773,12 @@ vec_Vec3f RePlanner::PathCropIntersect(const vec_Vec3f& path) {
         if (is_first_intersection) {
           ROS_INFO("Ignoring the first intersection...");
           is_first_intersection = false;
-          
+
           if (i == path.size() - 1) {
             cropped_path.push_back(path[i]);
             ROS_INFO(
-                "Global goal is inside local voxel map, directly using it as local "
+                "Global goal is inside local voxel map, directly using it as "
+                "local "
                 "goal!");
           }
 
@@ -1071,7 +1091,7 @@ RePlanner::RePlanner() : nh_("~") {
 
   // plan local trajectory action client, auto spin option set to true
   local_plan_client_.reset(
-      new actionlib::SimpleActionClient<planning_ros_msgs::PlanTwoPointAction>(
+      new actionlib::SimpleActionClient<planning_ros_msgs::PlanLocalPathAction>(
           nh_, "plan_local_trajectory", true));
 
   // run trajectory action client

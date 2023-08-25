@@ -20,11 +20,21 @@ find_package(
              traj_opt_ros
              dynamic_reconfigure
              motion_primitive_library
-             opt_planner
+             local_plan
              decomp_ros_utils
-             decomp_ros_msgs)
+             decomp_ros_msgs
+             sloam_msgs)
 
 generate_dynamic_reconfigure_options(cfg/ActionPlanner.cfg)
+
+include_directories( 
+    SYSTEM 
+    ${catkin_INCLUDE_DIRS}
+    ${Eigen3_INCLUDE_DIRS} 
+    ${GTSAM_LIBRARIES} 
+    ${Boost_INCLUDE_DIR} 
+)
+
 
 catkin_package(CATKIN_DEPENDS dynamic_reconfigure planning_ros_msgs)
 
@@ -38,6 +48,10 @@ add_dependencies(global_plan_server ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
 
 add_executable(local_plan_server src/local_plan_server.cpp)
-target_link_libraries(local_plan_server PUBLIC ${PROJECT_NAME} Boost::timer)
+target_link_libraries(local_plan_server PUBLIC ${PROJECT_NAME} 
+  Boost::timer     
+  ${GTSAM_LIBRARIES}
+  gtsam
+  "/usr/lib/x86_64-linux-gnu/libtbb.so.2")
 add_dependencies(local_plan_server ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})

@@ -26,13 +26,9 @@ trajectory_planner:
   max_j: 2.0 # x-y-direction maximum jerk, recommended value: for 2-D 3, for 3-D 2
   max_u: 2.0 # x-y-direction control inputs increase / decrease step, must be smaller than max_j, recommended value: for 2-D 3, for 3-D 1, for each axis jerk increment choice is -max_u, 0, max_u
   use_3d_local: false # local planner operates in 3D (true) or 2D (false)
-  use_opt_planner: false # set true if using the optimization-based planner
-
   use_3d_global: false # global planner operates in 3D (true, in this case use_3d_local has to be set as true) or 2D (false)
   z_cost_factor: 1 # global map z cost factor, this also influences the vertical semi field of view of global planner into 45-degree / z_cost_factor  (cost_along_z = z_cost_factor * cost_along_x_or_y)
   # TODO: Z factor not working, has a bug, set value to 1 always!
-
-
   max_v_z: 1.5 # z-direction maximum velocity, recommended value: 1.5
   max_a_z: 3.0 # z-direction maximum acceleration, recommended value: 3.0
   max_j_z: 3.0 # z-direction maximum jerk, recommended value: 3.0
@@ -42,29 +38,60 @@ trajectory_planner:
   global_goal_tol_acc: -1 # tolerance of acceleration for goal region, recommended value: -1
   dt: 1.0 # execution time for each primitive, recommended value: 1.0
   ndt: 1.0 # default 1
-  max_num: -1 # maxmum number of expansion, -1 means no limitation
+  max_num: -1 # maximum number of expansion, -1 means no limitation
   heuristic_weight: 50.0 # the larger heuristic_weight, the more emphasis on min time and the less emphasis on min control effort, recommended value: 50 for 2-D, 300 for 3-D
   vertical_semi_fov: 0.61 # vertical semi field of view (in rad), used for 3D planning only, value should lie in (0, pi/2), if 2D planning set it as 0
-  optimization/bb_xy_size: 4.0 # xy half size of the intial polytope of flight corridor
-  optimization/bb_z_up: 2.0 # z up size of the intial polytope of flight corridor
-  optimization/bb_z_down: 2.0 # z down size of the intial polytope of flight corridor
-  optimization/w_time: 8.0 # penalty weight to minimize the total time (4~20)
-  optimization/w_vel: 360.0 # penalty weight to minimize the the violate velocity (100 ~ 1000)
-  optimization/w_acc: 360.0 # penalty weight to minimize the the violate accelrate (100 ~ 1000)
-  optimization/w_sta_obs: 20.0 # penalty weight to enforce the position inside flight corridor (100 ~ 1000)
+  map_frame: "quadrotor/map"
+  use_opt_planner: true # set true if using the optimization-based planner
+  # parameters for local planning
+  physical/vehicleMass: 1.83
+  physical/gravAcc: 9.8
+  physical/horizDrag: 0.70
+  physical/vertDrag: 0.80
+  physical/parasDrag: 0.01
+  physical/speedEps: 0.0001
+  magnitudeBounds/maxVelMag: 3.0  # the maximum speed
+  magnitudeBounds/maxBdrMag: 2.0 # maximum angle velocity
+  magnitudeBounds/maxTiltAngle: 0.9 # maximum pitch angle (tile angle)
+  magnitudeBounds/minThrust: 5.0 # minimum Thrust, set around 0.5*mass*9.8
+  magnitudeBounds/maxThrust: 25.0 # maximum Thrust, set around 1.5*mass*9.8
+  params/WeightT: 8
+  params/ChiVec: [1.0e+4, 1.0e+4, 1.0e+4, 1.0e+4, 1.0e+5] #pos_weight, vel_weight, omg_weight, theta_weight, thrust_weight
+  params/SmoothingEps: 1.0e-2
+  params/IntegralIntervs: 16
+  params/RelCostTol: 1.0e-2
+  gp/use_gp_path: true
+  gp/time_res: 0.5
+  gp/sigma_vis: 1.0
+  gp/sigma_qc: 1.2 # jerk changes
+  gp/cov_goal: [0.5, 0.1, 0.1]
+  gp/cov_ref: [0.8, 1.0, 2.0]
+  gp/w_vis_theta: 0.1
+  gp/w_vis_r: 0.05
+  gp/theta_mean: 0.0
+  gp/theta_range: 0.8
+  gp/r_mean: 7
+  gp/r_range: 11
+  gp/dis_safe: 4.0
+  gp/w_dis: 1.5
+  sfc_gen/bb_xy_size: 3.0 # xy half size of the initial polytope of flight corridor
+  sfc_gen/bb_z_up: 2.0 # z up size of the initial polytope of flight corridor
+  sfc_gen/bb_z_down: 1.5 # z down size of the initial polytope of flight corridor
+  search/use_kino_acc_path: false
+  refine/sample_inflate_x: 1.0
+  refine/sample_inflate_y: 3.5
+  refine/sample_inflate_z: 0.5
+  refine/resolution: 0.25
   search/max_tau: 0.6 # time interval for kinodynamic search
   search/init_max_tau: 0.6 # time interval for kinodynamic search (usually don't change it)
-  search/horizon: 13.0 # local search horizon
+  search/horizon: 12.5 # local search horizon
   search/lambda_heu: 5.0 # heu weight
   search/allocate_num: 100000 # total allocate space to store nodes
-  search/resolution_astar: 0.3 # tolerance for a star search
+  search/resolution_astar: 0.05 # tolerance for a star search
   search/vis_check_num: 15 # number of checking point along each segement
   search/w_time: 3.0 # time weight
-  search/use_jerk: false # set false now
   search/time_res: 0.15 # time resolution to index the path
-  map_frame: "quadrotor/map" 
-
-
+  search/max_search_time: 0.1
 stopping_policy:
   acc_xy_des: 4.0 # stopping policy x-y maximum acceleration 
   jerk_xy_des: 2.0 # stopping policy x-y maximum jerk 
@@ -74,12 +101,12 @@ stopping_policy:
 
 local_global_server:
   # local planning horizon will be from robot to the local voxel map boundary
-  waypoint_reach_xy_threshold: 10.0 # x-y distance threshold, within which intermidiate waypoint is regarded as reached 
+  waypoint_reach_xy_threshold: 7.0 # x-y distance threshold, within which intermidiate waypoint is regarded as reached 
   final_goal_reach_xy_threshold: 5.0 # within which final waypoint is regarded as reached, this should be smaller than waypoint_reach_threshold
   close_to_final_dist: 10.0 # distance-to-goal threshold, should be larger than final_goal_reach_xy_threshold, within which the velocity and acceleration checking will be turned on, -1 means no velocity checking at all
   local_plan_timeout_duration: 1.0 # local planner timeout in seconds
-  max_local_plan_trials: 1 # should be set as 1 since state machine is now able to try multiple times after planner failures
-  max_horizon: 10 # defulat 5, should be larger than local_plan_timeout_duration*max_local_plan_trials*local_replan_rate 
+  max_local_plan_trials: 3 # should be set as 1 since state machine is now able to try multiple times after planner failures
+  max_horizon: 12.5 # defulat 5, should be larger than local_plan_timeout_duration*max_local_plan_trials*local_replan_rate 
   global_planner_verbose: false # verbose mode, default false
   odom_frame: "quadrotor/odom" # odometry reference frame
   map_frame: "quadrotor/map" # SLAM reference frame (only for using two-reference-frame system, otherwise this should be set to be the same as odom_frame)

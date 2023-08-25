@@ -36,6 +36,7 @@ class StoppingPolicy : public kr_trackers_manager::Tracker {
   Eigen::VectorXd p0_, v0_, a0_, j0_, a0_dir_xyz_;
   double v0_dir_yaw_;
   ros::Time t0_;
+  int stop_cnt_ = 0;
 };
 
 void StoppingPolicy::Initialize(const ros::NodeHandle& nh) {
@@ -106,6 +107,8 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr& cmd) {
     ROS_WARN("Stopping policy activated!");
     // IMPORTANT: resetting odom_first_call_ flag to make sure duration starts
     // from 0
+    stop_cnt_ += 1;
+    std::cout << "=========== total stopping call is : " << stop_cnt_ << std::endl;
     odom_first_call_ = true;
     ROS_WARN_STREAM("vx:" << cmd->velocity.x << "vy:" << cmd->velocity.y
                           << "vz:" << cmd->velocity.z);

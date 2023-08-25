@@ -30,9 +30,10 @@
   <depend>planning_ros_msgs</depend>
   <depend>traj_opt_ros</depend>
   <depend>motion_primitive_library</depend>
-  <depend>opt_planner</depend>
+  <depend>local_plan</depend>
   <depend>decomp_ros_utils</depend>
   <depend>decomp_ros_msgs</depend>
+  <depend>sloam_msgs</depend>
 
   <export>
   </export>

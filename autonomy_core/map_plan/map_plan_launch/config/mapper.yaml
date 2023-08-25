@@ -1,5 +1,5 @@
-robot_r: 1.5 # sim: 0.5 # robot radius, local and global maps will be dilated in x and y with a radius of [ceil(robot_r/res)] cells
-robot_h: 1.0 # sim: 0.25 # robot height, local and global maps will be dilated in z direction for 2*[ceil(robot_h/res)] cells (if robot_r is set as 0, there will not be any dilation along z either).
+robot_r: 0.5 # exp: 1.5 sim: 0.5 # robot radius, local and global maps will be dilated in x and y with a radius of [ceil(robot_r/res)] cells
+robot_h: 0.25 # exp: 1.0 sim: 0.25 # robot height, local and global maps will be dilated in z direction for 2*[ceil(robot_h/res)] cells (if robot_r is set as 0, there will not be any dilation along z either).
 
 # global mapper config
 global:
@@ -7,23 +7,23 @@ global:
   center_y: 0.0 # center of the map in y-axis
   range_x: 600.0 # range of the map in x-axis, map will span over [center_x - 0.5*range_x, center_x + 0.5*range_x] (high impact on memory and computation usage, recommended value: 500)
   range_y: 600.0 # range of the map in y-axis, map will span over [center_y - 0.5*range_y, center_y + 0.5*range_y] (high impact on memory and computation usage, recommended value: 500
-  center_z: 5.0 # center of the map in z-axis, should be similar to the robot take_off_height
-  range_z: 8.0 # range of the map in z-axis, map will span over [center_z - 0.5*range_z, center_z + 0.5*range_z] (high impact on memory and computation usage, recommended value: 10)
+  center_z: 7.0 # center of the map in z-axis, should be similar to the robot take_off_height
+  range_z: 15.0 # range of the map in z-axis, map will span over [center_z - 0.5*range_z, center_z + 0.5*range_z] (high impact on memory and computation usage, recommended value: 10)
   resolution: 1.0 # resolution of the map (high impact on memory and computation usage, recommended value: 1.0~2.0 for sparse environments, 0.5 for dense environments) 
   num_point_cloud_skip: 3 # the global map update frequency = point cloud frequency / num_point_cloud_skip
   max_raycast_range: 30.0 # max raycast range, the smaller, the less computation demand, but shorter perception range
-  dilate_xy: true # dilate global map along x and y axis (recommended value: true)
+  dilate_xy: false # dilate global map along x and y axis (recommended value: true)
   dilate_z: false # dilate global map along z axis (recommended value: false)
-  decay_times_to_empty: 30 # number of times of decay to empty, 0 means no decay, the noisier your state estimator is, the smaller this value should be (when using ground-truth pose, set this as 0)
+  decay_times_to_empty: 15 # number of times of decay to empty, 0 means no decay, the noisier your state estimator is, the smaller this value should be (when using ground-truth pose, set this as 0)
 
 local: # local map range z and center_z will be the same as storage map
   # local planning horizon will be from robot to the local voxel map boundary
   # center of local map will be the same as robot current odometry along x and y direction, and the same as global map along z direction
   range_x: 25.0 # range of the map in x-axis (high impact on memory and computation usage, recommended value: 40)
   range_y: 25.0 # range of the map in x-axis (high impact on memory and computation usage, recommended value: 40)
-  range_z: 8.0 # range of the map in z-axis (recommended value: slightly larger than global map range z to handle overshoot along z-axis upon stopping policy) 
+  range_z: 15.0 # range of the map in z-axis (recommended value: slightly larger than global map range z to handle overshoot along z-axis upon stopping policy) 
   resolution: 0.25 # resolution of the map (high impact on memory and computation usage, recommended value: 0.5~1.0 for sparse environments, 0.1~0.5 for dense environments) 
-  max_raycast_range: 10.0 # max raycast range, the smaller, the less computation demand, but shorter perception range
+  max_raycast_range: 13.0 # max raycast range, the smaller, the less computation demand, but shorter perception range
   decay_times_to_empty: 60 # number of times of decay to empty, 0 means no decay, the noisier your state estimator is, the smaller this value should be (when using ground-truth pose, set this as 0)
 
 

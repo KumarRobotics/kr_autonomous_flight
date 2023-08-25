@@ -73,8 +73,8 @@ bool EvaluateTrajectoryPos(const boost::shared_ptr<Trajectory>& traj,
            diff_xy.norm());
     return_v = false;  // return false
   }
-  printf("Tracking errror (distance between odom and traj in xy) is: %f \n",
-           diff_xy.norm());
+  // printf("Tracking errror (distance between odom and traj in xy) is: %f \n",
+  //          diff_xy.norm());
 
   EvaluateTrajectory(traj, t_des, out);
   return return_v;

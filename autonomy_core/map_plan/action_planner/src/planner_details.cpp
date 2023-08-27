@@ -14,7 +14,7 @@ void OptPlanner::iLQR_Planner::setup() {
       new SplineTrajSampler(subscribe_to_traj,
                             publish_optimized_traj,
                             publish_viz,
-                            51));  // good if multiple of 5, then add 1
+                            91));  // good if multiple of 5, then add 1
 }
 kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
     const MPL::Waypoint3D& start,
@@ -312,6 +312,9 @@ MPL::Waypoint3D SearchPlanner::UniformInputSampling::evaluate(double t) {
 //
 
 void SearchPlanner::Dispersion::setup() {
+  ROS_WARN("+++++++++++++++++++++++++++++++++++");
+  ROS_WARN("[LocalPlanServer:] Dispersion planner mode!!!!!");
+  ROS_WARN("+++++++++++++++++++++++++++++++++++");
   nh_.param("tol_pos", tol_pos_, 0.5);
   ROS_INFO_STREAM("Position tolerance: " << tol_pos_);
   nh_.param<std::string>("heuristic", heuristic_, "min_time");
@@ -592,7 +595,7 @@ void SearchPlanner::PathThrough::setup() {
 void SearchPlanner::PathThrough::highLevelPlannerCB(
     const kr_planning_msgs::Path& path) {
   path_ = path;
-  ROS_INFO_STREAM("[Local Plan Search: Passing through global plan!");
+  ROS_INFO_STREAM("[Local Plan Search]: Passing through global plan!");
 }
 
 kr_planning_msgs::SplineTrajectory SearchPlanner::PathThrough::plan(
@@ -651,7 +654,6 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Sampling::plan(
   endState << goal.pos(0), goal.vel(0), goal.acc(0), goal.pos(1), goal.vel(1),
       goal.acc(1), goal.pos(2), goal.vel(2), goal.acc(2);
 
-
   sstplanner_->setMap(map);
   std::vector<Eigen::VectorXd> route;
 
@@ -668,7 +670,6 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Sampling::plan(
     path.header.frame_id = frame_id_;
     path.header.stamp = ros::Time::now();
     path_pub_.publish(path);
-
 
     //@yuwei: constant velocity
     // double velocity;
@@ -687,9 +688,9 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Sampling::plan(
         double dt = route.at(s)(9);
 
         Eigen::Matrix<double, 3, 3> coeff;
-        coeff.col(0) = route.at(s).head(3); //position
-        coeff.col(1) = route.at(s).segment(3, 3) * dt; //vel
-        coeff.col(2) = 0.5 * route.at(s).segment(6, 3) * dt * dt; //vel
+        coeff.col(0) = route.at(s).head(3);                        // position
+        coeff.col(1) = route.at(s).segment(3, 3) * dt;             // vel
+        coeff.col(2) = 0.5 * route.at(s).segment(6, 3) * dt * dt;  // vel
 
         for (uint c = 0; c < 3; c++) {
           poly.coeffs.push_back(coeff(d, c));
@@ -698,7 +699,6 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Sampling::plan(
         poly.degree = 2;
         spline.segs.push_back(poly);
         total_time += poly.dt;
-
       }
       spline.segments = piece_num;
       spline.t_total = total_time;
@@ -711,11 +711,6 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Sampling::plan(
   }
   return spline_traj_;
 }
-
-
-
-
-
 
 MPL::Waypoint3D SearchPlanner::Sampling::evaluate(double t) {
   MPL::Waypoint3D waypoint;

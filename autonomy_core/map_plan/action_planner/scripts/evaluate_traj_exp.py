@@ -10,6 +10,7 @@ from visualization_msgs.msg import MarkerArray, Marker
 from actionlib import SimpleActionClient
 from std_srvs.srv import Empty
 from nav_msgs.msg import Odometry
+import random 
 
 # filename = '/home/laura/autonomy_ws/src/kr_autonomous_flight/autonomy_core/map_plan/action_planner/scripts/map_balls_start_goal.csv'
 
@@ -129,8 +130,9 @@ class Evaluater:
             dis1 = (self.odom_data.x - 2.0) *  (self.odom_data.x - 2.0)  + (self.odom_data.y - 2.0) *  (self.odom_data.y - 2.0)
             dis2 = (self.odom_data.x - 19.5) *  (self.odom_data.x -  19.5)  + (self.odom_data.y - 8.75) *  (self.odom_data.y -  8.75)
             if dis1 <= dis2:
-                msg.p_final.position.x = 19.5
-                msg.p_final.position.y = 10 - 1.25
+                # set goal to be random
+                msg.p_final.position.x = random.randrange(2, 20)
+                msg.p_final.position.y = random.randrange(-5, 5)
             else:
 
                 msg.p_final.position.x = 2.0

@@ -28,7 +28,7 @@ trajectory_planner:
   search_planner_type: 0 # 0: MPL, 1: dispersion planner, 2: JPS (geometric) 3: pass through from global planner 4: SST
   opt_planner_type: 2 # -1: no planner 0: Double Description 1: gcopter 2: iLQR(Altro)
   #TODO(Laura) fix path
-  dispersion/graph_file: "/home/yifei/Documents/optimal_ctrl/80.json"
+  dispersion/graph_file: "/home/yifei/Documents/optimal_ctrl/500.json"
 
   use_3d_global: false # global planner operates in 3D (true, in this case use_3d_local has to be set as true) or 2D (false)
   z_cost_factor: 1 # global map z cost factor, this also influences the vertical semi field of view of global planner into 45-degree / z_cost_factor  (cost_along_z = z_cost_factor * cost_along_x_or_y)

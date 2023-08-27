@@ -21,8 +21,19 @@
         <param name="map_frame" value="$(arg map_frame)"/>
         <param name="odom_frame" value="$(arg odom_frame)"/>
         <param name="lidar_frame" value="$(arg lidar_frame)"/>
-        <param name="global/range_z" value="10.0"/>
-        <param name="global/center_z" value="5.0"/>
+        <param name="global/range_z" value="4.0"/>
+        <param name="global/center_z" value="2.0"/>
+
+        <param name="global/range_x" value="20.0"/>
+        <param name="global/center_x" value="0.0"/>
+        <param name="global/range_y" value="20.0"/>
+        <param name="global/center_y" value="0.0"/>
+
+
+        <param name="local/range_x" value="20.0"/>
+        <param name="local/range_y" value="20.0"/>
+        <param name="local/range_z" value="3.0"/>
+
 
         <!-- <rosparam file="$(find map_plan_launch)/config/mapper.yaml"/> -->
         <rosparam file="$(arg mapper_config)"/>

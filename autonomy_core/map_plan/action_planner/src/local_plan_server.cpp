@@ -27,6 +27,8 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
 
   /**@yuwei : for falcon 250 interface**/
   pnh_.param("poly_srv_name", poly_srv_name_, std::string(" "));
+  pnh_.param("use_discrete_traj", use_discrete_traj_, false);
+
   // trajectory boardcast
   traj_goal_pub_ = pnh_.advertise<kr_tracker_msgs::PolyTrackerActionGoal>(
       "tracker_cmd", 10, true);
@@ -426,38 +428,56 @@ void LocalPlanServer::process_result(
     /////////////////////////////////////////////////////////////////////////////////////////////
     // get the trajectory
     kr_tracker_msgs::PolyTrackerActionGoal traj_act_msg;
-
-    traj_act_msg.goal.order = traj_msg.data[0].segs[0].degree;
     traj_act_msg.goal.set_yaw = false;
+    traj_act_msg.goal.t_start = ros::Time::now(); // spline_traj_.header.stamp
 
-    int piece_num = traj_msg.data[0].segments;
 
-    traj_act_msg.goal.t_start = ros::Time::now();  // spline_traj_.header.stamp
-    traj_act_msg.goal.seg_x.resize(piece_num);
-    traj_act_msg.goal.seg_y.resize(piece_num);
-    traj_act_msg.goal.seg_z.resize(piece_num);
+    if (!use_discrete_traj_)
+    {
+      traj_act_msg.goal.order = traj_msg.data[0].segs[0].degree;
 
-    std::cout << " piece_num  " << piece_num << std::endl;
+      int piece_num = traj_msg.data[0].segments;
 
-    for (int i = 0; i < piece_num; ++i) {
-      for (uint c = 0; c <= traj_act_msg.goal.order; c++) {
-        traj_act_msg.goal.seg_x[i].coeffs.push_back(
-            traj_msg.data[0].segs[i].coeffs[c]);
-        traj_act_msg.goal.seg_y[i].coeffs.push_back(
-            traj_msg.data[1].segs[i].coeffs[c]);
-        traj_act_msg.goal.seg_z[i].coeffs.push_back(
-            traj_msg.data[2].segs[i].coeffs[c]);
+      traj_act_msg.goal.seg_x.resize(piece_num);
+      traj_act_msg.goal.seg_y.resize(piece_num);
+      traj_act_msg.goal.seg_z.resize(piece_num);
+
+      std::cout << " piece_num  " << piece_num << std::endl;
+
+      for (int i = 0; i < piece_num; ++i) {
+        for (uint c = 0; c <= traj_act_msg.goal.order; c++) {
+          traj_act_msg.goal.seg_x[i].coeffs.push_back(
+              traj_msg.data[0].segs[i].coeffs[c]);
+          traj_act_msg.goal.seg_y[i].coeffs.push_back(
+              traj_msg.data[1].segs[i].coeffs[c]);
+          traj_act_msg.goal.seg_z[i].coeffs.push_back(
+              traj_msg.data[2].segs[i].coeffs[c]);
+        }
+
+        traj_act_msg.goal.seg_x[i].dt = traj_msg.data[0].segs[i].dt;
+        traj_act_msg.goal.seg_x[i].degree = traj_msg.data[0].segs[i].degree;
       }
 
-      traj_act_msg.goal.seg_x[i].dt = traj_msg.data[0].segs[i].dt;
-      traj_act_msg.goal.seg_x[i].degree = traj_msg.data[0].segs[i].degree;
+    }
+      /////////////////////////////////////////////////////////////////////////////////////////////
+    else
+    {
+
+      // http://docs.ros.org/en/api/trajectory_msgs/html/msg/MultiDOFJointTrajectoryPoint.html 
+      // use this can directly for control
+      traj_act_msg.goal.N = traj_dis_msg.N;
+      traj_act_msg.goal.pos_pts = traj_dis_msg.pos;
+      traj_act_msg.goal.vel_pts = traj_dis_msg.vel;
+      traj_act_msg.goal.acc_pts = traj_dis_msg.acc;
+      traj_act_msg.goal.dt      = traj_dis_msg.t[1] -  traj_dis_msg.t[0];
+
     }
 
     // publish the trajectory
     traj_goal_pub_.publish(traj_act_msg);
     std_srvs::Trigger trg;
     ros::service::call(poly_srv_name_, trg);
-    /////////////////////////////////////////////////////////////////////////////////////////////
+
 
     kr_planning_msgs::PlanTwoPointResult result;
     // evaluate trajectory for 5 steps, each step duration equals

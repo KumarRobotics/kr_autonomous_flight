@@ -265,9 +265,9 @@ class PathThrough : public PlannerType {
 
 
 //SST
-class Sampling : public PlannerType {
+class DynSampling : public PlannerType {
  public:
-  explicit Sampling(const ros::NodeHandle& nh, const std::string& frame_id)
+  explicit DynSampling(const ros::NodeHandle& nh, const std::string& frame_id)
       : PlannerType(nh, frame_id) {}
 
   void setup();
@@ -288,7 +288,28 @@ class Sampling : public PlannerType {
 };
 
 
+//RRT
+class Sampling : public PlannerType {
+ public:
+  explicit Sampling(const ros::NodeHandle& nh, const std::string& frame_id)
+      : PlannerType(nh, frame_id) {}
 
+  void setup();
+  kr_planning_msgs::SplineTrajectory plan(
+      const MPL::Waypoint3D& start,
+      const MPL::Waypoint3D& goal,
+      const kr_planning_msgs::VoxelMap& map);
+  MPL::Waypoint3D evaluate(double t);
+
+ private:
+
+  gcopter::GcopterPlanner::Ptr rrtplanner_;
+  bool verbose_{true};
+  vec_Vecf<3> path_;
+  kr_planning_msgs::SplineTrajectory spline_traj_;
+  ros::Publisher path_pub_;
+
+};
 
 
 }  // namespace SearchPlanner

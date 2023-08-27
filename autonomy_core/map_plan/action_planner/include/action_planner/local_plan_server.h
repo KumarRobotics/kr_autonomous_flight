@@ -59,6 +59,7 @@ class LocalPlanServer {
   CompositePlanner* planner_;
 
   std::string frame_id_, poly_srv_name_;
+  bool use_discrete_traj_ = false;
 
 
 

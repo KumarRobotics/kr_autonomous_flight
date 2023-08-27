@@ -129,8 +129,8 @@ class Evaluater:
             dis1 = (self.odom_data.x - 2.0) *  (self.odom_data.x - 2.0)  + (self.odom_data.y - 2.0) *  (self.odom_data.y - 2.0)
             dis2 = (self.odom_data.x - 19.5) *  (self.odom_data.x -  19.5)  + (self.odom_data.y - 8.75) *  (self.odom_data.y -  8.75)
             if dis1 <= dis2:
-                msg.p_final.position.x = 19.5
-                msg.p_final.position.y = 10 - 1.25
+                msg.p_final.position.x = -5.0
+                msg.p_final.position.y = 9.4
             else:
 
                 msg.p_final.position.x = 2.0

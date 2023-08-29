@@ -3,7 +3,7 @@
 #include <kr_planning_rviz_plugins/spline_trajectory_visual.h>
 
 //
-// Double Description Planner
+// Double Descrisption Planner
 //
 void OptPlanner::iLQR_Planner::setup() {
   ROS_INFO("[iLQR]::SETTING UP iLQR PLANNER");
@@ -14,15 +14,18 @@ void OptPlanner::iLQR_Planner::setup() {
       new SplineTrajSampler(subscribe_to_traj,
                             publish_optimized_traj,
                             publish_viz,
-                            91));  // good if multiple of 5, then add 1
+                            60));  // good if multiple of 5, then add 1
 }
 kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map) {
-  ROS_WARN("[iLQR] Discrete Planning!!!!!");
+  ROS_WARN("[iLQR] Discrete Planning");
+  Eigen::VectorXd start_state(7);
+  start_state << start.pos(0), start.pos(1), start.pos(2), start.vel(0),
+      start.vel(1), start.vel(2), start.yaw;
   return sampler_->sample_and_refine_trajectory(
-      search_path_msg_, this->hPolys, this->allo_ts);
+      start_state, search_path_msg_, this->hPolys, this->allo_ts);
 }
 
 MPL::Waypoint3D OptPlanner::iLQR_Planner::evaluate(double t) {

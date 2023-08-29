@@ -127,16 +127,16 @@ class Evaluater:
             msg.p_init.position = self.odom_data
             # msg.v_init.linear.x = 2
             # msg.v_init.linear.y = 2
-            dis1 = (self.odom_data.x - 2.0) *  (self.odom_data.x - 2.0)  + (self.odom_data.y - 2.0) *  (self.odom_data.y - 2.0)
-            dis2 = (self.odom_data.x - 19.5) *  (self.odom_data.x -  19.5)  + (self.odom_data.y - 8.75) *  (self.odom_data.y -  8.75)
-            if dis1 <= dis2:
+            # dis1 = (self.odom_data.x - 2.0) *  (self.odom_data.x - 2.0)  + (self.odom_data.y - 2.0) *  (self.odom_data.y - 2.0)
+            # dis2 = (self.odom_data.x - 19.5) *  (self.odom_data.x -  19.5)  + (self.odom_data.y - 8.75) *  (self.odom_data.y -  8.75)
+            # if dis1 <= dis2:
                 # set goal to be random
-                msg.p_final.position.x = random.randrange(2, 20)
-                msg.p_final.position.y = random.randrange(-5, 5)
-            else:
+            msg.p_final.position.x = random.randrange(-10, 10)
+            msg.p_final.position.y = random.randrange(-10, 10)
+            # else:
 
-                msg.p_final.position.x = 2.0
-                msg.p_final.position.y = 2.0
+            #     msg.p_final.position.x = 2.0
+            #     msg.p_final.position.y = 2.0
 
 
             msg.p_final.position.z = self.odom_data.z

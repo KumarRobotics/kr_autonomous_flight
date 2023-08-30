@@ -16,6 +16,9 @@ import random
 import actionlib
 
 poly_service_name = "/quadrotor/mav_services/poly_tracker"
+use_odom_bool = True
+multi_front_end = False
+
 # filename = '/home/laura/autonomy_ws/src/kr_autonomous_flight/autonomy_core/map_plan/action_planner/scripts/map_balls_start_goal.csv'
 
 
@@ -120,7 +123,6 @@ class Evaluater:
         #     msg.p_final.position.x = self.start_goals['xf'][i]
         #     msg.p_final.position.y = self.start_goals['yf'][i]
         #     msg.p_final.position.z = 5
-        use_odom_bool = False
         for i in range(self.num_trials):
             print(i)
             if rospy.is_shutdown():
@@ -129,36 +131,33 @@ class Evaluater:
                 #map_client()
                 #TODO(Laura): actually send map ?
                 rospy.sleep(2)
-            pos_msg = PositionCommand() # change position in simulator
-            pos_msg.header.frame_id = "map"
-            pos_msg.header.stamp = rospy.Time.now()
-            pos_msg.position.x = random.uniform(-10, 10)
-            pos_msg.position.y = random.uniform(-10, 10)
-            pos_msg.position.z = 1
-            pos_msg.velocity.x = 0
-            pos_msg.velocity.y = 0
-            pos_msg.velocity.z = 0
-            pos_msg.yaw = random.uniform(-np.pi,np.pi)
+            if not use_odom_bool:
+                pos_msg = PositionCommand() # change position in simulator
+                pos_msg.header.frame_id = "map"
+                pos_msg.header.stamp = rospy.Time.now()
+                pos_msg.position.x = random.uniform(-10, 10)
+                pos_msg.position.y = random.uniform(-10, 10)
+                pos_msg.position.z = 1
+                pos_msg.velocity.x = 0
+                pos_msg.velocity.y = 0
+                pos_msg.velocity.z = 0
+                pos_msg.yaw = random.uniform(-np.pi,np.pi)
 
+                traj_act_msg =  PolyTrackerGoal() #change trackpoint in tracker
+                traj_act_msg.set_yaw = True
+                traj_act_msg.start_yaw = pos_msg.yaw
+                traj_act_msg.final_yaw = pos_msg.yaw
+                traj_act_msg.t_start = rospy.Time.now() # Equivalent to ros::Time::now()
+                traj_act_msg.N = 2
+                traj_act_msg.pos_pts.append(pos_msg.position)
+                traj_act_msg.vel_pts.append(pos_msg.velocity)# 0
+                traj_act_msg.acc_pts.append(pos_msg.velocity)# 0 ToDo: Repalce with actual 
+                traj_act_msg.dt = 1.0
+
+                self.client_tracker.send_goal(traj_act_msg)# first change tracker pos
+                self.tracker_service()
+                self.set_state_pub.publish(pos_msg) #then change state so no error remain
             
-            traj_act_msg =  PolyTrackerGoal() #change trackpoint in tracker
-            traj_act_msg.set_yaw = True
-            traj_act_msg.start_yaw = pos_msg.yaw
-            traj_act_msg.final_yaw = pos_msg.yaw
-            traj_act_msg.t_start = rospy.Time.now() # Equivalent to ros::Time::now()
-            traj_act_msg.N = 2
-            traj_act_msg.pos_pts.append(pos_msg.position)
-            traj_act_msg.vel_pts.append(pos_msg.velocity)# 0
-            traj_act_msg.acc_pts.append(pos_msg.velocity)# 0 ToDo: Repalce with actual 
-            traj_act_msg.dt = 1.0
-
-            
-            self.client_tracker.send_goal(traj_act_msg)# first change tracker pos
-            self.tracker_service()
-            self.set_state_pub.publish(pos_msg) #then change state so no error remain
-            input("Press Enter to continue...")
-
-            continue
 
             msg = PlanTwoPointGoal()
             if use_odom_bool:
@@ -198,12 +197,14 @@ class Evaluater:
             # self.path_pub.publish(msg)
             self.start_and_goal_pub.publish(start_and_goal)
             self.client.send_goal(msg)
-            self.client2.send_goal(msg)
-            self.client3.send_goal(msg)
+            if multi_front_end:
+                self.client2.send_goal(msg)
+                self.client3.send_goal(msg)
             # Waits for the server to finish performing the action.
             self.client.wait_for_result(rospy.Duration.from_sec(5.0))
-            self.client2.wait_for_result(rospy.Duration.from_sec(5.0))
-            self.client3.wait_for_result(rospy.Duration.from_sec(5.0))
+            if multi_front_end:
+                self.client2.wait_for_result(rospy.Duration.from_sec(5.0))
+                self.client3.wait_for_result(rospy.Duration.from_sec(5.0))
 
             result = self.client.get_result()
             #TODO(Laura) check if the path is collision free and feasible

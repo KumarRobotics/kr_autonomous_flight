@@ -25,5 +25,6 @@ local: # local map range z and center_z will be the same as storage map
   resolution: 0.25 # resolution of the map (high impact on memory and computation usage, recommended value: 0.5~1.0 for sparse environments, 0.1~0.5 for dense environments)
   max_raycast_range: 25.0 # max raycast range, the smaller, the less computation demand, but shorter perception range
   decay_times_to_empty: 1 # number of times of decay to empty, 0 means no decay, the noisier your state estimator is, the smaller this value should be (when using ground-truth pose, set this as 0)
+  # if you are doing evaluation in simulation, set this to 1 so that map will change!
   ignore_offset: false
 

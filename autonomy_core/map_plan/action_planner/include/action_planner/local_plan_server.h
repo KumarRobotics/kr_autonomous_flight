@@ -4,11 +4,14 @@
 #include <action_planner/ActionPlannerConfig.h>
 #include <action_planner/data_conversions.h>  // setMap, getMap, etc
 #include <action_planner/planner_details.h>   // PlannerType
+#include <actionlib/client/simple_action_client.h>
 #include <actionlib/server/simple_action_server.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <kr_planning_msgs/PlanTwoPointAction.h>
+#include <kr_tracker_msgs/Transition.h>
 #include <ros/console.h>
 #include <ros/ros.h>
+#include <std_srvs/Trigger.h>
 
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
@@ -16,9 +19,6 @@
 #include <string>
 
 #include "kr_tracker_msgs/PolyTrackerAction.h"
-#include <kr_tracker_msgs/Transition.h>
-#include <std_srvs/Trigger.h>
-
 
 class LocalPlanServer {
  public:
@@ -33,7 +33,9 @@ class LocalPlanServer {
   ros::Subscriber local_map_sub_, local_no_infla_map_sub_;
   ros::Publisher local_map_cleared_pub_;
   ros::Publisher traj_pub_;
-  ros::Publisher traj_goal_pub_;
+  ros::Publisher traj_goal_pub_;  // let's eventually get rid of this
+
+  // this is different since you can wait for tracker to finish
 
   // visualization messages pub
   ros::Publisher sg_pub;
@@ -51,6 +53,9 @@ class LocalPlanServer {
 
   // action server
   std::unique_ptr<
+      actionlib::SimpleActionClient<kr_tracker_msgs::PolyTrackerAction>>
+      traj_goal_ac_;
+  std::unique_ptr<
       actionlib::SimpleActionServer<kr_planning_msgs::PlanTwoPointAction>>
       local_as_;
 
@@ -60,8 +65,7 @@ class LocalPlanServer {
 
   std::string frame_id_, poly_srv_name_;
   bool use_discrete_traj_ = false;
-
-
+  bool use_tracker_client_ = true;
 
   /**
    * @brief Goal callback function, prevent concurrent planner modes
@@ -78,15 +82,17 @@ class LocalPlanServer {
   /**
    * @brief Record result (trajectory, status, etc)
    */
-  void process_result(const std::pair< kr_planning_msgs::SplineTrajectory, kr_planning_msgs::TrajectoryDiscretized> & traj_combined,
-                      ros::Duration execution_time,
-                      int epoch);
+  void process_result(
+      const std::pair<kr_planning_msgs::SplineTrajectory,
+                      kr_planning_msgs::TrajectoryDiscretized>& traj_combined,
+      ros::Duration execution_time,
+      int epoch);
 
   /**
    * @brief map callback, update local_map_ptr_
    */
   void localMapCB(const kr_planning_msgs::VoxelMap::ConstPtr& msg);
- 
+
   /**
    * @brief map no inflation callback, update local_nofla_map_ptr_
    */

@@ -429,11 +429,9 @@ void LocalPlanServer::process_result(
     // get the trajectory
     kr_tracker_msgs::PolyTrackerActionGoal traj_act_msg;
     traj_act_msg.goal.set_yaw = false;
-    traj_act_msg.goal.t_start = ros::Time::now(); // spline_traj_.header.stamp
+    traj_act_msg.goal.t_start = ros::Time::now();  // spline_traj_.header.stamp
 
-
-    if (!use_discrete_traj_)
-    {
+    if (!use_discrete_traj_) {
       traj_act_msg.goal.order = traj_msg.data[0].segs[0].degree;
 
       int piece_num = traj_msg.data[0].segments;
@@ -459,18 +457,15 @@ void LocalPlanServer::process_result(
       }
 
     }
-      /////////////////////////////////////////////////////////////////////////////////////////////
-    else
-    {
-
-      // http://docs.ros.org/en/api/trajectory_msgs/html/msg/MultiDOFJointTrajectoryPoint.html 
+    /////////////////////////////////////////////////////////////////////////////////////////////
+    else {
+      // http://docs.ros.org/en/api/trajectory_msgs/html/msg/MultiDOFJointTrajectoryPoint.html
       // use this can directly for control
       traj_act_msg.goal.N = traj_dis_msg.N;
       traj_act_msg.goal.pos_pts = traj_dis_msg.pos;
       traj_act_msg.goal.vel_pts = traj_dis_msg.vel;
       traj_act_msg.goal.acc_pts = traj_dis_msg.acc;
-      traj_act_msg.goal.dt      = traj_dis_msg.t[1] -  traj_dis_msg.t[0];
-
+      traj_act_msg.goal.dt = traj_dis_msg.t[1] - traj_dis_msg.t[0];
     }
 
     // publish the trajectory
@@ -478,7 +473,13 @@ void LocalPlanServer::process_result(
     std_srvs::Trigger trg;
     ros::service::call(poly_srv_name_, trg);
 
+    // This node is a client of the trajectory tracker, it will send the
+    // tracking message wait for result after hardware execution to hopefully
+    // get things like tracking error
 
+    // This node is also a action server for plan two point, the
+    // client that will be calling it is the python simple script
+    // evalute_traj.py
     kr_planning_msgs::PlanTwoPointResult result;
     // evaluate trajectory for 5 steps, each step duration equals
     // execution_time, get corresponding waypoints and record in result

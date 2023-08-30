@@ -52,7 +52,7 @@ class Evaluater:
 
         self.start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10, latch=True)
         # rospy.Subscriber("/local_plan_server/trajectory", SplineTrajectory, self.callback)
-        self.num_trials = 10
+        self.num_trials = 20
         self.success = np.zeros(self.num_trials, dtype=bool)
         self.traj_time = np.zeros(self.num_trials)
         self.traj_cost = np.zeros(self.num_trials)
@@ -170,7 +170,7 @@ class Evaluater:
 
             else:
                 print("Action server failure " + str(i))
-            input("Press Enter to continue...")
+            # input("Press Enter to continue...")
 
         print(self.success)
         print("Traj Time", self.traj_time)

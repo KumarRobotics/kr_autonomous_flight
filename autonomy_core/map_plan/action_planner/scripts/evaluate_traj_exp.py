@@ -2,16 +2,20 @@
 import rospy
 # from kr_planning_msgs.msg import SplineTrajectory
 from kr_planning_msgs.msg import PlanTwoPointAction, PlanTwoPointGoal
+from kr_mav_msgs.msg import PositionCommand
+from kr_tracker_msgs.msg import PolyTrackerGoal, PolyTrackerAction
 import numpy as np
 # import matplotlib.pyplot as plt
 import pandas as pd
 from copy import deepcopy
 from visualization_msgs.msg import MarkerArray, Marker
 from actionlib import SimpleActionClient
-from std_srvs.srv import Empty
+from std_srvs.srv import Empty, Trigger
 from nav_msgs.msg import Odometry
 import random 
+import actionlib
 
+poly_service_name = "/quadrotor/mav_services/poly_tracker"
 # filename = '/home/laura/autonomy_ws/src/kr_autonomous_flight/autonomy_core/map_plan/action_planner/scripts/map_balls_start_goal.csv'
 
 
@@ -53,7 +57,9 @@ class Evaluater:
         self.client3 = SimpleActionClient('/local_plan_server3/plan_local_trajectory', PlanTwoPointAction)
 
         self.start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10, latch=True)
-
+        self.set_state_pub      = rospy.Publisher('/quadrotor/set_state', PositionCommand, queue_size=1, latch=False)
+        self.client_tracker = actionlib.SimpleActionClient('polytracker', PolyTrackerAction)
+        self.tracker_service = rospy.ServiceProxy(poly_service_name, Trigger)
         rospy.Subscriber("/quadrotor/odom", Odometry, self.odom_callback)
 
 
@@ -114,7 +120,7 @@ class Evaluater:
         #     msg.p_final.position.x = self.start_goals['xf'][i]
         #     msg.p_final.position.y = self.start_goals['yf'][i]
         #     msg.p_final.position.z = 5
-
+        use_odom_bool = False
         for i in range(self.num_trials):
             print(i)
             if rospy.is_shutdown():
@@ -123,25 +129,49 @@ class Evaluater:
                 #map_client()
                 #TODO(Laura): actually send map ?
                 rospy.sleep(2)
+            pos_msg = PositionCommand() # change position in simulator
+            pos_msg.header.frame_id = "map"
+            pos_msg.header.stamp = rospy.Time.now()
+            pos_msg.position.x = random.uniform(-10, 10)
+            pos_msg.position.y = random.uniform(-10, 10)
+            pos_msg.position.z = 1
+            pos_msg.velocity.x = 0
+            pos_msg.velocity.y = 0
+            pos_msg.velocity.z = 0
+            pos_msg.yaw = random.uniform(-np.pi,np.pi)
+
+            
+            traj_act_msg =  PolyTrackerGoal() #change trackpoint in tracker
+            traj_act_msg.set_yaw = True
+            traj_act_msg.start_yaw = pos_msg.yaw
+            traj_act_msg.final_yaw = pos_msg.yaw
+            traj_act_msg.t_start = rospy.Time.now() # Equivalent to ros::Time::now()
+            traj_act_msg.N = 2
+            traj_act_msg.pos_pts.append(pos_msg.position)
+            traj_act_msg.vel_pts.append(pos_msg.velocity)# 0
+            traj_act_msg.acc_pts.append(pos_msg.velocity)# 0 ToDo: Repalce with actual 
+            traj_act_msg.dt = 1.0
+
+            
+            self.client_tracker.send_goal(traj_act_msg)# first change tracker pos
+            self.tracker_service()
+            self.set_state_pub.publish(pos_msg) #then change state so no error remain
+            input("Press Enter to continue...")
+
+            continue
+
             msg = PlanTwoPointGoal()
-            msg.p_init.position = self.odom_data
-            # msg.v_init.linear.x = 2
-            # msg.v_init.linear.y = 2
-            # dis1 = (self.odom_data.x - 2.0) *  (self.odom_data.x - 2.0)  + (self.odom_data.y - 2.0) *  (self.odom_data.y - 2.0)
-            # dis2 = (self.odom_data.x - 19.5) *  (self.odom_data.x -  19.5)  + (self.odom_data.y - 8.75) *  (self.odom_data.y -  8.75)
-            # if dis1 <= dis2:
-                # set goal to be random
-            msg.p_final.position.x = random.randrange(-10, 10)
-            msg.p_final.position.y = random.randrange(-10, 10)
-            # else:
-
-            #     msg.p_final.position.x = 2.0
-            #     msg.p_final.position.y = 2.0
+            if use_odom_bool:
+                msg.p_init.position = self.odom_data # if starting from current position
+                msg.p_final.position.z = self.odom_data.z
+            else:
+                msg.p_init.position = pos_msg.position # if starting from random position
+                msg.p_final.position.z = pos_msg.position.z
 
 
-            msg.p_final.position.z = self.odom_data.z
-
-
+            # set goal to be random
+            msg.p_final.position.x = random.uniform(-10, 10)
+            msg.p_final.position.y = random.uniform(-10, 10)
 
             # do you want velocity initial and final to be zero?
 
@@ -149,7 +179,10 @@ class Evaluater:
             start = Marker()
             start.header.frame_id = "map"
             start.header.stamp = rospy.Time.now()
-            start.pose.position = self.odom_data
+            if use_odom_bool:
+                start.pose.position = self.odom_data
+            else:
+                start.pose.position = pos_msg.position
             start.pose.orientation.w = 1
             start.color.g = 1
             start.color.a = 1
@@ -187,7 +220,6 @@ class Evaluater:
 
             else:
                 print("Action server failure " + str(i))
-            input("Press Enter to continue...")
 
         print(self.success)
         print("Traj Time", self.traj_time)

@@ -7,7 +7,7 @@ repositories:
 
   kr_mav_control:
     type: git
-    url: http://github.com/KumarRobotics/kr_mav_control.git
+    url: git@github.com:shaoyifei96/kr_mav_control.git
     version: poly
 
   mrsl_quadrotor:

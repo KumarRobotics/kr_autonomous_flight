@@ -29,14 +29,49 @@ kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
           start_state, search_path_msg_, this->hPolys, this->allo_ts);
   if (result_discrete.t.size() == 0) {
     traj_total_time_ = 0;
+    opt_traj_.clear();
+    path_sampling_dt_ = 0.0;
   } else {
-    traj_total_time_ = result_discrete.t.back();
+    traj_total_time_ =
+        result_discrete.t.back();  // 0, 0.1, 0.2 .... 1.0 // 11 elements
+    opt_traj_ = sampler_->opt_traj_;
+    path_sampling_dt_ = result_discrete.t[1];  // dt = 0.1
   }
   return result_discrete;
 }
 
 MPL::Waypoint3D OptPlanner::iLQR_Planner::evaluate(double t) {
-  return MPL::Waypoint3D();
+  // bool is_linear_cut = true;
+  MPL::Waypoint3D waypt_return = MPL::Waypoint3D();
+  Eigen::VectorXd x_return(9);
+  if (t >= traj_total_time_) {
+    x_return = opt_traj_.back();
+  } else if (t < 0) {
+    x_return = opt_traj_.front();
+  } else {
+    int index = std::floor(t / path_sampling_dt_);  // 0.95 / 0.1 = 9
+
+    Eigen::VectorXd x1 = opt_traj_[index];
+    Eigen::VectorXd x2 = opt_traj_[index + 1];
+
+    double tau = t - index * path_sampling_dt_;
+
+    std::cout << "  index  " << index << std::endl;
+
+    // if (is_linear_cut) {
+    x_return = x1 + tau / path_sampling_dt_ * (x2 - x1);
+    // }
+
+    // Eigen::MatrixXd psi = (Phi(dt - tau).transpose());
+    // Eigen::MatrixXd lambda = Phi(tau) - psi * Phi(dt);
+
+    // x_return = lambda * x1 + psi * x2;
+  }
+  waypt_return.pos = x_return.segment<3>(0);
+  waypt_return.vel = x_return.segment<3>(3);
+  waypt_return.acc = x_return.segment<3>(6);
+
+  return waypt_return;
 }
 
 void OptPlanner::DoubleDescription::setup() {

@@ -135,6 +135,7 @@ class iLQR_Planner : public PlannerType {
   SplineTrajSampler::Ptr sampler_;
   // currently initialized another planner just to get polytopes, maybe consider
   // moving only that function out
+  std::vector<Eigen::VectorXd> opt_traj_;  // empty if no solution yet
 };
 
 class DoubleDescription : public PlannerType {
@@ -263,8 +264,7 @@ class PathThrough : public PlannerType {
   kr_planning_msgs::Path path_ = kr_planning_msgs::Path();
 };
 
-
-//SST
+// SST
 class DynSampling : public PlannerType {
  public:
   explicit DynSampling(const ros::NodeHandle& nh, const std::string& frame_id)
@@ -278,17 +278,14 @@ class DynSampling : public PlannerType {
   MPL::Waypoint3D evaluate(double t);
 
  private:
-
   gcopter::GcopterPlanner::Ptr sstplanner_;
   bool verbose_{true};
   vec_Vecf<3> path_;
   kr_planning_msgs::SplineTrajectory spline_traj_;
   ros::Publisher path_pub_;
-
 };
 
-
-//RRT
+// RRT
 class Sampling : public PlannerType {
  public:
   explicit Sampling(const ros::NodeHandle& nh, const std::string& frame_id)
@@ -302,15 +299,12 @@ class Sampling : public PlannerType {
   MPL::Waypoint3D evaluate(double t);
 
  private:
-
   gcopter::GcopterPlanner::Ptr rrtplanner_;
   bool verbose_{true};
   vec_Vecf<3> path_;
   kr_planning_msgs::SplineTrajectory spline_traj_;
   ros::Publisher path_pub_;
-
 };
-
 
 }  // namespace SearchPlanner
 

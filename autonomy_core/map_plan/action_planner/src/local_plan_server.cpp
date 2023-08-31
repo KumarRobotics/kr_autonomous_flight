@@ -12,7 +12,7 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
 
   traj_goal_ac_ = std::make_unique<
       actionlib::SimpleActionClient<kr_tracker_msgs::PolyTrackerAction>>(
-      pnh_, "tracker_cmd", true);
+      pnh_, "tracker_client", true);
   traj_planner_nh_ = ros::NodeHandle(pnh_, "trajectory_planner");
   sg_pub = pnh_.advertise<kr_planning_msgs::Path>("start_goal", 1, true);
 
@@ -31,8 +31,8 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
 
   /**@yuwei : for falcon 250 interface**/
   pnh_.param("poly_srv_name", poly_srv_name_, std::string(" "));
-  pnh_.param("use_discrete_traj", use_discrete_traj_, false);
-  pnh_.param("use_tracker_client", use_tracker_client_, true);
+  traj_planner_nh_.param("use_discrete_traj", use_discrete_traj_, false);
+  traj_planner_nh_.param("use_tracker_client", use_tracker_client_, true);
 
   // trajectory boardcast
   traj_goal_pub_ = pnh_.advertise<kr_tracker_msgs::PolyTrackerActionGoal>(

@@ -28,7 +28,7 @@ trajectory_planner:
   search_planner_type: 0 # 0: MPL, 1: dispersion planner, 2: JPS (geometric) 3: pass through from global planner 4: RRT 5 :SST
   opt_planner_type: 2 # -1: no planner 0: Double Description 1: gcopter 2: iLQR(Altro)
   use_discrete_traj: false # set true to use with ilqr
-  use_tracker_client: false # if we wait for tracker to finish before sending next command
+  use_tracker_client: true # if we wait for tracker to finish before sending next command
   #TODO(Laura) fix path
   dispersion/graph_file: "/home/yifei/Documents/optimal_ctrl/500.json"
 

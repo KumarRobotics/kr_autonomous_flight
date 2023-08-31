@@ -61,8 +61,10 @@ class Evaluater:
 
         self.start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10, latch=True)
         self.set_state_pub      = rospy.Publisher('/quadrotor/set_state', PositionCommand, queue_size=1, latch=False)
-        self.client_tracker = actionlib.SimpleActionClient('polytracker', PolyTrackerAction)
-        self.tracker_service = rospy.ServiceProxy(poly_service_name, Trigger)
+        self.client_tracker = actionlib.SimpleActionClient('/quadrotor/trackers_manager/poly_tracker/PolyTracker', PolyTrackerAction)
+        print("waiting for tracker trigger service")
+        rospy.wait_for_service(poly_service_name)
+        self.poly_trigger = rospy.ServiceProxy(poly_service_name, Trigger)
         rospy.Subscriber("/quadrotor/odom", Odometry, self.odom_callback)
 
 
@@ -103,12 +105,14 @@ class Evaluater:
 
     def publisher(self):
         print("waiting for map server")
-        #rospy.wait_for_service('/image_to_map')
-        #map_client = rospy.ServiceProxy('/image_to_map', Empty)
-        #map_client()
+        rospy.wait_for_service('/gen_new_map')
+        map_client = rospy.ServiceProxy('/gen_new_map', Empty)
+        map_client()
 
         print("waiting for action server")
         self.client.wait_for_server()
+
+
 
         # for i in range(self.start_goals.shape[0]):
         #     if rospy.is_shutdown():
@@ -128,7 +132,7 @@ class Evaluater:
             if rospy.is_shutdown():
                 break
             if (i > 0):
-                #map_client()
+                map_client()
                 #TODO(Laura): actually send map ?
                 rospy.sleep(2)
             if not use_odom_bool:
@@ -150,13 +154,24 @@ class Evaluater:
                 traj_act_msg.t_start = rospy.Time.now() # Equivalent to ros::Time::now()
                 traj_act_msg.N = 2
                 traj_act_msg.pos_pts.append(pos_msg.position)
+                traj_act_msg.pos_pts.append(pos_msg.position)
                 traj_act_msg.vel_pts.append(pos_msg.velocity)# 0
+                traj_act_msg.vel_pts.append(pos_msg.velocity)# 0
+                traj_act_msg.acc_pts.append(pos_msg.velocity)# 0 ToDo: Repalce with actual 
                 traj_act_msg.acc_pts.append(pos_msg.velocity)# 0 ToDo: Repalce with actual 
                 traj_act_msg.dt = 1.0
 
                 self.client_tracker.send_goal(traj_act_msg)# first change tracker pos
-                self.tracker_service()
+                self.client_tracker.wait_for_result(rospy.Duration.from_sec(1.0))
+
                 self.set_state_pub.publish(pos_msg) #then change state so no error remain
+                response = self.poly_trigger()
+                if response.success:
+                    rospy.loginfo("Tracking pos %f,%f, %f, yaw %f",pos_msg.position.x,pos_msg.position.y, pos_msg.position.z ,pos_msg.yaw)
+                    rospy.loginfo("Successfully triggered the service: %s", response.message)
+                else:
+                    rospy.logwarn("Failed to trigger: %s", response.message)
+                input("Press Enter to continue...")
             
 
             msg = PlanTwoPointGoal()
@@ -200,6 +215,8 @@ class Evaluater:
             if multi_front_end:
                 self.client2.send_goal(msg)
                 self.client3.send_goal(msg)
+
+            input("Press Enter to continue...")
             # Waits for the server to finish performing the action.
             self.client.wait_for_result(rospy.Duration.from_sec(5.0))
             if multi_front_end:

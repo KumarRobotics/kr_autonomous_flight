@@ -24,8 +24,15 @@ kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
   Eigen::VectorXd start_state(7);
   start_state << start.pos(0), start.pos(1), start.pos(2), start.vel(0),
       start.vel(1), start.vel(2), start.yaw;
-  return sampler_->sample_and_refine_trajectory(
-      start_state, search_path_msg_, this->hPolys, this->allo_ts);
+  kr_planning_msgs::TrajectoryDiscretized result_discrete =
+      sampler_->sample_and_refine_trajectory(
+          start_state, search_path_msg_, this->hPolys, this->allo_ts);
+  if (result_discrete.t.size() == 0) {
+    traj_total_time_ = 0;
+  } else {
+    traj_total_time_ = result_discrete.t.back();
+  }
+  return result_discrete;
 }
 
 MPL::Waypoint3D OptPlanner::iLQR_Planner::evaluate(double t) {

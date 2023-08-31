@@ -16,7 +16,7 @@ import random
 import actionlib
 
 poly_service_name = "/quadrotor/mav_services/poly_tracker"
-use_odom_bool = True
+use_odom_bool = False
 multi_front_end = False
 
 # filename = '/home/laura/autonomy_ws/src/kr_autonomous_flight/autonomy_core/map_plan/action_planner/scripts/map_balls_start_goal.csv'
@@ -69,7 +69,7 @@ class Evaluater:
 
 
         # rospy.Subscriber("/local_plan_server/trajectory", SplineTrajectory, self.callback)
-        self.num_trials = 10
+        self.num_trials = 30
         self.success = np.zeros(self.num_trials, dtype=bool)
         self.traj_time = np.zeros(self.num_trials)
         self.traj_cost = np.zeros(self.num_trials)
@@ -106,8 +106,8 @@ class Evaluater:
     def publisher(self):
         print("waiting for map server")
         rospy.wait_for_service('/gen_new_map')
-        map_client = rospy.ServiceProxy('/gen_new_map', Empty)
-        map_client()
+        change_map = rospy.ServiceProxy('/gen_new_map', Empty)
+        change_map()
 
         print("waiting for action server")
         self.client.wait_for_server()
@@ -132,9 +132,10 @@ class Evaluater:
             if rospy.is_shutdown():
                 break
             if (i > 0):
-                map_client()
+                change_map()
                 #TODO(Laura): actually send map ?
-                rospy.sleep(2)
+                # When change_map returns, the map is changed, but becuase delay, wait a little longer
+                rospy.sleep(2.5)
             if not use_odom_bool:
                 pos_msg = PositionCommand() # change position in simulator
                 pos_msg.header.frame_id = "map"
@@ -171,7 +172,7 @@ class Evaluater:
                     rospy.loginfo("Successfully triggered the service: %s", response.message)
                 else:
                     rospy.logwarn("Failed to trigger: %s", response.message)
-                input("Press Enter to continue...")
+                # input("Press Enter to continue...")
             
 
             msg = PlanTwoPointGoal()
@@ -186,6 +187,8 @@ class Evaluater:
             # set goal to be random
             msg.p_final.position.x = random.uniform(-10, 10)
             msg.p_final.position.y = random.uniform(-10, 10)
+            # msg.execution_time = -1.0 # execute whole thing
+            #this line make a error in sending msg. I want to say no execution time limit
 
             # do you want velocity initial and final to be zero?
 
@@ -216,7 +219,7 @@ class Evaluater:
                 self.client2.send_goal(msg)
                 self.client3.send_goal(msg)
 
-            input("Press Enter to continue...")
+            # input("Press Enter to continue...")
             # Waits for the server to finish performing the action.
             self.client.wait_for_result(rospy.Duration.from_sec(5.0))
             if multi_front_end:

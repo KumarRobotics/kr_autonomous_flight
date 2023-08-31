@@ -436,7 +436,9 @@ void LocalPlanServer::process_result(
     traj_act_msg.goal.set_yaw = false;
     traj_act_msg.goal.t_start = ros::Time::now();  // spline_traj_.header.stamp
 
-    if (!use_discrete_traj_) {
+    if (!use_discrete_traj_) {  // different from converting discrete to
+                                // continuous, this if else actually runs
+                                // discrete tracker
       traj_act_msg.goal.order = traj_msg.data[0].segs[0].degree;
 
       int piece_num = traj_msg.data[0].segments;
@@ -490,25 +492,24 @@ void LocalPlanServer::process_result(
 
     // This node is also a action server for plan two point, the
     // client that will be calling it is the python simple script
-    // evalute_traj.py
+    // evalute_traj.py / evalute_traj_exp.py
     kr_planning_msgs::PlanTwoPointResult result;
     // evaluate trajectory for 5 steps, each step duration equals
     // execution_time, get corresponding waypoints and record in result
     // (result_->p_stop etc.) (evaluate the whole traj if execution_time is not
     // set (i.e. not in replan mode))
-    double endt = execution_time.toSec();
+    double dt = execution_time.toSec();
     int num_goals = 5;
-    if (endt <= 0) {
-      endt = traj_total_time_;
-      num_goals = 1;
+    if (dt <= 0) {
+      dt = 0.2;
+      num_goals = (int)(traj_total_time_ / 0.2);  // using dt = 0.2
     }
 
     for (int i = 0; i < num_goals; i++) {
       geometry_msgs::Pose p_fin;
       geometry_msgs::Twist v_fin, a_fin, j_fin;
 
-      MPL::Waypoint3D pt_f =
-          planner_->evaluate(endt * static_cast<double>(i + 1));
+      MPL::Waypoint3D pt_f = planner_->evaluate(dt * static_cast<double>(i));
       // check if evaluation is successful, if not, set result.success to be
       // false! (if failure case, a null Waypoint is returned)
       if ((pt_f.pos(0) == 0) && (pt_f.pos(1) == 0) && (pt_f.pos(2) == 0) &&
@@ -517,7 +518,7 @@ void LocalPlanServer::process_result(
         ROS_WARN_STREAM(
             "waypoint evaluation failed, set result.success to be false");
         ROS_WARN_STREAM("trajectory total time:" << traj_total_time_);
-        ROS_WARN_STREAM("evaluating at:" << endt * static_cast<double>(i + 1));
+        ROS_WARN_STREAM("evaluating at:" << dt * static_cast<double>(i));
       }
 
       p_fin.position.x = pt_f.pos(0), p_fin.position.y = pt_f.pos(1),
@@ -532,7 +533,7 @@ void LocalPlanServer::process_result(
       result.p_stop.push_back(p_fin);
       result.v_stop.push_back(v_fin);
       result.a_stop.push_back(a_fin);
-      result.j_stop.push_back(j_fin);
+      result.j_stop.push_back(j_fin);  // TODO!!! j_fin never assigned
     }
 
     MPL::Waypoint3D pt = planner_->evaluate(traj_total_time_);

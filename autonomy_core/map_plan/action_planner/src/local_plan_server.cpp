@@ -5,6 +5,10 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
       pnh_.subscribe("local_voxel_map", 2, &LocalPlanServer::localMapCB, this);
   local_no_infla_map_sub_ = pnh_.subscribe(
       "local_noinfla_voxel_map", 2, &LocalPlanServer::localMapCBNoInfla, this);
+  srv_transition_ = pnh_.serviceClient<kr_tracker_msgs::Transition>(
+      "/quadrotor/trackers_manager/transition");  // ToDo: Assign Name Outside
+                                                  // in PARAM!!!
+  srv_transition_.waitForExistence();
 
   local_as_ = std::make_unique<
       actionlib::SimpleActionServer<kr_planning_msgs::PlanTwoPointAction>>(
@@ -13,6 +17,7 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   traj_goal_ac_ = std::make_unique<
       actionlib::SimpleActionClient<kr_tracker_msgs::PolyTrackerAction>>(
       pnh_, "tracker_client", true);
+
   traj_planner_nh_ = ros::NodeHandle(pnh_, "trajectory_planner");
   sg_pub = pnh_.advertise<kr_planning_msgs::Path>("start_goal", 1, true);
 
@@ -477,12 +482,17 @@ void LocalPlanServer::process_result(
     if (use_tracker_client_ == false) {
       // use client to send trajectory
       traj_goal_pub_.publish(traj_act_msg);
+      std_srvs::Trigger trg;
+      ros::service::call(poly_srv_name_, trg);
     } else {
+      std::string tracker_str = "kr_trackers/PolyTracker";
+      kr_tracker_msgs::Transition transition_cmd;
+      transition_cmd.request.tracker = tracker_str;
       traj_goal_ac_->sendGoal(traj_act_msg.goal);
-      traj_goal_ac_->waitForResult(ros::Duration(10.0));
+      srv_transition_.call(transition_cmd);
+      if (transition_cmd.response.success) ROS_INFO("Transition success!");
+      traj_goal_ac_->waitForResult(ros::Duration(20.0));
     }
-    std_srvs::Trigger trg;
-    ros::service::call(poly_srv_name_, trg);
 
     // This node is a client of the trajectory tracker, it will send the
     // tracking message wait for result after hardware execution to hopefully

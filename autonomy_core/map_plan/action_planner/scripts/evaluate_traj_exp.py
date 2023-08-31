@@ -3,7 +3,7 @@ import rospy
 # from kr_planning_msgs.msg import SplineTrajectory
 from kr_planning_msgs.msg import PlanTwoPointAction, PlanTwoPointGoal
 from kr_mav_msgs.msg import PositionCommand
-from kr_tracker_msgs.msg import PolyTrackerGoal, PolyTrackerAction
+from kr_tracker_msgs.msg import PolyTrackerGoal, PolyTrackerAction, LineTrackerAction, LineTrackerGoal
 import numpy as np
 # import matplotlib.pyplot as plt
 import pandas as pd
@@ -11,11 +11,13 @@ from copy import deepcopy
 from visualization_msgs.msg import MarkerArray, Marker
 from actionlib import SimpleActionClient
 from std_srvs.srv import Empty, Trigger
+from kr_tracker_msgs.srv import Transition
 from nav_msgs.msg import Odometry
 import random 
 import actionlib
 
 poly_service_name = "/quadrotor/mav_services/poly_tracker"
+line_service_name = "/quadrotor/trackers_manager/transition"
 use_odom_bool = False
 multi_front_end = False
 
@@ -61,10 +63,12 @@ class Evaluater:
 
         self.start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10, latch=True)
         self.set_state_pub      = rospy.Publisher('/quadrotor/set_state', PositionCommand, queue_size=1, latch=False)
-        self.client_tracker = actionlib.SimpleActionClient('/quadrotor/trackers_manager/poly_tracker/PolyTracker', PolyTrackerAction)
+        # self.client_tracker = actionlib.SimpleActionClient('/quadrotor/trackers_manager/poly_tracker/PolyTracker', PolyTrackerAction)
+        self.client_line_tracker = actionlib.SimpleActionClient('/quadrotor/trackers_manager/line_tracker_min_jerk/LineTracker', LineTrackerAction)
         print("waiting for tracker trigger service")
         rospy.wait_for_service(poly_service_name)
-        self.poly_trigger = rospy.ServiceProxy(poly_service_name, Trigger)
+        # self.poly_trigger = rospy.ServiceProxy(poly_service_name, Trigger)
+        self.transition_tracker = rospy.ServiceProxy(line_service_name, Transition)
         rospy.Subscriber("/quadrotor/odom", Odometry, self.odom_callback)
 
 
@@ -148,30 +152,36 @@ class Evaluater:
                 pos_msg.velocity.z = 0
                 pos_msg.yaw = random.uniform(-np.pi,np.pi)
 
-                traj_act_msg =  PolyTrackerGoal() #change trackpoint in tracker
-                traj_act_msg.set_yaw = True
-                traj_act_msg.start_yaw = pos_msg.yaw
-                traj_act_msg.final_yaw = pos_msg.yaw
-                traj_act_msg.t_start = rospy.Time.now() # Equivalent to ros::Time::now()
-                traj_act_msg.N = 2
-                traj_act_msg.pos_pts.append(pos_msg.position)
-                traj_act_msg.pos_pts.append(pos_msg.position)
-                traj_act_msg.vel_pts.append(pos_msg.velocity)# 0
-                traj_act_msg.vel_pts.append(pos_msg.velocity)# 0
-                traj_act_msg.acc_pts.append(pos_msg.velocity)# 0 ToDo: Repalce with actual 
-                traj_act_msg.acc_pts.append(pos_msg.velocity)# 0 ToDo: Repalce with actual 
-                traj_act_msg.dt = 1.0
 
-                self.client_tracker.send_goal(traj_act_msg)# first change tracker pos
-                self.client_tracker.wait_for_result(rospy.Duration.from_sec(1.0))
+                # self.client_tracker.send_goal(traj_act_msg)# first change tracker goal msg
+                traj_act_msg = LineTrackerGoal()
+                traj_act_msg.x = pos_msg.position.x
+                traj_act_msg.y = pos_msg.position.y
+                traj_act_msg.z = pos_msg.position.z
+                traj_act_msg.yaw = pos_msg.yaw
+                traj_act_msg.v_des = 0.0
+                traj_act_msg.a_des = 0.0
+                traj_act_msg.relative = False
+                traj_act_msg.t_start = rospy.Time.now()
+                traj_act_msg.duration = rospy.Duration(10.0)
+                self.client_line_tracker.send_goal(traj_act_msg)# first change tracker goal msg
+                rospy.sleep(0.5)
+                state = self.client_line_tracker.get_state() # make sure it received it
+                print(f"After sent goal: Action State: {state}")
+                # self.set_state_pub.publish(pos_msg) #then change state so no error remain
+                response = self.transition_tracker('kr_trackers/LineTrackerMinJerk')
+                print(response)
 
-                self.set_state_pub.publish(pos_msg) #then change state so no error remain
-                response = self.poly_trigger()
-                if response.success:
-                    rospy.loginfo("Tracking pos %f,%f, %f, yaw %f",pos_msg.position.x,pos_msg.position.y, pos_msg.position.z ,pos_msg.yaw)
-                    rospy.loginfo("Successfully triggered the service: %s", response.message)
-                else:
-                    rospy.logwarn("Failed to trigger: %s", response.message)
+                self.client_line_tracker.wait_for_result(rospy.Duration.from_sec(15.0)) #flying
+                response = self.client_line_tracker.get_result()
+                if response is not None:
+                    print("Finished flying")
+              
+                # if response.success:
+                #     rospy.loginfo("Tracking pos %f,%f, %f, yaw %f",pos_msg.position.x,pos_msg.position.y, pos_msg.position.z ,pos_msg.yaw)
+                #     rospy.loginfo("Successfully triggered the service: %s", response.message)
+                # else:
+                #     rospy.logwarn("Failed to trigger: %s", response.message)
                 # input("Press Enter to continue...")
             
 
@@ -221,7 +231,8 @@ class Evaluater:
 
             # input("Press Enter to continue...")
             # Waits for the server to finish performing the action.
-            self.client.wait_for_result(rospy.Duration.from_sec(5.0))
+            self.client.wait_for_result(rospy.Duration.from_sec(15.0)) 
+            # if the use_client flag is true, then this waits for the exuction to finish
             if multi_front_end:
                 self.client2.wait_for_result(rospy.Duration.from_sec(5.0))
                 self.client3.wait_for_result(rospy.Duration.from_sec(5.0))

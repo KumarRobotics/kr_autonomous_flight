@@ -34,6 +34,7 @@ class LocalPlanServer {
   ros::Publisher local_map_cleared_pub_;
   ros::Publisher traj_pub_;
   ros::Publisher traj_goal_pub_;  // let's eventually get rid of this
+  ros::ServiceClient srv_transition_;
 
   // this is different since you can wait for tracker to finish
 

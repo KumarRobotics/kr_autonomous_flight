@@ -11,9 +11,14 @@
   <arg name="nodelet_manager_name" default="nodelet_manager_control"/>
   <arg name="odom_topic" default="/$(arg mav_name)/odom"/>
 
+
+  <!-- Map related stuff -->
   <arg name="random_map" default="true"/>
   <arg name="vicon_map" default="false"/>
   <arg name="file_map" default="false"/>
+
+  <arg name="point_cloud" default="/global_cloud"/>
+  <arg name="map_name" default="structure_map"/>
 
 
   <arg name="initial_position/x" default="9.0"/>
@@ -38,7 +43,7 @@
   <arg name="planner_config" default="$(find control_launch)/config/tracker_params_mp.yaml"/>
   <arg name="viz" default="true"/>
 
-  <arg name="point_cloud" default="/global_cloud"/>
+
   
 
   <!-- Control stuff -->
@@ -84,12 +89,12 @@
         <arg name="mapper_config" value="$(arg mapper_config)"/>
         <arg name="cloud" value="$(arg point_cloud)"/>
 
-        <param name="map/x_size"     value="$(arg map_size_x)" />
-        <param name="map/y_size"     value="$(arg map_size_y)" />
-        <param name="map/z_size"     value="$(arg map_size_z)" />
-        <param name="map/x_origin"   value="$(arg map_x_origin)"/>
-        <param name="map/y_origin"   value="$(arg map_y_origin)"/>
-        <param name="map/z_origin"   value="$(arg map_z_origin)"/>
+        <arg name="map/x_size"     value="$(arg map_size_x)" />
+        <arg name="map/y_size"     value="$(arg map_size_y)" />
+        <arg name="map/z_size"     value="$(arg map_size_z)" />
+        <arg name="map/x_origin"   value="$(arg map_x_origin)"/>
+        <arg name="map/y_origin"   value="$(arg map_y_origin)"/>
+        <arg name="map/z_origin"   value="$(arg map_z_origin)"/>
 
     </include>
 
@@ -102,6 +107,9 @@
       <remap from="~tracker_cmd"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker/goal"/>
       <remap from="~tracker_client"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker"/>
       <param name="poly_srv_name"  value="/$(arg mav_name)/mav_services/poly_tracker"/>
+      
+      <param name="mav_name" value="$(arg mav_name)"/>
+      <param name="map_name" value="$(arg map_name)"/>
 
     </node>
 
@@ -135,8 +143,8 @@
 
         <param name="params/w1" value="0.1"/>
         <param name="params/w2" value="0.6"/>          
-        <param name="params/w3" value="1.2"/>
-        <param name="params/w4" value="2.0"/>
+        <param name="params/w3" value="1.0"/>
+        <param name="params/w4" value="1.8"/>
         
         <!-- add gaussion noise with param/w1 range on it -->
         <param name="params/add_noise" value="false"/>

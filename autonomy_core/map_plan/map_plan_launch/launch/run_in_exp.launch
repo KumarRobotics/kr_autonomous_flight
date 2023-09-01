@@ -82,12 +82,12 @@
         <arg name="mapper_config" value="$(arg mapper_config)"/>
         <arg name="cloud" value="$(arg point_cloud)"/>
 
-        <param name="map/x_size"     value="$(arg map_size_x)" />
-        <param name="map/y_size"     value="$(arg map_size_y)" />
-        <param name="map/z_size"     value="$(arg map_size_z)" />
-        <param name="map/x_origin"   value="$(arg map_x_origin)"/>
-        <param name="map/y_origin"   value="$(arg map_y_origin)"/>
-        <param name="map/z_origin"   value="$(arg map_z_origin)"/>
+        <arg name="map/x_size"     value="$(arg map_size_x)" />
+        <arg name="map/y_size"     value="$(arg map_size_y)" />
+        <arg name="map/z_size"     value="$(arg map_size_z)" />
+        <arg name="map/x_origin"   value="$(arg map_x_origin)"/>
+        <arg name="map/y_origin"   value="$(arg map_y_origin)"/>
+        <arg name="map/z_origin"   value="$(arg map_z_origin)"/>
 
     </include>
 

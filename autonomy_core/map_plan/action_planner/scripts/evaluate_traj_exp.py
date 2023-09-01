@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rospy
 # from kr_planning_msgs.msg import SplineTrajectory
-from kr_planning_msgs.msg import PlanTwoPointAction, PlanTwoPointGoal
+from kr_planning_msgs.msg import PlanTwoPointAction, PlanTwoPointGoal, VoxelMap
 from kr_mav_msgs.msg import PositionCommand
 from kr_tracker_msgs.msg import PolyTrackerGoal, PolyTrackerAction, LineTrackerAction, LineTrackerGoal
 import numpy as np
@@ -15,7 +15,7 @@ from kr_tracker_msgs.srv import Transition
 from nav_msgs.msg import Odometry
 import random 
 import actionlib
-
+from std_msgs.msg import Bool
 
 
 poly_service_name = "/quadrotor/mav_services/poly_tracker"
@@ -64,18 +64,31 @@ class Evaluater:
         self.client3 = SimpleActionClient('/local_plan_server3/plan_local_trajectory', PlanTwoPointAction)
 
         self.start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10, latch=True)
-        self.set_state_pub      = rospy.Publisher('/quadrotor/set_state', PositionCommand, queue_size=1, latch=False)
+        self.mav_name     = rospy.get_param("/local_plan_server/mav_name")
+        self.map_name     =  rospy.get_param("/local_plan_server/map_name")
+        
+        self.map_origin_x = rospy.get_param("/mapper/global/origin_x")
+        self.map_origin_y = rospy.get_param("/mapper/global/origin_y")
+        self.map_origin_z = rospy.get_param("/mapper/global/origin_z")
+
+        self.map_range_x = rospy.get_param("/mapper/global/range_x")
+        self.map_range_y = rospy.get_param("/mapper/global/range_y")
+        self.map_range_z = rospy.get_param("/mapper/global/range_z")
+        
+        self.set_state_pub      = rospy.Publisher( '/' + self.mav_name + '/set_state', PositionCommand, queue_size=1, latch=False)
         # self.client_tracker = actionlib.SimpleActionClient('/quadrotor/trackers_manager/poly_tracker/PolyTracker', PolyTrackerAction)
-        self.client_line_tracker = actionlib.SimpleActionClient('/quadrotor/trackers_manager/line_tracker_min_jerk/LineTracker', LineTrackerAction)
+        self.client_line_tracker = actionlib.SimpleActionClient('/' + self.mav_name + '/trackers_manager/line_tracker_min_jerk/LineTracker', LineTrackerAction)
+        self.change_map_pub     = rospy.Publisher('/' + self.map_name + '/change_map', Bool, queue_size=1)
+
         print("waiting for tracker trigger service")
         rospy.wait_for_service(poly_service_name)
         # self.poly_trigger = rospy.ServiceProxy(poly_service_name, Trigger)
         self.transition_tracker = rospy.ServiceProxy(line_service_name, Transition)
-        rospy.Subscriber("/quadrotor/odom", Odometry, self.odom_callback)
-
+        rospy.Subscriber('/' + self.mav_name + "/odom", Odometry, self.odom_callback)
+        rospy.Subscriber("/mapper/local_voxel_map", VoxelMap, self.point_clouds_callback)
 
         # rospy.Subscriber("/local_plan_server/trajectory", SplineTrajectory, self.callback)
-        self.num_trials = 2
+        self.num_trials = 10
         self.success = np.zeros(self.num_trials, dtype=bool)
         self.traj_time = np.zeros(self.num_trials)
         self.traj_cost = np.zeros(self.num_trials)
@@ -89,8 +102,43 @@ class Evaluater:
         self.publisher()
 
 
+
+
+    def sample_in_map(self):
+
+        curr_sample_idx = 0
+
+        while curr_sample_idx < 100:
+        
+            rand_start_x = random.uniform(self.map_origin_x, self.map_range_x + self.map_origin_x)
+            rand_start_y = random.uniform(self.map_origin_y, self.map_range_y + self.map_origin_y)
+            rand_start_z = random.uniform(self.map_origin_z, self.map_range_z + self.map_origin_z)
+
+            rand_goal_x = random.uniform(self.map_origin_x, self.map_range_x + self.map_origin_x)
+            rand_goal_y = random.uniform(self.map_origin_y, self.map_range_y + self.map_origin_y)
+            rand_goal_z = random.uniform(self.map_origin_z + 0.2, self.map_range_z + self.map_origin_z - 0.2)
+
+            start = np.array([rand_start_x, rand_start_y, rand_start_z])
+            goal = np.array([rand_goal_x, rand_goal_y, rand_goal_z])
+            
+
+            curr_sample_idx += 1
+            dis = np.linalg.norm(start - goal)
+            if dis < 0.8 * self.map_range_x or dis > 0.5 * (self.map_range_x + self.map_range_y):
+                #print("start and goal are too close! Skipping...")
+                continue
+
+        return start, goal
+
+
     def odom_callback(self, msg):
         self.odom_data = msg.pose.pose.position
+
+
+    def point_clouds_callback(self, msg):
+
+
+        return
 
     def computeJerk(self, traj):
         # creae empty array for time
@@ -111,15 +159,15 @@ class Evaluater:
         return cost
 
     def publisher(self):
-        print("waiting for map server")
-        rospy.wait_for_service('/gen_new_map')
-        change_map = rospy.ServiceProxy('/gen_new_map', Empty)
-        change_map()
+        # print("waiting for map server")
+        # rospy.wait_for_service('/gen_new_map')
+        # change_map = rospy.ServiceProxy('/gen_new_map', Empty)
+        # change_map()
 
         print("waiting for action server")
         self.client.wait_for_server()
 
-
+        
 
         # for i in range(self.start_goals.shape[0]):
         #     if rospy.is_shutdown():
@@ -140,16 +188,24 @@ class Evaluater:
             if rospy.is_shutdown():
                 break
             if (i > 0):
-                change_map()
+ 
+                msg = Bool()
+                msg.data = True
+                self.change_map_pub.publish(msg)
                 #TODO(Laura): actually send map ?
                 # When change_map returns, the map is changed, but becuase delay, wait a little longer
             if not use_odom_bool:
                 pos_msg = PositionCommand() # change position in simulator
                 pos_msg.header.frame_id = "map"
                 pos_msg.header.stamp = rospy.Time.now()
-                pos_msg.position.x = random.uniform(-10, 10)
-                pos_msg.position.y = random.uniform(-10, 10)
-                pos_msg.position.z = 1
+
+
+                start, end = self.sample_in_map()
+
+                pos_msg.position.x = start[0]
+                pos_msg.position.y = start[1]
+                pos_msg.position.z = start[2]
+
                 pos_msg.velocity.x = 0
                 pos_msg.velocity.y = 0
                 pos_msg.velocity.z = 0
@@ -191,7 +247,6 @@ class Evaluater:
                 #     rospy.logwarn("Failed to trigger: %s", response.message)
                 # input("Press Enter to continue...")
             
-
             msg = PlanTwoPointGoal()
             if use_odom_bool:
                 msg.p_init.position = self.odom_data # if starting from current position
@@ -202,8 +257,9 @@ class Evaluater:
 
 
             # set goal to be random
-            msg.p_final.position.x = random.uniform(-10, 10)
-            msg.p_final.position.y = random.uniform(-10, 10)
+            msg.p_final.position.x = end[0]
+            msg.p_final.position.y = end[1]
+            msg.p_final.position.z = end[2]
             # msg.execution_time = -1.0 # execute whole thing
             #this line make a error in sending msg. I want to say no execution time limit
 

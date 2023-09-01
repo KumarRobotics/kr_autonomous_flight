@@ -11,6 +11,16 @@
     <!-- hard assigning threads to avoid computation spikes -->
     <arg name="prefix" value="taskset -c 0"/>
 
+   
+    <arg name="map/x_size" default="20"/>
+    <arg name="map/y_size" default="20"/>
+    <arg name="map/z_size" default="5"/>
+
+
+    <arg name="map/x_origin" default="-10.0"/>
+    <arg name="map/y_origin" default="-10.0"/>
+    <arg name="map/z_origin" default="0.0"/>
+
     <!-- use nice to set low priority for mapper -->
     <node pkg="mapper" name="mapper" type="local_global_mapper" output="screen" launch-prefix="$(arg prefix)">
         <remap from="~cloud" to="$(arg cloud)"/>
@@ -21,18 +31,19 @@
         <param name="map_frame" value="$(arg map_frame)"/>
         <param name="odom_frame" value="$(arg odom_frame)"/>
         <param name="lidar_frame" value="$(arg lidar_frame)"/>
-        <param name="global/range_z" value="4.0"/>
-        <param name="global/center_z" value="2.0"/>
-
-        <param name="global/range_x" value="20.0"/>
-        <param name="global/center_x" value="0.0"/>
-        <param name="global/range_y" value="20.0"/>
-        <param name="global/center_y" value="0.0"/>
 
 
-        <param name="local/range_x" value="20.0"/>
-        <param name="local/range_y" value="20.0"/>
-        <param name="local/range_z" value="3.0"/>
+        <param name="global/range_x" value="$(arg map/x_size)"/>
+        <param name="global/range_y" value="$(arg map/y_size)"/>
+        <param name="global/range_z" value="$(arg map/z_size)"/>
+
+        <param name="global/origin_x" value="$(arg map/x_origin)"/>
+        <param name="global/origin_y" value="$(arg map/y_origin)"/>
+        <param name="global/origin_z" value="$(arg map/z_origin)"/>
+
+        <param name="local/range_x" value="$(arg map/x_size)"/>
+        <param name="local/range_y" value="$(arg map/y_size)"/>
+        <param name="local/range_z" value="$(arg map/z_size)"/>
 
 
         <!-- <rosparam file="$(find map_plan_launch)/config/mapper.yaml"/> -->

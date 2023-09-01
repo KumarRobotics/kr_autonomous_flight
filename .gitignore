@@ -11,6 +11,7 @@ catkin_simple/
 kr_demo_planner/
 DoubleDescription/
 GCOPTER/
+gcopter/
 altro/
 glog_catkin/
 kr_ilqr_optimizer/
@@ -19,7 +20,7 @@ mav_trajectory_generation/
 motion_primitives/
 kr_planning_msgs/
 external/
-map_generator/
+kr_param_map/
 #===========
 # C++
 # ===========

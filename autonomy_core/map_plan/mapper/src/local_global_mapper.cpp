@@ -68,11 +68,13 @@ void LocalGlobalMapperNode::initParams() {
   nh_.param("robot_r", robot_r_, 0.2);
   nh_.param("robot_h", robot_h_, 0.0);
 
-  double global_map_cx, global_map_cy, global_map_cz;
+  double global_map_origin_x, global_map_origin_y, global_map_origin_z;
   nh_.param("global/resolution", global_map_info_.resolution, 2.0f);
-  nh_.param("global/center_x", global_map_cx, 0.0);
-  nh_.param("global/center_y", global_map_cy, 0.0);
-  nh_.param("global/center_z", global_map_cz, 0.0);
+
+  nh_.param("global/origin_x", global_map_origin_x, 0.0);
+  nh_.param("global/origin_y", global_map_origin_y, 0.0);
+  nh_.param("global/origin_z", global_map_origin_z, 0.0);
+
   nh_.param("global/range_x", global_map_dim_d_x_, 500.0);
   nh_.param("global/range_y", global_map_dim_d_y_, 500.0);
   nh_.param("global/range_z", global_map_dim_d_z_, 2.0);
@@ -86,9 +88,9 @@ void LocalGlobalMapperNode::initParams() {
 
   // map origin is the left lower corner of the voxel map, therefore, adding
   // an offset make the map centered around the given position
-  global_map_info_.origin.x = global_map_cx - global_map_dim_d_x_ / 2;
-  global_map_info_.origin.y = global_map_cy - global_map_dim_d_y_ / 2;
-  global_map_info_.origin.z = global_map_cz - global_map_dim_d_z_ / 2;
+  global_map_info_.origin.x = global_map_origin_x;
+  global_map_info_.origin.y = global_map_origin_y;
+  global_map_info_.origin.z = global_map_origin_z;
   global_map_info_.dim.x = static_cast<int>(
       ceil((global_map_dim_d_x_) / global_map_info_.resolution));
   global_map_info_.dim.y = static_cast<int>(

@@ -16,6 +16,8 @@ from nav_msgs.msg import Odometry
 import random 
 import actionlib
 
+
+
 poly_service_name = "/quadrotor/mav_services/poly_tracker"
 line_service_name = "/quadrotor/trackers_manager/transition"
 use_odom_bool = False
@@ -73,7 +75,7 @@ class Evaluater:
 
 
         # rospy.Subscriber("/local_plan_server/trajectory", SplineTrajectory, self.callback)
-        self.num_trials = 30
+        self.num_trials = 2
         self.success = np.zeros(self.num_trials, dtype=bool)
         self.traj_time = np.zeros(self.num_trials)
         self.traj_cost = np.zeros(self.num_trials)
@@ -81,6 +83,7 @@ class Evaluater:
         self.traj_compute_time = np.zeros(self.num_trials)
         self.compute_time_front = np.zeros(self.num_trials)
         self.compute_time_back = np.zeros(self.num_trials)
+        self.tracking_error = np.zeros(self.num_trials)
         self.rho = 50  # TODO(Laura) pull from param or somewhere
     
         self.publisher()
@@ -132,6 +135,7 @@ class Evaluater:
         #     msg.p_final.position.y = self.start_goals['yf'][i]
         #     msg.p_final.position.z = 5
         for i in range(self.num_trials):
+            random.seed(i)
             print(i)
             if rospy.is_shutdown():
                 break
@@ -139,7 +143,6 @@ class Evaluater:
                 change_map()
                 #TODO(Laura): actually send map ?
                 # When change_map returns, the map is changed, but becuase delay, wait a little longer
-                rospy.sleep(2.5)
             if not use_odom_bool:
                 pos_msg = PositionCommand() # change position in simulator
                 pos_msg.header.frame_id = "map"
@@ -163,19 +166,23 @@ class Evaluater:
                 traj_act_msg.a_des = 0.0
                 traj_act_msg.relative = False
                 traj_act_msg.t_start = rospy.Time.now()
-                traj_act_msg.duration = rospy.Duration(10.0)
+                traj_act_msg.duration = rospy.Duration(6.0)
                 self.client_line_tracker.send_goal(traj_act_msg)# first change tracker goal msg
                 rospy.sleep(0.5)
-                state = self.client_line_tracker.get_state() # make sure it received it
-                print(f"After sent goal: Action State: {state}")
-                # self.set_state_pub.publish(pos_msg) #then change state so no error remain
+                # state = self.client_line_tracker.get_state() # make sure it received it
+                # print(f"After sent goal: Action State: {state}")
                 response = self.transition_tracker('kr_trackers/LineTrackerMinJerk')
+                # self.set_state_pub.publish(pos_msg) #then change state so no error remain
+
                 print(response)
 
                 self.client_line_tracker.wait_for_result(rospy.Duration.from_sec(15.0)) #flying
                 response = self.client_line_tracker.get_result()
                 if response is not None:
-                    print("Finished flying")
+                    rospy.loginfo("Line Tracker Finished")
+                else:
+                    rospy.logerr("Line Tracker Failed")
+
               
                 # if response.success:
                 #     rospy.loginfo("Tracking pos %f,%f, %f, yaw %f",pos_msg.position.x,pos_msg.position.y, pos_msg.position.z ,pos_msg.yaw)
@@ -231,7 +238,7 @@ class Evaluater:
 
             # input("Press Enter to continue...")
             # Waits for the server to finish performing the action.
-            self.client.wait_for_result(rospy.Duration.from_sec(15.0)) 
+            self.client.wait_for_result(rospy.Duration.from_sec(20.0)) 
             # if the use_client flag is true, then this waits for the exuction to finish
             if multi_front_end:
                 self.client2.wait_for_result(rospy.Duration.from_sec(5.0))
@@ -241,10 +248,11 @@ class Evaluater:
             #TODO(Laura) check if the path is collision free and feasible
             if result:
                 self.success[i] = result.success
-                if 0 < result.computation_time < 1000:
+                if 0 < result.computation_time:
                     self.traj_compute_time[i] = result.computation_time
                     self.compute_time_front[i] = result.compute_time_front_end
                     self.compute_time_back[i] = result.compute_time_back_end
+                    self.tracking_error[i] = result.tracking_error
                 if result.success:
                     self.traj_time[i] = result.traj.data[0].t_total
                     self.traj_cost[i] = self.computeCost(result.traj, self.rho)
@@ -260,14 +268,16 @@ class Evaluater:
         print("Compute Time", self.traj_compute_time)
         print("Compute Time Front", self.compute_time_front)
         print("Compute Time Back", self.compute_time_back)
+        print("Tracking Error", self.tracking_error)
 
         print("success rate: " + str(np.sum(self.success)/self.success.size))
-        print("avg traj time: " + str(np.sum(self.traj_time[self.success]) / np.sum(self.success)))
-        print("avg traj cost: " + str(np.sum(self.traj_cost[self.success]) / np.sum(self.success)))
+        print("avg traj time(s): " + str(np.sum(self.traj_time[self.success]) / np.sum(self.success)))
+        print("avg traj cost(time + jerk): " + str(np.sum(self.traj_cost[self.success]) / np.sum(self.success)))
         print("avg traj jerk: " + str(np.sum(self.traj_jerk[self.success]) / np.sum(self.success)))
-        print("avg compute time: " + str(np.sum(self.traj_compute_time[self.success]) / np.sum(self.success)))
-        print("avg compute time front: " + str(np.sum(self.compute_time_front[self.success]) / np.sum(self.success)))
-        print("avg compute time back: " + str(np.sum(self.compute_time_back[self.success]) / np.sum(self.success)))
+        print("avg compute time(ms): " + str(np.sum(self.traj_compute_time[self.success]) / np.sum(self.success)))
+        print("avg compute time front(ms): " + str(np.sum(self.compute_time_front[self.success]) / np.sum(self.success)))
+        print("avg compute time back(ms): " + str(np.sum(self.compute_time_back[self.success]) / np.sum(self.success)))
+        print("avg tracking error(m): " + str(np.sum(self.tracking_error[self.success]) / np.sum(self.success)))
 
 
 def subscriber():

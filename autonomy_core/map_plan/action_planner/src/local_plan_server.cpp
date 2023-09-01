@@ -421,6 +421,7 @@ void LocalPlanServer::process_result(
     traj_msg = SplineTrajfromDiscrete(traj_dis_msg);
     solved = true;
   }
+
   if (!solved) {
     // local plan fails
     aborted_ = true;
@@ -479,6 +480,7 @@ void LocalPlanServer::process_result(
     }
 
     // publish the trajectory
+    double tracking_error = 0.0;
     if (use_tracker_client_ == false) {
       // use client to send trajectory
       traj_goal_pub_.publish(traj_act_msg);
@@ -492,8 +494,12 @@ void LocalPlanServer::process_result(
       srv_transition_.call(transition_cmd);
       if (transition_cmd.response.success) ROS_INFO("Transition success!");
       traj_goal_ac_->waitForResult(ros::Duration(20.0));
+      kr_tracker_msgs::PolyTrackerResultConstPtr result_ptr =
+          traj_goal_ac_->getResult();
+      tracking_error = result_ptr->total_tracking_error;
+      ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
     }
-
+    ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
     // This node is a client of the trajectory tracker, it will send the
     // tracking message wait for result after hardware execution to hopefully
     // get things like tracking error
@@ -543,8 +549,9 @@ void LocalPlanServer::process_result(
       result.a_stop.push_back(a_fin);
       result.j_stop.push_back(j_fin);  // TODO!!! j_fin never assigned
     }
-
+    ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
     MPL::Waypoint3D pt = planner_->evaluate(traj_total_time_);
+    result.tracking_error = tracking_error;
     result.traj_end.position.x = pt.pos(0);
     result.traj_end.position.y = pt.pos(1);
     result.traj_end.position.z = pt.pos(2);
@@ -565,10 +572,14 @@ void LocalPlanServer::process_result(
     result.traj_end.orientation.w = 1.0;
     result.traj_end.orientation.z = 0;
     result.computation_time = computation_time_;
+    // this is not done until after?
     result.compute_time_front_end = compute_time_front_end_;
     result.compute_time_back_end = compute_time_back_end_;
     if (local_as_->isActive()) {
+      ROS_INFO("Current local plan trial is active & succeeded!");
       local_as_->setSucceeded(result);
+    } else {
+      ROS_ERROR("Current local plan trial is not active !");
     }
   }
 }

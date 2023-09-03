@@ -25,8 +25,8 @@ trajectory_planner:
   max_j: 2.0 # x-y-direction maximum jerk, recommended value: for 2-D 3, for 3-D 2
   max_u: 2.0 # x-y-direction control inputs increase / decrease step, must be smaller than max_j, recommended value: for 2-D 3, for 3-D 1, for each axis jerk increment choice is -max_u, 0, max_u
   use_3d_local: true # local planner operates in 3D (true) or 2D (false)
-  search_planner_type: 5 # 0: MPL, 1: dispersion planner, 2: JPS (geometric) 3: pass through from global planner 4: RRT 5 :SST
-  opt_planner_type: 1 # -1: no planner 0: Double Description 1: gcopter 2: iLQR(Altro)
+  search_planner_type: 0 # 0: MPL, 1: dispersion planner, 2: JPS (geometric) 3: pass through from global planner 4: RRT 5 :SST
+  opt_planner_type: 2 # -1: no planner 0: Double Description 1: gcopter 2: iLQR(Altro)
   use_discrete_traj: false # set true to use with ilqr
   use_tracker_client: true # if we wait for tracker to finish before sending next command
   #TODO(Laura) fix path

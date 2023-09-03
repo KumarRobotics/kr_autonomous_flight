@@ -499,7 +499,7 @@ void LocalPlanServer::process_result(
       tracking_error = result_ptr->total_tracking_error;
       ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
     }
-    ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
+    // ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
     // This node is a client of the trajectory tracker, it will send the
     // tracking message wait for result after hardware execution to hopefully
     // get things like tracking error
@@ -549,7 +549,7 @@ void LocalPlanServer::process_result(
       result.a_stop.push_back(a_fin);
       result.j_stop.push_back(j_fin);  // TODO!!! j_fin never assigned
     }
-    ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
+    // ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
     MPL::Waypoint3D pt = planner_->evaluate(traj_total_time_);
     result.tracking_error = tracking_error;
     result.traj_end.position.x = pt.pos(0);

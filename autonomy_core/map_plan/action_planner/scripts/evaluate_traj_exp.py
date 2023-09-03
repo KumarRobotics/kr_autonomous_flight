@@ -2,7 +2,7 @@
 import rospy
 # from kr_planning_msgs.msg import SplineTrajectory
 from kr_planning_msgs.msg import PlanTwoPointAction, PlanTwoPointGoal, VoxelMap
-from kr_mav_msgs.msg import PositionCommand
+from kr_mav_msgs.msg import PositionCommand, OutputData
 from kr_tracker_msgs.msg import PolyTrackerGoal, PolyTrackerAction, LineTrackerAction, LineTrackerGoal
 import numpy as np
 # import matplotlib.pyplot as plt
@@ -86,6 +86,10 @@ class Evaluater:
         self.transition_tracker = rospy.ServiceProxy(line_service_name, Transition)
         rospy.Subscriber('/' + self.mav_name + "/odom", Odometry, self.odom_callback)
         rospy.Subscriber("/mapper/local_voxel_map", VoxelMap, self.point_clouds_callback)
+        self.effort_temp = 0.0 # these need to be defined before the callback
+        self.effort_counter = 0
+        rospy.Subscriber("/quadrotor/quadrotor_simulator_so3/output_data", OutputData, self.sim_output_callback)
+        rospy.logwarn("Change topic name of OutputData on real quadrotor")
 
         # rospy.Subscriber("/local_plan_server/trajectory", SplineTrajectory, self.callback)
         self.num_trials = 10
@@ -97,7 +101,11 @@ class Evaluater:
         self.compute_time_front = np.zeros(self.num_trials)
         self.compute_time_back = np.zeros(self.num_trials)
         self.tracking_error = np.zeros(self.num_trials)
+        self.effort = np.zeros(self.num_trials) #unit in rpm
         self.rho = 50  # TODO(Laura) pull from param or somewhere
+
+
+
     
         self.publisher()
 
@@ -134,6 +142,9 @@ class Evaluater:
     def odom_callback(self, msg):
         self.odom_data = msg.pose.pose.position
 
+    def sim_output_callback(self, msg): #ToDo: This also has odom inside, consider combine with previous callback 
+        self.effort_temp += np.mean(msg.motor_rpm) #rpm
+        self.effort_counter += 1
 
     def point_clouds_callback(self, msg):
 
@@ -286,8 +297,10 @@ class Evaluater:
             start_and_goal.markers.append(start)
             start_and_goal.markers.append(goal)
             # self.path_pub.publish(msg)
-            self.start_and_goal_pub.publish(start_and_goal)
-            self.client.send_goal(msg)
+            self.start_and_goal_pub.publish(start_and_goal) # viz
+            self.client.send_goal(msg) #motion
+            self.effort_temp = 0.0
+            self.effort_counter = 1 # to avoid divide by zero
             if multi_front_end:
                 self.client2.send_goal(msg)
                 self.client3.send_goal(msg)
@@ -300,7 +313,10 @@ class Evaluater:
                 self.client2.wait_for_result(rospy.Duration.from_sec(5.0))
                 self.client3.wait_for_result(rospy.Duration.from_sec(5.0))
 
+            # stop accumulating the effort
+            self.effort[i] = self.effort_temp / self.effort_counter
             result = self.client.get_result()
+
             #TODO(Laura) check if the path is collision free and feasible
             if result:
                 self.success[i] = result.success
@@ -311,7 +327,7 @@ class Evaluater:
                     self.tracking_error[i] = result.tracking_error
                 if result.success:
                     self.traj_time[i] = result.traj.data[0].t_total
-                    self.traj_cost[i] = self.computeCost(result.traj, self.rho)
+                    # self.traj_cost[i] = self.computeCost(result.traj, self.rho)
                     self.traj_jerk[i] = self.computeJerk(result.traj)
 
             else:
@@ -328,13 +344,13 @@ class Evaluater:
 
         print("success rate: " + str(np.sum(self.success)/self.success.size))
         print("avg traj time(s): " + str(np.sum(self.traj_time[self.success]) / np.sum(self.success)))
-        print("avg traj cost(time + jerk): " + str(np.sum(self.traj_cost[self.success]) / np.sum(self.success)))
+        # print("avg traj cost(time + jerk): " + str(np.sum(self.traj_cost[self.success]) / np.sum(self.success)))
         print("avg traj jerk: " + str(np.sum(self.traj_jerk[self.success]) / np.sum(self.success)))
         print("avg compute time(ms): " + str(np.sum(self.traj_compute_time[self.success]) / np.sum(self.success)))
         print("avg compute time front(ms): " + str(np.sum(self.compute_time_front[self.success]) / np.sum(self.success)))
         print("avg compute time back(ms): " + str(np.sum(self.compute_time_back[self.success]) / np.sum(self.success)))
         print("avg tracking error(m): " + str(np.sum(self.tracking_error[self.success]) / np.sum(self.success)))
-
+        print("avg effort(rpm): " + str(np.sum(self.effort) / self.effort.size))
 
 def subscriber():
     rospy.init_node('evaluate_traj')

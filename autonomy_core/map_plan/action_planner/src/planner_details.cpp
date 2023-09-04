@@ -14,7 +14,9 @@ void OptPlanner::iLQR_Planner::setup() {
       new SplineTrajSampler(subscribe_to_traj,
                             publish_optimized_traj,
                             publish_viz,
-                            60));  // good if multiple of 5, then add 1
+                            65));  // good if multiple of 5, then it will
+                                   // automatically return +1 elements
+                                   // this is the number of controls
 }
 kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
     const MPL::Waypoint3D& start,
@@ -27,21 +29,21 @@ kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
   kr_planning_msgs::TrajectoryDiscretized result_discrete =
       sampler_->sample_and_refine_trajectory(
           start_state, search_path_msg_, this->hPolys, this->allo_ts);
-  if (result_discrete.t.size() == 0) {
+  if (result_discrete.pos.size() == 0) {
     traj_total_time_ = 0;
     opt_traj_.clear();
     path_sampling_dt_ = 0.0;
   } else {
-    traj_total_time_ =
-        result_discrete.t.back();  // 0, 0.1, 0.2 .... 1.0 // 11 elements
+    traj_total_time_ = result_discrete.N_ctrl * result_discrete.dt;
     opt_traj_ = sampler_->opt_traj_;
-    path_sampling_dt_ = result_discrete.t[1];  // dt = 0.1
+    path_sampling_dt_ = result_discrete.dt;
   }
   return result_discrete;
 }
 
 MPL::Waypoint3D OptPlanner::iLQR_Planner::evaluate(double t) {
-  // bool is_linear_cut = true;
+  // this function is not currently used!!
+  // TODO (Yifei): make it better usign non-linear cut!
   MPL::Waypoint3D waypt_return = MPL::Waypoint3D();
   Eigen::VectorXd x_return(9);
   if (t >= traj_total_time_) {

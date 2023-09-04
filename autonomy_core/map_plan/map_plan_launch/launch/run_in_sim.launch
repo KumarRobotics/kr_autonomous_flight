@@ -13,12 +13,12 @@
 
 
   <!-- Map related stuff -->
-  <arg name="random_map" default="true"/>
+  <arg name="random_map" default="false"/>
   <arg name="vicon_map" default="false"/>
-  <arg name="file_map" default="false"/>
+  <arg name="file_map" default="true"/>
 
   <arg name="point_cloud" default="/global_cloud"/>
-  <arg name="map_name" default="structure_map"/>
+  <arg name="map_name" default="param_map"/>
 
 
   <arg name="initial_position/x" default="9.0"/>
@@ -110,6 +110,7 @@
       
       <param name="mav_name" value="$(arg mav_name)"/>
       <param name="map_name" value="$(arg map_name)"/>
+      <param name="use_file_map" value="$(arg file_map)"/> <!-- ToDo (Yifei): Get rid of this, use_the flags in front to infer-->
 
     </node>
 
@@ -117,7 +118,7 @@
 
     <!-- 1. Random map -->
     <group if="$(arg random_map)">
-      <node pkg ="param_env" name ="structure_map" type ="structure_map" output = "screen">    
+      <node pkg ="param_env" name ="param_map" type ="structure_map" output = "screen">    
         <!-- this is the map init position, not the odom-->
         <remap from="~global_cloud" to="$(arg point_cloud)"/>
 
@@ -162,7 +163,7 @@
 
     <!-- file map -->
     <group if="$(arg file_map)">
-      <node pkg ="param_env" name ="read_grid_map" type ="read_grid_map" output = "screen">    
+      <node pkg ="param_env" name ="param_map" type ="read_grid_map" output = "screen">    
         <!-- this is the map init position, not the odom-->
         <remap from="~global_gridmap" to="$(arg point_cloud)"/>
 
@@ -183,16 +184,16 @@
         <!-- another topic to publish point with inflation-->
         <param name="map/publish_grid_centers"  value="true"/>
 
-        <!-- map mode 
+        <!-- map mode  ToDo:(Yifei) just use another mode for if reading image or folder
               0 randomly generate
               1 read the image
               2 read the ros bag poind cloud 1
               3 read the ros bag poind cloud 2
               4 read pcd file -->
-        <param name="map/mode"       value="1" />
+        <param name="map/mode"       value="1" /> 
 
         <param name="folder_path" value="$(find param_env)/data/img/maze/"/>
-        <param name="use_folfer"  value="true"/>
+        <param name="use_folder"  value="true"/>
 
         <!-- mode 1 eg -->
         <param name="file_path" value="$(find param_env)/data/img/maze/maze8.png"/>

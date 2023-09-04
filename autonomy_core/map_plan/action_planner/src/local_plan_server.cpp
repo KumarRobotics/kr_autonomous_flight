@@ -298,58 +298,63 @@ void normalizePosCoeffMat(double duration, Eigen::MatrixXd& coeffMat) {
 
 kr_planning_msgs::SplineTrajectory SplineTrajfromDiscreteTwoPoints(
     const kr_planning_msgs::TrajectoryDiscretized& traj_dis_msg) {
-  int degree_plus1 = 6;
-  double dt = traj_dis_msg.t[1] - traj_dis_msg.t[0];
-  kr_planning_msgs::SplineTrajectory traj_msg;
-  traj_msg.header = traj_dis_msg.header;
-  traj_msg.dimensions = 3;
-  // prepare polynomial fit time vector
-  kr_planning_msgs::Spline spline;
-  for (int dim = 0; dim < 3; dim++) {
-    traj_msg.data.push_back(spline);
-    traj_msg.data[dim].t_total = traj_dis_msg.t[traj_dis_msg.t.size() - 1];
-  }
-  // calc coeff
-  for (int traj_idx = 0; traj_idx < traj_dis_msg.pos.size() - 1; traj_idx++) {
-    // Eigen::MatrixXd pos_mat = Eigen::MatrixXd::Zero(degree_plus1, 3);
-    // create a vector of pos, vel, acc for traj_idx and next point
-    Eigen::VectorXd state1(9);
-    Eigen::VectorXd state2(9);
-    state1 << traj_dis_msg.pos[traj_idx].x, traj_dis_msg.pos[traj_idx].y,
-        traj_dis_msg.pos[traj_idx].z, traj_dis_msg.vel[traj_idx].x,
-        traj_dis_msg.vel[traj_idx].y, traj_dis_msg.vel[traj_idx].z,
-        traj_dis_msg.acc[traj_idx].x, traj_dis_msg.acc[traj_idx].y,
-        traj_dis_msg.acc[traj_idx].z;
-    state2 << traj_dis_msg.pos[traj_idx + 1].x,
-        traj_dis_msg.pos[traj_idx + 1].y, traj_dis_msg.pos[traj_idx + 1].z,
-        traj_dis_msg.vel[traj_idx + 1].x, traj_dis_msg.vel[traj_idx + 1].y,
-        traj_dis_msg.vel[traj_idx + 1].z, traj_dis_msg.acc[traj_idx + 1].x,
-        traj_dis_msg.acc[traj_idx + 1].y, traj_dis_msg.acc[traj_idx + 1].z;
-    std::cout << "state1: \n" << state1.transpose() << std::endl;
-    std::cout << "state2: \n" << state2.transpose() << std::endl;
-    // solve for coefficients
-    Eigen::MatrixXd coeff_mat = compute_bvp_pva(state1,  // p0 v0 a0, size 9
-                                                state2,
-                                                dt);
+  // this function does not quite work since dt is too small(or not set
+  // properly due to N_ctrl N_state issue) This also needs to be updated with
+  // the update on TrajDescrtized msg
 
-    // 1.0);  // #this is because the whole thing is a unit coeff
-    normalizePosCoeffMat(dt, coeff_mat);
-    //
-    // input into the new message
-    for (int dim = 0; dim < 3; dim++) {
-      traj_msg.data[dim].segments++;
-      kr_planning_msgs::Polynomial p;
-      p.basis = p.STANDARD;
-      Eigen::VectorXd coeff_dim = coeff_mat.col(dim);
-      std::vector<float> std_vector(coeff_dim.data(),
-                                    coeff_dim.data() + coeff_dim.size());
-      p.coeffs = std_vector;
-      p.degree = degree_plus1 - 1;
-      p.dt = dt;
-      // p.start_index = traj_idx;
-      traj_msg.data[dim].segs.push_back(p);
-    }
-  }
+  // int degree_plus1 = 6;
+  // double dt = traj_dis_msg.t[1] - traj_dis_msg.t[0];
+  kr_planning_msgs::SplineTrajectory traj_msg;
+  // traj_msg.header = traj_dis_msg.header;
+  // traj_msg.dimensions = 3;
+  // // prepare polynomial fit time vector
+  // kr_planning_msgs::Spline spline;
+  // for (int dim = 0; dim < 3; dim++) {
+  //   traj_msg.data.push_back(spline);
+  //   traj_msg.data[dim].t_total = traj_dis_msg.t[traj_dis_msg.t.size() - 1];
+  // }
+  // // calc coeff
+  // for (int traj_idx = 0; traj_idx < traj_dis_msg.pos.size() - 1; traj_idx++)
+  // {
+  //   // Eigen::MatrixXd pos_mat = Eigen::MatrixXd::Zero(degree_plus1, 3);
+  //   // create a vector of pos, vel, acc for traj_idx and next point
+  //   Eigen::VectorXd state1(9);
+  //   Eigen::VectorXd state2(9);
+  //   state1 << traj_dis_msg.pos[traj_idx].x, traj_dis_msg.pos[traj_idx].y,
+  //       traj_dis_msg.pos[traj_idx].z, traj_dis_msg.vel[traj_idx].x,
+  //       traj_dis_msg.vel[traj_idx].y, traj_dis_msg.vel[traj_idx].z,
+  //       traj_dis_msg.acc[traj_idx].x, traj_dis_msg.acc[traj_idx].y,
+  //       traj_dis_msg.acc[traj_idx].z;
+  //   state2 << traj_dis_msg.pos[traj_idx + 1].x,
+  //       traj_dis_msg.pos[traj_idx + 1].y, traj_dis_msg.pos[traj_idx + 1].z,
+  //       traj_dis_msg.vel[traj_idx + 1].x, traj_dis_msg.vel[traj_idx + 1].y,
+  //       traj_dis_msg.vel[traj_idx + 1].z, traj_dis_msg.acc[traj_idx + 1].x,
+  //       traj_dis_msg.acc[traj_idx + 1].y, traj_dis_msg.acc[traj_idx + 1].z;
+  //   std::cout << "state1: \n" << state1.transpose() << std::endl;
+  //   std::cout << "state2: \n" << state2.transpose() << std::endl;
+  //   // solve for coefficients
+  //   Eigen::MatrixXd coeff_mat = compute_bvp_pva(state1,  // p0 v0 a0, size 9
+  //                                               state2,
+  //                                               dt);
+
+  //   // 1.0);  // #this is because the whole thing is a unit coeff
+  //   normalizePosCoeffMat(dt, coeff_mat);
+  //   //
+  //   // input into the new message
+  //   for (int dim = 0; dim < 3; dim++) {
+  //     traj_msg.data[dim].segments++;
+  //     kr_planning_msgs::Polynomial p;
+  //     p.basis = p.STANDARD;
+  //     Eigen::VectorXd coeff_dim = coeff_mat.col(dim);
+  //     std::vector<float> std_vector(coeff_dim.data(),
+  //                                   coeff_dim.data() + coeff_dim.size());
+  //     p.coeffs = std_vector;
+  //     p.degree = degree_plus1 - 1;
+  //     p.dt = dt;
+  //     // p.start_index = traj_idx;
+  //     traj_msg.data[dim].segs.push_back(p);
+  //   }
+  // }
 
   return traj_msg;
 }
@@ -358,7 +363,7 @@ SplineTrajfromDiscrete(  // this method will make beginning and end have an
                          // nonzero velocity issue
     const kr_planning_msgs::TrajectoryDiscretized& traj_dis_msg) {
   int degree_plus1 = 6;
-  double dt = traj_dis_msg.t[degree_plus1 - 1];
+  double dt = traj_dis_msg.dt;
   kr_planning_msgs::SplineTrajectory traj_msg;
   traj_msg.header = traj_dis_msg.header;
   traj_msg.dimensions = 3;
@@ -377,8 +382,7 @@ SplineTrajfromDiscrete(  // this method will make beginning and end have an
        traj_idx += (degree_plus1 - 1)) {
     // this is to have 1 repeat point to make sure things connect
     for (int dim = 0; dim < 3; dim++)
-      traj_msg.data[dim].t_total =
-          traj_dis_msg.t[traj_idx + (degree_plus1 - 1)];
+      traj_msg.data[dim].t_total = traj_idx + (degree_plus1 - 1) * dt;
 
     Eigen::MatrixXd pos_mat = Eigen::MatrixXd::Zero(degree_plus1, 3);
 
@@ -472,11 +476,13 @@ void LocalPlanServer::process_result(
     else {
       // http://docs.ros.org/en/api/trajectory_msgs/html/msg/MultiDOFJointTrajectoryPoint.html
       // use this can directly for control
-      traj_act_msg.goal.N = traj_dis_msg.N;
+      traj_act_msg.goal.N =
+          traj_dis_msg.N_ctrl +
+          1;  // Tracker expect same number of things, so just add 1
       traj_act_msg.goal.pos_pts = traj_dis_msg.pos;
       traj_act_msg.goal.vel_pts = traj_dis_msg.vel;
       traj_act_msg.goal.acc_pts = traj_dis_msg.acc;
-      traj_act_msg.goal.dt = traj_dis_msg.t[1] - traj_dis_msg.t[0];
+      traj_act_msg.goal.dt = traj_dis_msg.dt;
     }
 
     // publish the trajectory

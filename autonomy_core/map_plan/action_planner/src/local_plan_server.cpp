@@ -422,6 +422,9 @@ void LocalPlanServer::process_result(
     int epoch) {
   kr_planning_msgs::SplineTrajectory traj_msg = traj_combined.first;
   kr_planning_msgs::TrajectoryDiscretized traj_dis_msg = traj_combined.second;
+  double tracking_error = 0.0;
+  std::vector<geometry_msgs::Point> odom_pts;
+
   bool solved = traj_msg.data.size() > 0;
   if (!solved && traj_dis_msg.pos.size() > 0) {
     traj_msg = SplineTrajfromDiscrete(traj_dis_msg);
@@ -434,7 +437,7 @@ void LocalPlanServer::process_result(
     if (local_as_->isActive()) {
       ROS_WARN("Current local plan trial failed!");
       traj_pub_.publish(kr_planning_msgs::SplineTrajectory());
-      local_as_->setAborted();
+      // local_as_->setAborted(); //do not set aborted here, otherwise no return
     }
   } else {
     ROS_WARN("[LocalPlanServer] Planning success!!!!!!");
@@ -488,8 +491,6 @@ void LocalPlanServer::process_result(
     }
 
     // publish the trajectory
-    double tracking_error = 0.0;
-    std::vector<geometry_msgs::Point> odom_pts;
     if (use_tracker_client_ == false) {
       // use client to send trajectory
       traj_goal_pub_.publish(traj_act_msg);
@@ -509,90 +510,91 @@ void LocalPlanServer::process_result(
       odom_pts = result_ptr->odom_history;
       ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
     }
-    // ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
-    // This node is a client of the trajectory tracker, it will send the
-    // tracking message wait for result after hardware execution to hopefully
-    // get things like tracking error
+  }  // success case
 
-    // This node is also a action server for plan two point, the
-    // client that will be calling it is the python simple script
-    // evalute_traj.py / evalute_traj_exp.py
-    kr_planning_msgs::PlanTwoPointResult result;
-    // evaluate trajectory for 5 steps, each step duration equals
-    // execution_time, get corresponding waypoints and record in result
-    // (result_->p_stop etc.) (evaluate the whole traj if execution_time is not
-    // set (i.e. not in replan mode))
-    double dt = execution_time.toSec();
-    int num_goals = 5;
-    if (dt <= 0) {
-      dt = 0.2;
-      num_goals = (int)(traj_total_time_ / 0.2);  // using dt = 0.2
-    }
+  // ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
+  // This node is a client of the trajectory tracker, it will send the
+  // tracking message wait for result after hardware execution to hopefully
+  // get things like tracking error
 
-    for (int i = 0; i < num_goals; i++) {
-      geometry_msgs::Pose p_fin;
-      geometry_msgs::Twist v_fin, a_fin, j_fin;
+  // This node is also a action server for plan two point, the
+  // client that will be calling it is the python simple script
+  // evalute_traj.py / evalute_traj_exp.py
+  kr_planning_msgs::PlanTwoPointResult result;
+  // evaluate trajectory for 5 steps, each step duration equals
+  // execution_time, get corresponding waypoints and record in result
+  // (result_->p_stop etc.) (evaluate the whole traj if execution_time is not
+  // set (i.e. not in replan mode))
+  double dt = execution_time.toSec();
+  int num_goals = 5;
+  if (dt <= 0) {
+    dt = 0.2;
+    num_goals = (int)(traj_total_time_ / 0.2);  // using dt = 0.2
+  }
+  // unclear what the following section does comment out for now
+  //  for (int i = 0; i < num_goals; i++) {
+  //    geometry_msgs::Pose p_fin;
+  //    geometry_msgs::Twist v_fin, a_fin, j_fin;
 
-      MPL::Waypoint3D pt_f = planner_->evaluate(dt * static_cast<double>(i));
-      // check if evaluation is successful, if not, set result.success to be
-      // false! (if failure case, a null Waypoint is returned)
-      if ((pt_f.pos(0) == 0) && (pt_f.pos(1) == 0) && (pt_f.pos(2) == 0) &&
-          (pt_f.vel(0) == 0) && (pt_f.vel(1) == 0) && (pt_f.vel(2) == 0)) {
-        result.success = 0;
-        ROS_WARN_STREAM(
-            "waypoint evaluation failed, set result.success to be false");
-        ROS_WARN_STREAM("trajectory total time:" << traj_total_time_);
-        ROS_WARN_STREAM("evaluating at:" << dt * static_cast<double>(i));
-      }
+  //   MPL::Waypoint3D pt_f = planner_->evaluate(dt * static_cast<double>(i));
+  //   // check if evaluation is successful, if not, set result.success to be
+  //   // false! (if failure case, a null Waypoint is returned)
+  //   if ((pt_f.pos(0) == 0) && (pt_f.pos(1) == 0) && (pt_f.pos(2) == 0) &&
+  //       (pt_f.vel(0) == 0) && (pt_f.vel(1) == 0) && (pt_f.vel(2) == 0)) {
+  //     result.success = 0;
+  //     ROS_WARN_STREAM(
+  //         "waypoint evaluation failed, set result.success to be false");
+  //     ROS_WARN_STREAM("trajectory total time:" << traj_total_time_);
+  //     ROS_WARN_STREAM("evaluating at:" << dt * static_cast<double>(i));
+  //   }
 
-      p_fin.position.x = pt_f.pos(0), p_fin.position.y = pt_f.pos(1),
-      p_fin.position.z = pt_f.pos(2);
-      p_fin.orientation.w = 1, p_fin.orientation.z = 0;
-      v_fin.linear.x = pt_f.vel(0), v_fin.linear.y = pt_f.vel(1),
-      v_fin.linear.z = pt_f.vel(2);
-      v_fin.angular.z = 0;
-      a_fin.linear.x = pt_f.acc(0), a_fin.linear.y = pt_f.acc(1),
-      a_fin.linear.z = pt_f.acc(2);
-      a_fin.angular.z = 0;
-      result.p_stop.push_back(p_fin);
-      result.v_stop.push_back(v_fin);
-      result.a_stop.push_back(a_fin);
-      result.j_stop.push_back(j_fin);  // TODO!!! j_fin never assigned
-    }
-    // ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
-    MPL::Waypoint3D pt = planner_->evaluate(traj_total_time_);
-    result.tracking_error = tracking_error;
-    result.odom_pts = odom_pts;
-    result.traj_end.position.x = pt.pos(0);
-    result.traj_end.position.y = pt.pos(1);
-    result.traj_end.position.z = pt.pos(2);
-    // record trajectory in result
-    result.success = solved;  // set success status
-    result.policy_status =
-        success_status_;  // using this field for success status
+  //   p_fin.position.x = pt_f.pos(0), p_fin.position.y = pt_f.pos(1),
+  //   p_fin.position.z = pt_f.pos(2);
+  //   p_fin.orientation.w = 1, p_fin.orientation.z = 0;
+  //   v_fin.linear.x = pt_f.vel(0), v_fin.linear.y = pt_f.vel(1),
+  //   v_fin.linear.z = pt_f.vel(2);
+  //   v_fin.angular.z = 0;
+  //   a_fin.linear.x = pt_f.acc(0), a_fin.linear.y = pt_f.acc(1),
+  //   a_fin.linear.z = pt_f.acc(2);
+  //   a_fin.angular.z = 0;
+  //   result.p_stop.push_back(p_fin);
+  //   result.v_stop.push_back(v_fin);
+  //   result.a_stop.push_back(a_fin);
+  //   result.j_stop.push_back(j_fin);  // TODO!!! j_fin never assigned
+  // }
+  // ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
+  // MPL::Waypoint3D pt = planner_->evaluate(traj_total_time_);
+  // result.traj_end.position.x = pt.pos(0);
+  // result.traj_end.position.y = pt.pos(1);
+  // result.traj_end.position.z = pt.pos(2);
 
-    result.traj = traj_msg;
-    result.traj.header.frame_id = frame_id_;
+  result.tracking_error = tracking_error;
+  result.odom_pts = odom_pts;
+  // record trajectory in result
+  result.success = solved;  // set success status
+  result.policy_status =
+      success_status_;  // using this field for success status
 
-    // execution_time (set in replanner)
-    // equals 1.0/local_replan_rate
-    result.execution_time =
-        execution_time;  // execution_time (set in replanner)
-                         // equals 1.0/local_replan_rate
+  result.traj = traj_msg;
+  result.traj.header.frame_id = frame_id_;
 
-    result.epoch = epoch;
-    result.traj_end.orientation.w = 1.0;
-    result.traj_end.orientation.z = 0;
-    result.computation_time = computation_time_;
-    // this is not done until after?
-    result.compute_time_front_end = compute_time_front_end_;
-    result.compute_time_back_end = compute_time_back_end_;
-    if (local_as_->isActive()) {
-      ROS_INFO("Current local plan trial is active & succeeded!");
-      local_as_->setSucceeded(result);
-    } else {
-      ROS_ERROR("Current local plan trial is not active !");
-    }
+  // execution_time (set in replanner)
+  // equals 1.0/local_replan_rate
+  result.execution_time = execution_time;  // execution_time (set in replanner)
+                                           // equals 1.0/local_replan_rate
+
+  result.epoch = epoch;
+  result.traj_end.orientation.w = 1.0;
+  result.traj_end.orientation.z = 0;
+  result.computation_time = computation_time_;
+  // this is not done until after?
+  result.compute_time_front_end = compute_time_front_end_;
+  result.compute_time_back_end = compute_time_back_end_;
+  if (local_as_->isActive()) {
+    ROS_INFO("Current local plan trial is active & succeeded!");
+    local_as_->setSucceeded(result);
+  } else {
+    ROS_ERROR("Current local plan trial is not active !");
   }
 }
 

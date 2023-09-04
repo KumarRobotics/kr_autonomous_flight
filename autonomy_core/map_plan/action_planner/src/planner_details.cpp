@@ -546,8 +546,10 @@ MPL::Waypoint3D SearchPlanner::Dispersion::evaluate(double t) {
   return waypoint;
 }
 
-kr_planning_msgs::SplineTrajectory path_to_spline_traj(
-    kr_planning_msgs::Path path, double velocity) {
+kr_planning_msgs::SplineTrajectory
+path_to_spline_traj(  // this function needs float
+    kr_planning_msgs::Path path,
+    float velocity) {
   float total_dist = 0.0;
   for (int seg_num = 0; seg_num < path.waypoints.size() - 1; seg_num++) {
     Eigen::Vector3f pt1(path.waypoints.at(seg_num + 1).x,
@@ -639,7 +641,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Geometric::plan(
 
     double velocity;
     nh_.param("max_v", velocity, 2.0);
-    spline_traj_ = path_to_spline_traj(path, velocity);
+    spline_traj_ = path_to_spline_traj(path, static_cast<float>(velocity));
     spline_traj_.header.frame_id = frame_id_;
     spline_traj_.header.stamp = ros::Time::now();
     traj_total_time_ = spline_traj_.data[0].t_total;

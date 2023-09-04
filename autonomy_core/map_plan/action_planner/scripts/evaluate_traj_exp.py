@@ -340,6 +340,8 @@ class Evaluater:
 
             else:
                 print("Action server failure " + str(i))
+            
+            # input("Press Enter to continue...")
 
         print(self.success)
         print("Traj Time", self.traj_time)
@@ -350,7 +352,7 @@ class Evaluater:
         print("Compute Time Back", self.compute_time_back)
         print("Tracking Error", self.tracking_error)
 
-        print("success rate: " + str(np.sum(self.success)/self.success.size))
+        print("success rate: " + str(np.sum(self.success)/self.success.size)+ " out of " + str(self.success.size))
         print("avg traj time(s): " + str(np.sum(self.traj_time[self.success]) / np.sum(self.success)))
         # print("avg traj cost(time + jerk): " + str(np.sum(self.traj_cost[self.success]) / np.sum(self.success)))
         print("avg traj jerk: " + str(np.sum(self.traj_jerk[self.success]) / np.sum(self.success)))

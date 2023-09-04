@@ -382,7 +382,7 @@ SplineTrajfromDiscrete(  // this method will make beginning and end have an
        traj_idx += (degree_plus1 - 1)) {
     // this is to have 1 repeat point to make sure things connect
     for (int dim = 0; dim < 3; dim++)
-      traj_msg.data[dim].t_total = traj_idx + (degree_plus1 - 1) * dt;
+      traj_msg.data[dim].t_total = (traj_idx + (degree_plus1 - 1)) * dt;
 
     Eigen::MatrixXd pos_mat = Eigen::MatrixXd::Zero(degree_plus1, 3);
 
@@ -404,7 +404,7 @@ SplineTrajfromDiscrete(  // this method will make beginning and end have an
                                     coeff_dim.data() + coeff_dim.size());
       p.coeffs = std_vector;
       p.degree = degree_plus1 - 1;
-      p.dt = dt;
+      p.dt = dt * (degree_plus1 - 1);
       // p.start_index = traj_idx;
       traj_msg.data[dim].segs.push_back(p);
     }

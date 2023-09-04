@@ -96,6 +96,7 @@ class Evaluater:
         # rospy.Subscriber("/local_plan_server/trajectory", SplineTrajectory, self.callback)
         self.num_trials = 30
         self.success = np.zeros(self.num_trials, dtype=bool)
+        self.success_detail = np.zeros(self.num_trials, dtype=int)
         self.traj_time = np.zeros(self.num_trials)
         self.traj_cost = np.zeros(self.num_trials)
         self.traj_jerk = np.zeros(self.num_trials)
@@ -208,7 +209,7 @@ class Evaluater:
                 msg = Bool()
                 msg.data = True
                 self.change_map_pub.publish(msg)
-                #TODO(Laura): actually send map ?
+                rospy.sleep(2.0)
                 # When change_map returns, the map is changed, but becuase delay, wait a little longer
             if not use_odom_bool:
                 pos_msg = PositionCommand() # change position in simulator
@@ -333,6 +334,8 @@ class Evaluater:
             #TODO(Laura) check if the path is collision free and feasible
             if result:
                 self.success[i] = result.success
+                self.success_detail[i] = result.policy_status
+
                 if 0 < result.computation_time:
                     self.traj_compute_time[i] = result.computation_time
                     self.compute_time_front[i] = result.compute_time_front_end
@@ -349,6 +352,7 @@ class Evaluater:
             # input("Press Enter to continue...")
 
         print(self.success)
+        print(self.success_detail)
         print("Traj Time", self.traj_time)
         print("Traj Cost",self.traj_cost)
         print("Jerk", self.traj_jerk)
@@ -356,6 +360,7 @@ class Evaluater:
         print("Compute Time Front", self.compute_time_front)
         print("Compute Time Back", self.compute_time_back)
         print("Tracking Error", self.tracking_error)
+        print("Effort", self.effort)
 
         print("success rate: " + str(np.sum(self.success)/self.success.size)+ " out of " + str(self.success.size))
         print("avg traj time(s): " + str(np.sum(self.traj_time[self.success]) / np.sum(self.success)))

@@ -922,7 +922,10 @@ CompositePlanner::plan_composite(
     const kr_planning_msgs::VoxelMap& map,
     const kr_planning_msgs::VoxelMap& map_no_inflation,
     float* compute_time_front_end,
-    float* compute_time_back_end) {
+    float* compute_time_back_end,
+    int& success_status) {
+  // success status = 0: no success 1: front success 2: poly_gen_success 3: back
+  // success
   auto start_timer = std::chrono::high_resolution_clock::now();
   kr_planning_msgs::SplineTrajectory result =
       search_planner_type_->plan(start, goal, map);
@@ -935,7 +938,11 @@ CompositePlanner::plan_composite(
   *compute_time_front_end = duration.count() / 1000.0;
 
   // if result is empty, then just return an empty SplineTrajectory
-  if (result.data.size() == 0) return empty_result;
+  if (result.data.size() == 0) {
+    success_status = 0;
+    return empty_result;
+  }
+  success_status = 1;
   search_traj_pub_.publish(result);
 
   start_timer = std::chrono::high_resolution_clock::now();
@@ -959,13 +966,15 @@ CompositePlanner::plan_composite(
       ROS_ERROR("[Local Planner]:Corridor generation fails!\n");
       return empty_result;
     }
-
+    success_status = 2;
     opt_planner_type_->hPolys = hPolys;
     opt_planner_type_->allo_ts = allo_ts;
     // now do optimization
     result = opt_planner_type_->plan(start, goal, map_no_inflation);
     result_discretized =
         opt_planner_type_->plan_discrete(start, goal, map_no_inflation);
+    if (result.data.size() != 0 || result_discretized.pos.size() != 0)
+      success_status = 3;
     // TODO:(Yifei) only use no infla for gcopter planner, not dd planner
   }
   end_timer = std::chrono::high_resolution_clock::now();

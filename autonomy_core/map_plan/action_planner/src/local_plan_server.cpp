@@ -164,7 +164,8 @@ void LocalPlanServer::process_goal(
                                           local_map_cleared,
                                           local_no_infla_map_cleared,
                                           &compute_time_front_end_,
-                                          &compute_time_back_end_),
+                                          &compute_time_back_end_,
+                                          success_status_),
                  as_goal.execution_time,
                  as_goal.epoch);
 }
@@ -563,7 +564,8 @@ void LocalPlanServer::process_result(
     result.traj_end.position.z = pt.pos(2);
     // record trajectory in result
     result.success = solved;  // set success status
-    result.policy_status = solved ? 1 : -1;
+    result.policy_status =
+        success_status_;  // using this field for success status
 
     result.traj = traj_msg;
     result.traj.header.frame_id = frame_id_;

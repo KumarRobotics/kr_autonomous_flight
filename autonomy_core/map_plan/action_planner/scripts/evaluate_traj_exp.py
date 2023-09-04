@@ -66,7 +66,8 @@ class Evaluater:
         self.start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10, latch=True)
         self.mav_name     = rospy.get_param("/local_plan_server/mav_name")
         self.map_name     =  rospy.get_param("/local_plan_server/map_name")
-        self.fix_start_end_location = self.map_name
+        self.wait_for_things = rospy.get_param("/local_plan_server/trajectory_planner/use_tracker_client")
+        self.fix_start_end_location = self.map_name == "read_grid_map"
         
         self.map_origin_x = rospy.get_param('/' + self.map_name + "/map/x_origin")
         self.map_origin_y = rospy.get_param('/' + self.map_name + "/map/y_origin")
@@ -231,32 +232,33 @@ class Evaluater:
 
 
                 # self.client_tracker.send_goal(traj_act_msg)# first change tracker goal msg
-                traj_act_msg = LineTrackerGoal()
-                traj_act_msg.x = pos_msg.position.x
-                traj_act_msg.y = pos_msg.position.y
-                traj_act_msg.z = pos_msg.position.z
-                traj_act_msg.yaw = pos_msg.yaw
-                traj_act_msg.v_des = 0.0
-                traj_act_msg.a_des = 0.0
-                traj_act_msg.relative = False
-                traj_act_msg.t_start = rospy.Time.now()
-                traj_act_msg.duration = rospy.Duration(6.0)
-                self.client_line_tracker.send_goal(traj_act_msg)# first change tracker goal msg
-                self.client_line_tracker.send_goal(traj_act_msg)# sometimes don't work so try twice
-                rospy.sleep(2.0)
-                # state = self.client_line_tracker.get_state() # make sure it received it
-                # print(f"After sent goal: Action State: {state}")
-                response = self.transition_tracker('kr_trackers/LineTrackerMinJerk')
-                # self.set_state_pub.publish(pos_msg) #then change state so no error remain
+                if self.wait_for_things:
+                    traj_act_msg = LineTrackerGoal()
+                    traj_act_msg.x = pos_msg.position.x
+                    traj_act_msg.y = pos_msg.position.y
+                    traj_act_msg.z = pos_msg.position.z
+                    traj_act_msg.yaw = pos_msg.yaw
+                    traj_act_msg.v_des = 0.0
+                    traj_act_msg.a_des = 0.0
+                    traj_act_msg.relative = False
+                    traj_act_msg.t_start = rospy.Time.now()
+                    traj_act_msg.duration = rospy.Duration(6.0)
+                    self.client_line_tracker.send_goal(traj_act_msg)# first change tracker goal msg
+                    self.client_line_tracker.send_goal(traj_act_msg)# sometimes don't work so try twice
+                    rospy.sleep(2.0)
+                    # state = self.client_line_tracker.get_state() # make sure it received it
+                    # print(f"After sent goal: Action State: {state}")
+                    response = self.transition_tracker('kr_trackers/LineTrackerMinJerk')
+                    # self.set_state_pub.publish(pos_msg) #then change state so no error remain
 
-                print(response)
+                    print(response)
 
-                self.client_line_tracker.wait_for_result(rospy.Duration.from_sec(15.0)) #flying
-                response = self.client_line_tracker.get_result()
-                if response is not None:
-                    rospy.loginfo("Line Tracker Finished")
-                else:
-                    rospy.logerr("Line Tracker Failed")
+                    self.client_line_tracker.wait_for_result(rospy.Duration.from_sec(15.0)) #flying
+                    response = self.client_line_tracker.get_result()
+                    if response is not None:
+                        rospy.loginfo("Line Tracker Finished")
+                    else:
+                        rospy.logerr("Line Tracker Failed")
 
               
                 # if response.success:
@@ -315,11 +317,14 @@ class Evaluater:
 
             # input("Press Enter to continue...")
             # Waits for the server to finish performing the action.
-            self.client.wait_for_result(rospy.Duration.from_sec(20.0)) 
+            if self.wait_for_things:
+                self.client.wait_for_result(rospy.Duration.from_sec(20.0)) 
+            else:
+                self.client.wait_for_result(rospy.Duration.from_sec(4.0)) 
             # if the use_client flag is true, then this waits for the exuction to finish
-            if multi_front_end:
-                self.client2.wait_for_result(rospy.Duration.from_sec(5.0))
-                self.client3.wait_for_result(rospy.Duration.from_sec(5.0))
+            # if multi_front_end:
+            #     self.client2.wait_for_result(rospy.Duration.from_sec(5.0))
+            #     self.client3.wait_for_result(rospy.Duration.from_sec(5.0))
 
             # stop accumulating the effort
             self.effort[i] = self.effort_temp / self.effort_counter

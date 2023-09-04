@@ -21,6 +21,9 @@
     <arg name="map/y_origin" default="-10.0"/>
     <arg name="map/z_origin" default="0.0"/>
 
+
+    <arg name="map/resolution"  default="0.2"/>  
+
     <!-- use nice to set low priority for mapper -->
     <node pkg="mapper" name="mapper" type="local_global_mapper" output="screen" launch-prefix="$(arg prefix)">
         <remap from="~cloud" to="$(arg cloud)"/>
@@ -45,6 +48,7 @@
         <param name="local/range_y" value="$(arg map/y_size)"/>
         <param name="local/range_z" value="$(arg map/z_size)"/>
 
+        <param name="local/resolution" value="0.2"/>
 
         <!-- <rosparam file="$(find map_plan_launch)/config/mapper.yaml"/> -->
         <rosparam file="$(arg mapper_config)"/>

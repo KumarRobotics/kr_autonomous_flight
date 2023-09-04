@@ -18,7 +18,7 @@
   <arg name="file_map" default="false"/>
 
   <arg name="point_cloud" default="/global_cloud"/>
-  <arg name="map_name" default="structure_map"/>
+  <arg name="map_name" default="param_map"/>
 
 
   <arg name="initial_position/x" default="9.0"/>
@@ -37,6 +37,9 @@
   <arg name="map_x_origin" default="-10.0"/>
   <arg name="map_y_origin" default="-5.0"/>
   <arg name="map_z_origin" default="0.0"/>
+
+  <arg name="map_resolution" default="0.1"/>  <!--be 0.1, 0.25, 0.5-->
+
 
 
   <arg name="mapper_config" default="$(find map_plan_launch)/config/mapper.yaml"/>
@@ -83,7 +86,7 @@
   
   </group>
 
-    <include file="$(find map_plan_launch)/launch/mapper.launch">
+    <!-- <include file="$(find map_plan_launch)/launch/mapper.launch">
         <arg name="odom_frame" value="$(arg world_frame_id)"/>
         <arg name="map_frame" value="$(arg world_frame_id)"/>
         <arg name="mapper_config" value="$(arg mapper_config)"/>
@@ -96,7 +99,9 @@
         <arg name="map/y_origin"   value="$(arg map_y_origin)"/>
         <arg name="map/z_origin"   value="$(arg map_z_origin)"/>
 
-    </include>
+        <arg name="map/resolution" value="$(arg map_resolution)"/>  
+
+    </include> -->
 
     <node pkg="action_planner"  type="local_plan_server"  name="local_plan_server"  output="screen"  respawn="true">
       <rosparam file="$(arg planner_config)"/>
@@ -117,7 +122,7 @@
 
     <!-- 1. Random map -->
     <group if="$(arg random_map)">
-      <node pkg ="param_env" name ="structure_map" type ="structure_map" output = "screen">    
+      <node pkg ="param_env" name ="param_map" type ="structure_map" output = "screen">    
         <!-- this is the map init position, not the odom-->
         <remap from="~global_cloud" to="$(arg point_cloud)"/>
 
@@ -128,8 +133,9 @@
         <param name="map/y_origin"   value="$(arg map_y_origin)"/>
         <param name="map/z_origin"   value="$(arg map_z_origin)"/>
 
-        <param name="map/resolution" value="0.1"/>        
+        <param name="map/resolution"   value="$(arg map_resolution)"/>       
         <param name="map/frame_id"     value="$(arg world_frame_id)" />
+        <param name="map/inflate_radius" value="0.18"/> <!-- 0.3 m-->
 
         <!-- randomly change the map without trigger -->
         <param name="map/auto_change"    value="false"/>
@@ -162,9 +168,9 @@
 
     <!-- file map -->
     <group if="$(arg file_map)">
-      <node pkg ="param_env" name ="read_grid_map" type ="read_grid_map" output = "screen">    
+      <node pkg ="param_env" name ="param_map" type ="read_grid_map" output = "screen">    
         <!-- this is the map init position, not the odom-->
-        <remap from="~global_gridmap" to="$(arg point_cloud)"/>
+        <remap from="~global_cloud" to="$(arg point_cloud)"/>
 
         <param name="map/x_size"     value="$(arg map_size_x)" />
         <param name="map/y_size"     value="$(arg map_size_y)" />
@@ -173,9 +179,9 @@
         <param name="map/y_origin"   value="$(arg map_y_origin)"/>
         <param name="map/z_origin"   value="$(arg map_z_origin)"/>
 
-        <param name="map/resolution"    value="0.1"/>        
+        <param name="map/resolution"    value="$(arg map_resolution)"/>        
         <param name="map/frame_id"      value="$(arg world_frame_id)" />
-        <param name="map/inflate_radius" value="0.2"/> <!-- 0.3 m-->
+        <param name="map/inflate_radius" value="0.18"/> <!-- 0.3 m-->
 
         <!-- randomly change the map without trigger -->
         <param name="map/auto_change"    value="false"/>

@@ -112,7 +112,6 @@
       
       <param name="mav_name" value="$(arg mav_name)"/>
       <param name="map_name" value="$(arg map_name)"/>
-      <param name="use_file_map" value="$(arg file_map)"/> <!-- ToDo (Yifei): Get rid of this, use_the flags in front to infer-->
 
     </node>
 

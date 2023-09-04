@@ -66,15 +66,15 @@ class Evaluater:
         self.start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10, latch=True)
         self.mav_name     = rospy.get_param("/local_plan_server/mav_name")
         self.map_name     =  rospy.get_param("/local_plan_server/map_name")
-        self.fix_start_end_location = rospy.get_param("/local_plan_server/use_file_map")
+        self.fix_start_end_location = self.map_name
         
-        self.map_origin_x = rospy.get_param("/mapper/global/origin_x")
-        self.map_origin_y = rospy.get_param("/mapper/global/origin_y")
-        self.map_origin_z = rospy.get_param("/mapper/global/origin_z")
+        self.map_origin_x = rospy.get_param('/' + self.map_name + "/map/x_origin")
+        self.map_origin_y = rospy.get_param('/' + self.map_name + "/map/y_origin")
+        self.map_origin_z = rospy.get_param('/' + self.map_name + "/map/z_origin")
 
-        self.map_range_x = rospy.get_param("/mapper/global/range_x")
-        self.map_range_y = rospy.get_param("/mapper/global/range_y")
-        self.map_range_z = rospy.get_param("/mapper/global/range_z")
+        self.map_range_x = rospy.get_param('/' + self.map_name + "/map/x_size")
+        self.map_range_y = rospy.get_param('/' + self.map_name + "/map/y_size")
+        self.map_range_z = rospy.get_param('/' + self.map_name + "/map/z_size")
         
         self.set_state_pub      = rospy.Publisher( '/' + self.mav_name + '/set_state', PositionCommand, queue_size=1, latch=False)
         # self.client_tracker = actionlib.SimpleActionClient('/quadrotor/trackers_manager/poly_tracker/PolyTracker', PolyTrackerAction)

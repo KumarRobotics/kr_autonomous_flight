@@ -66,6 +66,7 @@ class Evaluater:
         self.start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10, latch=True)
         self.mav_name     = rospy.get_param("/local_plan_server/mav_name")
         self.map_name     =  rospy.get_param("/local_plan_server/map_name")
+        self.fix_start_end_location = rospy.get_param("/local_plan_server/use_file_map")
         
         self.map_origin_x = rospy.get_param("/mapper/global/origin_x")
         self.map_origin_y = rospy.get_param("/mapper/global/origin_y")
@@ -92,7 +93,7 @@ class Evaluater:
         rospy.logwarn("Change topic name of OutputData on real quadrotor")
 
         # rospy.Subscriber("/local_plan_server/trajectory", SplineTrajectory, self.callback)
-        self.num_trials = 10
+        self.num_trials = 30
         self.success = np.zeros(self.num_trials, dtype=bool)
         self.traj_time = np.zeros(self.num_trials)
         self.traj_cost = np.zeros(self.num_trials)
@@ -120,7 +121,7 @@ class Evaluater:
         
             rand_start_x = random.uniform(self.map_origin_x, self.map_range_x + self.map_origin_x)
             rand_start_y = random.uniform(self.map_origin_y, self.map_range_y + self.map_origin_y)
-            rand_start_z = random.uniform(self.map_origin_z, self.map_range_z + self.map_origin_z)
+            rand_start_z = random.uniform(self.map_origin_z + 0.2, self.map_range_z + self.map_origin_z - 0.2)
 
             rand_goal_x = random.uniform(self.map_origin_x, self.map_range_x + self.map_origin_x)
             rand_goal_y = random.uniform(self.map_origin_y, self.map_range_y + self.map_origin_y)
@@ -132,9 +133,12 @@ class Evaluater:
 
             curr_sample_idx += 1
             dis = np.linalg.norm(start - goal)
-            if dis < 0.8 * self.map_range_x or dis > 0.5 * (self.map_range_x + self.map_range_y):
+            if dis > 0.8 * self.map_range_x: 
+                break
                 #print("start and goal are too close! Skipping...")
-                continue
+                # continue
+        if curr_sample_idx == 100:
+            rospy.logerr("Failed to sample a start and goal pair far enough apart, consider changing the map size")
 
         return start, goal
 
@@ -210,8 +214,11 @@ class Evaluater:
                 pos_msg.header.frame_id = "map"
                 pos_msg.header.stamp = rospy.Time.now()
 
-
-                start, end = self.sample_in_map()
+                if self.fix_start_end_location:
+                    start = np.array([-9.5, -4, 1.0])
+                    end = np.array([9.5, 4, 1.0])
+                else:
+                    start, end = self.sample_in_map()
 
                 pos_msg.position.x = start[0]
                 pos_msg.position.y = start[1]
@@ -235,7 +242,8 @@ class Evaluater:
                 traj_act_msg.t_start = rospy.Time.now()
                 traj_act_msg.duration = rospy.Duration(6.0)
                 self.client_line_tracker.send_goal(traj_act_msg)# first change tracker goal msg
-                rospy.sleep(0.5)
+                self.client_line_tracker.send_goal(traj_act_msg)# sometimes don't work so try twice
+                rospy.sleep(2.0)
                 # state = self.client_line_tracker.get_state() # make sure it received it
                 # print(f"After sent goal: Action State: {state}")
                 response = self.transition_tracker('kr_trackers/LineTrackerMinJerk')
@@ -332,6 +340,8 @@ class Evaluater:
 
             else:
                 print("Action server failure " + str(i))
+            
+            # input("Press Enter to continue...")
 
         print(self.success)
         print("Traj Time", self.traj_time)
@@ -342,7 +352,7 @@ class Evaluater:
         print("Compute Time Back", self.compute_time_back)
         print("Tracking Error", self.tracking_error)
 
-        print("success rate: " + str(np.sum(self.success)/self.success.size))
+        print("success rate: " + str(np.sum(self.success)/self.success.size)+ " out of " + str(self.success.size))
         print("avg traj time(s): " + str(np.sum(self.traj_time[self.success]) / np.sum(self.success)))
         # print("avg traj cost(time + jerk): " + str(np.sum(self.traj_cost[self.success]) / np.sum(self.success)))
         print("avg traj jerk: " + str(np.sum(self.traj_jerk[self.success]) / np.sum(self.success)))

@@ -21,6 +21,8 @@ motion_primitives/
 kr_planning_msgs/
 external/
 kr_param_map/
+map_generator/
+motion_capture_system/
 #===========
 # C++
 # ===========

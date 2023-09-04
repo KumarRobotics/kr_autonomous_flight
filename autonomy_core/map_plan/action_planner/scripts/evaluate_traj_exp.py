@@ -15,7 +15,8 @@ from kr_tracker_msgs.srv import Transition
 from nav_msgs.msg import Odometry
 import random 
 import actionlib
-from std_msgs.msg import Bool
+# from std_msgs.msg import Bool
+from std_msgs.msg import Int32
 
 
 poly_service_name = "/quadrotor/mav_services/poly_tracker"
@@ -80,7 +81,7 @@ class Evaluater:
         self.set_state_pub      = rospy.Publisher( '/' + self.mav_name + '/set_state', PositionCommand, queue_size=1, latch=False)
         # self.client_tracker = actionlib.SimpleActionClient('/quadrotor/trackers_manager/poly_tracker/PolyTracker', PolyTrackerAction)
         self.client_line_tracker = actionlib.SimpleActionClient('/' + self.mav_name + '/trackers_manager/line_tracker_min_jerk/LineTracker', LineTrackerAction)
-        self.change_map_pub     = rospy.Publisher('/' + self.map_name + '/change_map', Bool, queue_size=1)
+        self.change_map_pub     = rospy.Publisher('/' + self.map_name + '/change_map', Int32, queue_size=1)
 
         print("waiting for tracker trigger service")
         rospy.wait_for_service(poly_service_name)
@@ -206,8 +207,8 @@ class Evaluater:
                 break
             if (i > 0):
  
-                msg = Bool()
-                msg.data = True
+                msg = Int32()
+                msg.data = i
                 self.change_map_pub.publish(msg)
                 rospy.sleep(2.0)
                 # When change_map returns, the map is changed, but becuase delay, wait a little longer
@@ -334,6 +335,7 @@ class Evaluater:
             #TODO(Laura) check if the path is collision free and feasible
             if result:
                 self.success[i] = result.success
+                print("Solve Status:", result.policy_status)
                 self.success_detail[i] = result.policy_status
                 print(result.odom_pts)
                 if result.computation_time > 0:
@@ -348,8 +350,6 @@ class Evaluater:
 
             else:
                 print("Action server failure " + str(i))
-            
-            # input("Press Enter to continue...")
 
         print(self.success)
         print(self.success_detail)
@@ -362,6 +362,7 @@ class Evaluater:
         print("Tracking Error", self.tracking_error)
         print("Effort", self.effort)
 
+        print("success details: ", self.success_detail)
         print("success rate: " + str(np.sum(self.success)/self.success.size)+ " out of " + str(self.success.size))
         print("avg traj time(s): " + str(np.sum(self.traj_time[self.success]) / np.sum(self.success)))
         # print("avg traj cost(time + jerk): " + str(np.sum(self.traj_cost[self.success]) / np.sum(self.success)))

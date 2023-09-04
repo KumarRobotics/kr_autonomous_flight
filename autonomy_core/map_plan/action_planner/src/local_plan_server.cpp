@@ -1,4 +1,5 @@
 #include <action_planner/local_plan_server.h>
+#include <geometry_msgs/Point.h>
 
 LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   local_map_sub_ =
@@ -488,6 +489,7 @@ void LocalPlanServer::process_result(
 
     // publish the trajectory
     double tracking_error = 0.0;
+    std::vector<geometry_msgs::Point> odom_pts;
     if (use_tracker_client_ == false) {
       // use client to send trajectory
       traj_goal_pub_.publish(traj_act_msg);
@@ -504,6 +506,7 @@ void LocalPlanServer::process_result(
       kr_tracker_msgs::PolyTrackerResultConstPtr result_ptr =
           traj_goal_ac_->getResult();
       tracking_error = result_ptr->total_tracking_error;
+      odom_pts = result_ptr->odom_history;
       ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
     }
     // ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
@@ -559,6 +562,7 @@ void LocalPlanServer::process_result(
     // ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
     MPL::Waypoint3D pt = planner_->evaluate(traj_total_time_);
     result.tracking_error = tracking_error;
+    result.odom_pts = odom_pts;
     result.traj_end.position.x = pt.pos(0);
     result.traj_end.position.y = pt.pos(1);
     result.traj_end.position.z = pt.pos(2);

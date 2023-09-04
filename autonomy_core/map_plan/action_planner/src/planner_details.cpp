@@ -548,7 +548,7 @@ MPL::Waypoint3D SearchPlanner::Dispersion::evaluate(double t) {
 
 kr_planning_msgs::SplineTrajectory path_to_spline_traj(
     kr_planning_msgs::Path path, double velocity) {
-  double total_dist = 0.0;
+  float total_dist = 0.0;
   for (int seg_num = 0; seg_num < path.waypoints.size() - 1; seg_num++) {
     Eigen::Vector3f pt1(path.waypoints.at(seg_num + 1).x,
                         path.waypoints.at(seg_num + 1).y,
@@ -558,7 +558,7 @@ kr_planning_msgs::SplineTrajectory path_to_spline_traj(
                         path.waypoints.at(seg_num).z);
 
     Eigen::Vector3f vec_between = pt1 - pt0;
-    double distance = vec_between.norm();
+    float distance = vec_between.norm();
     total_dist += distance;
   }
   kr_planning_msgs::SplineTrajectory spline_traj;
@@ -567,7 +567,7 @@ kr_planning_msgs::SplineTrajectory path_to_spline_traj(
     kr_planning_msgs::Spline spline;
     spline_traj.data.push_back(spline);
   }
-  double accumulative_dist = 0.0;
+  float accumulative_dist = 0.0;
   float v0_norm = 0.0;
   for (int seg_num = 0; seg_num < path.waypoints.size() - 1; seg_num++) {
     Eigen::Vector3f pt1(path.waypoints.at(seg_num + 1).x,
@@ -578,22 +578,22 @@ kr_planning_msgs::SplineTrajectory path_to_spline_traj(
                         path.waypoints.at(seg_num).z);
 
     Eigen::Vector3f vec_between = pt1 - pt0;
-    double distance = vec_between.norm();
+    float distance = vec_between.norm();
 
     // we make distance porpotional to velocity, this will make speed not
     // linearly but still smooth
     accumulative_dist += distance;
 
-    double vf = std::min(std::min(accumulative_dist, velocity),
-                         total_dist - accumulative_dist);  // total velocity
-    double t_seg = distance * 2 / (vf + v0_norm);          // triangle integrate
+    float vf = std::min(std::min(accumulative_dist, velocity),
+                        total_dist - accumulative_dist);  // total velocity
+    float t_seg = distance * 2 / (vf + v0_norm);          // triangle integrate
 
-    std::cout << "total dist :" << accumulative_dist << " vf: " << vf
-              << " v0: " << v0_norm << " t_seg: " << t_seg << std::endl;
+    // std::cout << "total dist :" << accumulative_dist << " vf: " << vf
+    //           << " v0: " << v0_norm << " t_seg: " << t_seg << std::endl;
 
     for (int dim = 0; dim < 3; dim++) {
-      double v0_dim = vec_between(dim) / distance * v0_norm;
-      double vf_dim = vec_between(dim) / distance * vf;
+      float v0_dim = vec_between(dim) / distance * v0_norm;
+      float vf_dim = vec_between(dim) / distance * vf;
       kr_planning_msgs::Polynomial seg;
       seg.degree = 5;  // Chosen a little arbitrarily
       seg.dt = t_seg;

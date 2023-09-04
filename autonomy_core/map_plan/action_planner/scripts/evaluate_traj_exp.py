@@ -335,8 +335,8 @@ class Evaluater:
             if result:
                 self.success[i] = result.success
                 self.success_detail[i] = result.policy_status
-
-                if 0 < result.computation_time:
+                print(result.odom_pts)
+                if result.computation_time > 0:
                     self.traj_compute_time[i] = result.computation_time
                     self.compute_time_front[i] = result.compute_time_front_end
                     self.compute_time_back[i] = result.compute_time_back_end

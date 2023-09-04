@@ -2,6 +2,7 @@
 #include <action_planner/planner_details.h>
 #include <kr_planning_rviz_plugins/spline_trajectory_visual.h>
 
+#include <iostream>
 //
 // Double Descrisption Planner
 //
@@ -547,13 +548,7 @@ MPL::Waypoint3D SearchPlanner::Dispersion::evaluate(double t) {
 
 kr_planning_msgs::SplineTrajectory path_to_spline_traj(
     kr_planning_msgs::Path path, double velocity) {
-  kr_planning_msgs::SplineTrajectory spline_traj;
-  spline_traj.dimensions = 3;
-  for (int i = 0; i < 3; i++) {
-    kr_planning_msgs::Spline spline;
-    spline_traj.data.push_back(spline);
-  }
-
+  double total_dist = 0.0;
   for (int seg_num = 0; seg_num < path.waypoints.size() - 1; seg_num++) {
     Eigen::Vector3f pt1(path.waypoints.at(seg_num + 1).x,
                         path.waypoints.at(seg_num + 1).y,
@@ -564,19 +559,54 @@ kr_planning_msgs::SplineTrajectory path_to_spline_traj(
 
     Eigen::Vector3f vec_between = pt1 - pt0;
     double distance = vec_between.norm();
+    total_dist += distance;
+  }
+  kr_planning_msgs::SplineTrajectory spline_traj;
+  spline_traj.dimensions = 3;
+  for (int i = 0; i < 3; i++) {
+    kr_planning_msgs::Spline spline;
+    spline_traj.data.push_back(spline);
+  }
+  double accumulative_dist = 0.0;
+  float v0_norm = 0.0;
+  for (int seg_num = 0; seg_num < path.waypoints.size() - 1; seg_num++) {
+    Eigen::Vector3f pt1(path.waypoints.at(seg_num + 1).x,
+                        path.waypoints.at(seg_num + 1).y,
+                        path.waypoints.at(seg_num + 1).z);
+    Eigen::Vector3f pt0(path.waypoints.at(seg_num).x,
+                        path.waypoints.at(seg_num).y,
+                        path.waypoints.at(seg_num).z);
+
+    Eigen::Vector3f vec_between = pt1 - pt0;
+    double distance = vec_between.norm();
+
+    // we make distance porpotional to velocity, this will make speed not
+    // linearly but still smooth
+    accumulative_dist += distance;
+
+    double vf = std::min(std::min(accumulative_dist, velocity),
+                         total_dist - accumulative_dist);  // total velocity
+    double t_seg = distance * 2 / (vf + v0_norm);          // triangle integrate
+
+    std::cout << "total dist :" << accumulative_dist << " vf: " << vf
+              << " v0: " << v0_norm << " t_seg: " << t_seg << std::endl;
+
     for (int dim = 0; dim < 3; dim++) {
+      double v0_dim = vec_between(dim) / distance * v0_norm;
+      double vf_dim = vec_between(dim) / distance * vf;
       kr_planning_msgs::Polynomial seg;
       seg.degree = 5;  // Chosen a little arbitrarily
-      seg.dt = distance / velocity;
-      // TODO(Laura) Replace with e.g. trapezoidal velocity profile instead of
-      // constant velocity
-      seg.coeffs = {pt0(dim), vec_between(dim), 0, 0, 0, 0};
+      seg.dt = t_seg;
+
+      seg.coeffs = {
+          pt0(dim), v0_dim * t_seg, 0.5 * (vf_dim - v0_dim) * t_seg, 0, 0, 0};
+
       spline_traj.data.at(dim).segments++;
       spline_traj.data.at(dim).segs.push_back(seg);
       spline_traj.data.at(dim).t_total += seg.dt;
     }
+    v0_norm = vf;
   }
-
   return spline_traj;
 }
 

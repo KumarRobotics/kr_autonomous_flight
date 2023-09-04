@@ -13,12 +13,9 @@
 
 
   <!-- Map related stuff -->
-  <arg name="random_map" default="false"/>
   <arg name="vicon_map" default="false"/>
-  <arg name="file_map" default="true"/>
-
   <arg name="point_cloud" default="/global_cloud"/>
-  <arg name="map_name" default="param_map"/>
+  <arg name="map_name" default="structure_map"/>   <!-- read_grid_map or structure_map -->
 
 
   <arg name="initial_position/x" default="9.0"/>
@@ -38,7 +35,7 @@
   <arg name="map_y_origin" default="-5.0"/>
   <arg name="map_z_origin" default="0.0"/>
 
-  <arg name="map_resolution" default="0.1"/>  <!--be 0.1, 0.25, 0.5-->
+  <arg name="map_resolution" default="0.1"/>  <!--be 0.1, 0.2, 0.25, 0.5-->
 
 
 
@@ -122,91 +119,77 @@
     <!-- Map Settings -->
 
     <!-- 1. Random map -->
-    <group if="$(arg random_map)">
-      <node pkg ="param_env" name ="param_map" type ="structure_map" output = "screen">    
-        <!-- this is the map init position, not the odom-->
-        <remap from="~global_cloud" to="$(arg point_cloud)"/>
 
-        <param name="map/x_size"     value="$(arg map_size_x)" />
-        <param name="map/y_size"     value="$(arg map_size_y)" />
-        <param name="map/z_size"     value="$(arg map_size_z)" />
-        <param name="map/x_origin"   value="$(arg map_x_origin)"/>
-        <param name="map/y_origin"   value="$(arg map_y_origin)"/>
-        <param name="map/z_origin"   value="$(arg map_z_origin)"/>
+    <node pkg ="param_env" name ="$(arg map_name)" type ="$(arg map_name)" output = "screen">    
+      <!-- this is the map init position, not the odom-->
+      <remap from="~global_cloud" to="$(arg point_cloud)"/>
 
-        <param name="map/resolution"   value="$(arg map_resolution)"/>       
-        <param name="map/frame_id"     value="$(arg world_frame_id)" />
-        <param name="map/inflate_radius" value="0.18"/> <!-- 0.3 m-->
+      <param name="map/x_size"     value="$(arg map_size_x)" />
+      <param name="map/y_size"     value="$(arg map_size_y)" />
+      <param name="map/z_size"     value="$(arg map_size_z)" />
+      <param name="map/x_origin"   value="$(arg map_x_origin)"/>
+      <param name="map/y_origin"   value="$(arg map_y_origin)"/>
+      <param name="map/z_origin"   value="$(arg map_z_origin)"/>
 
-        <!-- randomly change the map without trigger -->
-        <param name="map/auto_change"    value="false"/>
+      <param name="map/resolution"   value="$(arg map_resolution)"/>       
+      <param name="map/frame_id"     value="$(arg world_frame_id)" />
+      <param name="map/inflate_radius" value="0.18"/> <!-- 0.3 m-->
 
-        <!-- total obstacle ratios -->
-        <param name="params/cylinder_ratio" value="0.02" type="double"/>
-        <param name="params/circle_ratio"   value="0.02" type="double"/>
-        <param name="params/gate_ratio"     value="0.02" type="double"/>
-        <param name="params/ellip_ratio"    value="0.02" type="double"/>
-        <param name="params/poly_ratio"     value="0.02" type="double"/>
+      <!-- randomly change the map without trigger -->
+      <param name="map/auto_change"    value="false"/>
 
-        <param name="params/w1" value="0.1"/>
-        <param name="params/w2" value="0.6"/>          
-        <param name="params/w3" value="1.0"/>
-        <param name="params/w4" value="1.8"/>
-        
-        <!-- add gaussion noise with param/w1 range on it -->
-        <param name="params/add_noise" value="false"/>
-        <param name="params/seed" value="35.8"/>
 
-        <!-- to generate map dataset in this folder -->
-        <param name="dataset/save_map"    value="true"/>
-        <param name="dataset/samples_num" value="100"/>
-        <param name="dataset/start_index" value="5080900"/>
-        <param name="dataset/path"        value="$(find param_env)/dataset/"/>
+      <!-- params for random_map -->
+      <!-- params for random_map -->
 
-      </node>
 
-    </group>
+      <!-- total obstacle ratios -->
+      <param name="params/cylinder_ratio" value="0.02" type="double"/>
+      <param name="params/circle_ratio"   value="0.02" type="double"/>
+      <param name="params/gate_ratio"     value="0.02" type="double"/>
+      <param name="params/ellip_ratio"    value="0.02" type="double"/>
+      <param name="params/poly_ratio"     value="0.02" type="double"/>
 
-    <!-- file map -->
-    <group if="$(arg file_map)">
-      <node pkg ="param_env" name ="param_map" type ="read_grid_map" output = "screen">    
-        <!-- this is the map init position, not the odom-->
-        <remap from="~global_cloud" to="$(arg point_cloud)"/>
+      <param name="params/w1" value="0.1"/>
+      <param name="params/w2" value="0.6"/>          
+      <param name="params/w3" value="1.0"/>
+      <param name="params/w4" value="1.8"/>
+      
+      <!-- add gaussion noise with param/w1 range on it -->
+      <param name="params/add_noise" value="false"/>
+      <param name="params/seed" value="35.8"/>
 
-        <param name="map/x_size"     value="$(arg map_size_x)" />
-        <param name="map/y_size"     value="$(arg map_size_y)" />
-        <param name="map/z_size"     value="$(arg map_size_z)" />
-        <param name="map/x_origin"   value="$(arg map_x_origin)"/>
-        <param name="map/y_origin"   value="$(arg map_y_origin)"/>
-        <param name="map/z_origin"   value="$(arg map_z_origin)"/>
+      <!-- to generate map dataset in this folder -->
+      <param name="dataset/save_map"    value="true"/>
+      <param name="dataset/samples_num" value="100"/>
+      <param name="dataset/start_index" value="5080900"/>
+      <param name="dataset/path"        value="$(find param_env)/dataset/"/>
+      <!-- params for random_map -->
 
-        <param name="map/resolution"    value="$(arg map_resolution)"/>        
-        <param name="map/frame_id"      value="$(arg world_frame_id)" />
-        <param name="map/inflate_radius" value="0.18"/> <!-- 0.3 m-->
 
-        <!-- randomly change the map without trigger -->
-        <param name="map/auto_change"    value="false"/>
 
-        <!-- another topic to publish point with inflation-->
-        <param name="map/publish_grid_centers"  value="true"/>
+      <!-- params for read map -->
+      <!-- params for read map -->
 
-        <!-- map mode  ToDo:(Yifei) just use another mode for if reading image or folder
-              0 randomly generate
-              1 read the image
-              2 read the ros bag poind cloud 1
-              3 read the ros bag poind cloud 2
-              4 read pcd file -->
-        <param name="map/mode"       value="1" /> 
+      <!-- another topic to publish point with inflation-->
+      <param name="map/publish_grid_centers"  value="true"/>
 
-        <param name="folder_path" value="$(find param_env)/data/img/maze/"/>
-        <param name="use_folder"  value="true"/>
+      <!-- map mode  ToDo:(Yifei) just use another mode for if reading image or folder
+            0 randomly generate
+            1 read the image
+            2 read the ros bag poind cloud 1
+            3 read the ros bag poind cloud 2
+            4 read pcd file -->
+      <param name="map/mode"       value="1" /> 
 
-        <!-- mode 1 eg -->
-        <param name="file_path" value="$(find param_env)/data/img/maze/maze8.png"/>
-        <param name="img/occ_th" value="0.6"/>
+      <param name="folder_path" value="$(find param_env)/data/img/maze/"/>
+      <param name="use_folder"  value="true"/>
 
-      </node>
-    </group>
+      <!-- mode 1 eg -->
+      <param name="file_path" value="$(find param_env)/data/img/maze/maze8.png"/>
+      <param name="img/occ_th" value="0.6"/>
+
+    </node>
 
 
     <!-- vicon map generator -->

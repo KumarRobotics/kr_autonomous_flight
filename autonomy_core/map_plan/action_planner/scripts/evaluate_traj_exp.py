@@ -201,9 +201,10 @@ class Evaluater:
         self.start_and_goal_pub.publish(start_and_goal) # viz
     def publisher(self):
 
-        print("waiting for action server")
         for  i in range(self.num_planners):
             self.client_list[i].wait_for_server()
+            print("waiting for action server ", i)
+        print("All action server connected", i)
 
         for i in tqdm(range(self.num_trials)):
             if rospy.is_shutdown():
@@ -258,23 +259,23 @@ class Evaluater:
                     while True:
                         rospy.sleep(0.1)
                         state = self.client_line_tracker.get_state()
-                        rospy.loginfo_throttle(f"Waiting for line tracker goal. Current State: {state}")
                         if state == 1:
-                            rospy.loginfo("Line Tracker Goal Received")
+                            tqdm.write("Line Tracker Goal Received")
                             break
+                        rospy.loginfo_throttle(0.5,f"Waiting for line tracker goal. Current State: {state}")
                     # state = self.client_line_tracker.get_state() # make sure it received it
                     # print(f"After sent goal: Action State: {state}")
                     response = self.transition_tracker('kr_trackers/LineTrackerMinJerk')
                     # self.set_state_pub.publish(pos_msg) #then change state so no error remain
 
-                    print(response)
+                    tqdm.write(response.message)
 
                     self.client_line_tracker.wait_for_result(rospy.Duration.from_sec(line_tracker_flight_time + 3.0)) #flying
                     response = self.client_line_tracker.get_result()
                     if response is not None:
-                        rospy.loginfo("Line Tracker Finished")
+                        tqdm.write("Line Tracker Finished")
                     else:
-                        rospy.logerr("Line Tracker Failed")
+                        tqdm.write("Line Tracker Failed!!!!!!!!!!!!!")
 
 
                 ##### SET GOAL #####
@@ -313,6 +314,7 @@ class Evaluater:
                     # print(result.odom_pts) #@Yuwei: this should work, try this out! 
                     # Odom is also returned in result.odom_pts
                     if result.computation_time > 0:
+                        # rospy.loginfo(result.odom_pts)
                         self.traj_compute_time[i,client_idx] = result.computation_time
                         self.compute_time_front[i,client_idx] = result.compute_time_front_end
                         self.compute_time_back[i,client_idx] = result.compute_time_back_end

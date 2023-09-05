@@ -20,6 +20,11 @@ from std_msgs.msg import Int32
 from tqdm import tqdm
 import pickle
 
+import pcl
+import sensor_msgs.point_cloud2 as pc2
+from sensor_msgs.msg import PointCloud2
+#sudo apt install python3-pcl
+
 
 poly_service_name = "/quadrotor/mav_services/poly_tracker"
 line_service_name = "/quadrotor/trackers_manager/transition"
@@ -72,9 +77,14 @@ class Evaluater:
         # self.client3 = SimpleActionClient('/local_plan_server3/plan_local_trajectory', PlanTwoPointAction)
 
         self.start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10, latch=True)
-        self.mav_name     = rospy.get_param("/local_plan_server0/mav_name")
-        self.map_name     =  rospy.get_param("/local_plan_server0/map_name")
-        self.wait_for_things = rospy.get_param("/local_plan_server0/trajectory_planner/use_tracker_client")
+
+
+        self.mav_name    = rospy.get_param('/local_plan_server' + str(i) + '/mav_name')
+        self.map_name    = rospy.get_param('/local_plan_server' + str(i) + '/map_name')
+        self.mav_radius  = rospy.get_param('/local_plan_server' + str(i) + '/mav_radius')
+
+
+        self.wait_for_things = rospy.get_param('/local_plan_server' + str(i) +  '/trajectory_planner/use_tracker_client')
         self.fix_start_end_location = self.map_name == "read_grid_map"
         
         self.map_origin_x = rospy.get_param('/' + self.map_name + "/map/x_origin")
@@ -95,10 +105,10 @@ class Evaluater:
         # self.poly_trigger = rospy.ServiceProxy(poly_service_name, Trigger)
         self.transition_tracker = rospy.ServiceProxy(line_service_name, Transition)
         rospy.Subscriber('/' + self.mav_name + "/odom", Odometry, self.odom_callback)
-        rospy.Subscriber("/mapper/local_voxel_map", VoxelMap, self.point_clouds_callback)
+        rospy.Subscriber("global_cloud", PointCloud2, self.point_clouds_callback)
         self.effort_temp = 0.0 # these need to be defined before the callback
         self.effort_counter = 0
-        rospy.Subscriber("/quadrotor/quadrotor_simulator_so3/output_data", OutputData, self.sim_output_callback)
+        rospy.Subscriber('/' + self.mav_name + "/quadrotor_simulator_so3/output_data", OutputData, self.sim_output_callback)
         rospy.logwarn("Change topic name of OutputData on real quadrotor")
 
         # rospy.Subscriber("/local_plan_server0/trajectory", SplineTrajectory, self.callback)
@@ -114,7 +124,10 @@ class Evaluater:
         self.tracking_error = np.zeros((self.num_trials, self.num_planners))
         self.effort = np.zeros((self.num_trials, self.num_planners)) #unit in rpm
         self.rho = 50  # TODO(Laura) pull from param or somewhere
+        self.collision_cnt = np.zeros((self.num_trials, self.num_planners), dtype=bool)
     
+        self.kdtree = None
+
         self.publisher()
 
 
@@ -159,8 +172,54 @@ class Evaluater:
 
     def point_clouds_callback(self, msg):
 
+        points_list = []
+
+        for data in pc2.read_points(msg, skip_nans=True):
+            points_list.append([data[0], data[1], data[2]])
+
+        pcl_data = pcl.PointCloud(np.array(points_list, dtype=np.float32))
+
+
+        self.kdtree = pcl_data.make_kdtree_flann()
 
         return
+    
+
+    def is_point_collided(self, search_point):
+ 
+        #search_point = pcl.PointXYZ(pt[0], pt[1], pt[2]) 
+
+        if self.kdtree != None:
+
+            # Perform a radius search
+            [ind, sqdist] = self.kdtree.nearest_k_search_for_cloud(search_point, 1)
+
+            for i in range(0, ind.size):
+
+                if sqdist[0][i] < self.mav_radius:
+                  return True
+
+        return False
+    
+
+    def evaluate_collision(self, pts):
+
+        #size = len(pts)
+
+        for pt in pts:
+        
+            sp = pcl.PointCloud()
+            sps = np.zeros((1, 3), dtype=np.float32)
+            sps[0][0] = pt.x
+            sps[0][1] = pt.y
+            sps[0][2] = pt.z
+            sp.from_array(sps)
+
+            if self.is_point_collided(sp):
+                return True
+            
+        return False
+            
 
     def computeJerk(self, traj):
         # creae empty array for time
@@ -319,10 +378,12 @@ class Evaluater:
                         self.compute_time_front[i,client_idx] = result.compute_time_front_end
                         self.compute_time_back[i,client_idx] = result.compute_time_back_end
                         self.tracking_error[i,client_idx] = result.tracking_error
+                        
                     if result.success:
                         self.traj_time[i,client_idx] = result.traj.data[0].t_total
                         # self.traj_cost[i,client_idx] = self.computeCost(result.traj, self.rho)
                         self.traj_jerk[i,client_idx] = self.computeJerk(result.traj)
+                        self.collision_cnt[i,client_idx] = self.evaluate_collision(result.odom_pts)
 
                 else:
                     print("Action server failure trial" + str(i), "client" + str(client_idx))
@@ -340,6 +401,7 @@ class Evaluater:
         print("Compute Time Back", self.compute_time_back)
         print("Tracking Error", self.tracking_error)
         print("Effort", self.effort)
+        print("Is Collide", self.collision_cnt)
 
         #save pickle with all the data, use date time as name
         with open('ECI_eval_data_'+str(rospy.get_time())+'.pkl', 'wb') as f:

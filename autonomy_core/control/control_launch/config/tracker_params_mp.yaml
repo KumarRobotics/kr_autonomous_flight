@@ -27,12 +27,12 @@ trajectory_planner:
   use_3d_local: true # local planner operates in 3D (true) or 2D (false)
   search_planner_type: 0 # 0: MPL, 1: dispersion planner, 2: JPS (geometric) 3: pass through from global planner 4: RRT 5 :SST
   #is being overwriten in the launch file
-  opt_planner_type: 2 # -1: no planner 0: Double Description 1: gcopter 2: iLQR(Altro)
+  opt_planner_type: 1 # -1: no planner 0: Double Description 1: gcopter 2: iLQR(Altro)
   use_discrete_traj: false # set true to use with ilqr, still a lot of tracking er
   use_tracker_client: true # if we wait for tracker to finish before sending next command
   # if we do not care about tracking error and want things to run fast, set this to false
   #TODO(Laura) fix path
-  dispersion/graph_file: "/home/yifei/Documents/optimal_ctrl/500.json"
+  dispersion/graph_file: "/home/wyw/Code/yifei_ws/500.json" # /home/wyw/Code/yifei_ws    /home/yifei/Documents/optimal_ctrl/
 
   use_3d_global: false # global planner operates in 3D (true, in this case use_3d_local has to be set as true) or 2D (false)
   z_cost_factor: 1 # global map z cost factor, this also influences the vertical semi field of view of global planner into 45-degree / z_cost_factor  (cost_along_z = z_cost_factor * cost_along_x_or_y)
@@ -91,3 +91,21 @@ state_machine:
   local_replan_rate: 2.0 # local replan frequency, calling local planner every (1/local_replan_rate) seconds, (float 32)
   global_replan_rate_factor: 3 # global_replan_rate_factor = local replan frequency / global replan frequency, should be an integer and >= 1, (int)
   max_replan_trials: 100 # max allowed trials to re-enter replanner
+
+# gcopter parameters
+MaxVelMag: 3.0
+MaxBdrMag: 2.1
+MinThrust: 2.0
+MaxThrust: 12.0
+DilateRadius: 0.05
+TimeoutRRT: 0.2
+MaxTiltAngle: 1.05
+HorizDrag: 0.70
+VertDrag: 0.80
+ParasDrag: 0.01
+SpeedEps:  0.0001
+WeightT: 20.0
+ChiVec:  [1.0e+4, 1.0e+4, 1.0e+4, 1.0e+4, 1.0e+5]
+SmoothingEps: 1.0e-2
+IntegralIntervs: 16
+RelCostTol: 1.0e-5

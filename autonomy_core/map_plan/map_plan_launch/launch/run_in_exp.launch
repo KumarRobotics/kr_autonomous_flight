@@ -38,65 +38,10 @@
   <arg name="viz" default="true"/>
 
   <arg name="point_cloud" default="/global_cloud"/>
-
-  <!-- Control stuff -->
-  <include file="$(find kr_mav_launch)/launch/example_control.launch">
-    <arg name="nodelet_manager_name" value="$(arg nodelet_manager_name)"/>
-    <arg name="mass" value="$(arg mass)"/>
-    <arg name="mav_name" value="$(arg mav_name)"/>
-    <arg name="mav_type" value="$(arg mav_type)"/>
-    <arg name="odom_topic" value="$(arg odom_topic)"/>
-  </include>
-
-
-  <group ns="$(arg mav_name)">
-
-    <!-- Simulator -->
-    <include file="$(find kr_mav_launch)/launch/sim.launch" if="$(arg sim)">
-      <arg name="mav_name" value="$(arg mav_name)"/>
-      <arg name="mav_type" value="$(arg mav_type)"/>
-      <arg name="mass" value="$(arg mass)"/>
-      <arg name="world_frame_id" value="$(arg world_frame_id)"/>
-      <arg name="initial_position/x" value="$(arg initial_position/x)"/>
-      <arg name="initial_position/y" value="$(arg initial_position/y)"/>
-      <arg name="initial_position/z" value="$(arg initial_position/z)"/>
-      <arg name="color/r" value="$(arg color/r)"/>
-      <arg name="color/g" value="$(arg color/g)"/>
-      <arg name="color/b" value="$(arg color/b)"/>
-      <arg name="color/a" value="$(arg color/a)"/>
-      <arg name="odom_topic" value="$(arg odom_topic)"/>
-    </include>
-
-    <!-- Serial communication for real robot -->
-    <include file="$(find kr_mav_launch)/launch/asctec_comms.launch" unless="$(arg sim)">
-      <arg name="device" value="/dev/ttyUSB0"/>
-      <arg name="slow_baud_rate" value="$(arg slow_baud_rate)"/>
-      <arg name="nodelet_manager_name" value="$(arg nodelet_manager_name)"/>
-    </include>
-  
-  </group>
-
-    <include file="$(find map_plan_launch)/launch/mapper.launch">
-        <arg name="odom_frame" value="$(arg world_frame_id)"/>
-        <arg name="map_frame" value="$(arg world_frame_id)"/>
-        <arg name="mapper_config" value="$(arg mapper_config)"/>
-        <arg name="cloud" value="$(arg point_cloud)"/>
-
-        <arg name="map/x_size"     value="$(arg map_size_x)" />
-        <arg name="map/y_size"     value="$(arg map_size_y)" />
-        <arg name="map/z_size"     value="$(arg map_size_z)" />
-        <arg name="map/x_origin"   value="$(arg map_x_origin)"/>
-        <arg name="map/y_origin"   value="$(arg map_y_origin)"/>
-        <arg name="map/z_origin"   value="$(arg map_z_origin)"/>
-
-    </include>
-
-
     <node pkg="action_planner"  type="local_plan_server"  name="local_plan_server"  output="screen"  respawn="true">
       <rosparam file="$(arg planner_config)"/>
       <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
       <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
-      <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
 
       <remap from="~tracker_cmd"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker/goal"/>
       <remap from="~tracker_client"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker"/>

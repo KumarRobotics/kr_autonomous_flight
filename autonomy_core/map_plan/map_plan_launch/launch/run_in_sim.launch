@@ -1,22 +1,19 @@
 <launch>
+
+  <!-- system related stuff -->
+  <arg name="world_frame_id" default="map"/>
+  <arg name="slow_baud_rate" default="true"/>
+  <arg name="nodelet_manager_name" default="nodelet_manager_control"/>
+  <arg name="viz" default="true"/>
+  <arg name="mapper_config" default="$(find map_plan_launch)/config/mapper.yaml"/>
+  <arg name="planner_config" default="$(find control_launch)/config/tracker_params_mp.yaml"/>
+
+
+  <!-- Mav related stuff -->
   <arg name="mav_name" default="quadrotor"/>
   <arg name="mav_id" default="1"/>
   <arg name="mav_type" default="hummingbird"/>
-  <arg name="world_frame_id" default="map"/>
-  <arg name="sim" default="1"/>
-  <arg name="vicon" default="1"/>
-  <arg name="vicon_fps" default="100"/>
-  <arg name="slow_baud_rate" default="true"/>
-  <arg name="mass" default="0.5"/>
-  <arg name="nodelet_manager_name" default="nodelet_manager_control"/>
   <arg name="odom_topic" default="/$(arg mav_name)/odom"/>
-
-
-  <!-- Map related stuff -->
-  <arg name="vicon_map" default="false"/>
-  <arg name="point_cloud" default="/global_cloud"/>
-  <arg name="map_name" default="read_grid_map"/>   <!-- read_grid_map or structure_map -->
-
 
   <arg name="initial_position/x" default="9.0"/>
   <arg name="initial_position/y" default="4.5"/>
@@ -27,6 +24,18 @@
   <arg name="color/b" default="1.0"/>
   <arg name="color/a" default="0.7"/>
 
+  <arg name="mass"       default="0.5"/> <!--0.5 in sim -->
+  <arg name="grav_acc"   default="9.8"/>
+  <arg name="min_thrust" default="5.0"/>
+  <arg name="max_thrust" default="25.0"/>
+  <arg name="mav_radius" default="0.25"/>
+
+
+  <!-- Map related stuff -->
+  <arg name="vicon_map" default="false"/>
+  <arg name="point_cloud" default="/global_cloud"/>
+  <arg name="map_name" default="read_grid_map"/>   <!-- read_grid_map or structure_map -->
+
   <arg name="map_frame_id" default="map"/>
   <arg name="map_size_x" default="20"/>
   <arg name="map_size_y" default="10"/>
@@ -36,15 +45,6 @@
   <arg name="map_z_origin" default="0.0"/>
 
   <arg name="map_resolution" default="0.1"/>  <!--be 0.1, 0.2, 0.25, 0.5-->
-
-
-
-  <arg name="mapper_config" default="$(find map_plan_launch)/config/mapper.yaml"/>
-  <arg name="planner_config" default="$(find control_launch)/config/tracker_params_mp.yaml"/>
-  <arg name="viz" default="true"/>
-
-
-  
 
   <!-- Control stuff -->
   <include file="$(find kr_mav_launch)/launch/example_control.launch">
@@ -57,9 +57,8 @@
 
 
   <group ns="$(arg mav_name)">
-
     <!-- Simulator -->
-    <include file="$(find kr_mav_launch)/launch/sim.launch" if="$(arg sim)">
+    <include file="$(find kr_mav_launch)/launch/sim.launch">
       <arg name="mav_name" value="$(arg mav_name)"/>
       <arg name="mav_type" value="$(arg mav_type)"/>
       <arg name="mass" value="$(arg mass)"/>
@@ -72,15 +71,9 @@
       <arg name="color/b" value="$(arg color/b)"/>
       <arg name="color/a" value="$(arg color/a)"/>
       <arg name="odom_topic" value="$(arg odom_topic)"/>
-    </include>
+      <arg name="gravity"    value="$(arg grav_acc)"/>
 
-    <!-- Serial communication for real robot -->
-    <include file="$(find kr_mav_launch)/launch/asctec_comms.launch" unless="$(arg sim)">
-      <arg name="device" value="/dev/ttyUSB0"/>
-      <arg name="slow_baud_rate" value="$(arg slow_baud_rate)"/>
-      <arg name="nodelet_manager_name" value="$(arg nodelet_manager_name)"/>
     </include>
-  
   </group>
 
     <!-- <include file="$(find map_plan_launch)/launch/mapper.launch">
@@ -105,7 +98,6 @@
       <rosparam file="$(arg planner_config)"/>
       <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
       <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
-      <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
       <!-- Set your favorite planner here -->
       <param name="trajectory_planner/search_planner_type" value="0"/>
 
@@ -113,8 +105,14 @@
       <remap from="~tracker_client"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker"/>
       <param name="poly_srv_name"  value="/$(arg mav_name)/mav_services/poly_tracker"/>
       
-      <param name="mav_name" value="$(arg mav_name)"/>
-      <param name="map_name" value="$(arg map_name)"/>
+      <param name="mav_name"   value="$(arg mav_name)"/>
+      <param name="map_name"   value="$(arg map_name)"/>
+      <param name="mav_radius" value="$(arg mav_radius)"/>
+
+      <param name="VehicleMass" value="$(arg mass)"/>
+      <param name="GravAcc"     value="$(arg grav_acc)"/>
+      <param name="MinThrust"   value="$(arg min_thrust)"/>
+      <param name="MaxThrust"   value="$(arg max_thrust)"/>
 
     </node>
     
@@ -122,7 +120,8 @@
       <rosparam file="$(arg planner_config)"/>
       <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
       <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
-      <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
+      <remap from="~global_cloud" to="$(arg point_cloud)"/>
+
       <!-- Set your favorite planner here -->
       <param name="trajectory_planner/search_planner_type" value="1"/>
 
@@ -130,8 +129,14 @@
       <remap from="~tracker_client"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker"/>
       <param name="poly_srv_name"  value="/$(arg mav_name)/mav_services/poly_tracker"/>
       
-      <param name="mav_name" value="$(arg mav_name)"/>
-      <param name="map_name" value="$(arg map_name)"/>
+      <param name="mav_name"   value="$(arg mav_name)"/>
+      <param name="map_name"   value="$(arg map_name)"/>
+      <param name="mav_radius" value="$(arg mav_radius)"/>
+
+      <param name="VehicleMass" value="$(arg mass)"/>
+      <param name="GravAcc"     value="$(arg grav_acc)"/>
+      <param name="MinThrust"   value="$(arg min_thrust)"/>
+      <param name="MaxThrust"   value="$(arg max_thrust)"/>
 
     </node>
 
@@ -139,7 +144,8 @@
       <rosparam file="$(arg planner_config)"/>
       <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
       <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
-      <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
+      <remap from="~global_cloud" to="$(arg point_cloud)"/>
+
       <!-- Set your favorite planner here -->
       <param name="trajectory_planner/search_planner_type" value="2"/>
 
@@ -147,8 +153,15 @@
       <remap from="~tracker_client"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker"/>
       <param name="poly_srv_name"  value="/$(arg mav_name)/mav_services/poly_tracker"/>
       
-      <param name="mav_name" value="$(arg mav_name)"/>
-      <param name="map_name" value="$(arg map_name)"/>
+      <param name="mav_name"   value="$(arg mav_name)"/>
+      <param name="map_name"   value="$(arg map_name)"/>
+      <param name="mav_radius" value="$(arg mav_radius)"/>
+
+
+      <param name="VehicleMass" value="$(arg mass)"/>
+      <param name="GravAcc"     value="$(arg grav_acc)"/>
+      <param name="MinThrust"   value="$(arg min_thrust)"/>
+      <param name="MaxThrust"   value="$(arg max_thrust)"/>
 
     </node>
 
@@ -156,7 +169,8 @@
       <rosparam file="$(arg planner_config)"/>
       <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
       <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
-      <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
+      <remap from="~global_cloud" to="$(arg point_cloud)"/>
+
       <!-- Set your favorite planner here -->
       <param name="trajectory_planner/search_planner_type" value="4"/>
 
@@ -164,8 +178,15 @@
       <remap from="~tracker_client"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker"/>
       <param name="poly_srv_name"  value="/$(arg mav_name)/mav_services/poly_tracker"/>
       
-      <param name="mav_name" value="$(arg mav_name)"/>
-      <param name="map_name" value="$(arg map_name)"/>
+      <param name="mav_name"   value="$(arg mav_name)"/>
+      <param name="map_name"   value="$(arg map_name)"/>
+      <param name="mav_radius" value="$(arg mav_radius)"/>
+
+
+      <param name="VehicleMass" value="$(arg mass)"/>
+      <param name="GravAcc"     value="$(arg grav_acc)"/>
+      <param name="MinThrust"   value="$(arg min_thrust)"/>
+      <param name="MaxThrust"   value="$(arg max_thrust)"/>
 
     </node>
 
@@ -173,7 +194,8 @@
       <rosparam file="$(arg planner_config)"/>
       <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
       <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
-      <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
+      <remap from="~global_cloud" to="$(arg point_cloud)"/>
+
       <!-- Set your favorite planner here -->
       <param name="trajectory_planner/search_planner_type" value="5"/>
 
@@ -181,8 +203,15 @@
       <remap from="~tracker_client"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker"/>
       <param name="poly_srv_name"  value="/$(arg mav_name)/mav_services/poly_tracker"/>
       
-      <param name="mav_name" value="$(arg mav_name)"/>
-      <param name="map_name" value="$(arg map_name)"/>
+      <param name="mav_name"   value="$(arg mav_name)"/>
+      <param name="map_name"   value="$(arg map_name)"/>
+      <param name="mav_radius" value="$(arg mav_radius)"/>
+
+
+      <param name="VehicleMass" value="$(arg mass)"/>
+      <param name="GravAcc"     value="$(arg grav_acc)"/>
+      <param name="MinThrust"   value="$(arg min_thrust)"/>
+      <param name="MaxThrust"   value="$(arg max_thrust)"/>
 
     </node>
 

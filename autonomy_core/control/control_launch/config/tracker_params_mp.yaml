@@ -25,7 +25,8 @@ trajectory_planner:
   max_j: 2.0 # x-y-direction maximum jerk, recommended value: for 2-D 3, for 3-D 2
   max_u: 2.0 # x-y-direction control inputs increase / decrease step, must be smaller than max_j, recommended value: for 2-D 3, for 3-D 1, for each axis jerk increment choice is -max_u, 0, max_u
   use_3d_local: true # local planner operates in 3D (true) or 2D (false)
-  search_planner_type: 2 # 0: MPL, 1: dispersion planner, 2: JPS (geometric) 3: pass through from global planner 4: RRT 5 :SST
+  search_planner_type: 0 # 0: MPL, 1: dispersion planner, 2: JPS (geometric) 3: pass through from global planner 4: RRT 5 :SST
+  #is being overwriten in the launch file
   opt_planner_type: 2 # -1: no planner 0: Double Description 1: gcopter 2: iLQR(Altro)
   use_discrete_traj: false # set true to use with ilqr, still a lot of tracking er
   use_tracker_client: false # if we wait for tracker to finish before sending next command
@@ -40,7 +41,7 @@ trajectory_planner:
   max_v_z: 1.5 # z-direction maximum velocity, recommended value: 1.5
   max_a_z: 3.0 # z-direction maximum acceleration, recommended value: 3.0
   max_j_z: 3.0 # z-direction maximum jerk, recommended value: 3.0
-  max_u_z: 3.0 # z-direction control inputs increase / decrease step, must be smaller than max_j, recommended value: 3.0
+  max_u_z: 1.0 # z-direction control inputs increase / decrease step, must be smaller than max_j, recommended value: 3.0
   tol_pos: 1.0 # tolerance of distance for goal region, 0 means no tolerance, -1 means no limitation, recommended value: 3.0 for 2-D and 5.0 for 3-D
   global_goal_tol_vel: 3.0 # tolerance of velocity for goal region, recommended value: 2.0 for 2-D and 3.0 for 3-D
   global_goal_tol_acc: -1 # tolerance of acceleration for goal region, recommended value: -1

@@ -962,7 +962,7 @@ CompositePlanner::plan_composite(
     std::vector<Eigen::MatrixXd> hPolys;
     Eigen::MatrixXd inner_pts;  // (4, N -1)
     Eigen::VectorXd allo_ts;
-    setMap(poly_gen_map_util_, map_no_inflation);
+    setMap(poly_gen_map_util_, map);
     if (!poly_generator_->getSikangConst(
             opt_planner_type_->search_path_, inner_pts, allo_ts, hPolys)) {
       ROS_ERROR("[Local Planner]:Corridor generation fails!\n");
@@ -972,9 +972,9 @@ CompositePlanner::plan_composite(
     opt_planner_type_->hPolys = hPolys;
     opt_planner_type_->allo_ts = allo_ts;
     // now do optimization
-    result = opt_planner_type_->plan(start, goal, map_no_inflation);
+    result = opt_planner_type_->plan(start, goal, map);
     result_discretized =
-        opt_planner_type_->plan_discrete(start, goal, map_no_inflation);
+        opt_planner_type_->plan_discrete(start, goal, map);
     if (result.data.size() != 0 || result_discretized.pos.size() != 0)
       success_status = 3;
     // TODO:(Yifei) only use no infla for gcopter planner, not dd planner

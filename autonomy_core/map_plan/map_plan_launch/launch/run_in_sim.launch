@@ -15,7 +15,7 @@
   <!-- Map related stuff -->
   <arg name="vicon_map" default="false"/>
   <arg name="point_cloud" default="/global_cloud"/>
-  <arg name="map_name" default="structure_map"/>   <!-- read_grid_map or structure_map -->
+  <arg name="map_name" default="read_grid_map"/>   <!-- read_grid_map or structure_map -->
 
 
   <arg name="initial_position/x" default="9.0"/>
@@ -100,11 +100,82 @@
 
     </include> -->
 
-    <node pkg="action_planner"  type="local_plan_server"  name="local_plan_server"  output="screen"  respawn="true">
+    <!-- Planner -->
+    <node pkg="action_planner"  type="local_plan_server"  name="local_plan_server0"  output="screen"  respawn="true">
       <rosparam file="$(arg planner_config)"/>
       <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
       <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
       <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
+      <!-- Set your favorite planner here -->
+      <param name="trajectory_planner/search_planner_type" value="0"/>
+
+      <remap from="~tracker_cmd"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker/goal"/>
+      <remap from="~tracker_client"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker"/>
+      <param name="poly_srv_name"  value="/$(arg mav_name)/mav_services/poly_tracker"/>
+      
+      <param name="mav_name" value="$(arg mav_name)"/>
+      <param name="map_name" value="$(arg map_name)"/>
+
+    </node>
+    
+     <node pkg="action_planner"  type="local_plan_server"  name="local_plan_server1"  output="screen"  respawn="true">
+      <rosparam file="$(arg planner_config)"/>
+      <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
+      <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
+      <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
+      <!-- Set your favorite planner here -->
+      <param name="trajectory_planner/search_planner_type" value="1"/>
+
+      <remap from="~tracker_cmd"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker/goal"/>
+      <remap from="~tracker_client"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker"/>
+      <param name="poly_srv_name"  value="/$(arg mav_name)/mav_services/poly_tracker"/>
+      
+      <param name="mav_name" value="$(arg mav_name)"/>
+      <param name="map_name" value="$(arg map_name)"/>
+
+    </node>
+
+     <node pkg="action_planner"  type="local_plan_server"  name="local_plan_server2"  output="screen"  respawn="true">
+      <rosparam file="$(arg planner_config)"/>
+      <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
+      <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
+      <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
+      <!-- Set your favorite planner here -->
+      <param name="trajectory_planner/search_planner_type" value="2"/>
+
+      <remap from="~tracker_cmd"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker/goal"/>
+      <remap from="~tracker_client"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker"/>
+      <param name="poly_srv_name"  value="/$(arg mav_name)/mav_services/poly_tracker"/>
+      
+      <param name="mav_name" value="$(arg mav_name)"/>
+      <param name="map_name" value="$(arg map_name)"/>
+
+    </node>
+
+     <node pkg="action_planner"  type="local_plan_server"  name="local_plan_server3"  output="screen"  respawn="true">
+      <rosparam file="$(arg planner_config)"/>
+      <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
+      <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
+      <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
+      <!-- Set your favorite planner here -->
+      <param name="trajectory_planner/search_planner_type" value="4"/>
+
+      <remap from="~tracker_cmd"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker/goal"/>
+      <remap from="~tracker_client"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker"/>
+      <param name="poly_srv_name"  value="/$(arg mav_name)/mav_services/poly_tracker"/>
+      
+      <param name="mav_name" value="$(arg mav_name)"/>
+      <param name="map_name" value="$(arg map_name)"/>
+
+    </node>
+
+    <node pkg="action_planner"  type="local_plan_server"  name="local_plan_server4"  output="screen"  respawn="true">
+      <rosparam file="$(arg planner_config)"/>
+      <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
+      <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
+      <rosparam file="$(find gcopter)/config/global_planning.yaml" command="load" />
+      <!-- Set your favorite planner here -->
+      <param name="trajectory_planner/search_planner_type" value="5"/>
 
       <remap from="~tracker_cmd"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker/goal"/>
       <remap from="~tracker_client"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker"/>
@@ -143,16 +214,16 @@
 
 
       <!-- total obstacle ratios -->
-      <param name="params/cylinder_ratio" value="0.02" type="double"/>
-      <param name="params/circle_ratio"   value="0.02" type="double"/>
-      <param name="params/gate_ratio"     value="0.02" type="double"/>
-      <param name="params/ellip_ratio"    value="0.02" type="double"/>
-      <param name="params/poly_ratio"     value="0.02" type="double"/>
+      <param name="params/cylinder_ratio" value="0.001" type="double"/>
+      <param name="params/circle_ratio"   value="0.001" type="double"/>
+      <param name="params/gate_ratio"     value="0.001" type="double"/>
+      <param name="params/ellip_ratio"    value="0.001" type="double"/>
+      <param name="params/poly_ratio"     value="0.001" type="double"/>
 
-      <param name="params/w1" value="0.1"/>
-      <param name="params/w2" value="0.6"/>          
-      <param name="params/w3" value="1.0"/>
-      <param name="params/w4" value="1.8"/>
+      <param name="params/w1" value="0.05"/>
+      <param name="params/w2" value="0.3"/>          
+      <param name="params/w3" value="0.5"/>
+      <param name="params/w4" value="0.6"/>
       
       <!-- add gaussion noise with param/w1 range on it -->
       <param name="params/add_noise" value="false"/>

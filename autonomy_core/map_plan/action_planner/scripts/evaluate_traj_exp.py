@@ -21,9 +21,9 @@ from tqdm import tqdm
 import pickle
 
 import pcl
+#sudo apt install python3-pcl
 import sensor_msgs.point_cloud2 as pc2
 from sensor_msgs.msg import PointCloud2
-#sudo apt install python3-pcl
 
 
 poly_service_name = "/quadrotor/mav_services/poly_tracker"
@@ -79,12 +79,12 @@ class Evaluater:
         self.start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10, latch=True)
 
 
-        self.mav_name    = rospy.get_param('/local_plan_server' + str(i) + '/mav_name')
-        self.map_name    = rospy.get_param('/local_plan_server' + str(i) + '/map_name')
-        self.mav_radius  = rospy.get_param('/local_plan_server' + str(i) + '/mav_radius')
+        self.mav_name    = rospy.get_param('/local_plan_server0/mav_name')
+        self.map_name    = rospy.get_param('/local_plan_server0/map_name')
+        self.mav_radius  = rospy.get_param('/local_plan_server0/mav_radius')
 
 
-        self.wait_for_things = rospy.get_param('/local_plan_server' + str(i) +  '/trajectory_planner/use_tracker_client')
+        self.wait_for_things = rospy.get_param('/local_plan_server0/trajectory_planner/use_tracker_client')
         self.fix_start_end_location = self.map_name == "read_grid_map"
         
         self.map_origin_x = rospy.get_param('/' + self.map_name + "/map/x_origin")
@@ -98,6 +98,8 @@ class Evaluater:
         self.set_state_pub      = rospy.Publisher( '/' + self.mav_name + '/set_state', PositionCommand, queue_size=1, latch=False)
         # self.client_tracker = actionlib.SimpleActionClient('/quadrotor/trackers_manager/poly_tracker/PolyTracker', PolyTrackerAction)
         self.client_line_tracker = actionlib.SimpleActionClient('/' + self.mav_name + '/trackers_manager/line_tracker_min_jerk/LineTracker', LineTrackerAction)
+        rospy.Subscriber("global_cloud", PointCloud2, self.point_clouds_callback) # this needs to be ready early
+
         self.change_map_pub     = rospy.Publisher('/' + self.map_name + '/change_map', Int32, queue_size=1)
 
         print("waiting for tracker trigger service")
@@ -105,7 +107,6 @@ class Evaluater:
         # self.poly_trigger = rospy.ServiceProxy(poly_service_name, Trigger)
         self.transition_tracker = rospy.ServiceProxy(line_service_name, Transition)
         rospy.Subscriber('/' + self.mav_name + "/odom", Odometry, self.odom_callback)
-        rospy.Subscriber("global_cloud", PointCloud2, self.point_clouds_callback)
         self.effort_temp = 0.0 # these need to be defined before the callback
         self.effort_counter = 0
         rospy.Subscriber('/' + self.mav_name + "/quadrotor_simulator_so3/output_data", OutputData, self.sim_output_callback)
@@ -172,7 +173,7 @@ class Evaluater:
         self.effort_counter += 1
 
     def point_clouds_callback(self, msg):
-
+        tqdm.write("point cloud CALLBACK received")
         points_list = []
 
         for data in pc2.read_points(msg, skip_nans=True):
@@ -186,47 +187,34 @@ class Evaluater:
         return
     
 
-    def is_point_collided(self, search_point):
- 
-        #search_point = pcl.PointXYZ(pt[0], pt[1], pt[2]) 
-
-        if self.kdtree != None:
-
-            # Perform a radius search
-            [ind, sqdist] = self.kdtree.nearest_k_search_for_cloud(search_point, 1)
-
-            for i in range(0, ind.size):
-
-                if sqdist[0][i] < self.mav_radius * self.mav_radius:
-                  
-                  print("collide!")
-                  print('(' + str(self.pcl_data[ind[0][i]][0]) + ' ' + str(self.pcl_data[ind[0][i]][1]) + ' ' + str(
-                   self.pcl_data[ind[0][i]][2]) + ' (squared distance: ' + str(sqdist[0][i]) + ')')
-                #   print('(' + str(search_point[0][0]) + ' ' + str(search_point[0][1]) + ' ' + str(
-                #    search_point[0][2]))
-                  return True
-
-        return False
-    
-
     def evaluate_collision(self, pts):
-
-        #size = len(pts)
-
-        for pt in pts:
-        
+        min_sq_dist = 1000000
+        min_idx = 0
+        pts = pts[::10]
+        tqdm.write("odom length = " + str( len(pts)))
+        if self.kdtree is None:
+            rospy.sleep(0.1)
+            rospy.logerr("No KD Tree, skipping collision check")
+            return True # assume collision
+        for pt_idx in range(len(pts)):
+            pt = pts[pt_idx]
             sp = pcl.PointCloud()
             sps = np.zeros((1, 3), dtype=np.float32)
             sps[0][0] = pt.x
             sps[0][1] = pt.y
             sps[0][2] = pt.z
             sp.from_array(sps)
+            [ind, sqdist] = self.kdtree.nearest_k_search_for_cloud(sp, 1) #which pointcloud pt has min dist
+            if sqdist[0][0] < min_sq_dist:
+                min_sq_dist = sqdist[0][0]
+                min_idx = pt_idx
 
-            if self.is_point_collided(sp):
-                return True
-            
-        return False
-            
+        tqdm.write("min dist = " + str(np.sqrt(min_sq_dist)) + "@ traj percentage = " + str(min_idx/len(pts)))
+        if np.sqrt(min_sq_dist) < self.mav_radius:
+            rospy.logwarn("Collision Detected")
+            return True
+        else:
+            return False            
 
     def computeJerk(self, traj):
         # creae empty array for time
@@ -270,7 +258,7 @@ class Evaluater:
         for  i in range(self.num_planners):
             self.client_list[i].wait_for_server()
             print("waiting for action server ", i)
-        print("All action server connected", i)
+        print("All action server connected, number of planners = ", self.num_planners)
 
         for i in tqdm(range(self.num_trials)):
             if rospy.is_shutdown():
@@ -359,6 +347,7 @@ class Evaluater:
                 self.send_start_goal_viz(msg)
 
                 client.send_goal(msg) #motion
+                tqdm.write("Goal Sent")
                 self.effort_temp = 0.0 # 
                 self.effort_counter = 1 # to avoid divide by zero
 

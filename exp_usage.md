@@ -1,3 +1,8 @@
+Install dependencies:
+$ sudo apt-get update -y
+
+$ sudo apt-get install libpcl-dev -y
+
 To change planner, change `tracker_params_mp.yaml`, to run planner quickly without running quad, set `use_tracker_client` to false
 
 

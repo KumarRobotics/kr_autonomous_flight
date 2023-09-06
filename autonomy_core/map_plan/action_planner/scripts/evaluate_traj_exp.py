@@ -8,6 +8,7 @@ import numpy as np
 # import matplotlib.pyplot as plt
 import pandas as pd
 from copy import deepcopy
+from geometry_msgs.msg import Point
 from visualization_msgs.msg import MarkerArray, Marker
 from actionlib import SimpleActionClient
 from std_srvs.srv import Empty, Trigger
@@ -19,6 +20,8 @@ import actionlib
 from std_msgs.msg import Int32
 from tqdm import tqdm
 import pickle
+import yaml
+import csv
 
 import pcl
 #sudo apt install python3-pcl
@@ -70,10 +73,12 @@ class Evaluater:
         # self.path_pub = rospy.Publisher('/local_plan_server0/plan_local_trajectory/goal', PlanTwoPointActionGoal, queue_size=10, latch=True)
         # self.client = SimpleActionClient('/local_plan_server0/plan_local_trajectory', PlanTwoPointAction)
         self.client_list = []
+        self.client_name_list = []
         self.num_planners = 5
+        self.num_trials = 3
         for i in range(self.num_planners): #  0, 1, 2, ... not gonna include the one with no suffix
             self.client_list.append(SimpleActionClient('/local_plan_server'+str(i)+'/plan_local_trajectory', PlanTwoPointAction))
-        # self.client2 = SimpleActionClient('/local_plan_server2/plan_local_trajectory', PlanTwoPointAction)
+             # self.client2 = SimpleActionClient('/local_plan_server2/plan_local_trajectory', PlanTwoPointAction)
         # self.client3 = SimpleActionClient('/local_plan_server3/plan_local_trajectory', PlanTwoPointAction)
 
         self.start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10, latch=True)
@@ -113,7 +118,6 @@ class Evaluater:
         rospy.logwarn("Change topic name of OutputData on real quadrotor")
 
         # rospy.Subscriber("/local_plan_server0/trajectory", SplineTrajectory, self.callback)
-        self.num_trials = 5
         self.success = np.zeros((self.num_trials, self.num_planners), dtype=bool)
         self.success_detail = np.zeros((self.num_trials, self.num_planners), dtype=int)
         self.traj_time = np.zeros((self.num_trials, self.num_planners))
@@ -125,7 +129,7 @@ class Evaluater:
         self.tracking_error = np.zeros((self.num_trials, self.num_planners))
         self.effort = np.zeros((self.num_trials, self.num_planners)) #unit in rpm
         self.rho = 50  # TODO(Laura) pull from param or somewhere
-        self.collision_cnt = np.ones((self.num_trials, self.num_planners), dtype=bool)
+        self.collision_cnt = np.zeros((self.num_trials, self.num_planners), dtype=bool)
 
         self.kdtree = None
         self.pcl_data = None
@@ -254,9 +258,15 @@ class Evaluater:
         # self.path_pub.publish(msg)
         self.start_and_goal_pub.publish(start_and_goal) # viz
     def publisher(self):
-
-        for  i in range(self.num_planners):
+        for i in range(self.num_planners):
             self.client_list[i].wait_for_server()
+            search_planner_text = rospy.get_param('/local_plan_server0/trajectory_planner/search_planner_text')
+            opt_planner_text = rospy.get_param('/local_plan_server0/trajectory_planner/opt_planner_text')
+        
+            planner_name_front = search_planner_text[rospy.get_param('/local_plan_server'+str(i)+'/trajectory_planner/search_planner_type')]
+            planner_name_back  = opt_planner_text[rospy.get_param('/local_plan_server'+str(i)+'/trajectory_planner/opt_planner_type')]
+            self.client_name_list.append(planner_name_front + '+'+ planner_name_back)
+       
             print("waiting for action server ", i)
         print("All action server connected, number of planners = ", self.num_planners)
 
@@ -368,17 +378,30 @@ class Evaluater:
                     self.success_detail[i,client_idx] = result.policy_status
                     # print(result.odom_pts) #@Yuwei: this should work, try this out! 
                     # Odom is also returned in result.odom_pts
-                    if result.computation_time > 0:
                         # rospy.loginfo(result.odom_pts)
+
+                        
+                    if result.success:
+                        #these 4 lines can also be computed if it is not a success, but skip
                         self.traj_compute_time[i,client_idx] = result.computation_time
                         self.compute_time_front[i,client_idx] = result.compute_time_front_end
                         self.compute_time_back[i,client_idx] = result.compute_time_back_end
                         self.tracking_error[i,client_idx] = result.tracking_error
-                        
-                    if result.success:
+
                         self.traj_time[i,client_idx] = result.traj.data[0].t_total
                         # self.traj_cost[i,client_idx] = self.computeCost(result.traj, self.rho)
                         self.traj_jerk[i,client_idx] = self.computeJerk(result.traj)
+                        if ~self.wait_for_things: # if no tracking then check collision of the planned traj
+                            result.odom_pts.clear()
+                            for t in np.arange(0, result.traj.data[0].t_total, 0.02):
+                                pos_t = evaluate(result.traj, t, 0)
+                                pos_t_pt = Point()
+                                pos_t_pt.x = pos_t[0]
+                                pos_t_pt.y = pos_t[1]
+                                pos_t_pt.z = pos_t[2]
+
+                                result.odom_pts.append(pos_t_pt)
+                                
                         self.collision_cnt[i,client_idx] = self.evaluate_collision(result.odom_pts)
 
                 else:
@@ -386,6 +409,23 @@ class Evaluater:
                     self.success_detail[i,client_idx] = -1
             
             # input("Press Enter to continue...")
+        #save results
+        file_name_save_time = str(rospy.get_time())
+        param_names = rospy.get_param_names()
+        params = {}
+        for name in param_names:
+            params[name] = rospy.get_param(name)
+        params['success'] = self.success.tolist()
+        params['success_detail'] = self.success_detail.tolist()
+        params['traj_time'] = self.traj_time.tolist()
+        params['traj_cost'] = self.traj_cost.tolist()
+        params['traj_jerk'] = self.traj_jerk.tolist()
+        params['traj_compute_time'] = self.traj_compute_time.tolist()
+        params['compute_time_front'] = self.compute_time_front.tolist()
+        params['compute_time_back'] = self.compute_time_back.tolist()
+        params['tracking_error'] = self.tracking_error.tolist()
+        params['effort'] = self.effort.tolist()
+        params['collision_cnt'] = self.collision_cnt.tolist()
 
         print(self.success)
         print(self.success_detail)
@@ -400,20 +440,46 @@ class Evaluater:
         print("Is Collide", self.collision_cnt)
 
         #save pickle with all the data, use date time as name
-        with open('ECI_eval_data_'+str(rospy.get_time())+'.pkl', 'wb') as f:
-            pickle.dump([self.success, self.success_detail, self.traj_time, self.traj_cost, self.traj_jerk, self.traj_compute_time, self.compute_time_front, self.compute_time_back, self.tracking_error, self.effort], f)
-        
+        # with open('ECI_eval_data_'+file_name_save_time+'.pkl', 'wb') as f:
+        #     pickle.dump([self.success, self.success_detail, self.traj_time, self.traj_cost, self.traj_jerk, self.traj_compute_time, self.compute_time_front, self.compute_time_back, self.tracking_error, self.effort], f)
+        with open('ECI_Result' + file_name_save_time + '.yaml', 'w') as f:
+            yaml.dump(params, f)# result and config
 
-        print("success details: ", self.success_detail)
-        print("success rate: " + str(np.sum(self.success)/self.success.size)+ " out of " + str(self.success.size))
-        print("avg traj time(s): " + str(np.sum(self.traj_time[self.success]) / np.sum(self.success)))
-        # print("avg traj cost(time + jerk): " + str(np.sum(self.traj_cost[self.success]) / np.sum(self.success)))
-        print("avg traj jerk: " + str(np.sum(self.traj_jerk[self.success]) / np.sum(self.success)))
-        print("avg compute time(ms): " + str(np.sum(self.traj_compute_time[self.success]) / np.sum(self.success)))
-        print("avg compute time front(ms): " + str(np.sum(self.compute_time_front[self.success]) / np.sum(self.success)))
-        print("avg compute time back(ms): " + str(np.sum(self.compute_time_back[self.success]) / np.sum(self.success)))
-        print("avg tracking error(m): " + str(np.sum(self.tracking_error[self.success]) / np.sum(self.success)))
-        print("avg effort(rpm): " + str(np.sum(self.effort) / self.effort.size))
+        #create variables to store the average values
+        success_rate_avg = np.sum(self.success,axis = 0)/self.success.shape[0]
+        traj_time_avg = np.sum(self.traj_time,axis = 0) / np.sum(self.success, axis = 0)
+        # traj_cost_avg = np.sum(self.traj_cost[self.success]) / np.sum(self.success)
+        traj_jerk_avg = np.sum(self.traj_jerk, axis = 0) / np.sum(self.success, axis = 0)
+        traj_compute_time_avg = np.sum(self.traj_compute_time, axis = 0) / np.sum(self.success, axis = 0)
+        compute_time_front_avg = np.sum(self.compute_time_front, axis = 0) / np.sum(self.success, axis = 0)
+        compute_time_back_avg = np.sum(self.compute_time_back, axis = 0) / np.sum(self.success, axis = 0)
+        tracking_error_avg = np.sum(self.tracking_error, axis = 0) / np.sum(self.success, axis = 0)
+        effort_avg = np.sum(self.effort, axis = 0) / np.sum(self.success, axis = 0)
+        collision_rate_avg = np.sum(self.collision_cnt, axis = 0) / np.sum(self.success, axis = 0)
+
+        # rewrite the above section with defined avg variables
+        print("success rate: " + str(success_rate_avg)+ " out of " + str(self.success.shape[0]))
+        print("avg traj time(s): " + str(traj_time_avg))
+        # print("avg traj cost(time + jerk): " + str(traj_cost_avg))
+        print("avg traj jerk: " + str(traj_jerk_avg))
+        print("avg compute time(ms): " + str(traj_compute_time_avg))
+        print("avg compute time front(ms): " + str(compute_time_front_avg))
+        print("avg compute time back(ms): " + str(compute_time_back_avg))
+        print("avg tracking error(m): " + str(tracking_error_avg))
+        print("avg effort(rpm): " + str(effort_avg))# this is bugg!! need to consider success
+        print("collision rate: " + str(collision_rate_avg))
+
+
+        
+        # save the avg values to a csv file by appending to the end of the file
+        csv_name = 'ECI_summary_'+file_name_save_time+'.csv'
+
+        with open(csv_name, 'w') as f: #result summary
+            writer = csv.writer(f)
+            writer.writerow(['planner','success rate', 'traj time', 'traj jerk', 'compute time(ms)', 'compute time front(ms)', 'compute time back(ms)', 'tracking error(m)', 'effort(rpm)', 'collision rate'])
+            for i in range(self.num_planners):
+                writer.writerow([self.client_name_list[i], success_rate_avg[i], traj_time_avg[i], traj_jerk_avg[i], traj_compute_time_avg[i], compute_time_front_avg[i], compute_time_back_avg[i], tracking_error_avg[i], effort_avg[i], collision_rate_avg[i]])
+           
 
 def subscriber():
     rospy.init_node('evaluate_traj')

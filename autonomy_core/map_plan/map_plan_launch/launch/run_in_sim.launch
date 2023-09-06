@@ -24,11 +24,19 @@
   <arg name="color/b" default="1.0"/>
   <arg name="color/a" default="0.7"/>
 
-  <arg name="mass"       default="0.5"/> <!--0.5 in sim -->
+  <arg name="mass"       default="2.0"/> <!--0.5 in sim -->
   <arg name="grav_acc"   default="9.8"/>
   <arg name="min_thrust" default="5.0"/>
   <arg name="max_thrust" default="25.0"/>
   <arg name="mav_radius" default="0.25"/>
+  <arg name="mom_inertia" default="[0.005, 0.005, 0.01]"/>
+  <arg name="M_Ixx" default="0.005"/> <!--Make sure these are SAME!-->
+  <arg name="M_Iyy" default="0.005"/>
+  <arg name="M_Izz" default="0.01"/>
+  <arg name="arm_length" default="0.18"/>
+  <arg name="kf" default="1.0"/> <!--ilqr has strong assumption about this = 1 , not sure if we can change this-->
+  <arg name="km" default="0.0245"/>
+
 
 
   <!-- Map related stuff -->
@@ -61,7 +69,7 @@
     <include file="$(find kr_mav_launch)/launch/sim.launch">
       <arg name="mav_name" value="$(arg mav_name)"/>
       <arg name="mav_type" value="$(arg mav_type)"/>
-      <arg name="mass" value="$(arg mass)"/>
+
       <arg name="world_frame_id" value="$(arg world_frame_id)"/>
       <arg name="initial_position/x" value="$(arg initial_position/x)"/>
       <arg name="initial_position/y" value="$(arg initial_position/y)"/>
@@ -71,7 +79,15 @@
       <arg name="color/b" value="$(arg color/b)"/>
       <arg name="color/a" value="$(arg color/a)"/>
       <arg name="odom_topic" value="$(arg odom_topic)"/>
+
       <arg name="gravity"    value="$(arg grav_acc)"/>
+      <arg name="mass" value="$(arg mass)"/>
+      <arg name='Ixx' value="$(arg M_Ixx)"/>
+      <arg name='Iyy' value="$(arg M_Iyy)"/>
+      <arg name='Izz' value="$(arg M_Izz)"/>
+      <arg name='arm_length' value="$(arg arm_length)"/>  
+      <arg name='kf' value="$(arg kf)"/>
+      <arg name='km' value="$(arg km)"/>
 
     </include>
   </group>
@@ -110,9 +126,13 @@
       <param name="mav_radius" value="$(arg mav_radius)"/>
 
       <param name="VehicleMass" value="$(arg mass)"/>
+      <param name="MomentInertia" value="$(arg mom_inertia)"/>
       <param name="GravAcc"     value="$(arg grav_acc)"/>
       <param name="MinThrust"   value="$(arg min_thrust)"/>
       <param name="MaxThrust"   value="$(arg max_thrust)"/>
+      <param name='arm_length' value="$(arg arm_length)"/>  
+      <param name='kf' value="$(arg kf)"/>
+      <param name='km' value="$(arg km)"/>
 
     </node>
     
@@ -134,9 +154,13 @@
       <param name="mav_radius" value="$(arg mav_radius)"/>
 
       <param name="VehicleMass" value="$(arg mass)"/>
+      <param name="MomentInertia" value="$(arg mom_inertia)"/>
       <param name="GravAcc"     value="$(arg grav_acc)"/>
       <param name="MinThrust"   value="$(arg min_thrust)"/>
       <param name="MaxThrust"   value="$(arg max_thrust)"/>
+      <param name='arm_length' value="$(arg arm_length)"/>  
+      <param name='kf' value="$(arg kf)"/>
+      <param name='km' value="$(arg km)"/>
 
     </node>
 
@@ -159,9 +183,13 @@
 
 
       <param name="VehicleMass" value="$(arg mass)"/>
+      <param name="MomentInertia" value="$(arg mom_inertia)"/>
       <param name="GravAcc"     value="$(arg grav_acc)"/>
       <param name="MinThrust"   value="$(arg min_thrust)"/>
       <param name="MaxThrust"   value="$(arg max_thrust)"/>
+      <param name='arm_length' value="$(arg arm_length)"/>  
+      <param name='kf' value="$(arg kf)"/>
+      <param name='km' value="$(arg km)"/>
 
     </node>
 
@@ -184,9 +212,13 @@
 
 
       <param name="VehicleMass" value="$(arg mass)"/>
+      <param name="MomentInertia" value="$(arg mom_inertia)"/>
       <param name="GravAcc"     value="$(arg grav_acc)"/>
       <param name="MinThrust"   value="$(arg min_thrust)"/>
       <param name="MaxThrust"   value="$(arg max_thrust)"/>
+      <param name='arm_length' value="$(arg arm_length)"/>  
+      <param name='kf' value="$(arg kf)"/>
+      <param name='km' value="$(arg km)"/>
 
     </node>
 
@@ -209,9 +241,13 @@
 
 
       <param name="VehicleMass" value="$(arg mass)"/>
+      <param name="MomentInertia" value="$(arg mom_inertia)"/>
       <param name="GravAcc"     value="$(arg grav_acc)"/>
       <param name="MinThrust"   value="$(arg min_thrust)"/>
       <param name="MaxThrust"   value="$(arg max_thrust)"/>
+      <param name='arm_length' value="$(arg arm_length)"/>  
+      <param name='kf' value="$(arg kf)"/>
+      <param name='km' value="$(arg km)"/>
 
     </node>
 

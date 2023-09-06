@@ -10,9 +10,11 @@ void OptPlanner::iLQR_Planner::setup() {
   ROS_INFO("[iLQR]::SETTING UP iLQR PLANNER");
   bool subscribe_to_traj = false;
   bool publish_optimized_traj = false;
-  bool publish_viz = true;  // N sample, time limit
+  bool publish_viz = true;                    // N sample, time limit
+  ros::NodeHandle nh = ros::NodeHandle("~");  // to get parameters
   sampler_.reset(
-      new SplineTrajSampler(subscribe_to_traj,
+      new SplineTrajSampler(nh,
+                            subscribe_to_traj,
                             publish_optimized_traj,
                             publish_viz,
                             65));  // good if multiple of 5, then it will
@@ -973,8 +975,7 @@ CompositePlanner::plan_composite(
     opt_planner_type_->allo_ts = allo_ts;
     // now do optimization
     result = opt_planner_type_->plan(start, goal, map);
-    result_discretized =
-        opt_planner_type_->plan_discrete(start, goal, map);
+    result_discretized = opt_planner_type_->plan_discrete(start, goal, map);
     if (result.data.size() != 0 || result_discretized.pos.size() != 0)
       success_status = 3;
     // TODO:(Yifei) only use no infla for gcopter planner, not dd planner

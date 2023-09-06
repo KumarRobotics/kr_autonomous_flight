@@ -124,9 +124,10 @@ class Evaluater:
         self.tracking_error = np.zeros((self.num_trials, self.num_planners))
         self.effort = np.zeros((self.num_trials, self.num_planners)) #unit in rpm
         self.rho = 50  # TODO(Laura) pull from param or somewhere
-        self.collision_cnt = np.zeros((self.num_trials, self.num_planners), dtype=bool)
-    
+        self.collision_cnt = np.ones((self.num_trials, self.num_planners), dtype=bool)
+
         self.kdtree = None
+        self.pcl_data = None
 
         self.publisher()
 
@@ -177,10 +178,10 @@ class Evaluater:
         for data in pc2.read_points(msg, skip_nans=True):
             points_list.append([data[0], data[1], data[2]])
 
-        pcl_data = pcl.PointCloud(np.array(points_list, dtype=np.float32))
+        self.pcl_data = pcl.PointCloud(np.array(points_list, dtype=np.float32))
 
 
-        self.kdtree = pcl_data.make_kdtree_flann()
+        self.kdtree = self.pcl_data.make_kdtree_flann()
 
         return
     
@@ -196,7 +197,13 @@ class Evaluater:
 
             for i in range(0, ind.size):
 
-                if sqdist[0][i] < self.mav_radius:
+                if sqdist[0][i] < self.mav_radius * self.mav_radius:
+                  
+                  print("collide!")
+                  print('(' + str(self.pcl_data[ind[0][i]][0]) + ' ' + str(self.pcl_data[ind[0][i]][1]) + ' ' + str(
+                   self.pcl_data[ind[0][i]][2]) + ' (squared distance: ' + str(sqdist[0][i]) + ')')
+                #   print('(' + str(search_point[0][0]) + ' ' + str(search_point[0][1]) + ' ' + str(
+                #    search_point[0][2]))
                   return True
 
         return False

@@ -28,13 +28,13 @@ trajectory_planner:
   search_planner_text: ["MPL", "dispersion planner", "JPS (geometric)", "pass through from global planner", "RRT", "SST"]
   search_planner_type: 0 # 0: MPL, 1: dispersion planner, 2: JPS (geometric) 3: pass through from global planner 4: RRT 5 :SST
   #is being overwriten in the launch file
-  opt_planner_type: 1 # -1: no planner 0: Double Description 1: gcopter 2: iLQR(Altro)
+  opt_planner_type: 2 # -1: no planner 0: Double Description 1: gcopter 2: iLQR(Altro)
   opt_planner_text: ["Double Description", "gcopter", "iLQR(Altro)"]
   use_discrete_traj: false # set true to use with ilqr, still a lot of tracking er
   use_tracker_client: true # if we wait for tracker to finish before sending next command
   # if we do not care about tracking error and want things to run fast, set this to false
   #TODO(Laura) fix path
-  dispersion/graph_file: "/home/yifei/Documents/optimal_ctrl/500.json" #"/home/wyw/Code/yifei_ws/500.json" # /home/wyw/Code/yifei_ws    
+  dispersion/graph_file: "/home/wyw/Code/yifei_ws/500.json" #"/home/wyw/Code/yifei_ws/500.json" # /home/wyw/Code/yifei_ws     /home/yifei/Documents/optimal_ctrl/500.json
 
   use_3d_global: false # global planner operates in 3D (true, in this case use_3d_local has to be set as true) or 2D (false)
   z_cost_factor: 1 # global map z cost factor, this also influences the vertical semi field of view of global planner into 45-degree / z_cost_factor  (cost_along_z = z_cost_factor * cost_along_x_or_y)

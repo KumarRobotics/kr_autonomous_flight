@@ -11,9 +11,9 @@ void OptPlanner::iLQR_Planner::setup() {
   bool subscribe_to_traj = false;
   bool publish_optimized_traj = false;
   bool publish_viz = true;                    // N sample, time limit
-  ros::NodeHandle nh = ros::NodeHandle("~");  // to get parameters
+  //ros::NodeHandle nh = ros::NodeHandle("~");  // to get parameters
   sampler_.reset(
-      new SplineTrajSampler(nh,
+      new SplineTrajSampler(nh_,
                             subscribe_to_traj,
                             publish_optimized_traj,
                             publish_viz,

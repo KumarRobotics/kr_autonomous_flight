@@ -7,7 +7,7 @@ repositories:
 
   kr_mav_control:
     type: git
-    url: http://github.com/KumarRobotics/kr_mav_control.git
+    url: https://github.com/shaoyifei96/kr_mav_control.git
     version: poly
 
   mrsl_quadrotor:
@@ -38,6 +38,7 @@ repositories:
   kr_planning_msgs:
     type: git
     url: git@github.com:KumarRobotics/kr_planning_msgs.git
+    version: main
 
   DoubleDescription:
     type: git
@@ -58,6 +59,7 @@ repositories:
   kr_param_map:
     type: git
     url: git@github.com:KumarRobotics/kr_param_map.git
+    version: pub_voxel
 
   kr_ilqr_optimizer:
     type: git

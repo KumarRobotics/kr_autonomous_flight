@@ -7,7 +7,9 @@
 // Double Descrisption Planner 
 //
 void OptPlanner::iLQR_Planner::setup() {
-  ROS_INFO("[iLQR]::SETTING UP iLQR PLANNER");
+  ROS_WARN("+++++++++++++++++++++++++++++++++++");
+  ROS_WARN("[LocalPlanServer:] iLQR planner mode!!!!!");
+  ROS_WARN("+++++++++++++++++++++++++++++++++++");
   bool subscribe_to_traj = false;
   bool publish_optimized_traj = false;
   bool publish_viz = true;                    // N sample, time limit
@@ -312,7 +314,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::UniformInputSampling::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map) {
-  ROS_WARN("[LocalPlanServer] trigger mp_planner!!!!!");
+  ROS_WARN("[MPL] trigger mp_planner!!!!!");
 
   setMap(mp_map_util_, map);
   if (action_server_goal_.check_vel) {

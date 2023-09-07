@@ -34,7 +34,7 @@ trajectory_planner:
   use_tracker_client: true # if we wait for tracker to finish before sending next command
   # if we do not care about tracking error and want things to run fast, set this to false
   #TODO(Laura) fix path
-  dispersion/graph_file: "/home/wyw/Code/yifei_ws/500.json" # /home/wyw/Code/yifei_ws    /home/yifei/Documents/optimal_ctrl/
+  dispersion/graph_file: "/home/yifei/Documents/optimal_ctrl/500.json" #"/home/wyw/Code/yifei_ws/500.json" # /home/wyw/Code/yifei_ws    
 
   use_3d_global: false # global planner operates in 3D (true, in this case use_3d_local has to be set as true) or 2D (false)
   z_cost_factor: 1 # global map z cost factor, this also influences the vertical semi field of view of global planner into 45-degree / z_cost_factor  (cost_along_z = z_cost_factor * cost_along_x_or_y)

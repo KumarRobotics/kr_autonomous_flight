@@ -4,7 +4,7 @@
 
 #include <iostream>
 //
-// Double Descrisption Planner
+// Double Descrisption Planner 
 //
 void OptPlanner::iLQR_Planner::setup() {
   ROS_INFO("[iLQR]::SETTING UP iLQR PLANNER");
@@ -156,8 +156,8 @@ void OptPlanner::GCOPTER::setup() {
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
 
   /* initialize main modules */
-  ros::NodeHandle nh = ros::NodeHandle("~");
-  planner_manager_.reset(new gcopter::GcopterPlanner(nh, frame_id_));
+  //ros::NodeHandle nh = ros::NodeHandle("~");
+  planner_manager_.reset(new gcopter::GcopterPlanner(nh_, frame_id_));
   ROS_WARN("[LocalPlanServer:] GCOPTER setup complete");
 }
 
@@ -717,8 +717,8 @@ void SearchPlanner::Sampling::setup() {
   ROS_WARN("[LocalPlanServer:] RRT planner mode!!!!!");
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
 
-  ros::NodeHandle nh = ros::NodeHandle("~");
-  rrtplanner_.reset(new gcopter::GcopterPlanner(nh, frame_id_));
+  //ros::NodeHandle nh = ros::NodeHandle("~");
+  rrtplanner_.reset(new gcopter::GcopterPlanner(nh_, frame_id_));
   path_pub_ = nh_.advertise<kr_planning_msgs::Path>("path", 1, true);
 }
 
@@ -771,8 +771,8 @@ void SearchPlanner::DynSampling::setup() {
   ROS_WARN("[LocalPlanServer:] SST planner mode!!!!!");
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
 
-  ros::NodeHandle nh = ros::NodeHandle("~");
-  sstplanner_.reset(new gcopter::GcopterPlanner(nh, frame_id_));
+  //ros::NodeHandle nh = ros::NodeHandle("~");
+  sstplanner_.reset(new gcopter::GcopterPlanner(nh_, frame_id_));
   path_pub_ = nh_.advertise<kr_planning_msgs::Path>("path", 1, true);
 }
 

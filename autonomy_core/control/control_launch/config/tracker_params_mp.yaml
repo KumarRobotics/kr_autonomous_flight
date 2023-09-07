@@ -69,6 +69,23 @@ trajectory_planner:
   search/w_time: 50.0 # time weight
   search/use_jerk: false # set false now
   search/time_res: 0.15 # time resolution to index the path
+  # gcopter parameters
+  MaxVelMag: 3.0
+  MaxBdrMag: 2.1
+  MinThrust: 2.0
+  MaxThrust: 12.0
+  DilateRadius: 0.05
+  TimeoutRRT: 0.2
+  MaxTiltAngle: 1.05
+  HorizDrag: 0.70
+  VertDrag: 0.80
+  ParasDrag: 0.01
+  SpeedEps:  0.0001
+  WeightT: 20.0
+  ChiVec:  [1.0e+4, 1.0e+4, 1.0e+4, 1.0e+4, 1.0e+5]
+  SmoothingEps: 1.0e-2
+  IntegralIntervs: 16
+  RelCostTol: 1.0e-5
 
 stopping_policy:
   acc_xy_des: 4.0 # stopping policy x-y maximum acceleration
@@ -94,20 +111,3 @@ state_machine:
   global_replan_rate_factor: 3 # global_replan_rate_factor = local replan frequency / global replan frequency, should be an integer and >= 1, (int)
   max_replan_trials: 100 # max allowed trials to re-enter replanner
 
-# gcopter parameters
-MaxVelMag: 3.0
-MaxBdrMag: 2.1
-MinThrust: 2.0
-MaxThrust: 12.0
-DilateRadius: 0.05
-TimeoutRRT: 0.2
-MaxTiltAngle: 1.05
-HorizDrag: 0.70
-VertDrag: 0.80
-ParasDrag: 0.01
-SpeedEps:  0.0001
-WeightT: 20.0
-ChiVec:  [1.0e+4, 1.0e+4, 1.0e+4, 1.0e+4, 1.0e+5]
-SmoothingEps: 1.0e-2
-IntegralIntervs: 16
-RelCostTol: 1.0e-5

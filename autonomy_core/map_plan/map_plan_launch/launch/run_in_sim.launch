@@ -109,10 +109,10 @@
       <param name="map_name"   value="$(arg map_name)"/>
       <param name="mav_radius" value="$(arg mav_radius)"/>
 
-      <param name="VehicleMass" value="$(arg mass)"/>
-      <param name="GravAcc"     value="$(arg grav_acc)"/>
-      <param name="MinThrust"   value="$(arg min_thrust)"/>
-      <param name="MaxThrust"   value="$(arg max_thrust)"/>
+      <param name="trajectory_planner/VehicleMass" value="$(arg mass)"/>
+      <param name="trajectory_planner/GravAcc"     value="$(arg grav_acc)"/>
+      <param name="trajectory_planner/MinThrust"   value="$(arg min_thrust)"/>
+      <param name="trajectory_planner/MaxThrust"   value="$(arg max_thrust)"/>
 
     </node>
     
@@ -133,10 +133,12 @@
       <param name="map_name"   value="$(arg map_name)"/>
       <param name="mav_radius" value="$(arg mav_radius)"/>
 
-      <param name="VehicleMass" value="$(arg mass)"/>
-      <param name="GravAcc"     value="$(arg grav_acc)"/>
-      <param name="MinThrust"   value="$(arg min_thrust)"/>
-      <param name="MaxThrust"   value="$(arg max_thrust)"/>
+
+      <param name="trajectory_planner/VehicleMass" value="$(arg mass)"/>
+      <param name="trajectory_planner/GravAcc"     value="$(arg grav_acc)"/>
+      <param name="trajectory_planner/MinThrust"   value="$(arg min_thrust)"/>
+      <param name="trajectory_planner/MaxThrust"   value="$(arg max_thrust)"/>
+
 
     </node>
 
@@ -158,10 +160,11 @@
       <param name="mav_radius" value="$(arg mav_radius)"/>
 
 
-      <param name="VehicleMass" value="$(arg mass)"/>
-      <param name="GravAcc"     value="$(arg grav_acc)"/>
-      <param name="MinThrust"   value="$(arg min_thrust)"/>
-      <param name="MaxThrust"   value="$(arg max_thrust)"/>
+      <param name="trajectory_planner/VehicleMass" value="$(arg mass)"/>
+      <param name="trajectory_planner/GravAcc"     value="$(arg grav_acc)"/>
+      <param name="trajectory_planner/MinThrust"   value="$(arg min_thrust)"/>
+      <param name="trajectory_planner/MaxThrust"   value="$(arg max_thrust)"/>
+
 
     </node>
 
@@ -182,11 +185,11 @@
       <param name="map_name"   value="$(arg map_name)"/>
       <param name="mav_radius" value="$(arg mav_radius)"/>
 
+      <param name="trajectory_planner/VehicleMass" value="$(arg mass)"/>
+      <param name="trajectory_planner/GravAcc"     value="$(arg grav_acc)"/>
+      <param name="trajectory_planner/MinThrust"   value="$(arg min_thrust)"/>
+      <param name="trajectory_planner/MaxThrust"   value="$(arg max_thrust)"/>
 
-      <param name="VehicleMass" value="$(arg mass)"/>
-      <param name="GravAcc"     value="$(arg grav_acc)"/>
-      <param name="MinThrust"   value="$(arg min_thrust)"/>
-      <param name="MaxThrust"   value="$(arg max_thrust)"/>
 
     </node>
 
@@ -207,11 +210,11 @@
       <param name="map_name"   value="$(arg map_name)"/>
       <param name="mav_radius" value="$(arg mav_radius)"/>
 
+      <param name="trajectory_planner/VehicleMass" value="$(arg mass)"/>
+      <param name="trajectory_planner/GravAcc"     value="$(arg grav_acc)"/>
+      <param name="trajectory_planner/MinThrust"   value="$(arg min_thrust)"/>
+      <param name="trajectory_planner/MaxThrust"   value="$(arg max_thrust)"/>
 
-      <param name="VehicleMass" value="$(arg mass)"/>
-      <param name="GravAcc"     value="$(arg grav_acc)"/>
-      <param name="MinThrust"   value="$(arg min_thrust)"/>
-      <param name="MaxThrust"   value="$(arg max_thrust)"/>
 
     </node>
 

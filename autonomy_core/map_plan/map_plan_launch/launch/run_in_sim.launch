@@ -42,7 +42,7 @@
   <!-- Map related stuff -->
   <arg name="vicon_map" default="false"/>
   <arg name="point_cloud" default="/global_cloud"/>
-  <arg name="map_name" default="read_grid_map"/>   <!-- read_grid_map or structure_map -->
+  <arg name="map_name" default="structure_map"/>   <!-- read_grid_map or structure_map -->
 
   <arg name="map_frame_id" default="map"/>
   <arg name="map_size_x" default="20"/>
@@ -268,7 +268,7 @@
 
       <param name="map/resolution"   value="$(arg map_resolution)"/>       
       <param name="map/frame_id"     value="$(arg world_frame_id)" />
-      <param name="map/inflate_radius" value="0.18"/> <!-- 0.3 m-->
+      <param name="map/inflate_radius" value="0.4"/> <!-- 0.3 m-->
 
       <!-- randomly change the map without trigger -->
       <param name="map/auto_change"    value="false"/>

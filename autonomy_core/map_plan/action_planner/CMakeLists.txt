@@ -29,6 +29,7 @@ find_package(
              motion_primitives
              gcopter
              kr_tracker_msgs
+             param_env_msgs
             )
 
 generate_dynamic_reconfigure_options(cfg/ActionPlanner.cfg)

@@ -37,6 +37,7 @@
   <depend>gcopter</depend>
   <depend>kr_ilqr_optimizer</depend>
   <depend>kr_trackers_msgs</depend>
+  <depend>param_env_msgs</depend>
 
   <export>
   </export>

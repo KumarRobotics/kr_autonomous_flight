@@ -74,8 +74,8 @@ class Evaluater:
         # self.client = SimpleActionClient('/local_plan_server0/plan_local_trajectory', PlanTwoPointAction)
         self.client_list = []
         self.client_name_list = []
-        self.num_planners = 5
-        self.num_trials = 3
+        self.num_planners = 1
+        self.num_trials = 50
         for i in range(self.num_planners): #  0, 1, 2, ... not gonna include the one with no suffix
             self.client_list.append(SimpleActionClient('/local_plan_server'+str(i)+'/plan_local_trajectory', PlanTwoPointAction))
              # self.client2 = SimpleActionClient('/local_plan_server2/plan_local_trajectory', PlanTwoPointAction)
@@ -90,7 +90,7 @@ class Evaluater:
 
 
         self.wait_for_things = rospy.get_param('/local_plan_server0/trajectory_planner/use_tracker_client')
-        self.fix_start_end_location = self.map_name == "read_grid_map"
+        self.fix_start_end_location = self.map_name == "read_grid_map" # or structure_map or real_map
         
         self.map_origin_x = rospy.get_param('/' + self.map_name + "/map/x_origin")
         self.map_origin_y = rospy.get_param('/' + self.map_name + "/map/y_origin")
@@ -143,15 +143,15 @@ class Evaluater:
 
         curr_sample_idx = 0
 
-        while curr_sample_idx < 100:
+        while curr_sample_idx < 1000:
         
-            rand_start_x = random.uniform(self.map_origin_x, self.map_range_x + self.map_origin_x)
-            rand_start_y = random.uniform(self.map_origin_y, self.map_range_y + self.map_origin_y)
-            rand_start_z = random.uniform(self.map_origin_z + 0.2, self.map_range_z + self.map_origin_z - 0.2)
+            rand_start_x = random.uniform(self.map_origin_x + 1 ,  self.map_range_x + self.map_origin_x - 1)
+            rand_start_y = random.uniform(self.map_origin_y + 1 ,  self.map_range_y + self.map_origin_y - 1)
+            rand_start_z = random.uniform(self.map_origin_z + 0.5, self.map_range_z + self.map_origin_z - 0.5)
 
-            rand_goal_x = random.uniform(self.map_origin_x, self.map_range_x + self.map_origin_x)
-            rand_goal_y = random.uniform(self.map_origin_y, self.map_range_y + self.map_origin_y)
-            rand_goal_z = random.uniform(self.map_origin_z + 0.2, self.map_range_z + self.map_origin_z - 0.2)
+            rand_goal_x = random.uniform(self.map_origin_x + 1 ,  self.map_range_x + self.map_origin_x - 1)
+            rand_goal_y = random.uniform(self.map_origin_y + 1,   self.map_range_y + self.map_origin_y - 1)
+            rand_goal_z = random.uniform(self.map_origin_z + 0.5, self.map_range_z + self.map_origin_z - 0.5)
 
             start = np.array([rand_start_x, rand_start_y, rand_start_z])
             goal = np.array([rand_goal_x, rand_goal_y, rand_goal_z])
@@ -159,12 +159,13 @@ class Evaluater:
 
             curr_sample_idx += 1
             dis = np.linalg.norm(start - goal)
-            if dis > 0.8 * self.map_range_x: 
+            
+            #check dist is far and collision free
+            if dis > 0.7 * self.map_range_x and not self.evaluate_collision([Point(x=start[0], y=start[1], z=start[2]), Point(x=goal[0], y=goal[1], z=goal[2])], tol = 1.0):
                 break
-                #print("start and goal are too close! Skipping...")
-                # continue
+            
         if curr_sample_idx == 100:
-            rospy.logerr("Failed to sample a start and goal pair far enough apart, consider changing the map size")
+            rospy.logerr("Failed to sample a start and goal pair far enough apart && collision free")
 
         return start, goal
 
@@ -191,11 +192,14 @@ class Evaluater:
         return
     
 
-    def evaluate_collision(self, pts):
+    def evaluate_collision(self, pts, tol = -1.0):
+        if tol < 0:
+            tol = self.mav_radius
         min_sq_dist = 1000000
         min_idx = 0
-        pts = pts[::10]
-        tqdm.write("odom length = " + str( len(pts)))
+        if len(pts) > 200:
+            pts = pts[::10]
+        # tqdm.write("odom length = " + str( len(pts)))
         if self.kdtree is None:
             rospy.sleep(0.1)
             rospy.logerr("No KD Tree, skipping collision check")
@@ -213,9 +217,9 @@ class Evaluater:
                 min_sq_dist = sqdist[0][0]
                 min_idx = pt_idx
 
-        tqdm.write("min dist = " + str(np.sqrt(min_sq_dist)) + "@ traj percentage = " + str(min_idx/len(pts)))
-        if np.sqrt(min_sq_dist) < self.mav_radius:
-            rospy.logwarn("Collision Detected")
+        # tqdm.write("min dist = " + str(np.sqrt(min_sq_dist)) + "@ traj percentage = " + str(min_idx/len(pts)))
+        if np.sqrt(min_sq_dist) < tol:
+            # rospy.logwarn("Collision Detected")
             return True
         else:
             return False            
@@ -353,6 +357,7 @@ class Evaluater:
                 # set goal to be random
                 msg.p_final.position.x = end[0]
                 msg.p_final.position.y = end[1]
+                msg.check_vel = False
 
                 self.send_start_goal_viz(msg)
 
@@ -442,10 +447,11 @@ class Evaluater:
         #save pickle with all the data, use date time as name
         # with open('ECI_eval_data_'+file_name_save_time+'.pkl', 'wb') as f:
         #     pickle.dump([self.success, self.success_detail, self.traj_time, self.traj_cost, self.traj_jerk, self.traj_compute_time, self.compute_time_front, self.compute_time_back, self.tracking_error, self.effort], f)
-        with open('ECI_Result' + file_name_save_time + '.yaml', 'w') as f:
+        with open('ECI_Result' + file_name_save_time + '.csv', 'w') as f:
             yaml.dump(params, f)# result and config
 
         #create variables to store the average values
+        success_front_rate = np.sum(self.success_detail >= 1, axis = 0)/self.success.shape[0]
         success_rate_avg = np.sum(self.success,axis = 0)/self.success.shape[0]
         traj_time_avg = np.sum(self.traj_time,axis = 0) / np.sum(self.success, axis = 0)
         # traj_cost_avg = np.sum(self.traj_cost[self.success]) / np.sum(self.success)
@@ -458,6 +464,7 @@ class Evaluater:
         collision_rate_avg = np.sum(self.collision_cnt, axis = 0) / np.sum(self.success, axis = 0)
 
         # rewrite the above section with defined avg variables
+        print("frontend success rate: " + str(success_front_rate)+ " out of " + str(self.success.shape[0]))
         print("success rate: " + str(success_rate_avg)+ " out of " + str(self.success.shape[0]))
         print("avg traj time(s): " + str(traj_time_avg))
         # print("avg traj cost(time + jerk): " + str(traj_cost_avg))
@@ -476,9 +483,9 @@ class Evaluater:
 
         with open(csv_name, 'w') as f: #result summary
             writer = csv.writer(f)
-            writer.writerow(['planner','success rate', 'traj time', 'traj jerk', 'compute time(ms)', 'compute time front(ms)', 'compute time back(ms)', 'tracking error(m)', 'effort(rpm)', 'collision rate'])
+            writer.writerow(['Map:'+self.map_name+ ' Run:' + str(self.num_trials),'success rate', 'frontend success','traj time', 'traj jerk', 'compute time(ms)', 'compute time front(ms)', 'compute time back(ms)', 'tracking error(m)', 'effort(rpm)', 'collision rate'])
             for i in range(self.num_planners):
-                writer.writerow([self.client_name_list[i], success_rate_avg[i], traj_time_avg[i], traj_jerk_avg[i], traj_compute_time_avg[i], compute_time_front_avg[i], compute_time_back_avg[i], tracking_error_avg[i], effort_avg[i], collision_rate_avg[i]])
+                writer.writerow([self.client_name_list[i], success_rate_avg[i], success_front_rate[i], traj_time_avg[i], traj_jerk_avg[i], traj_compute_time_avg[i], compute_time_front_avg[i], compute_time_back_avg[i], tracking_error_avg[i], effort_avg[i], collision_rate_avg[i]])
            
 
 def subscriber():

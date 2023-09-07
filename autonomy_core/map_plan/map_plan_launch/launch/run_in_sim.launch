@@ -246,7 +246,7 @@
       <param name='trajectory_planner/arm_length' value="$(arg arm_length)"/>  
       <param name='trajectory_planner/kf' value="$(arg kf)"/>
       <param name='trajectory_planner/km' value="$(arg km)"/>
-      
+
     </node>
 
     <!-- Map Settings -->
@@ -271,6 +271,10 @@
       <!-- randomly change the map without trigger -->
       <param name="map/auto_change"    value="false"/>
 
+      <!-- for evaluation -->
+      <param name="map/mav_radius" value="$(arg mav_radius)"/>
+      <param name="map/evaluate"   value="true"/> 
+
 
       <!-- params for random_map -->
       <!-- params for random_map -->
@@ -293,7 +297,7 @@
       <param name="params/seed" value="35.8"/>
 
       <!-- to generate map dataset in this folder -->
-      <param name="dataset/save_map"    value="true"/>
+      <param name="dataset/save_map"    value="false"/>
       <param name="dataset/samples_num" value="100"/>
       <param name="dataset/start_index" value="5080900"/>
       <param name="dataset/path"        value="$(find param_env)/dataset/"/>
@@ -315,13 +319,36 @@
             4 read pcd file -->
       <param name="map/mode"       value="1" /> 
 
+      <!-- mode 0 eg -->
+      <param name="params/density_index"     value="0.2"/>  <!-- 0-0.5 -->
+      <param name="params/clutter_index"     value="0.5"/> 
+      <param name="params/structure index"   value="0.1"/> 
+      <param name="params/seed"              value="1"/>
+
+
+      <!-- for multi-map reader, set folder path and use_folder as true -->
+
       <param name="folder_path" value="$(find param_env)/data/img/maze/"/>
       <param name="use_folder"  value="true"/>
 
       <!-- mode 1 eg -->
       <param name="file_path" value="$(find param_env)/data/img/maze/maze8.png"/>
+      <param name="img/negate" value="0"/>
       <param name="img/occ_th" value="0.6"/>
 
+      <!-- mode 12 eg -->
+      <!-- <param name="file_path" value="$(find param_env)/data/pc1/levine/levine.bag"/>
+      <param name="bag_topic" value="/cloud"/> -->
+
+      <!-- mode 3 eg -->
+      <!-- <param name="file_path" value="$(find param_env)/data/pc2/iss_obs.bag"/>
+      <param name="bag_topic" value="/obs_points"/>  -->
+      <!-- point clouds topic name in the bag file -->
+
+      <!-- mode 4 eg -->
+      <!-- <param name="file_path" value="$(find param_env)/data/pcd/urban/72.pcd"/> -->
+
+      
     </node>
 
 

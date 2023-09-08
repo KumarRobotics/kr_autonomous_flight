@@ -147,9 +147,10 @@ class Evaluater:
 
 
 
-    def sample_in_map(self):
+    def sample_in_map(self, tol):
 
         curr_sample_idx = 0
+        start_end_feasible = True
 
         while curr_sample_idx < 1000:
         
@@ -169,13 +170,13 @@ class Evaluater:
             dis = np.linalg.norm(start - goal)
             
             #check dist is far and collision free
-            if dis > 0.7 * self.map_range_x and not self.evaluate_collision([Point(x=start[0], y=start[1], z=start[2]), Point(x=goal[0], y=goal[1], z=goal[2])], tol = 1.0):
+            if dis > 0.7 * self.map_range_x and not self.evaluate_collision([Point(x=start[0], y=start[1], z=start[2]), Point(x=goal[0], y=goal[1], z=goal[2])], tol):
                 break
             
         if curr_sample_idx == 100:
             rospy.logerr("Failed to sample a start and goal pair far enough apart && collision free")
-
-        return start, goal
+            start_end_feasible = False
+        return start, goal, start_end_feasible
 
 
     def odom_callback(self, msg):
@@ -291,7 +292,7 @@ class Evaluater:
             with open('ECI_single_line_'+file_name_save_time+'.csv', 'w') as csvfile:
                 csv_writer = csv.writer(csvfile)
                 csv_writer.writerow(['map_type', 'map_seed', 'density_index', 'clutter_index', 'structure_index',
-                                     'planner_frontend', 'planner_backend', 
+                                     'start_end_feasible', 'planner_frontend', 'planner_backend', 
                                      'success', 'success_detail', 'traj_time(s)', 'traj_length(m)', 'traj_jerk', 'traj_effort(rpm)',
                                      'traj_compute_time(ms)', 'compute_time_frontend(ms)', 'compute_time_backend', 
                                      'tracking_error(m) avg', 'collision_status'])
@@ -308,7 +309,8 @@ class Evaluater:
                     map_response = self.change_map_pub(seed = i) # this is only active when using structure map
                     rospy.sleep(0.5) # maze map is still reading files sequentially
                         # When change_map returns, the map is changed, but becuase delay, wait a little longer
-                    print(map_response)
+                    # print(map_response)
+                    start_end_feasible = True
                     ####### DEFINE START #####
                     # define start location not actually sending pos_msg since we using a tracker to get there
                     if not use_odom_bool: # hopefully this is always the case, we can specify the start
@@ -320,7 +322,7 @@ class Evaluater:
                             start = np.array([-9.5, -4, 1.0])
                             end = np.array([9.5, 4, 1.0])
                         else:
-                            start, end = self.sample_in_map()
+                            start, end, start_end_feasible = self.sample_in_map(tol = 1.0)
 
                         pos_msg.position.x = start[0]
                         pos_msg.position.y = start[1]
@@ -385,7 +387,7 @@ class Evaluater:
                         self.send_start_goal_viz(msg)
 
                         client.send_goal(msg) #motion
-                        tqdm.write("Goal Sent")
+
                         self.effort_temp = 0.0 # 
                         self.effort_counter = 1 # to avoid divide by zero
 
@@ -433,11 +435,11 @@ class Evaluater:
                                 self.collision_cnt[i,client_idx] = self.evaluate_collision(result.odom_pts)
 
                         else:
-                            tqdm.write("Server Failure: trial " + str(i), " planner: " + str(client_idx))
+                            tqdm.write("Server Failure: trial " + str(i) + " planner: " + str(client_idx))
                             self.success_detail[i,client_idx] = -1
                 #dont have traj length, so just put 0
                         csv_writer.writerow([self.map_name, i, map_response.density_index, map_response.clutter_index, map_response.structure_index,
-                                             self.client_name_front_list[client_idx], self.client_name_back_list[client_idx],
+                                             start_end_feasible, self.client_name_front_list[client_idx], self.client_name_back_list[client_idx],
                                             self.success[i,client_idx], self.success_detail[i,client_idx], self.traj_time[i,client_idx], 0.0, self.traj_jerk[i,client_idx], self.effort[i,client_idx],
                                             self.traj_compute_time[i,client_idx], self.compute_time_front[i,client_idx], self.compute_time_back[i,client_idx],
                                             self.tracking_error[i,client_idx], self.collision_cnt[i,client_idx]])
@@ -451,17 +453,17 @@ class Evaluater:
         params = {}
         for name in param_names:
             params[name] = rospy.get_param(name)
-        params['success'] = self.success.tolist()
-        params['success_detail'] = self.success_detail.tolist()
-        params['traj_time'] = self.traj_time.tolist()
-        params['traj_cost'] = self.traj_cost.tolist()
-        params['traj_jerk'] = self.traj_jerk.tolist()
-        params['traj_compute_time'] = self.traj_compute_time.tolist()
-        params['compute_time_front'] = self.compute_time_front.tolist()
-        params['compute_time_back'] = self.compute_time_back.tolist()
-        params['tracking_error'] = self.tracking_error.tolist()
-        params['effort'] = self.effort.tolist()
-        params['collision_cnt'] = self.collision_cnt.tolist()
+        params['success'] = self.success
+        params['success_detail'] = self.success_detail
+        params['traj_time'] = self.traj_time
+        params['traj_cost'] = self.traj_cost
+        params['traj_jerk'] = self.traj_jerk
+        params['traj_compute_time'] = self.traj_compute_time
+        params['compute_time_front'] = self.compute_time_front
+        params['compute_time_back'] = self.compute_time_back
+        params['tracking_error'] = self.tracking_error
+        params['effort'] = self.effort
+        params['collision_cnt'] = self.collision_cnt
 
         print(self.success)
         print(self.success_detail)
@@ -478,7 +480,7 @@ class Evaluater:
         #save pickle with all the data, use date time as name
         # with open('ECI_eval_data_'+file_name_save_time+'.pkl', 'wb') as f:
         #     pickle.dump([self.success, self.success_detail, self.traj_time, self.traj_cost, self.traj_jerk, self.traj_compute_time, self.compute_time_front, self.compute_time_back, self.tracking_error, self.effort], f)
-        with open('ECI_Result' + file_name_save_time + '.csv', 'w') as f:
+        with open('ECI_Result' + file_name_save_time + '.pkl', 'wb') as f:
             yaml.dump(params, f)# result and config
 
         #create variables to store the average values

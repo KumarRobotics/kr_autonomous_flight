@@ -20,7 +20,7 @@ import actionlib
 from std_msgs.msg import Int32
 from tqdm import tqdm
 import pickle
-import yaml
+# import yaml
 import csv
 
 import pcl
@@ -81,7 +81,7 @@ class Evaluater:
         self.client_name_back_list = []
 
         self.num_planners = 5
-        self.num_trials = 50
+        self.num_trials = 10
         for i in range(self.num_planners): #  0, 1, 2, ... not gonna include the one with no suffix
             self.client_list.append(SimpleActionClient('/local_plan_server'+str(i)+'/plan_local_trajectory', PlanTwoPointAction))
              # self.client2 = SimpleActionClient('/local_plan_server2/plan_local_trajectory', PlanTwoPointAction)
@@ -480,8 +480,8 @@ class Evaluater:
         #save pickle with all the data, use date time as name
         # with open('ECI_eval_data_'+file_name_save_time+'.pkl', 'wb') as f:
         #     pickle.dump([self.success, self.success_detail, self.traj_time, self.traj_cost, self.traj_jerk, self.traj_compute_time, self.compute_time_front, self.compute_time_back, self.tracking_error, self.effort], f)
-        with open('ECI_Result' + file_name_save_time + '.pkl', 'wb') as f:
-            yaml.dump(params, f)# result and config
+        with open('ECI_Result_Config' + file_name_save_time + '.pkl', 'wb') as f:
+            pickle.dump(params, f)# result and config
 
         #create variables to store the average values
         success_front_rate = np.sum(self.success_detail >= 1, axis = 0)/self.success.shape[0]

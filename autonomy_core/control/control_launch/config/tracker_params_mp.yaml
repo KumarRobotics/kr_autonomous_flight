@@ -9,7 +9,7 @@ take_off_tracker:
 land_tracker:
   epsilon: 2.0 # landing process stops when the position command is epsilon below odom
   vel: 0.5 # landing velocity, will hit ground with this velocity
-  acc: 2.0 # landing acceleration
+  acc: 2.0 # landing acceleration 
 
 trajectory_tracker:
   max_pos_error: 1.00 # maximum allowed trajectory tracking error in meters (recommended value: 0.5-1.0)
@@ -29,7 +29,7 @@ trajectory_planner:
   search_planner_type: 0 # 0: MPL, 1: dispersion planner, 2: JPS (geometric) 3: pass through from global planner 4: RRT 5 :SST
   #is being overwriten in the launch file
   opt_planner_text: ["Double Description", "gcopter", "iLQR(Altro)", "None"] #this trick make when no opt planner, the text says none
-  opt_planner_type: 2 # -1: no planner(BROKEN) 0: Double Description 1: gcopter 2: iLQR(Altro) 
+  opt_planner_type: 1 # -1: no planner(BROKEN) 0: Double Description 1: gcopter 2: iLQR(Altro) 
   use_discrete_traj: false # set true to use with ilqr, still a lot of tracking er
   use_tracker_client: false # if we wait for tracker to finish before sending next command
   # if we do not care about tracking error and want things to run fast, set this to false

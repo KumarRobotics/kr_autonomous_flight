@@ -801,8 +801,9 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::DynSampling::plan(
     path_.clear();
     for (auto& wp : route) {
       path_.push_back(wp.head(3));
+      //std::cout << "wp.head(3)" << wp.head(3).transpose() << std::endl;
     }
-    path_.push_back(goal.pos);
+
 
     kr_planning_msgs::Path path = kr::path_to_ros(path_);
     path.header.frame_id = frame_id_;
@@ -814,7 +815,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::DynSampling::plan(
     // nh_.param("max_v", velocity, 2.0);
     // spline_traj_ = path_to_spline_traj(path, velocity);
     spline_traj_.dimensions = 3;
-    int piece_num = route.size();
+    int piece_num = route.size()-1;
     for (uint d = 0; d < 3; d++) {
       kr_planning_msgs::Spline spline;
       double total_time = 0.0;
@@ -959,7 +960,8 @@ CompositePlanner::plan_composite(
     // Double description initialization traj must fully reach the end or it
     // will fail.
     // TODO(Laura) consider whether should actually calculate the BVP instead
-    path.push_back(goal.pos);
+    // yuwei : don't add goal position
+    //path.push_back(goal.pos);
     opt_planner_type_->setSearchPath(path);
 
     // before planning, generate polytopes

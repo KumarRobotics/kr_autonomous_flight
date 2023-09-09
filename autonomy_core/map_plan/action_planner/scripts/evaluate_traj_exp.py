@@ -80,7 +80,7 @@ class Evaluater:
         self.client_name_front_list = []
         self.client_name_back_list = []
 
-        self.num_planners = 5
+        self.num_planners = 1
         self.num_trials = 10
         for i in range(self.num_planners): #  0, 1, 2, ... not gonna include the one with no suffix
             self.client_list.append(SimpleActionClient('/local_plan_server'+str(i)+'/plan_local_trajectory', PlanTwoPointAction))
@@ -138,6 +138,7 @@ class Evaluater:
         self.effort = np.zeros((self.num_trials, self.num_planners)) #unit in rpm
         self.rho = 50  # TODO(Laura) pull from param or somewhere
         self.collision_cnt = np.zeros((self.num_trials, self.num_planners), dtype=bool)
+        self.dist_to_goal = np.zeros((self.num_trials, self.num_planners))
 
         self.kdtree = None
         self.pcl_data = None
@@ -223,12 +224,14 @@ class Evaluater:
             sp.from_array(sps)
             [ind, sqdist] = self.kdtree.nearest_k_search_for_cloud(sp, 1) #which pointcloud pt has min dist
             if sqdist[0][0] < min_sq_dist:
+
                 min_sq_dist = sqdist[0][0]
                 min_idx = pt_idx
 
         # tqdm.write("min dist = " + str(np.sqrt(min_sq_dist)) + "@ traj percentage = " + str(min_idx/len(pts)))
         if np.sqrt(min_sq_dist) < tol:
-            # rospy.logwarn("Collision Detected")
+            rospy.logwarn("Collision Detected")
+            print("min_sq_dist is ", min_sq_dist)
             return True
         else:
             return False            
@@ -433,7 +436,16 @@ class Evaluater:
                                         result.odom_pts.append(pos_t_pt)
                                         
                                 self.collision_cnt[i,client_idx] = self.evaluate_collision(result.odom_pts)
+                                
 
+                                traj_end_point = np.zeros(3, dtype=np.float32)
+                                traj_end_point[0] = result.odom_pts[-1].x
+                                traj_end_point[1] = result.odom_pts[-1].y
+                                traj_end_point[2] = result.odom_pts[-1].z
+
+
+                                self.dist_to_goal[i, client_idx] = np.linalg.norm(end - traj_end_point)
+ 
                         else:
                             tqdm.write("Server Failure: trial " + str(i) + " planner: " + str(client_idx))
                             self.success_detail[i,client_idx] = -1
@@ -442,7 +454,7 @@ class Evaluater:
                                              start_end_feasible, self.client_name_front_list[client_idx], self.client_name_back_list[client_idx],
                                             self.success[i,client_idx], self.success_detail[i,client_idx], self.traj_time[i,client_idx], 0.0, self.traj_jerk[i,client_idx], self.effort[i,client_idx],
                                             self.traj_compute_time[i,client_idx], self.compute_time_front[i,client_idx], self.compute_time_back[i,client_idx],
-                                            self.tracking_error[i,client_idx], self.collision_cnt[i,client_idx]])
+                                            self.tracking_error[i,client_idx], self.collision_cnt[i,client_idx], self.dist_to_goal[i, client_idx]])
 
         except KeyboardInterrupt:
             tqdm.write("Keyboard Interrupt!")
@@ -464,6 +476,7 @@ class Evaluater:
         params['tracking_error'] = self.tracking_error
         params['effort'] = self.effort
         params['collision_cnt'] = self.collision_cnt
+        params['dist_to_goal'] = self.dist_to_goal
 
         print(self.success)
         print(self.success_detail)
@@ -476,6 +489,9 @@ class Evaluater:
         print("Tracking Error", self.tracking_error)
         print("Effort", self.effort)
         print("Is Collide", self.collision_cnt)
+        print("Distance To Goal", self.dist_to_goal)
+
+
 
         #save pickle with all the data, use date time as name
         # with open('ECI_eval_data_'+file_name_save_time+'.pkl', 'wb') as f:
@@ -495,7 +511,7 @@ class Evaluater:
         tracking_error_avg = np.sum(self.tracking_error, axis = 0) / np.sum(self.success, axis = 0)
         effort_avg = np.sum(self.effort, axis = 0) / np.sum(self.success, axis = 0)
         collision_rate_avg = np.sum(self.collision_cnt, axis = 0) / np.sum(self.success, axis = 0)
-
+        dist_to_goal_avg = np.sum(self.dist_to_goal, axis = 0) / np.sum(self.success, axis = 0)
         # rewrite the above section with defined avg variables
         print("frontend success rate: " + str(success_front_rate)+ " out of " + str(self.success.shape[0]))
         print("success rate: " + str(success_rate_avg)+ " out of " + str(self.success.shape[0]))
@@ -507,6 +523,7 @@ class Evaluater:
         print("avg compute time back(ms): " + str(compute_time_back_avg))
         print("avg tracking error(m): " + str(tracking_error_avg))
         print("avg effort(rpm): " + str(effort_avg))# this is bugg!! need to consider success
+        print("avg dist to goal: " + str(dist_to_goal_avg))
         print("collision rate: " + str(collision_rate_avg))
 
 

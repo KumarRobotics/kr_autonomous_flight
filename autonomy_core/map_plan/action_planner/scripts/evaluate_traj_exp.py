@@ -96,7 +96,9 @@ class Evaluater:
 
 
         self.wait_for_things = rospy.get_param('/local_plan_server0/trajectory_planner/use_tracker_client')
-        self.fix_start_end_location = self.map_type == "read_grid_map" # or structure_map or real_map
+        self.map_read_mode = rospy.get_param('/' + self.map_type + "/map/mode")
+
+        self.fix_start_end_location = (self.map_type == "read_grid_map" and self.map_read_mode == 1) # or structure_map 
         
         self.map_origin_x = rospy.get_param('/' + self.map_type + "/map/x_origin")
         self.map_origin_y = rospy.get_param('/' + self.map_type + "/map/y_origin")

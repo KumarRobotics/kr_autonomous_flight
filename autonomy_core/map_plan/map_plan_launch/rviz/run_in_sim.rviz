@@ -3,7 +3,9 @@ Panels:
     Help Height: 0
     Name: Displays
     Property Tree Widget:
-      Expanded: ~
+      Expanded:
+        - /VoxelMap1
+        - /Inflated Map1
       Splitter Ratio: 0.32383421063423157
     Tree Height: 678
   - Class: rviz/Selection
@@ -110,7 +112,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: AxisColor
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
@@ -119,13 +121,13 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 1
+      Size (m): 0.10000000149011612
       Style: Squares
       Topic: /global_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -151,7 +153,7 @@ Visualization Manager:
       Queue Size: 1
       Selectable: true
       Size (Pixels): 10
-      Size (m): 0.25
+      Size (m): 0.10000000149011612
       State: Occupied
       Style: Boxes
       Topic: /mapper/local_voxel_no_inflation_map
@@ -159,7 +161,7 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
-    - Alpha: 1
+    - Alpha: 0.5
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
         Max Value: 10.125
@@ -172,7 +174,7 @@ Visualization Manager:
       Color: 173; 127; 168
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       MeshAlpha: 0.20000000298023224
@@ -184,14 +186,14 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.25
+      Size (m): 0.10000000149011612
       State: Occupied
       Style: Boxes
       Topic: /mapper/local_voxel_map
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /quadrotor/mesh_visualization/robot
@@ -393,7 +395,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 21.70362091064453
+      Distance: 22.426376342773438
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -401,17 +403,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.8901920318603516
-        Y: -3.1303837299346924
+        X: -1.9946348667144775
+        Y: -2.5021116733551025
         Z: 0
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.4747966527938843
+      Pitch: 0.3147951662540436
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 4.775392055511475
+      Yaw: 4.070373058319092
     Saved: ~
 Window Geometry:
   Displays:

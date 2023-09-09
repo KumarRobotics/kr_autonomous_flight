@@ -20,7 +20,7 @@ import actionlib
 from std_msgs.msg import Int32
 from tqdm import tqdm
 import pickle
-# import yaml
+import yaml
 import csv
 
 import pcl
@@ -81,7 +81,7 @@ class Evaluater:
         self.client_name_back_list = []
 
         self.num_planners = 5
-        self.num_trials = 10
+        self.num_trials = 70
         for i in range(self.num_planners): #  0, 1, 2, ... not gonna include the one with no suffix
             self.client_list.append(SimpleActionClient('/local_plan_server'+str(i)+'/plan_local_trajectory', PlanTwoPointAction))
              # self.client2 = SimpleActionClient('/local_plan_server2/plan_local_trajectory', PlanTwoPointAction)
@@ -91,20 +91,20 @@ class Evaluater:
 
 
         self.mav_name    = rospy.get_param('/local_plan_server0/mav_name')
-        self.map_name    = rospy.get_param('/local_plan_server0/map_name')
+        self.map_type    = rospy.get_param('/local_plan_server0/map_name')
         self.mav_radius  = rospy.get_param('/local_plan_server0/mav_radius')
 
 
         self.wait_for_things = rospy.get_param('/local_plan_server0/trajectory_planner/use_tracker_client')
-        self.fix_start_end_location = self.map_name == "read_grid_map" # or structure_map or real_map
+        self.fix_start_end_location = self.map_type == "read_grid_map" # or structure_map or real_map
         
-        self.map_origin_x = rospy.get_param('/' + self.map_name + "/map/x_origin")
-        self.map_origin_y = rospy.get_param('/' + self.map_name + "/map/y_origin")
-        self.map_origin_z = rospy.get_param('/' + self.map_name + "/map/z_origin")
+        self.map_origin_x = rospy.get_param('/' + self.map_type + "/map/x_origin")
+        self.map_origin_y = rospy.get_param('/' + self.map_type + "/map/y_origin")
+        self.map_origin_z = rospy.get_param('/' + self.map_type + "/map/z_origin")
 
-        self.map_range_x = rospy.get_param('/' + self.map_name + "/map/x_size")
-        self.map_range_y = rospy.get_param('/' + self.map_name + "/map/y_size")
-        self.map_range_z = rospy.get_param('/' + self.map_name + "/map/z_size")
+        self.map_range_x = rospy.get_param('/' + self.map_type + "/map/x_size")
+        self.map_range_y = rospy.get_param('/' + self.map_type + "/map/y_size")
+        self.map_range_z = rospy.get_param('/' + self.map_type + "/map/z_size")
         
         self.set_state_pub      = rospy.Publisher( '/' + self.mav_name + '/set_state', PositionCommand, queue_size=1, latch=False)
         # self.client_tracker = actionlib.SimpleActionClient('/quadrotor/trackers_manager/poly_tracker/PolyTracker', PolyTrackerAction)
@@ -112,7 +112,7 @@ class Evaluater:
         rospy.Subscriber("global_cloud", PointCloud2, self.point_clouds_callback) # this needs to be ready early
 
         # self.change_map_pub     = rospy.Publisher('/' + self.map_name + '/change_map', Int32, queue_size=1)
-        self.change_map_pub  = rospy.ServiceProxy('/' + self.map_name + '/change_map', changeMap)
+        self.change_map_pub  = rospy.ServiceProxy('/' + self.map_type + '/change_map', changeMap)
 
 
         print("waiting for tracker trigger service")
@@ -279,7 +279,7 @@ class Evaluater:
     def publisher(self):
         search_planner_text = rospy.get_param('/local_plan_server0/trajectory_planner/search_planner_text')
         opt_planner_text = rospy.get_param('/local_plan_server0/trajectory_planner/opt_planner_text')
-        print("Running ", self.num_planners, "planner combinations for", self.num_trials, "trials", "on map", self.map_name)
+        print("Running ", self.num_planners, "planner combinations for", self.num_trials, "trials", "on map", self.map_type)
         for i in range(self.num_planners):
             print("waiting for action server ", i)
             self.client_list[i].wait_for_server()
@@ -294,10 +294,18 @@ class Evaluater:
         now = datetime.now()
         file_name_save_time = now.strftime("%m-%d_%H-%M-%S")
 
+        param_names = rospy.get_param_names()
+        params = {}
+        for name in param_names:
+            params[name] = rospy.get_param(name)
+
+        with open('ECI_params_'+file_name_save_time+'.yaml', 'w') as f:
+            yaml.dump(params, f)
+
         try:
             with open('ECI_single_line_'+file_name_save_time+'.csv', 'w') as csvfile:
                 csv_writer = csv.writer(csvfile)
-                csv_writer.writerow(['map_type', 'map_seed', 'density_index', 'clutter_index', 'structure_index',
+                csv_writer.writerow(['map_type', 'map_seed','map_filename', 'density_index', 'clutter_index', 'structure_index',
                                      'start_end_feasible', 'planner_frontend', 'planner_backend', 
                                      'success', 'success_detail', 'traj_time(s)', 'traj_length(m)', 'traj_jerk', 'traj_effort(rpm)',
                                      'compute_time_poly(ms)', 'compute_time_frontend(ms)', 'compute_time_backend(ms)', 
@@ -328,7 +336,7 @@ class Evaluater:
                             start = np.array([-9.5, -4, 1.0])
                             end = np.array([9.5, 4, 1.0])
                         else:
-                            start, end, start_end_feasible = self.sample_in_map(tol = 1.0)
+                            start, end, start_end_feasible = self.sample_in_map(tol = self.mav_radius)
                         if not start_end_feasible:
                             continue
                         pos_msg.position.x = start[0]
@@ -452,7 +460,7 @@ class Evaluater:
                             tqdm.write("Server Failure: trial " + str(i) + " planner: " + str(client_idx))
                             self.success_detail[i,client_idx] = -1
                 #dont have traj length, so just put 0
-                        csv_writer.writerow([self.map_name, i, map_response.density_index, map_response.clutter_index, map_response.structure_index,
+                        csv_writer.writerow([self.map_type, i, map_response.file_name.data, map_response.density_index, map_response.clutter_index, map_response.structure_index,
                                              start_end_feasible, self.client_name_front_list[client_idx], self.client_name_back_list[client_idx],
                                             self.success[i,client_idx], self.success_detail[i,client_idx], self.traj_time[i,client_idx], 0.0, self.traj_jerk[i,client_idx], self.effort[i,client_idx],
                                             self.poly_compute_time[i,client_idx], self.compute_time_front[i,client_idx], self.compute_time_back[i,client_idx],
@@ -467,18 +475,20 @@ class Evaluater:
         params = {}
         for name in param_names:
             params[name] = rospy.get_param(name)
-        params['success'] = self.success
-        params['success_detail'] = self.success_detail
-        params['traj_time'] = self.traj_time
-        params['traj_cost'] = self.traj_cost
-        params['traj_jerk'] = self.traj_jerk
-        params['poly_compute_time'] = self.poly_compute_time
-        params['compute_time_front'] = self.compute_time_front
-        params['compute_time_back'] = self.compute_time_back
-        params['tracking_error'] = self.tracking_error
-        params['effort'] = self.effort
-        params['collision_cnt'] = self.collision_cnt
-        params['dist_to_goal'] = self.dist_to_goal
+        data_all = {}
+
+        data_all['success'] = self.success
+        data_all['success_detail'] = self.success_detail
+        data_all['traj_time'] = self.traj_time
+        data_all['traj_cost'] = self.traj_cost
+        data_all['traj_jerk'] = self.traj_jerk
+        data_all['poly_compute_time'] = self.poly_compute_time
+        data_all['compute_time_front'] = self.compute_time_front
+        data_all['compute_time_back'] = self.compute_time_back
+        data_all['tracking_error'] = self.tracking_error
+        data_all['effort'] = self.effort
+        data_all['collision_cnt'] = self.collision_cnt
+        data_all['dist_to_goal'] = self.dist_to_goal
 
         print(self.success)
         print("Legend: -2: not run, -1: server failure, 0: front failure, 1: front success, 2: poly success, 3: back success")
@@ -499,8 +509,8 @@ class Evaluater:
         #save pickle with all the data, use date time as name
         # with open('ECI_eval_data_'+file_name_save_time+'.pkl', 'wb') as f:
         #     pickle.dump([self.success, self.success_detail, self.traj_time, self.traj_cost, self.traj_jerk, self.traj_compute_time, self.compute_time_front, self.compute_time_back, self.tracking_error, self.effort], f)
-        with open('ECI_Result_Config' + file_name_save_time + '.pkl', 'wb') as f:
-            pickle.dump(params, f)# result and config
+        with open('ECI_Result_' + file_name_save_time + '.pkl', 'wb') as f:
+            pickle.dump(data_all, f)# result and config
 
         #create variables to store the average values
         success_front_rate = np.sum(self.success_detail >= 1, axis = 0)/self.success.shape[0]
@@ -532,11 +542,11 @@ class Evaluater:
 
         
         # save the avg values to a csv file by appending to the end of the file
-        csv_name = 'ECI_summary_'+file_name_save_time+'.csv'
+        csv_name = 'ECI_Summary_'+file_name_save_time+'.csv'
 
         with open(csv_name, 'w') as f: #result summary
             writer = csv.writer(f)
-            writer.writerow(['Map:'+self.map_name+ ' Run:' + str(self.num_trials),'success rate', 'frontend success','traj time', 'traj jerk', 'compute time(ms)', 'compute time front(ms)', 'compute time back(ms)', 'tracking error(m)', 'effort(rpm)', 'collision rate'])
+            writer.writerow(['Map:'+self.map_type+ ' Run:' + str(self.num_trials),'success rate', 'frontend success','traj time', 'traj jerk', 'compute time(ms)', 'compute time front(ms)', 'compute time back(ms)', 'tracking error(m)', 'effort(rpm)', 'collision rate'])
             for i in range(self.num_planners):
                 writer.writerow([self.client_name_list[i], success_rate_avg[i], success_front_rate[i], traj_time_avg[i], traj_jerk_avg[i], poly_compute_time_avg[i], compute_time_front_avg[i], compute_time_back_avg[i], tracking_error_avg[i], effort_avg[i], collision_rate_avg[i]])
            

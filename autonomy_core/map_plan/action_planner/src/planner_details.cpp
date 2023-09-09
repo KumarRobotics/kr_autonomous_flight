@@ -37,11 +37,11 @@ kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
   if (result_discrete.pos.size() == 0) {
     traj_total_time_ = 0;
     opt_traj_.clear();
-    path_sampling_dt_ = 0.0;
+    ilqr_sampling_dt_ = 0.0;
   } else {
     traj_total_time_ = result_discrete.N_ctrl * result_discrete.dt;
     opt_traj_ = sampler_->opt_traj_;
-    path_sampling_dt_ = result_discrete.dt;
+    ilqr_sampling_dt_ = result_discrete.dt;
   }
   return result_discrete;
 }
@@ -56,17 +56,17 @@ MPL::Waypoint3D OptPlanner::iLQR_Planner::evaluate(double t) {
   } else if (t < 0) {
     x_return = opt_traj_.front();
   } else {
-    int index = std::floor(t / path_sampling_dt_);  // 0.95 / 0.1 = 9
+    int index = std::floor(t / ilqr_sampling_dt_);  // 0.95 / 0.1 = 9
 
     Eigen::VectorXd x1 = opt_traj_[index];
     Eigen::VectorXd x2 = opt_traj_[index + 1];
 
-    double tau = t - index * path_sampling_dt_;
+    double tau = t - index * ilqr_sampling_dt_;
 
     std::cout << "  index  " << index << std::endl;
 
     // if (is_linear_cut) {
-    x_return = x1 + tau / path_sampling_dt_ * (x2 - x1);
+    x_return = x1 + tau / ilqr_sampling_dt_ * (x2 - x1);
     // }
 
     // Eigen::MatrixXd psi = (Phi(dt - tau).transpose());
@@ -644,7 +644,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Geometric::plan(
     path_pub_.publish(path);
 
     double velocity;
-    nh_.param("max_v", velocity, 2.0);
+    nh_.param("max_v", velocity, 1.0);
     spline_traj_ = path_to_spline_traj(path, static_cast<float>(velocity));
     spline_traj_.header.frame_id = frame_id_;
     spline_traj_.header.stamp = ros::Time::now();
@@ -696,7 +696,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::PathThrough::plan(
   path_pub_.publish(path);
 
   double velocity;
-  nh_.param("max_v", velocity, 2.0);
+  nh_.param("max_v", velocity, 1.0);
   spline_traj_ = path_to_spline_traj(path, velocity);
   spline_traj_.header.frame_id = frame_id_;
   spline_traj_.header.stamp = ros::Time::now();
@@ -750,7 +750,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Sampling::plan(
 
     //@yuwei: constant velocity
     double velocity;
-    nh_.param("max_v", velocity, 2.0);
+    nh_.param("max_v", velocity, 1.0);
     spline_traj_ = path_to_spline_traj(path, velocity);
     spline_traj_.header.frame_id = frame_id_;
     spline_traj_.header.stamp = ros::Time::now();
@@ -861,6 +861,8 @@ void CompositePlanner::setup() {
   int search_planner_type_id, opt_planner_type_id;
   nh_.param("search_planner_type", search_planner_type_id, -1);
   nh_.param("opt_planner_type", opt_planner_type_id, -1);
+  nh_.param("path_sampling_dt", path_sampling_dt_, 0.0);
+   
   search_traj_pub_ = nh_.advertise<kr_planning_msgs::SplineTrajectory>(
       "search_trajectory", 1, true);
 
@@ -953,16 +955,22 @@ CompositePlanner::plan_composite(
   search_traj_pub_.publish(result);
 
   start_timer = std::chrono::high_resolution_clock::now();
-
+  std::cout << "front-end result total time is " << result.data[0].t_total << std::endl;
+   
   if (opt_planner_type_ != nullptr) {
     opt_planner_type_->search_path_msg_ = result;
-    auto path = search_planner_type_->SamplePath();
+    auto path = search_planner_type_->SamplePath(path_sampling_dt_);
     // Double description initialization traj must fully reach the end or it
     // will fail.
     // TODO(Laura) consider whether should actually calculate the BVP instead
     // yuwei : don't add goal position
     //path.push_back(goal.pos);
     opt_planner_type_->setSearchPath(path);
+
+    std::cout << "path.lenth is " << path.size() << std::endl;
+    std::cout << "opt_planner_type_->search_path_ lenth is " << opt_planner_type_->search_path_.size() << std::endl;
+
+
 
     // before planning, generate polytopes
     std::vector<Eigen::MatrixXd> hPolys;
@@ -974,6 +982,8 @@ CompositePlanner::plan_composite(
       ROS_ERROR("[Local Planner]:Corridor generation fails!\n");
       return empty_result;
     }
+
+    std::cout << "total time is " << allo_ts.sum() << std::endl;
     success_status = 2;
     opt_planner_type_->hPolys = hPolys;
     opt_planner_type_->allo_ts = allo_ts;
@@ -999,10 +1009,24 @@ MPL::Waypoint3D CompositePlanner::evaluate(double t) {
   return search_planner_type_->evaluate(t);
 }
 
-std::vector<Eigen::Vector3d> PlannerType::SamplePath() {
-  std::vector<Eigen::Vector3d> result(traj_total_time_ / path_sampling_dt_ + 1);
+std::vector<Eigen::Vector3d> PlannerType::SamplePath(double dt) { 
+
+  std::vector<Eigen::Vector3d> result(traj_total_time_ / dt);
   for (int i = 0; i < result.size(); i++) {
-    result[i] = evaluate(path_sampling_dt_ * i).pos;
+    result[i] = evaluate(dt * i).pos;
   }
   return result;
 }
+
+
+
+// bool PlannerType::has_collision(double dt,
+//                                 const kr_planning_msgs::VoxelMap& map)
+// { 
+//   std::cout << "traj_total_time_ is " << traj_total_time_ << std::endl;
+//   for(double cur_time = 0.0; cur_time <= traj_total_time_; cur_time += dt)
+//   {
+//     waypoint = evaluate(cur_time);
+//   }
+//   return false;
+// }

@@ -126,7 +126,7 @@ drag_coefficient: 0.0 -->
       <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
       <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
       <!-- Set your favorite planner here -->
-      <param name="trajectory_planner/search_planner_type" value="4"/>
+      <param name="trajectory_planner/search_planner_type" value="0"/>
 
       <remap from="~tracker_cmd"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker/goal"/>
       <remap from="~tracker_client"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker"/>

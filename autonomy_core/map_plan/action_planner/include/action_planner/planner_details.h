@@ -73,13 +73,14 @@ class PlannerType {
   void setSearchPath(const std::vector<Eigen::Vector3d>& search_path) {
     search_path_ = search_path;
   }
-  std::vector<Eigen::Vector3d> SamplePath();
+  std::vector<Eigen::Vector3d> SamplePath(double dt);
+
+  bool has_collision(const kr_planning_msgs::VoxelMap& map);
 
   ros::NodeHandle nh_;
   std::string frame_id_;
   double traj_total_time_;
-  // TODO(Laura) pass as param
-  double path_sampling_dt_ = 0.15;
+  double ilqr_sampling_dt_ = 0.1;
   // TODO(Laura) not sure if this is the best way to pass the search path
   std::vector<Eigen::Vector3d> search_path_;
   kr_planning_msgs::SplineTrajectory search_path_msg_;
@@ -114,6 +115,7 @@ class CompositePlanner : public PlannerType {
  private:
   PlannerType* search_planner_type_;
   PlannerType* opt_planner_type_;
+  double path_sampling_dt_;
   ros::Publisher search_traj_pub_;
   opt_planner::PlannerManager::Ptr poly_generator_;
   std::shared_ptr<MPL::VoxelMapUtil> poly_gen_map_util_;

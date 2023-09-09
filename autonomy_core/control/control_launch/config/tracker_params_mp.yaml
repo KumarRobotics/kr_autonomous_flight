@@ -33,9 +33,11 @@ trajectory_planner:
   use_discrete_traj: false # set true to use with ilqr, still a lot of tracking er
   use_tracker_client: false # if we wait for tracker to finish before sending next command
   # if we do not care about tracking error and want things to run fast, set this to false
+  path_sampling_dt : 0.05  # should be same as search/time_res
+
   #TODO(Laura) fix path
   dispersion/graph_file: "/home/wyw/Code/yifei_ws/src/500.json" #/home/wyw/Code/yifei_ws/src/500.json" # /home/wyw/Code/yifei_ws    /home/yifei/Documents/optimal_ctrl/
-
+  
   use_3d_global: false # global planner operates in 3D (true, in this case use_3d_local has to be set as true) or 2D (false)
   z_cost_factor: 1 # global map z cost factor, this also influences the vertical semi field of view of global planner into 45-degree / z_cost_factor  (cost_along_z = z_cost_factor * cost_along_x_or_y)
   # TODO: Z factor not working, has a bug, set value to 1 always!
@@ -73,7 +75,7 @@ trajectory_planner:
   search/vis_check_num: 15 # number of checking point along each segement
   search/w_time: 50.0 # time weight
   search/use_jerk: false # set false now
-  search/time_res: 0.15 # time resolution to index the path
+  search/time_res: 0.05 # time resolution to index the path
   # gcopter parameters
   MaxVelMag: 3.0
   MaxBdrMag: 2.1
@@ -89,7 +91,7 @@ trajectory_planner:
   WeightT: 20.0
   ChiVec:  [1.0e+4, 1.0e+4, 1.0e+4, 1.0e+4, 1.0e+5]
   SmoothingEps: 1.0e-2
-  IntegralIntervs: 16
+  IntegralIntervs: 32
   RelCostTol: 1.0e-5
 
 stopping_policy:

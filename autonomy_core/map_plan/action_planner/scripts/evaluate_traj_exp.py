@@ -80,7 +80,7 @@ class Evaluater:
         self.client_name_front_list = []
         self.client_name_back_list = []
 
-        self.num_planners = 1
+        self.num_planners = 5
         self.num_trials = 10
         for i in range(self.num_planners): #  0, 1, 2, ... not gonna include the one with no suffix
             self.client_list.append(SimpleActionClient('/local_plan_server'+str(i)+'/plan_local_trajectory', PlanTwoPointAction))
@@ -230,8 +230,10 @@ class Evaluater:
 
         # tqdm.write("min dist = " + str(np.sqrt(min_sq_dist)) + "@ traj percentage = " + str(min_idx/len(pts)))
         if np.sqrt(min_sq_dist) < tol:
-            rospy.logwarn("Collision Detected")
-            print("min_sq_dist is ", min_sq_dist)
+
+            if tol == self.mav_radius:
+                rospy.logwarn("Collision Detected")
+                print("np.sqrt(min_sq_dist) is ", np.sqrt(min_sq_dist))
             return True
         else:
             return False            

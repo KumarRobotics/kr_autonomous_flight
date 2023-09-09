@@ -45,8 +45,9 @@ class LocalPlanServer {
 
   double traj_total_time_;
   float computation_time_;
-  float compute_time_front_end_;
-  float compute_time_back_end_;
+  float compute_time_front_end_ = 0.0;
+  float compute_time_back_end_ = 0.0;
+  float compute_time_poly_ = 0.0;
   int success_status_;
 
   // current local map

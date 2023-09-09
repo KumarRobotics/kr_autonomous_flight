@@ -58,6 +58,7 @@ class PlannerType {
                  const kr_planning_msgs::VoxelMap& map_no_inflation,
                  float* compute_time_front_end,
                  float* compute_time_back_end,
+                 float* compute_time_poly,
                  int& success_status) {
     ROS_ERROR("[Plannner Details]:plan composite not implemented");
     // std::logic_error("Function not yet implemented");
@@ -109,6 +110,7 @@ class CompositePlanner : public PlannerType {
                  const kr_planning_msgs::VoxelMap& map_no_inflation,
                  float* compute_time_front_end,
                  float* compute_time_back_end,
+                 float* compute_time_poly, 
                  int& success_status);
   MPL::Waypoint3D evaluate(double t);
 

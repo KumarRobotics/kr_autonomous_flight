@@ -80,7 +80,7 @@ class Evaluater:
         self.client_name_front_list = []
         self.client_name_back_list = []
 
-        self.num_planners = 1
+        self.num_planners = 5
         self.num_trials = 10
         for i in range(self.num_planners): #  0, 1, 2, ... not gonna include the one with no suffix
             self.client_list.append(SimpleActionClient('/local_plan_server'+str(i)+'/plan_local_trajectory', PlanTwoPointAction))
@@ -127,11 +127,11 @@ class Evaluater:
 
         # rospy.Subscriber("/local_plan_server0/trajectory", SplineTrajectory, self.callback)
         self.success = np.zeros((self.num_trials, self.num_planners), dtype=bool)
-        self.success_detail = np.zeros((self.num_trials, self.num_planners), dtype=int)
+        self.success_detail = -2*np.ones((self.num_trials, self.num_planners), dtype=int)
         self.traj_time = np.zeros((self.num_trials, self.num_planners))
         self.traj_cost = np.zeros((self.num_trials, self.num_planners))
         self.traj_jerk = np.zeros((self.num_trials, self.num_planners))
-        self.traj_compute_time = np.zeros((self.num_trials, self.num_planners))
+        self.poly_compute_time = np.zeros((self.num_trials, self.num_planners))
         self.compute_time_front = np.zeros((self.num_trials, self.num_planners))
         self.compute_time_back = np.zeros((self.num_trials, self.num_planners))
         self.tracking_error = np.zeros((self.num_trials, self.num_planners))
@@ -152,8 +152,8 @@ class Evaluater:
 
         curr_sample_idx = 0
         start_end_feasible = True
-
-        while curr_sample_idx < 1000:
+        max_iter = 200
+        while curr_sample_idx < max_iter:
         
             rand_start_x = random.uniform(self.map_origin_x + 1 ,  self.map_range_x + self.map_origin_x - 1)
             rand_start_y = random.uniform(self.map_origin_y + 1 ,  self.map_range_y + self.map_origin_y - 1)
@@ -174,7 +174,7 @@ class Evaluater:
             if dis > 0.7 * self.map_range_x and not self.evaluate_collision([Point(x=start[0], y=start[1], z=start[2]), Point(x=goal[0], y=goal[1], z=goal[2])], tol):
                 break
             
-        if curr_sample_idx == 100:
+        if curr_sample_idx >= max_iter:
             rospy.logerr("Failed to sample a start and goal pair far enough apart && collision free")
             start_end_feasible = False
         return start, goal, start_end_feasible
@@ -230,10 +230,11 @@ class Evaluater:
 
         # tqdm.write("min dist = " + str(np.sqrt(min_sq_dist)) + "@ traj percentage = " + str(min_idx/len(pts)))
         if np.sqrt(min_sq_dist) < tol:
-            rospy.logwarn("Collision Detected")
-            print("min_sq_dist is ", min_sq_dist)
+            # rospy.logwarn("Collision Detected")
+            # print("min dist is ", np.sqrt(min_sq_dist))
             return True
         else:
+            # print("min dist is ", np.sqrt(min_sq_dist))
             return False            
 
     def computeJerk(self, traj):
@@ -297,8 +298,8 @@ class Evaluater:
                 csv_writer.writerow(['map_type', 'map_seed', 'density_index', 'clutter_index', 'structure_index',
                                      'start_end_feasible', 'planner_frontend', 'planner_backend', 
                                      'success', 'success_detail', 'traj_time(s)', 'traj_length(m)', 'traj_jerk', 'traj_effort(rpm)',
-                                     'traj_compute_time(ms)', 'compute_time_frontend(ms)', 'compute_time_backend', 
-                                     'tracking_error(m) avg', 'collision_status'])
+                                     'compute_time_poly(ms)', 'compute_time_frontend(ms)', 'compute_time_backend(ms)', 
+                                     'tracking_error(m) avg', 'collision_status','dist_to_goal(m)'])
 
                 for i in tqdm(range(self.num_trials)):
                     if rospy.is_shutdown():
@@ -326,7 +327,8 @@ class Evaluater:
                             end = np.array([9.5, 4, 1.0])
                         else:
                             start, end, start_end_feasible = self.sample_in_map(tol = 1.0)
-
+                        if not start_end_feasible:
+                            continue
                         pos_msg.position.x = start[0]
                         pos_msg.position.y = start[1]
                         pos_msg.position.z = start[2]
@@ -413,14 +415,12 @@ class Evaluater:
                             # Odom is also returned in result.odom_pts
                                 # rospy.loginfo(result.odom_pts)
 
-                                
+                            self.poly_compute_time[i,client_idx] = result.computation_time
+                            self.compute_time_front[i,client_idx] = result.compute_time_front_end
+                            self.compute_time_back[i,client_idx] = result.compute_time_back_end
+                            self.tracking_error[i,client_idx] = result.tracking_error
                             if result.success:
-                                #these 4 lines can also be computed if it is not a success, but skip
-                                self.traj_compute_time[i,client_idx] = result.computation_time
-                                self.compute_time_front[i,client_idx] = result.compute_time_front_end
-                                self.compute_time_back[i,client_idx] = result.compute_time_back_end
-                                self.tracking_error[i,client_idx] = result.tracking_error
-
+                            
                                 self.traj_time[i,client_idx] = result.traj.data[0].t_total
                                 # self.traj_cost[i,client_idx] = self.computeCost(result.traj, self.rho)
                                 self.traj_jerk[i,client_idx] = self.computeJerk(result.traj)
@@ -453,7 +453,7 @@ class Evaluater:
                         csv_writer.writerow([self.map_name, i, map_response.density_index, map_response.clutter_index, map_response.structure_index,
                                              start_end_feasible, self.client_name_front_list[client_idx], self.client_name_back_list[client_idx],
                                             self.success[i,client_idx], self.success_detail[i,client_idx], self.traj_time[i,client_idx], 0.0, self.traj_jerk[i,client_idx], self.effort[i,client_idx],
-                                            self.traj_compute_time[i,client_idx], self.compute_time_front[i,client_idx], self.compute_time_back[i,client_idx],
+                                            self.poly_compute_time[i,client_idx], self.compute_time_front[i,client_idx], self.compute_time_back[i,client_idx],
                                             self.tracking_error[i,client_idx], self.collision_cnt[i,client_idx], self.dist_to_goal[i, client_idx]])
 
         except KeyboardInterrupt:
@@ -470,7 +470,7 @@ class Evaluater:
         params['traj_time'] = self.traj_time
         params['traj_cost'] = self.traj_cost
         params['traj_jerk'] = self.traj_jerk
-        params['traj_compute_time'] = self.traj_compute_time
+        params['poly_compute_time'] = self.poly_compute_time
         params['compute_time_front'] = self.compute_time_front
         params['compute_time_back'] = self.compute_time_back
         params['tracking_error'] = self.tracking_error
@@ -479,12 +479,13 @@ class Evaluater:
         params['dist_to_goal'] = self.dist_to_goal
 
         print(self.success)
+        print("Legend: -2: not run, -1: server failure, 0: front failure, 1: front success, 2: poly success, 3: back success")
         print(self.success_detail)
         print("Traj Time", self.traj_time)
         print("Traj Cost",self.traj_cost)
         print("Jerk", self.traj_jerk)
-        print("Compute Time", self.traj_compute_time)
         print("Compute Time Front", self.compute_time_front)
+        print("Compute Time Poly", self.poly_compute_time)
         print("Compute Time Back", self.compute_time_back)
         print("Tracking Error", self.tracking_error)
         print("Effort", self.effort)
@@ -505,7 +506,7 @@ class Evaluater:
         traj_time_avg = np.sum(self.traj_time,axis = 0) / np.sum(self.success, axis = 0)
         # traj_cost_avg = np.sum(self.traj_cost[self.success]) / np.sum(self.success)
         traj_jerk_avg = np.sum(self.traj_jerk, axis = 0) / np.sum(self.success, axis = 0)
-        traj_compute_time_avg = np.sum(self.traj_compute_time, axis = 0) / np.sum(self.success, axis = 0)
+        poly_compute_time_avg = np.sum(self.poly_compute_time, axis = 0) / np.sum(self.success, axis = 0)
         compute_time_front_avg = np.sum(self.compute_time_front, axis = 0) / np.sum(self.success, axis = 0)
         compute_time_back_avg = np.sum(self.compute_time_back, axis = 0) / np.sum(self.success, axis = 0)
         tracking_error_avg = np.sum(self.tracking_error, axis = 0) / np.sum(self.success, axis = 0)
@@ -518,8 +519,8 @@ class Evaluater:
         print("avg traj time(s): " + str(traj_time_avg))
         # print("avg traj cost(time + jerk): " + str(traj_cost_avg))
         print("avg traj jerk: " + str(traj_jerk_avg))
-        print("avg compute time(ms): " + str(traj_compute_time_avg))
         print("avg compute time front(ms): " + str(compute_time_front_avg))
+        print("avg compute time poly(ms): " + str(poly_compute_time_avg))
         print("avg compute time back(ms): " + str(compute_time_back_avg))
         print("avg tracking error(m): " + str(tracking_error_avg))
         print("avg effort(rpm): " + str(effort_avg))# this is bugg!! need to consider success
@@ -535,7 +536,7 @@ class Evaluater:
             writer = csv.writer(f)
             writer.writerow(['Map:'+self.map_name+ ' Run:' + str(self.num_trials),'success rate', 'frontend success','traj time', 'traj jerk', 'compute time(ms)', 'compute time front(ms)', 'compute time back(ms)', 'tracking error(m)', 'effort(rpm)', 'collision rate'])
             for i in range(self.num_planners):
-                writer.writerow([self.client_name_list[i], success_rate_avg[i], success_front_rate[i], traj_time_avg[i], traj_jerk_avg[i], traj_compute_time_avg[i], compute_time_front_avg[i], compute_time_back_avg[i], tracking_error_avg[i], effort_avg[i], collision_rate_avg[i]])
+                writer.writerow([self.client_name_list[i], success_rate_avg[i], success_front_rate[i], traj_time_avg[i], traj_jerk_avg[i], poly_compute_time_avg[i], compute_time_front_avg[i], compute_time_back_avg[i], tracking_error_avg[i], effort_avg[i], collision_rate_avg[i]])
            
 
 def subscriber():

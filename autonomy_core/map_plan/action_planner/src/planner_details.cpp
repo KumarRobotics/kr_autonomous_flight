@@ -4,7 +4,7 @@
 
 #include <iostream>
 //
-// Double Descrisption Planner 
+// Double Descrisption Planner
 //
 void OptPlanner::iLQR_Planner::setup() {
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
@@ -12,8 +12,8 @@ void OptPlanner::iLQR_Planner::setup() {
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
   bool subscribe_to_traj = false;
   bool publish_optimized_traj = false;
-  bool publish_viz = true;                    // N sample, time limit
-  //ros::NodeHandle nh = ros::NodeHandle("~");  // to get parameters
+  bool publish_viz = true;  // N sample, time limit
+  // ros::NodeHandle nh = ros::NodeHandle("~");  // to get parameters
   sampler_.reset(
       new SplineTrajSampler(nh_,
                             subscribe_to_traj,
@@ -160,7 +160,7 @@ void OptPlanner::GCOPTER::setup() {
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
 
   /* initialize main modules */
-  //ros::NodeHandle nh = ros::NodeHandle("~");
+  // ros::NodeHandle nh = ros::NodeHandle("~");
   planner_manager_.reset(new gcopter::GcopterPlanner(nh_, frame_id_));
   ROS_WARN("[LocalPlanServer:] GCOPTER setup complete");
 }
@@ -721,7 +721,7 @@ void SearchPlanner::Sampling::setup() {
   ROS_WARN("[LocalPlanServer:] RRT planner mode!!!!!");
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
 
-  //ros::NodeHandle nh = ros::NodeHandle("~");
+  // ros::NodeHandle nh = ros::NodeHandle("~");
   rrtplanner_.reset(new gcopter::GcopterPlanner(nh_, frame_id_));
   path_pub_ = nh_.advertise<kr_planning_msgs::Path>("path", 1, true);
 }
@@ -775,7 +775,7 @@ void SearchPlanner::DynSampling::setup() {
   ROS_WARN("[LocalPlanServer:] SST planner mode!!!!!");
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
 
-  //ros::NodeHandle nh = ros::NodeHandle("~");
+  // ros::NodeHandle nh = ros::NodeHandle("~");
   sstplanner_.reset(new gcopter::GcopterPlanner(nh_, frame_id_));
   path_pub_ = nh_.advertise<kr_planning_msgs::Path>("path", 1, true);
 }
@@ -801,9 +801,8 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::DynSampling::plan(
     path_.clear();
     for (auto& wp : route) {
       path_.push_back(wp.head(3));
-      //std::cout << "wp.head(3)" << wp.head(3).transpose() << std::endl;
+      // std::cout << "wp.head(3)" << wp.head(3).transpose() << std::endl;
     }
-
 
     kr_planning_msgs::Path path = kr::path_to_ros(path_);
     path.header.frame_id = frame_id_;
@@ -815,7 +814,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::DynSampling::plan(
     // nh_.param("max_v", velocity, 2.0);
     // spline_traj_ = path_to_spline_traj(path, velocity);
     spline_traj_.dimensions = 3;
-    int piece_num = route.size()-1;
+    int piece_num = route.size() - 1;
     for (uint d = 0; d < 3; d++) {
       kr_planning_msgs::Spline spline;
       double total_time = 0.0;
@@ -930,6 +929,7 @@ CompositePlanner::plan_composite(
     const kr_planning_msgs::VoxelMap& map_no_inflation,
     float* compute_time_front_end,
     float* compute_time_back_end,
+    float* compute_time_poly,
     int& success_status) {
   // success status = 0: no success 1: front success 2: poly_gen_success 3: back
   // success
@@ -940,9 +940,10 @@ CompositePlanner::plan_composite(
   auto end_timer = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
       end_timer - start_timer);
+  *compute_time_front_end = duration.count() / 1000.0;
+
   auto empty_result =
       std::make_pair(kr_planning_msgs::SplineTrajectory(), result_discretized);
-  *compute_time_front_end = duration.count() / 1000.0;
 
   // if result is empty, then just return an empty SplineTrajectory
   if (result.data.size() == 0) {
@@ -952,16 +953,16 @@ CompositePlanner::plan_composite(
   success_status = 1;
   search_traj_pub_.publish(result);
 
-  start_timer = std::chrono::high_resolution_clock::now();
-
   if (opt_planner_type_ != nullptr) {
+    start_timer = std::chrono::high_resolution_clock::now();
+
     opt_planner_type_->search_path_msg_ = result;
     auto path = search_planner_type_->SamplePath();
     // Double description initialization traj must fully reach the end or it
     // will fail.
     // TODO(Laura) consider whether should actually calculate the BVP instead
     // yuwei : don't add goal position
-    //path.push_back(goal.pos);
+    // path.push_back(goal.pos);
     opt_planner_type_->setSearchPath(path);
 
     // before planning, generate polytopes
@@ -969,8 +970,13 @@ CompositePlanner::plan_composite(
     Eigen::MatrixXd inner_pts;  // (4, N -1)
     Eigen::VectorXd allo_ts;
     setMap(poly_gen_map_util_, map);
-    if (!poly_generator_->getSikangConst(
-            opt_planner_type_->search_path_, inner_pts, allo_ts, hPolys)) {
+    bool poly_success = poly_generator_->getSikangConst(
+        opt_planner_type_->search_path_, inner_pts, allo_ts, hPolys);
+    end_timer = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(
+        end_timer - start_timer);
+    *compute_time_poly = duration.count() / 1000.0;
+    if (!poly_success) {
       ROS_ERROR("[Local Planner]:Corridor generation fails!\n");
       return empty_result;
     }
@@ -978,16 +984,18 @@ CompositePlanner::plan_composite(
     opt_planner_type_->hPolys = hPolys;
     opt_planner_type_->allo_ts = allo_ts;
     // now do optimization
+    start_timer = std::chrono::high_resolution_clock::now();
+
     result = opt_planner_type_->plan(start, goal, map);
     result_discretized = opt_planner_type_->plan_discrete(start, goal, map);
+    end_timer = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(
+        end_timer - start_timer);
+    *compute_time_back_end = duration.count() / 1000.0;
+
     if (result.data.size() != 0 || result_discretized.pos.size() != 0)
       success_status = 3;
-    // TODO:(Yifei) only use no infla for gcopter planner, not dd planner
   }
-  end_timer = std::chrono::high_resolution_clock::now();
-  duration = std::chrono::duration_cast<std::chrono::microseconds>(end_timer -
-                                                                   start_timer);
-  *compute_time_back_end = duration.count() / 1000.0;
 
   return std::make_pair(result, result_discretized);
 }

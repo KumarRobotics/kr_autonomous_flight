@@ -166,6 +166,7 @@ void LocalPlanServer::process_goal(
                                           local_no_infla_map_cleared,
                                           &compute_time_front_end_,
                                           &compute_time_back_end_,
+                                          &compute_time_poly_,
                                           success_status_),
                  as_goal.execution_time,
                  as_goal.epoch);
@@ -586,7 +587,7 @@ void LocalPlanServer::process_result(
   result.epoch = epoch;
   result.traj_end.orientation.w = 1.0;
   result.traj_end.orientation.z = 0;
-  result.computation_time = computation_time_;
+  result.computation_time = compute_time_poly_;
   // this is not done until after?
   result.compute_time_front_end = compute_time_front_end_;
   result.compute_time_back_end = compute_time_back_end_;

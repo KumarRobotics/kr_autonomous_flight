@@ -179,7 +179,13 @@ kr_planning_msgs::SplineTrajectory OptPlanner::GCOPTER::plan(
   endState << goal.pos(0), goal.vel(0), goal.acc(0), goal.pos(1), goal.vel(1),
       goal.acc(1), goal.pos(2), goal.vel(2), goal.acc(2);
 
-  planner_manager_->setMap(map);
+
+  //auto start_timer2 = std::chrono::high_resolution_clock::now();
+  // planner_manager_->setMap(map);
+  // auto end_timer2 = std::chrono::high_resolution_clock::now();
+  // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+  //       end_timer2 - start_timer2);
+  // std::cout << "read map time is  " << duration.count() / 1000.0 << std::endl;
 
   bool valid =
       planner_manager_->plan(startState, endState, search_path_, hPolys);
@@ -779,6 +785,8 @@ void SearchPlanner::DynSampling::setup() {
   sstplanner_.reset(new gcopter::GcopterPlanner(nh_, frame_id_));
   path_pub_ = nh_.advertise<kr_planning_msgs::Path>("path", 1, true);
 }
+
+
 
 kr_planning_msgs::SplineTrajectory SearchPlanner::DynSampling::plan(
     const MPL::Waypoint3D& start,

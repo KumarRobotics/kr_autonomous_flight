@@ -81,7 +81,6 @@ class PlannerType {
   ros::NodeHandle nh_;
   std::string frame_id_;
   double traj_total_time_;
-  double ilqr_sampling_dt_ = 0.1;
   // TODO(Laura) not sure if this is the best way to pass the search path
   std::vector<Eigen::Vector3d> search_path_;
   kr_planning_msgs::SplineTrajectory search_path_msg_;
@@ -110,7 +109,7 @@ class CompositePlanner : public PlannerType {
                  const kr_planning_msgs::VoxelMap& map_no_inflation,
                  float* compute_time_front_end,
                  float* compute_time_back_end,
-                 float* compute_time_poly, 
+                 float* compute_time_poly,
                  int& success_status);
   MPL::Waypoint3D evaluate(double t);
 
@@ -139,6 +138,7 @@ class iLQR_Planner : public PlannerType {
 
  private:
   SplineTrajSampler::Ptr sampler_;
+  double ilqr_sampling_dt_ = 0.1;
   // currently initialized another planner just to get polytopes, maybe consider
   // moving only that function out
   std::vector<Eigen::VectorXd> opt_traj_;  // empty if no solution yet

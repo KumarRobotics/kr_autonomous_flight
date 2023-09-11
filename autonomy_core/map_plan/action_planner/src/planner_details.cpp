@@ -14,14 +14,17 @@ void OptPlanner::iLQR_Planner::setup() {
   bool publish_optimized_traj = false;
   bool publish_viz = true;  // N sample, time limit
   // ros::NodeHandle nh = ros::NodeHandle("~");  // to get parameters
+  double dt_ilqr;
+  nh_.param("path_sampling_dt", dt_ilqr, 0.1);
+  ROS_INFO("dt_ilqr = : %f", dt_ilqr);
   sampler_.reset(
       new SplineTrajSampler(nh_,
                             subscribe_to_traj,
                             publish_optimized_traj,
                             publish_viz,
-                            65));  // good if multiple of 5, then it will
-                                   // automatically return +1 elements
-                                   // this is the number of controls
+                            dt_ilqr));  // good if multiple of 5, then it will
+                                        // automatically return +1 elements
+                                        // this is the number of controls
 }
 kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
     const MPL::Waypoint3D& start,
@@ -179,13 +182,13 @@ kr_planning_msgs::SplineTrajectory OptPlanner::GCOPTER::plan(
   endState << goal.pos(0), goal.vel(0), goal.acc(0), goal.pos(1), goal.vel(1),
       goal.acc(1), goal.pos(2), goal.vel(2), goal.acc(2);
 
-
-  //auto start_timer2 = std::chrono::high_resolution_clock::now();
-  // planner_manager_->setMap(map);
-  // auto end_timer2 = std::chrono::high_resolution_clock::now();
-  // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
-  //       end_timer2 - start_timer2);
-  // std::cout << "read map time is  " << duration.count() / 1000.0 << std::endl;
+  // auto start_timer2 = std::chrono::high_resolution_clock::now();
+  //  planner_manager_->setMap(map);
+  //  auto end_timer2 = std::chrono::high_resolution_clock::now();
+  //  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+  //        end_timer2 - start_timer2);
+  //  std::cout << "read map time is  " << duration.count() / 1000.0 <<
+  //  std::endl;
 
   bool valid =
       planner_manager_->plan(startState, endState, search_path_, hPolys);
@@ -786,8 +789,6 @@ void SearchPlanner::DynSampling::setup() {
   path_pub_ = nh_.advertise<kr_planning_msgs::Path>("path", 1, true);
 }
 
-
-
 kr_planning_msgs::SplineTrajectory SearchPlanner::DynSampling::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
@@ -869,7 +870,7 @@ void CompositePlanner::setup() {
   nh_.param("search_planner_type", search_planner_type_id, -1);
   nh_.param("opt_planner_type", opt_planner_type_id, -1);
   nh_.param("path_sampling_dt", path_sampling_dt_, 0.0);
-   
+
   search_traj_pub_ = nh_.advertise<kr_planning_msgs::SplineTrajectory>(
       "search_trajectory", 1, true);
 
@@ -976,9 +977,8 @@ CompositePlanner::plan_composite(
     opt_planner_type_->setSearchPath(path);
 
     std::cout << "path.lenth is " << path.size() << std::endl;
-    std::cout << "opt_planner_type_->search_path_ lenth is " << opt_planner_type_->search_path_.size() << std::endl;
-
-
+    std::cout << "opt_planner_type_->search_path_ lenth is "
+              << opt_planner_type_->search_path_.size() << std::endl;
 
     // before planning, generate polytopes
     std::vector<Eigen::MatrixXd> hPolys;
@@ -1024,8 +1024,7 @@ MPL::Waypoint3D CompositePlanner::evaluate(double t) {
   return search_planner_type_->evaluate(t);
 }
 
-std::vector<Eigen::Vector3d> PlannerType::SamplePath(double dt) { 
-
+std::vector<Eigen::Vector3d> PlannerType::SamplePath(double dt) {
   std::vector<Eigen::Vector3d> result(traj_total_time_ / dt);
   for (int i = 0; i < result.size(); i++) {
     result[i] = evaluate(dt * i).pos;
@@ -1033,11 +1032,9 @@ std::vector<Eigen::Vector3d> PlannerType::SamplePath(double dt) {
   return result;
 }
 
-
-
 // bool PlannerType::has_collision(double dt,
 //                                 const kr_planning_msgs::VoxelMap& map)
-// { 
+// {
 //   std::cout << "traj_total_time_ is " << traj_total_time_ << std::endl;
 //   for(double cur_time = 0.0; cur_time <= traj_total_time_; cur_time += dt)
 //   {

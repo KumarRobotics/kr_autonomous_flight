@@ -81,7 +81,7 @@ class Evaluater:
         self.client_name_back_list = []
 
         self.num_planners = 5
-        self.num_trials = 70
+        self.num_trials = 20
         for i in range(self.num_planners): #  0, 1, 2, ... not gonna include the one with no suffix
             self.client_list.append(SimpleActionClient('/local_plan_server'+str(i)+'/plan_local_trajectory', PlanTwoPointAction))
              # self.client2 = SimpleActionClient('/local_plan_server2/plan_local_trajectory', PlanTwoPointAction)
@@ -335,8 +335,8 @@ class Evaluater:
                         pos_msg.header.stamp = rospy.Time.now()
 
                         if self.fix_start_end_location:
-                            start = np.array([-9.5, -4, 1.0])
-                            end = np.array([9.5, 4, 1.0])
+                            start = np.array([-9.0, -4, 1.0])
+                            end = np.array([9.0, 4, 1.0])
                         else:
                             start, end, start_end_feasible = self.sample_in_map(tol = self.mav_radius)
                         if not start_end_feasible:

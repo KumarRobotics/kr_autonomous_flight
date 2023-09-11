@@ -63,7 +63,7 @@ drag_coefficient: 0.0 -->
   <arg name="map_y_origin" default="-5.0"/>
   <arg name="map_z_origin" default="0.0"/>
 
-  <arg name="map_resolution" default="0.1"/>  <!--be 0.1, 0.2, 0.25, 0.5-->
+  <arg name="map_resolution" default="$(arg mav_radius)"/>  <!--be 0.1, 0.2, 0.25, 0.5-->
 
   <!-- Control stuff -->
   <include file="$(find kr_mav_launch)/launch/example_control.launch">
@@ -292,7 +292,7 @@ drag_coefficient: 0.0 -->
 
       <param name="map/resolution"   value="$(arg map_resolution)"/>       
       <param name="map/frame_id"     value="$(arg world_frame_id)" />
-      <param name="map/inflate_radius" value="0.4"/> <!-- 0.3 m-->
+      <param name="map/inflate_radius" value="0.0"/> <!-- 0.3 m-->
 
       <!-- randomly change the map without trigger -->
       <param name="map/auto_change"    value="false"/>
@@ -343,7 +343,7 @@ drag_coefficient: 0.0 -->
             2 read the ros bag poind cloud 1
             3 read the ros bag poind cloud 2
             4 read pcd file -->
-      <param name="map/mode"       value="4" /> 
+      <param name="map/mode"       value="1" /> 
 
       <!-- mode 0 eg -->
       <param name="params/density_index"     value="0.2"/>  <!-- 0-0.5 -->
@@ -354,13 +354,13 @@ drag_coefficient: 0.0 -->
 
       <!-- for multi-map reader, set folder path and use_folder as true -->
 
-      <param name="folder_path" value="$(find param_env)/dataset2/"/>
+      <param name="folder_path" value="$(find param_env)/data/img/maze/"/>
       <param name="use_folder"  value="true"/>
 
       <!-- mode 1 eg -->
       <param name="file_path" value="$(find param_env)/data/img/maze/maze8.png"/>
       <param name="img/negate" value="0"/>
-      <param name="img/occ_th" value="0.6"/>
+      <param name="img/occ_th" value="0.3"/>
 
       <!-- mode 12 eg -->
       <!-- <param name="file_path" value="$(find param_env)/data/pc1/levine/levine.bag"/>

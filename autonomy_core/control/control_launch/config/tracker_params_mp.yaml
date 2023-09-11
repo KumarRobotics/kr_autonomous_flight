@@ -79,8 +79,6 @@ trajectory_planner:
   # gcopter parameters
   MaxVelMag: 3.0
   MaxBdrMag: 2.1
-  MinThrust: 2.0
-  MaxThrust: 12.0
   DilateRadius: 0.05
   TimeoutRRT: 0.2
   MaxTiltAngle: 1.05
@@ -92,7 +90,7 @@ trajectory_planner:
   ChiVec:  [1.0e+4, 1.0e+4, 1.0e+4, 1.0e+4, 1.0e+5]
   SmoothingEps: 1.0e-2
   IntegralIntervs: 32
-  RelCostTol: 1.0e-5
+  RelCostTol: 1.0e-6
 
 stopping_policy:
   acc_xy_des: 4.0 # stopping policy x-y maximum acceleration

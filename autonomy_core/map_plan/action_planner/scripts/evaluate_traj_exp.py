@@ -80,8 +80,8 @@ class Evaluater:
         self.client_name_front_list = []
         self.client_name_back_list = []
 
-        self.num_planners = 5
-        self.num_trials = 20
+        self.num_planners = 1
+        self.num_trials = 10
         for i in range(self.num_planners): #  0, 1, 2, ... not gonna include the one with no suffix
             self.client_list.append(SimpleActionClient('/local_plan_server'+str(i)+'/plan_local_trajectory', PlanTwoPointAction))
              # self.client2 = SimpleActionClient('/local_plan_server2/plan_local_trajectory', PlanTwoPointAction)
@@ -107,6 +107,8 @@ class Evaluater:
         self.map_range_x = rospy.get_param('/' + self.map_type + "/map/x_size")
         self.map_range_y = rospy.get_param('/' + self.map_type + "/map/y_size")
         self.map_range_z = rospy.get_param('/' + self.map_type + "/map/z_size")
+
+        self.inflate_radius = rospy.get_param('/' + self.map_type + "/map/inflate_radius")
         
         self.set_state_pub      = rospy.Publisher( '/' + self.mav_name + '/set_state', PositionCommand, queue_size=1, latch=False)
         # self.client_tracker = actionlib.SimpleActionClient('/quadrotor/trackers_manager/poly_tracker/PolyTracker', PolyTrackerAction)
@@ -317,13 +319,12 @@ class Evaluater:
                     if rospy.is_shutdown():
                         break
                     ######## CHANGE MAP ######
-                    random.seed(i)
+                    seed_val = i +2000
+                    random.seed(seed_val)
 
-                    msg = Int32()
-                    msg.data = i
 
-                    map_response = self.change_map_pub(seed = i) # this is only active when using structure map
-                    rospy.sleep(0.5) # maze map is still reading files sequentially
+                    map_response = self.change_map_pub(seed = seed_val) # this is only active when using structure map
+                    rospy.sleep(4) # maze map is still reading files sequentially
                         # When change_map returns, the map is changed, but becuase delay, wait a little longer
                     # print(map_response)
                     start_end_feasible = True
@@ -338,7 +339,7 @@ class Evaluater:
                             start = np.array([-9.0, -4, 1.0])
                             end = np.array([9.0, 4, 1.0])
                         else:
-                            start, end, start_end_feasible = self.sample_in_map(tol = self.mav_radius)
+                            start, end, start_end_feasible = self.sample_in_map(tol = self.mav_radius + self.inflate_radius)
                         if not start_end_feasible:
                             continue
                         pos_msg.position.x = start[0]
@@ -412,7 +413,7 @@ class Evaluater:
                         if self.wait_for_things:
                             client.wait_for_result(rospy.Duration.from_sec(20.0)) 
                         else:
-                            client.wait_for_result(rospy.Duration.from_sec(4.0)) 
+                            client.wait_for_result(rospy.Duration.from_sec(10.0)) 
                 
                         # stop accumulating the effort
                         self.effort[i,client_idx] = self.effort_temp / self.effort_counter
@@ -421,7 +422,7 @@ class Evaluater:
                         #TODO(Laura) check if the path is collision free and feasible
                         if result:
                             self.success[i,client_idx] = result.success
-                            tqdm.write("Solve Status: trial "+ str(i) + " planner: " + str(client_idx) + " status: "+ str(result.policy_status))
+                            tqdm.write("Solve Status: trial "+ str(seed_val) + " planner: " + str(client_idx) + " status: "+ str(result.policy_status))
                             self.success_detail[i,client_idx] = result.policy_status
                             # print(result.odom_pts) #@Yuwei: this should work, try this out! 
                             # Odom is also returned in result.odom_pts
@@ -462,7 +463,7 @@ class Evaluater:
                             tqdm.write("Server Failure: trial " + str(i) + " planner: " + str(client_idx))
                             self.success_detail[i,client_idx] = -1
                 #dont have traj length, so just put 0
-                        csv_writer.writerow([self.map_type, i, map_response.file_name.data, map_response.density_index, map_response.clutter_index, map_response.structure_index,
+                        csv_writer.writerow([self.map_type, seed_val, map_response.file_name.data, map_response.density_index, map_response.clutter_index, map_response.structure_index,
                                              start_end_feasible, self.client_name_front_list[client_idx], self.client_name_back_list[client_idx],
                                             self.success[i,client_idx], self.success_detail[i,client_idx], self.traj_time[i,client_idx], 0.0, self.traj_jerk[i,client_idx], self.effort[i,client_idx],
                                             self.poly_compute_time[i,client_idx], self.compute_time_front[i,client_idx], self.compute_time_back[i,client_idx],

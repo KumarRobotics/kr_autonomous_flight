@@ -86,8 +86,10 @@ class LocalPlanServer {
    * @brief Record result (trajectory, status, etc)
    */
   void process_result(
-      const std::pair<kr_planning_msgs::SplineTrajectory,
-                      kr_planning_msgs::TrajectoryDiscretized>& traj_combined,
+      const std::tuple<kr_planning_msgs::SplineTrajectory,  // search
+                       kr_planning_msgs::SplineTrajectory,  // continuous, then
+                                                            // discrete
+                       kr_planning_msgs::TrajectoryDiscretized>& traj_combined,
       ros::Duration execution_time,
       int epoch);
 

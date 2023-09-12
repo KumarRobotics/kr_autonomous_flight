@@ -80,7 +80,7 @@ class Evaluater:
         self.client_name_front_list = []
         self.client_name_back_list = []
 
-        self.num_planners = 5
+        self.num_planners = 1
         self.num_trials = 20
         for i in range(self.num_planners): #  0, 1, 2, ... not gonna include the one with no suffix
             self.client_list.append(SimpleActionClient('/local_plan_server'+str(i)+'/plan_local_trajectory', PlanTwoPointAction))
@@ -139,6 +139,7 @@ class Evaluater:
         self.tracking_error = np.zeros((self.num_trials, self.num_planners))
         self.effort = np.zeros((self.num_trials, self.num_planners)) #unit in rpm
         self.rho = 50  # TODO(Laura) pull from param or somewhere
+        self.collision_front = np.zeros((self.num_trials, self.num_planners), dtype=bool)
         self.collision_cnt = np.zeros((self.num_trials, self.num_planners), dtype=bool)
         self.dist_to_goal = np.zeros((self.num_trials, self.num_planners))
 
@@ -311,7 +312,7 @@ class Evaluater:
                                      'start_end_feasible', 'planner_frontend', 'planner_backend', 
                                      'success', 'success_detail', 'traj_time(s)', 'traj_length(m)', 'traj_jerk', 'traj_effort(rpm)',
                                      'compute_time_poly(ms)', 'compute_time_frontend(ms)', 'compute_time_backend(ms)', 
-                                     'tracking_error(m) avg', 'collision_status','dist_to_goal(m)'])
+                                     'tracking_error(m) avg', 'collision_frontend', 'collision_status','dist_to_goal(m)'])
 
                 for i in tqdm(range(self.num_trials)):
                     if rospy.is_shutdown():
@@ -323,7 +324,7 @@ class Evaluater:
                     msg.data = i
 
                     map_response = self.change_map_pub(seed = i) # this is only active when using structure map
-                    rospy.sleep(0.5) # maze map is still reading files sequentially
+                    rospy.sleep(5.0) # maze map is still reading files sequentially
                         # When change_map returns, the map is changed, but becuase delay, wait a little longer
                     # print(map_response)
                     start_end_feasible = True
@@ -446,8 +447,20 @@ class Evaluater:
                                         pos_t_pt.z = pos_t[2]
 
                                         result.odom_pts.append(pos_t_pt)
-                                        
-                                self.collision_cnt[i,client_idx] = self.evaluate_collision(result.odom_pts)
+                                    self.collision_cnt[i,client_idx] = self.evaluate_collision(result.odom_pts)
+                                    result.odom_pts.clear()
+                                    for t in np.arange(0, result.search_traj.data[0].t_total, 0.02):
+                                        pos_t = evaluate(result.search_traj, t, 0)
+                                        pos_t_pt = Point()
+                                        pos_t_pt.x = pos_t[0]
+                                        pos_t_pt.y = pos_t[1]
+                                        pos_t_pt.z = pos_t[2]
+
+                                        result.odom_pts.append(pos_t_pt)
+                                    self.collision_front[i,client_idx] = self.evaluate_collision(result.odom_pts)
+                                    
+                                else:
+                                    self.collision_cnt[i,client_idx] = self.evaluate_collision(result.odom_pts)
                                 
 
                                 traj_end_point = np.zeros(3, dtype=np.float32)
@@ -466,7 +479,7 @@ class Evaluater:
                                              start_end_feasible, self.client_name_front_list[client_idx], self.client_name_back_list[client_idx],
                                             self.success[i,client_idx], self.success_detail[i,client_idx], self.traj_time[i,client_idx], 0.0, self.traj_jerk[i,client_idx], self.effort[i,client_idx],
                                             self.poly_compute_time[i,client_idx], self.compute_time_front[i,client_idx], self.compute_time_back[i,client_idx],
-                                            self.tracking_error[i,client_idx], self.collision_cnt[i,client_idx], self.dist_to_goal[i, client_idx]])
+                                            self.tracking_error[i,client_idx], self.collision_front[i,client_idx], self.collision_cnt[i,client_idx], self.dist_to_goal[i, client_idx]])
 
         except KeyboardInterrupt:
             tqdm.write("Keyboard Interrupt!")
@@ -489,6 +502,7 @@ class Evaluater:
         data_all['compute_time_back'] = self.compute_time_back
         data_all['tracking_error'] = self.tracking_error
         data_all['effort'] = self.effort
+        data_all['collision_front'] = self.collision_front
         data_all['collision_cnt'] = self.collision_cnt
         data_all['dist_to_goal'] = self.dist_to_goal
 
@@ -503,6 +517,7 @@ class Evaluater:
         print("Compute Time Back", self.compute_time_back)
         print("Tracking Error", self.tracking_error)
         print("Effort", self.effort)
+        print("Is Collide Front", self.collision_front)
         print("Is Collide", self.collision_cnt)
         print("Distance To Goal", self.dist_to_goal)
 
@@ -525,6 +540,7 @@ class Evaluater:
         compute_time_back_avg = np.sum(self.compute_time_back, axis = 0) / np.sum(self.success, axis = 0)
         tracking_error_avg = np.sum(self.tracking_error, axis = 0) / np.sum(self.success, axis = 0)
         effort_avg = np.sum(self.effort, axis = 0) / np.sum(self.success, axis = 0)
+        collision_rate_avg = np.sum(self.collision_front, axis = 0) / np.sum(self.success, axis = 0)
         collision_rate_avg = np.sum(self.collision_cnt, axis = 0) / np.sum(self.success, axis = 0)
         dist_to_goal_avg = np.sum(self.dist_to_goal, axis = 0) / np.sum(self.success, axis = 0)
         # rewrite the above section with defined avg variables

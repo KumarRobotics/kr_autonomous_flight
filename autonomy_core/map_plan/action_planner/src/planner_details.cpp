@@ -931,8 +931,9 @@ void CompositePlanner::setup() {
   }
 }
 
-std::pair<kr_planning_msgs::SplineTrajectory,
-          kr_planning_msgs::TrajectoryDiscretized>
+std::tuple<kr_planning_msgs::SplineTrajectory,
+           kr_planning_msgs::SplineTrajectory,
+           kr_planning_msgs::TrajectoryDiscretized>
 CompositePlanner::plan_composite(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
@@ -945,29 +946,31 @@ CompositePlanner::plan_composite(
   // success status = 0: no success 1: front success 2: poly_gen_success 3: back
   // success
   auto start_timer = std::chrono::high_resolution_clock::now();
-  kr_planning_msgs::SplineTrajectory result =
+  kr_planning_msgs::SplineTrajectory search_result =
       search_planner_type_->plan(start, goal, map);
-  kr_planning_msgs::TrajectoryDiscretized result_discretized;
   auto end_timer = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
       end_timer - start_timer);
   *compute_time_front_end = duration.count() / 1000.0;
 
+  kr_planning_msgs::SplineTrajectory opt_result_continuous;
+  kr_planning_msgs::TrajectoryDiscretized opt_result_discretized;
+
   auto empty_result =
-      std::make_pair(kr_planning_msgs::SplineTrajectory(), result_discretized);
+      std::make_tuple(kr_planning_msgs::SplineTrajectory(),
+                      kr_planning_msgs::SplineTrajectory(),
+                      kr_planning_msgs::TrajectoryDiscretized());
 
   // if result is empty, then just return an empty SplineTrajectory
-  if (result.data.size() == 0) {
+  if (search_result.data.size() == 0) {
     success_status = 0;
     return empty_result;
   }
   success_status = 1;
-  search_traj_pub_.publish(result);
+  search_traj_pub_.publish(search_result);
 
   if (opt_planner_type_ != nullptr) {
-    start_timer = std::chrono::high_resolution_clock::now();
-
-    opt_planner_type_->search_path_msg_ = result;
+    opt_planner_type_->search_path_msg_ = search_result;
     auto path = search_planner_type_->SamplePath(path_sampling_dt_);
     // Double description initialization traj must fully reach the end or it
     // will fail.
@@ -981,6 +984,7 @@ CompositePlanner::plan_composite(
               << opt_planner_type_->search_path_.size() << std::endl;
 
     // before planning, generate polytopes
+    start_timer = std::chrono::high_resolution_clock::now();
     std::vector<Eigen::MatrixXd> hPolys;
     Eigen::MatrixXd inner_pts;  // (4, N -1)
     Eigen::VectorXd allo_ts;
@@ -1002,19 +1006,20 @@ CompositePlanner::plan_composite(
     opt_planner_type_->allo_ts = allo_ts;
     // now do optimization
     start_timer = std::chrono::high_resolution_clock::now();
-
-    result = opt_planner_type_->plan(start, goal, map);
-    result_discretized = opt_planner_type_->plan_discrete(start, goal, map);
+    opt_result_continuous = opt_planner_type_->plan(start, goal, map);
+    opt_result_discretized = opt_planner_type_->plan_discrete(start, goal, map);
     end_timer = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(
         end_timer - start_timer);
     *compute_time_back_end = duration.count() / 1000.0;
 
-    if (result.data.size() != 0 || result_discretized.pos.size() != 0)
+    if (opt_result_continuous.data.size() != 0 ||
+        opt_result_discretized.pos.size() != 0)
       success_status = 3;
   }
 
-  return std::make_pair(result, result_discretized);
+  return std::make_tuple(
+      search_result, opt_result_continuous, opt_result_discretized);
 }
 
 MPL::Waypoint3D CompositePlanner::evaluate(double t) {

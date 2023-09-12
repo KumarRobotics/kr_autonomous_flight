@@ -50,8 +50,9 @@ class PlannerType {
   }  // this does not have to be implemented
 
   // always called by composite planner
-  virtual std::pair<kr_planning_msgs::SplineTrajectory,
-                    kr_planning_msgs::TrajectoryDiscretized>
+  virtual std::tuple<kr_planning_msgs::SplineTrajectory,
+                     kr_planning_msgs::SplineTrajectory,
+                     kr_planning_msgs::TrajectoryDiscretized>
   plan_composite(const MPL::Waypoint3D& start,
                  const MPL::Waypoint3D& goal,
                  const kr_planning_msgs::VoxelMap& map,
@@ -62,8 +63,9 @@ class PlannerType {
                  int& success_status) {
     ROS_ERROR("[Plannner Details]:plan composite not implemented");
     // std::logic_error("Function not yet implemented");
-    return std::make_pair(kr_planning_msgs::SplineTrajectory(),
-                          kr_planning_msgs::TrajectoryDiscretized());
+    return std::make_tuple(kr_planning_msgs::SplineTrajectory(),
+                           kr_planning_msgs::SplineTrajectory(),
+                           kr_planning_msgs::TrajectoryDiscretized());
   }
 
   virtual MPL::Waypoint3D evaluate(double t) = 0;
@@ -101,8 +103,9 @@ class CompositePlanner : public PlannerType {
   //     const MPL::Waypoint3D& start,
   //     const MPL::Waypoint3D& goal,
   //     const kr_planning_msgs::VoxelMap& map);
-  std::pair<kr_planning_msgs::SplineTrajectory,
-            kr_planning_msgs::TrajectoryDiscretized>
+  std::tuple<kr_planning_msgs::SplineTrajectory,
+             kr_planning_msgs::SplineTrajectory,
+             kr_planning_msgs::TrajectoryDiscretized>
   plan_composite(const MPL::Waypoint3D& start,
                  const MPL::Waypoint3D& goal,
                  const kr_planning_msgs::VoxelMap& map,

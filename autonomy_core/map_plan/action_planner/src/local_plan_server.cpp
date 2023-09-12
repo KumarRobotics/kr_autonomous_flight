@@ -417,12 +417,17 @@ SplineTrajfromDiscrete(  // this method will make beginning and end have an
 }
 
 void LocalPlanServer::process_result(
-    const std::pair<kr_planning_msgs::SplineTrajectory,
-                    kr_planning_msgs::TrajectoryDiscretized>& traj_combined,
+    const std::tuple<kr_planning_msgs::SplineTrajectory,  // search
+                     kr_planning_msgs::SplineTrajectory,  // continuous, then
+                                                          // discrete
+                     kr_planning_msgs::TrajectoryDiscretized>& traj_combined,
     ros::Duration execution_time,
     int epoch) {
-  kr_planning_msgs::SplineTrajectory traj_msg = traj_combined.first;
-  kr_planning_msgs::TrajectoryDiscretized traj_dis_msg = traj_combined.second;
+  kr_planning_msgs::SplineTrajectory search_traj_msg =
+      std::get<0>(traj_combined);
+  kr_planning_msgs::SplineTrajectory traj_msg = std::get<1>(traj_combined);
+  kr_planning_msgs::TrajectoryDiscretized traj_dis_msg =
+      std::get<2>(traj_combined);
   double tracking_error = 0.0;
   std::vector<geometry_msgs::Point> odom_pts;
 
@@ -575,7 +580,7 @@ void LocalPlanServer::process_result(
   result.success = solved;  // set success status
   result.policy_status =
       success_status_;  // using this field for success status
-
+  result.search_traj = search_traj_msg;
   result.traj = traj_msg;
   result.traj.header.frame_id = frame_id_;
 

@@ -564,6 +564,8 @@ path_to_spline_traj(  // this function needs float
     kr_planning_msgs::Path path,
     float velocity) {
   float total_dist = 0.0;
+
+  std::vector<Eigen::Vector3f> waypoints;
   for (int seg_num = 0; seg_num < path.waypoints.size() - 1; seg_num++) {
     Eigen::Vector3f pt1(path.waypoints.at(seg_num + 1).x,
                         path.waypoints.at(seg_num + 1).y,
@@ -575,7 +577,24 @@ path_to_spline_traj(  // this function needs float
     Eigen::Vector3f vec_between = pt1 - pt0;
     float distance = vec_between.norm();
     total_dist += distance;
+    waypoints.push_back(pt0);
   }
+
+  Eigen::Vector3f pt1(path.waypoints.at(path.waypoints.size() - 1).x,
+                      path.waypoints.at(path.waypoints.size() - 1).y,
+                      path.waypoints.at(path.waypoints.size() - 1).z);
+
+  //work for size == 2
+  if (path.waypoints.size() == 2)
+  {
+
+    Eigen::Vector3f pt_middle = 0.5 * (pt1 + waypoints.at(0));
+    waypoints.push_back(pt_middle);
+
+  }
+  waypoints.push_back(pt1);
+
+
   kr_planning_msgs::SplineTrajectory spline_traj;
   spline_traj.dimensions = 3;
   for (int i = 0; i < 3; i++) {
@@ -584,13 +603,9 @@ path_to_spline_traj(  // this function needs float
   }
   float accumulative_dist = 0.0;
   float v0_norm = 0.0;
-  for (int seg_num = 0; seg_num < path.waypoints.size() - 1; seg_num++) {
-    Eigen::Vector3f pt1(path.waypoints.at(seg_num + 1).x,
-                        path.waypoints.at(seg_num + 1).y,
-                        path.waypoints.at(seg_num + 1).z);
-    Eigen::Vector3f pt0(path.waypoints.at(seg_num).x,
-                        path.waypoints.at(seg_num).y,
-                        path.waypoints.at(seg_num).z);
+  for (int seg_num = 0; seg_num < waypoints.size() - 1; seg_num++) {
+    Eigen::Vector3f pt1 = waypoints.at(seg_num + 1);
+    Eigen::Vector3f pt0 = waypoints.at(seg_num);
 
     Eigen::Vector3f vec_between = pt1 - pt0;
     float distance = vec_between.norm();
@@ -619,7 +634,11 @@ path_to_spline_traj(  // this function needs float
       spline_traj.data.at(dim).segments++;
       spline_traj.data.at(dim).segs.push_back(seg);
       spline_traj.data.at(dim).t_total += seg.dt;
+
     }
+
+
+
     v0_norm = vf;
   }
   return spline_traj;
@@ -647,17 +666,28 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Geometric::plan(
   if (!jps_3d_util_->plan(start.pos, goal.pos, 1.0, true)) {
     ROS_WARN("Failed to plan a JPS path!");
   } else {
+
+
     kr_planning_msgs::Path path = kr::path_to_ros(jps_3d_util_->getPath());
     path.header.frame_id = frame_id_;
     path.header.stamp = ros::Time::now();
     path_pub_.publish(path);
 
+    std::cout << "path.lenth is " << path.waypoints.size() << std::endl;
+
+
     double velocity;
-    nh_.param("max_v", velocity, 1.0);
+    nh_.param("max_v", velocity, 2.0);
     spline_traj_ = path_to_spline_traj(path, static_cast<float>(velocity));
+
+    std::cout << "spline_traj_.lenth is " << spline_traj_.data.size() << std::endl;
+
+
     spline_traj_.header.frame_id = frame_id_;
     spline_traj_.header.stamp = ros::Time::now();
     traj_total_time_ = spline_traj_.data[0].t_total;
+      std::cout << "spline_traj_.data[0].t_total is " << spline_traj_.data[0].t_total  << std::endl;
+
   }
   return spline_traj_;
 }
@@ -705,7 +735,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::PathThrough::plan(
   path_pub_.publish(path);
 
   double velocity;
-  nh_.param("max_v", velocity, 1.0);
+  nh_.param("max_v", velocity, 2.0);
   spline_traj_ = path_to_spline_traj(path, velocity);
   spline_traj_.header.frame_id = frame_id_;
   spline_traj_.header.stamp = ros::Time::now();
@@ -759,7 +789,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Sampling::plan(
 
     //@yuwei: constant velocity
     double velocity;
-    nh_.param("max_v", velocity, 1.0);
+    nh_.param("max_v", velocity, 2.0);
     spline_traj_ = path_to_spline_traj(path, velocity);
     spline_traj_.header.frame_id = frame_id_;
     spline_traj_.header.stamp = ros::Time::now();
@@ -1031,6 +1061,7 @@ MPL::Waypoint3D CompositePlanner::evaluate(double t) {
 
 std::vector<Eigen::Vector3d> PlannerType::SamplePath(double dt) {
   std::vector<Eigen::Vector3d> result(traj_total_time_ / dt);
+
   for (int i = 0; i < result.size(); i++) {
     result[i] = evaluate(dt * i).pos;
   }

@@ -29,11 +29,12 @@ trajectory_planner:
   search_planner_type: 0 # 0: MPL, 1: dispersion planner, 2: JPS (geometric) 3: pass through from global planner 4: RRT 5 :SST
   #is being overwriten in the launch file
   opt_planner_text: ["Double Description", "gcopter", "iLQR(Altro)", "None"] #this trick make when no opt planner, the text says none
-  opt_planner_type: 1 # -1: no planner(BROKEN) 0: Double Description 1: gcopter 2: iLQR(Altro) 
+  opt_planner_type: 2 # -1: no planner(BROKEN) 0: Double Description 1: gcopter 2: iLQR(Altro) 
   use_discrete_traj: false # set true to use with ilqr, still a lot of tracking er
   use_tracker_client: false # if we wait for tracker to finish before sending next command
   # if we do not care about tracking error and want things to run fast, set this to false
   path_sampling_dt : 0.05  # should be same as search/time_res
+  ilqr_dt: 0.1
 
   #TODO(Laura) fix path
   dispersion/graph_file: "/home/wyw/Code/yifei_ws/src/500.json" #/home/wyw/Code/yifei_ws/src/500.json" # /home/wyw/Code/yifei_ws    /home/yifei/Documents/optimal_ctrl/
@@ -89,7 +90,7 @@ trajectory_planner:
   WeightT: 20.0
   ChiVec:  [1.0e+4, 1.0e+4, 1.0e+4, 1.0e+4, 1.0e+5]
   SmoothingEps: 1.0e-2
-  IntegralIntervs: 32
+  IntegralIntervs: 16
   RelCostTol: 1.0e-6
 
 stopping_policy:

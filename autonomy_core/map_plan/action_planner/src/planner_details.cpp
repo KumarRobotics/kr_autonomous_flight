@@ -15,7 +15,7 @@ void OptPlanner::iLQR_Planner::setup() {
   bool publish_viz = true;  // N sample, time limit
   // ros::NodeHandle nh = ros::NodeHandle("~");  // to get parameters
   double dt_ilqr;
-  nh_.param("path_sampling_dt", dt_ilqr, 0.1);
+  nh_.param("ilqr_dt", dt_ilqr, 0.1);
   ROS_INFO("dt_ilqr = : %f", dt_ilqr);
   sampler_.reset(
       new SplineTrajSampler(nh_,

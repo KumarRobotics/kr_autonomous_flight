@@ -25,7 +25,7 @@
   <!-- drivers -->
 
   <!-- If using LIDAR odometry -->
-  <include file="$(find real_experiment_launch)/launch/drivers_for_faster_lio.launch">
+  <!-- include file="$(find real_experiment_launch)/launch/drivers_for_faster_lio.launch">
     <arg name="robot" value="$(arg robot)" />
     <arg name="sensor_hostname" value="192.168.100.12" />
     <arg name="udp_dest" value="192.168.100.1" />
@@ -34,7 +34,7 @@
     <arg name="replay" value="false" />
     <arg name="lidar_mode" value="1024x10" />
     <arg name="metadata" value="ouster_metadata.json" />
-  </include>
+  </include -->
 
   <!-- If NOT using LIDAR odometry -->
   <!-- <include file="$(find real_experiment_launch)/launch/ouster_decoder.launch"> -->
@@ -80,8 +80,8 @@
     <arg name="imu" value="/ovc/vectornav/imu_throttled" />
     <arg name="mag" value="/ovc/vectornav/mag_throttled" />
     <arg name="publish_body_camera_tf" default="false" />
-    <arg name="lidar_cloud_topic" value="os_cloud_node/points" />
-    <arg name="lidar_frame" value="$(arg robot)/lidar" />
+    <arg name="lidar_cloud_topic" value="ouster/points" />
+    <arg name="lidar_frame" value="os_lidar" />
     <arg name="publish_odom_tf" default="true" />
     <arg name="real_robot" value="true" />
     <arg name="mapper_config" value="$(arg mapper_config)" />
@@ -101,7 +101,7 @@
   </include>
 
   <!-- LIDAR Odometry -->
-  <!-- <include file="$(find faster_lio)/launch/mapping_ouster64.launch"></include> -->
+	  <!-- <include file="$(find faster_lio)/launch/mapping_ouster64.launch"></include> -->
 
   <!--ublox-->
   <!-- <include file="$(find ublox_gps)/launch/ublox_device.launch"> -->

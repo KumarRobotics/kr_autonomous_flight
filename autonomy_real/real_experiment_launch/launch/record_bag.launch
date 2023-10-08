@@ -3,6 +3,7 @@
   <arg name="dir" default="/home/asr/bags/map-merging-falcon-pennovation"/>
   <node pkg="rosbag" type="record" name="recorder" args="
   -o $(arg dir)
+  /cloud_registered
   /Odometry
   /quadrotor/ouster/imu_packets
   /quadrotor/ouster/lidar_packets

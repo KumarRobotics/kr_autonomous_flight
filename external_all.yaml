@@ -64,7 +64,7 @@ repositories:
   kr_ilqr_optimizer:
     type: git
     url: git@github.com:KumarRobotics/kr_ilqr_optimizer.git
-    version: bug_fix
+    version: icra_final
   
   altro:
     type: git

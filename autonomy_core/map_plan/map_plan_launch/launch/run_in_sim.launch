@@ -494,7 +494,7 @@ drag_coefficient: 0.0 -->
       <!-- another topic to publish point with inflation-->
       <param name="map/publish_grid_centers"  value="true"/>
 
-      <!-- map mode  ToDo:(Yifei) just use another mode for if reading image or folder
+      <!-- map mode  maze maps use 1, real dataset use 4
             0 randomly generate
             1 read the image
             2 read the ros bag poind cloud 1
@@ -511,7 +511,7 @@ drag_coefficient: 0.0 -->
 
       <!-- for multi-map reader, set folder path and use_folder as true -->
 
-      <param name="folder_path" value="$(find param_env)/icrapapers_dataset/"/>
+      <param name="folder_path" value="$(find param_env)/pcd_icrapapers_dataset/"/>
       <param name="use_folder"  value="true"/>
 
       <!-- mode 1 eg -->

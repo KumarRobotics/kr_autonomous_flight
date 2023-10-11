@@ -243,3 +243,4 @@ target/
 *.srctrl*
 
 cmake-build*/
+*data/

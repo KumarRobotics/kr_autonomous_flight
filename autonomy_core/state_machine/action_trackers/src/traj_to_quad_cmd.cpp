@@ -1,7 +1,7 @@
 
 #include <action_trackers/traj_to_quad_cmd.h>
 #include <angles/angles.h>
-
+#include <ros/ros.h>
 namespace traj_opt {
 
 using kr_mav_msgs::PositionCommand;
@@ -69,13 +69,10 @@ bool EvaluateTrajectoryPos(const boost::shared_ptr<Trajectory>& traj,
 
   Eigen::Vector2d diff_xy(val(0) - pos(0), val(1) - pos(1));
   if (diff_xy.norm() >= err_max) {
-    printf("Distance between odom and traj in xy too large! It is: %f \n",
+    ROS_WARN_THROTTLE(10,"Distance between odom and traj in xy too large! It is: %f \n",
            diff_xy.norm());
     return_v = false;  // return false
   }
-  printf("Tracking errror (distance between odom and traj in xy) is: %f \n",
-           diff_xy.norm());
-
   EvaluateTrajectory(traj, t_des, out);
   return return_v;
 }

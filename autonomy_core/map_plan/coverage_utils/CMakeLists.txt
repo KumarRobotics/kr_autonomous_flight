@@ -4,7 +4,7 @@ project(coverage_utils)
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(catkin REQUIRED COMPONENTS
-  planning_ros_msgs
+  kr_planning_msgs
   roscpp
   )
 
@@ -13,7 +13,7 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS
-  planning_ros_msgs
+  kr_planning_msgs
 )
 
 include_directories(${PROJECT_NAME} PUBLIC ${catkin_INCLUDE_DIRS} include)

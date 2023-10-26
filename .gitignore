@@ -9,6 +9,20 @@ waypoint_navigation_plugin/
 DecompROS/
 catkin_simple/
 kr_demo_planner/
+DoubleDescription/
+GCOPTER/
+gcopter/
+altro/
+glog_catkin/
+kr_ilqr_optimizer/
+mav_comm/
+mav_trajectory_generation/
+motion_primitives/
+kr_planning_msgs/
+external/
+kr_param_map/
+map_generator/
+motion_capture_system/
 #===========
 # C++
 # ===========
@@ -229,3 +243,4 @@ target/
 *.srctrl*
 
 cmake-build*/
+*data/

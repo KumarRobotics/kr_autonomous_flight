@@ -11,6 +11,9 @@
     <!-- hard assigning threads to avoid computation spikes -->
     <arg name="prefix" value="taskset -c 0"/>
 
+   
+
+
     <!-- use nice to set low priority for mapper -->
     <node pkg="mapper" name="mapper" type="local_global_mapper" output="screen" launch-prefix="$(arg prefix)">
         <remap from="~cloud" to="$(arg cloud)"/>
@@ -21,6 +24,8 @@
         <param name="map_frame" value="$(arg map_frame)"/>
         <param name="odom_frame" value="$(arg odom_frame)"/>
         <param name="lidar_frame" value="$(arg lidar_frame)"/>
+
+
 
         <!-- <rosparam file="$(find map_plan_launch)/config/mapper.yaml"/> -->
         <rosparam file="$(arg mapper_config)"/>

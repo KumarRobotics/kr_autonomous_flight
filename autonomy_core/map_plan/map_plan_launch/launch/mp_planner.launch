@@ -5,7 +5,6 @@
   <!-- hard assigning threads to avoid computation spikes -->
   <arg name="prefix" value="taskset -c 1,2,3"/>
   <arg name="odom" default="odom"/>
-  <arg name="min_dispersion_planner" default="false"/>
   <arg name="planner_config" default="$(find control_launch)/config/tracker_params_mp.yaml"/>
   
     ##### planning server#####
@@ -18,16 +17,15 @@
       <remap from="~odom" to="$(arg odom)"/>
       <remap from="~global_voxel_map" to="mapper/global_voxel_map"/>
     </node>
-
-    <!-- If NOT use minimum dispersion motion primitive planner, launch local motion primtive planner. Otherwise, launch planner in a separate file -->
-    <group unless="$(arg min_dispersion_planner)">
-      <node pkg="action_planner"
-        type="local_plan_server"
-        name="local_plan_server"
-        output="screen"
-        launch-prefix="$(arg prefix)">
-        <rosparam file="$(arg planner_config)"/>
-        <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
-      </node>
-    </group>  
+    <node pkg="action_planner"
+      type="local_plan_server"
+      name="local_plan_server"
+      output="screen"
+      launch-prefix="$(arg prefix)"
+      respawn="true"
+      respawn_delay = "10">
+      <rosparam file="$(arg planner_config)"/>
+      <remap from="~local_voxel_map" to="mapper/local_voxel_map"/>
+      <remap from="~local_noinfla_voxel_map" to="mapper/local_voxel_no_inflation_map"/>
+    </node>
 </launch>

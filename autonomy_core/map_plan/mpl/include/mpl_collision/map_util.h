@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mpl_basis/data_type.h"
-#include <planning_ros_msgs/VoxelMap.h>
+#include <kr_planning_msgs/VoxelMap.h>
 #include <vector>
 
 namespace MPL {
@@ -77,7 +77,7 @@ class MapUtil {
   /// Get unknown voxels for 3D
   vec_Vecf<Dim> getUnknownCloud();
 
-  planning_ros_msgs::VoxelMap voxel_map;
+  kr_planning_msgs::VoxelMap voxel_map;
 
  protected:
   /// Map resolution

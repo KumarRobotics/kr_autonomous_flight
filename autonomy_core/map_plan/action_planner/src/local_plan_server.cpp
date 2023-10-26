@@ -1,262 +1,83 @@
-#include <action_planner/ActionPlannerConfig.h>
-#include <actionlib/server/simple_action_server.h>
-#include <eigen_conversions/eigen_msg.h>
-#include <mpl_basis/trajectory.h>
-#include <mpl_collision/map_util.h>
-#include <mpl_planner/map_planner.h>
-#include <planning_ros_msgs/PlanTwoPointAction.h>
-#include <planning_ros_utils/data_ros_utils.h>
-#include <planning_ros_utils/primitive_ros_utils.h>
-#include <ros/console.h>
-#include <ros/ros.h>
-#include <traj_opt_ros/ros_bridge.h>
+#include <action_planner/local_plan_server.h>
+#include <geometry_msgs/Point.h>
 
-#include <boost/range/irange.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
+LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
+  local_map_sub_ =
+      pnh_.subscribe("local_voxel_map", 2, &LocalPlanServer::localMapCB, this);
+  local_no_infla_map_sub_ = pnh_.subscribe(
+      "local_noinfla_voxel_map", 2, &LocalPlanServer::localMapCBNoInfla, this);
+  srv_transition_ = pnh_.serviceClient<kr_tracker_msgs::Transition>(
+      "/quadrotor/trackers_manager/transition");  // ToDo: Assign Name Outside
+                                                  // in PARAM!!!
+  srv_transition_.waitForExistence();
 
-#include "data_conversions.h"  // setMap, getMap, etc
+  local_as_ = std::make_unique<
+      actionlib::SimpleActionServer<kr_planning_msgs::PlanTwoPointAction>>(
+      pnh_, "plan_local_trajectory", false);
 
-#include <plan_manage/planner_manager.h>
-#include <traj_utils/planning_visualization.h>
-#include <chrono>
+  traj_goal_ac_ = std::make_unique<
+      actionlib::SimpleActionClient<kr_tracker_msgs::PolyTrackerAction>>(
+      pnh_, "tracker_client", true);
 
-using boost::irange;
+  traj_planner_nh_ = ros::NodeHandle(pnh_, "trajectory_planner");
+  sg_pub = pnh_.advertise<kr_planning_msgs::Path>("start_goal", 1, true);
 
-// Local planning server for Sikang's motion primitive planner
-class LocalPlanServer {
- public:
-  explicit LocalPlanServer(const ros::NodeHandle& nh);
+  local_map_cleared_pub_ = pnh_.advertise<kr_planning_msgs::VoxelMap>(
+      "local_voxel_map_cleared", 1, true);
+  traj_pub_ =
+      pnh_.advertise<kr_planning_msgs::SplineTrajectory>("trajectory", 1, true);
+  local_as_->registerGoalCallback(boost::bind(&LocalPlanServer::goalCB, this));
+  while (local_map_ptr_ == nullptr || local_nofla_map_ptr_ == nullptr) {
+    ROS_WARN_THROTTLE(
+        4,
+        "[Local plan server]: Waiting for local map either inflated or not...");
+    ros::Duration(0.1).sleep();
+    ros::spinOnce();
+  }
 
-  /**
-   * @brief Call process_goal function, check planner timeout
-   */
-  void process_all();
+  /**@yuwei : for falcon 250 interface**/
+  pnh_.param("poly_srv_name", poly_srv_name_, std::string(" "));
+  traj_planner_nh_.param("use_discrete_traj", use_discrete_traj_, false);
+  traj_planner_nh_.param("use_tracker_client", use_tracker_client_, true);
 
-  bool aborted_;
+  // trajectory boardcast
+  traj_goal_pub_ = pnh_.advertise<kr_tracker_msgs::PolyTrackerActionGoal>(
+      "tracker_cmd", 10, true);
 
- private:
-  ros::NodeHandle pnh_;
-  ros::Subscriber local_map_sub_;
-  ros::Publisher traj_pub;
+  planner_ = new CompositePlanner(traj_planner_nh_, frame_id_);
+  ROS_WARN("[Local planner:] planner instance created!");
 
-  // visualization messages pub
-  ros::Publisher sg_pub;
-  ros::Publisher expanded_cloud_pub;
+  planner_->setup();
+  ROS_WARN("[Local planner:] setup-ed!");
 
-  ros::Publisher local_map_cleared_pub;
-
-  boost::mutex map_mtx, traj_mtx;  // TODO(xu): do we need this?
-
-  // motion primitive planner util and its map util
-  std::shared_ptr<MPL::VoxelMapPlanner> mp_planner_util_;
-  std::shared_ptr<MPL::VoxelMapUtil> mp_map_util_;
-
-
-  opt_planner::PlannerManager::Ptr planner_manager_;
-
-
-  // motion primitive trajectory
-  MPL::Trajectory3D mp_traj_;
-  min_jerk::Trajectory opt_traj_;
-  double traj_total_time_;
-
-  // current local map
-  planning_ros_msgs::VoxelMapConstPtr local_map_ptr_ = nullptr;
-
-  // actionlib
-  boost::shared_ptr<const planning_ros_msgs::PlanTwoPointGoal> goal_;
-  boost::shared_ptr<planning_ros_msgs::PlanTwoPointResult> result_;
-  // action lib
-  std::unique_ptr<
-      actionlib::SimpleActionServer<planning_ros_msgs::PlanTwoPointAction>>
-      local_as_;
-
-  bool debug_;
-  bool verbose_;
-  bool pub_cleared_map_ = false;
-  bool use_3d_local_; // it is for 2D mp planner
-  bool use_opt_planner_ = false;
-  bool set_vis_ = false;
-
-  std::string frame_id_;
-
-
-  // planner tolerance
-  double tol_pos_, goal_tol_vel_, goal_tol_acc_;
-
-  /**
-   * @brief Goal callback function, prevent concurrent planner modes, call
-   * process_all function
-   */
-  void goalCB();
-
-  /**
-   * @brief Call planner after setting planner start and goal and specify params
-   * (use jrk, acc or vel)
-   */
-  void process_goal();
-
-  /***@yuwei***/
-  /**
-   * @brief Record result (trajectory, status, etc)
-   */
-  void process_result(const planning_ros_msgs::SplineTrajectory& traj_msg, bool solved);
-
-  /**
-   * @brief map callback, update local_map_ptr_
-   */
-  void localMapCB(const planning_ros_msgs::VoxelMap::ConstPtr& msg);
-
-  /**
-   * @brief Local planner warpper
-   */
-  bool local_plan_process(const MPL::Waypoint3D& start,
-                          const MPL::Waypoint3D& goal,
-                          const planning_ros_msgs::VoxelMap& map);
-
-  /**
-   * @brief Local planner clear footprint
-   */
-  planning_ros_msgs::VoxelMap clear_map_position(
-      const planning_ros_msgs::VoxelMap& local_map, const Vec3f& start);
-
-  /**
-   * @brief Local planner check if outside map
-   */
-  bool is_outside_map(const Eigen::Vector3i& pn, const Eigen::Vector3i& dim);
-};
+  local_as_->start();
+  ROS_WARN("[Local planner:] Initialized!");
+}
 
 // map callback, update local_map_ptr_
 void LocalPlanServer::localMapCB(
-    const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
+    const kr_planning_msgs::VoxelMap::ConstPtr& msg) {
   ROS_WARN_ONCE("[Local planner:] Got the local voxel map!");
   local_map_ptr_ = msg;
   frame_id_ = local_map_ptr_->header.frame_id;
-
 }
 
-LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
-  traj_pub = pnh_.advertise<planning_ros_msgs::Trajectory>("traj", 1, true);
-  local_map_sub_ =
-      pnh_.subscribe("local_voxel_map", 2, &LocalPlanServer::localMapCB, this);
-  local_as_ = std::make_unique<
-      actionlib::SimpleActionServer<planning_ros_msgs::PlanTwoPointAction>>(
-      pnh_, "plan_local_trajectory", false);
-
-  // set up visualization publisher for mpl planner
-  sg_pub = pnh_.advertise<planning_ros_msgs::Path>("start_goal", 1, true);
-  expanded_cloud_pub =
-      pnh_.advertise<sensor_msgs::PointCloud>("expanded_cloud", 1, true);
-
-  local_map_cleared_pub = pnh_.advertise<planning_ros_msgs::VoxelMap>(
-      "local_voxel_map_cleared", 1, true);
-
-  // set up mpl planner
-  ros::NodeHandle traj_planner_nh(pnh_, "trajectory_planner");
-  traj_planner_nh.param("debug", debug_, false);
-  traj_planner_nh.param("verbose", verbose_, false);
-
-  double dt;
-  double W, v_fov;
-  int ndt, max_num;
-  traj_planner_nh.param("tol_pos", tol_pos_, 0.5);
-  traj_planner_nh.param("global_goal_tol_vel", goal_tol_vel_, 0.5);
-  traj_planner_nh.param("global_goal_tol_acc", goal_tol_acc_, 0.5);
-  /// Execution time for each primitive
-  traj_planner_nh.param("dt", dt, 1.0);
-  traj_planner_nh.param("ndt", ndt, -1);
-  traj_planner_nh.param("max_num", max_num, -1);
-  traj_planner_nh.param("heuristic_weight", W, 10.0);
-  traj_planner_nh.param("vertical_semi_fov", v_fov, 0.392);
-  traj_planner_nh.param("use_opt_planner", use_opt_planner_, false);
-
-  
-  mp_map_util_ = std::make_shared<MPL::VoxelMapUtil>();
-
-  // TODO(xu:) not differentiating between 2D and 3D, causing extra resource
-  // usage for 2D case, this needed to be changed in both planner util as well
-  // as map util, which requires the slicing map function
-  /***@yuwei: optimization based planner ***/
-  if (use_opt_planner_){
-
-    ROS_WARN("+++++++++++++++++++++++++++++++++++");
-    ROS_WARN("[LocalPlanServer:] Optimization planner mode!!!!!");
-    ROS_WARN("+++++++++++++++++++++++++++++++++++");
-
-    /* initialize main modules */
-    planner_manager_.reset(new opt_planner::PlannerManager);
-    planner_manager_->initPlanModules(traj_planner_nh, mp_map_util_);
-
-
-  }else{
-
-    traj_planner_nh.param("use_3d_local", use_3d_local_, false);
-    
-    double vz_max, az_max, jz_max, uz_max;
-    traj_planner_nh.param("max_v_z", vz_max, 2.0);
-    traj_planner_nh.param("max_a_z", az_max, 1.0);
-    traj_planner_nh.param("max_j_z", jz_max, 1.0);
-    traj_planner_nh.param("max_u_z", uz_max, 1.0);
-
-
-    double v_max, a_max, j_max, u_max;
-    traj_planner_nh.param("max_v", v_max, 2.0);
-    traj_planner_nh.param("max_a", a_max, 1.0);
-    traj_planner_nh.param("max_j", j_max, 1.0);
-    traj_planner_nh.param("max_u", u_max, 1.0);
-
-    // Important: set motion primitive control inputs
-    vec_E<VecDf> U;
-    if (!use_3d_local_) {
-      const decimal_t du = u_max;
-      for (decimal_t dx = -u_max; dx <= u_max; dx += du)
-        for (decimal_t dy = -u_max; dy <= u_max; dy += du)
-          U.push_back(Vec3f(dx, dy, 0));
-    } else {
-      const decimal_t du = u_max;
-      const decimal_t du_z = uz_max;
-      for (decimal_t dx = -u_max; dx <= u_max; dx += du)
-        for (decimal_t dy = -u_max; dy <= u_max; dy += du)
-          for (decimal_t dz = -uz_max; dz <= uz_max; dz += du_z)
-            U.push_back(Vec3f(dx, dy, dz));
-    }
-
-    mp_planner_util_.reset(new MPL::VoxelMapPlanner(verbose_));  // verbose
-    mp_planner_util_->setMapUtil(
-        mp_map_util_);                  // Set collision checking function
-    mp_planner_util_->setEpsilon(1.0);  // Set greedy param (default equal to 1)
-
-    mp_planner_util_->setVxy(v_max);  // Set max velocity along x and y
-    mp_planner_util_->setVz(vz_max);  // Set max velocity along z
-
-    mp_planner_util_->setAmax(a_max);  // Set max acceleration
-    mp_planner_util_->setJmax(j_max);  // Set max jerk
-    mp_planner_util_->setVfov(v_fov);  // Set vertical semi-fov
-    // mp_planner_util_->setUmax(u_max); // Set max control input
-    mp_planner_util_->setDt(dt);          // Set dt for each primitive
-    mp_planner_util_->setTmax(ndt * dt);  // Set max time horizon of planning
-    mp_planner_util_->setMaxNum(
-        max_num);  // Set maximum allowed expansion, -1 means no limitation
-    mp_planner_util_->setU(U);  // 2D discretization if false, 3D if true
-    mp_planner_util_->setW(W);  // 2D discretization if false, 3D if true
-    mp_planner_util_->setLPAstar(false);  // Use Astar
-  }
-
-
-
-  // Register goal and preempt callbacks
-  local_as_->registerGoalCallback(boost::bind(&LocalPlanServer::goalCB, this));
-  local_as_->start();
-
-
+// map callback, update local_map_ptr_
+void LocalPlanServer::localMapCBNoInfla(
+    const kr_planning_msgs::VoxelMap::ConstPtr& msg) {
+  ROS_WARN_ONCE(
+      "[Local planner:] Got the local voxel map without inflation!!!");
+  local_nofla_map_ptr_ = msg;
+  frame_id_ = local_nofla_map_ptr_->header.frame_id;
 }
 
-void LocalPlanServer::process_all() {
-  boost::mutex::scoped_lock lockm(map_mtx);
+void LocalPlanServer::goalCB() {
+  auto start_timer = std::chrono::high_resolution_clock::now();
+  // check_vel is true if local planner reaches global goal
 
-  if (goal_ == NULL) {
+  aborted_ = false;
+  auto goal_ptr = local_as_->acceptNewGoal();
+  if (goal_ptr == NULL) {
     ROS_WARN("+++++++++++++++++++++++++++++++++++");
     ROS_WARN("[LocalPlanServer:] Goal is null!!!!!");
     ROS_WARN("+++++++++++++++++++++++++++++++++++");
@@ -264,153 +85,23 @@ void LocalPlanServer::process_all() {
     ROS_WARN("+++++++++++++++++++++++++++++++++++");
     ROS_WARN("[LocalPlanServer:] local map is not received!!!!!");
     ROS_WARN("+++++++++++++++++++++++++++++++++++");
+  } else if (local_nofla_map_ptr_ == nullptr) {
+    ROS_WARN("+++++++++++++++++++++++++++++++++++");
+    ROS_WARN("[LocalPlanServer:] local no inflation map is not received!!!!!");
+    ROS_WARN("+++++++++++++++++++++++++++++++++++");
   } else {
-    process_goal();
+    process_goal(*goal_ptr);
   }
+  auto end_timer = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+      end_timer - start_timer);
+  ROS_INFO("Local goalCB took %f ms", duration.count() / 1000.0);
+  computation_time_ = duration.count() / 1000.0;
+  planner_->setGoal(*goal_ptr);
 }
 
-void LocalPlanServer::process_result(const planning_ros_msgs::SplineTrajectory& traj_msg,
-                                     bool solved) {
-  result_ = boost::make_shared<planning_ros_msgs::PlanTwoPointResult>();
-  result_->success = solved;  // set success status
-  result_->policy_status = solved ? 1 : -1;
-  ROS_WARN_STREAM("result_->success:" << result_->success);
-  if (solved) {
-    // record trajectory in result
-    result_->traj = traj_msg;
-    result_->traj.header.frame_id = frame_id_;
-    traj_opt::TrajRosBridge::publish_msg(result_->traj);
-
-     
-    //planning_ros_msgs::SplineTrajectory
-
-    // execution_time (set in replanner)
-    // equals 1.0/local_replan_rate
-    double endt = goal_->execution_time.toSec();
-
-    ROS_WARN_STREAM("endt:" << endt);
-    // evaluate trajectory for 5 steps, each step duration equals
-    // execution_time, get corresponding waypoints and record in result
-    // (result_->p_stop etc.) (evaluate the whole traj if execution_time is not
-    // set (i.e. not in replan mode))
-    int num_goals = 5;
-    if (endt <= 0) {
-      endt = traj_total_time_;
-      num_goals = 1;
-    }
-
-    /***@yuwei: optimization based planner ***/
-    if (use_opt_planner_){
-      
-      Eigen::Vector3d pos, vel, acc;
-      pos.setZero(), vel.setZero(), acc.setZero();
-
-      for (int i = 0; i < num_goals; i++) {
-        geometry_msgs::Pose p_fin;
-        geometry_msgs::Twist v_fin, a_fin, j_fin;
-
-        double t_cur = endt * double(i + 1);
-
-        pos = opt_traj_.getPos(t_cur);
-        vel = opt_traj_.getVel(t_cur);
-        acc = opt_traj_.getAcc(t_cur);
-
-        // check if evaluation is successful, if not, set result->success to be
-        // false! (if failure case, a null Waypoint is returned)
-        if ( pos == Eigen::Vector3d::Zero() && vel == Eigen::Vector3d::Zero() ) {
-          result_->success = 0;
-          ROS_WARN_STREAM(
-              "waypoint evaluation failed, set result->success to be false");
-          ROS_WARN_STREAM("trajectory total time:" << traj_total_time_);
-          ROS_WARN_STREAM("evaluating at:" << endt * double(i + 1));
-        }
-
-        p_fin.position.x = pos(0), p_fin.position.y = pos(1),
-        p_fin.position.z = pos(2);
-        p_fin.orientation.w = 1, p_fin.orientation.z = 0;
-        v_fin.linear.x = vel(0), v_fin.linear.y = vel(1),
-        v_fin.linear.z = vel(2);
-        v_fin.angular.z = 0;
-        a_fin.linear.x = acc(0), a_fin.linear.y = acc(1),
-        a_fin.linear.z = acc(2);
-        a_fin.angular.z = 0;
-        result_->p_stop.push_back(p_fin);
-        result_->v_stop.push_back(v_fin);
-        result_->a_stop.push_back(a_fin);
-        result_->j_stop.push_back(j_fin);
-      }
-
-      pos = opt_traj_.getPos(traj_total_time_);
-      result_->traj_end.position.x = pos(0);
-      result_->traj_end.position.y = pos(1);
-      result_->traj_end.position.z = pos(2);
-
-    }else{
-
-      for (int i = 0; i < num_goals; i++) {
-        geometry_msgs::Pose p_fin;
-        geometry_msgs::Twist v_fin, a_fin, j_fin;
-
-        MPL::Waypoint3D pt_f = mp_traj_.evaluate(endt * double(i + 1));
-        // check if evaluation is successful, if not, set result->success to be
-        // false! (if failure case, a null Waypoint is returned)
-        if ((pt_f.pos(0) == 0) && (pt_f.pos(1) == 0) && (pt_f.pos(2) == 0) &&
-            (pt_f.vel(0) == 0) && (pt_f.vel(1) == 0) && (pt_f.vel(2) == 0)) {
-          result_->success = 0;
-          ROS_WARN_STREAM(
-              "waypoint evaluation failed, set result->success to be false");
-          ROS_WARN_STREAM("trajectory total time:" << traj_total_time_);
-          ROS_WARN_STREAM("evaluating at:" << endt * double(i + 1));
-        }
-
-
-        p_fin.position.x = pt_f.pos(0), p_fin.position.y = pt_f.pos(1),
-        p_fin.position.z = pt_f.pos(2);
-        p_fin.orientation.w = 1, p_fin.orientation.z = 0;
-        v_fin.linear.x = pt_f.vel(0), v_fin.linear.y = pt_f.vel(1),
-        v_fin.linear.z = pt_f.vel(2);
-        v_fin.angular.z = 0;
-        a_fin.linear.x = pt_f.acc(0), a_fin.linear.y = pt_f.acc(1),
-        a_fin.linear.z = pt_f.acc(2);
-        a_fin.angular.z = 0;
-        result_->p_stop.push_back(p_fin);
-        result_->v_stop.push_back(v_fin);
-        result_->a_stop.push_back(a_fin);
-        result_->j_stop.push_back(j_fin);
-      }
-
-      MPL::Waypoint3D pt = mp_traj_.evaluate(traj_total_time_);
-      result_->traj_end.position.x = pt.pos(0);
-      result_->traj_end.position.y = pt.pos(1);
-      result_->traj_end.position.z = pt.pos(2);
-
-    }
-
-    result_->execution_time =
-        goal_->execution_time;  // execution_time (set in replanner)
-                                // equals 1.0/local_replan_rate
-
-    result_->epoch = goal_->epoch;
-    result_->traj_end.orientation.w = 1.0;
-    result_->traj_end.orientation.z = 0;
-
-  }
-  
-  // reset goal
-  goal_ = boost::shared_ptr<planning_ros_msgs::PlanTwoPointGoal>();
-  // abort if trajectory generation failed
-  if (!solved && local_as_->isActive()) {
-    ROS_WARN("Current local plan trail: trajectory generation failed!");
-    local_as_->setAborted();
-  }
-
-  if (local_as_->isActive()) {
-    local_as_->setSucceeded(*result_);
-  }
-}
-
-// record goal position, specify use jrk, acc or vel
-void LocalPlanServer::process_goal() {
+void LocalPlanServer::process_goal(
+    const kr_planning_msgs::PlanTwoPointGoal& as_goal) {
   boost::mutex::scoped_lock lockt(traj_mtx);
   if (aborted_) {
     if (local_as_->isActive()) {
@@ -424,10 +115,10 @@ void LocalPlanServer::process_goal() {
   MPL::Waypoint3D start, goal;
   // instead of using current odometry as start, we use the given start position
   // for consistency between old and new trajectories in replan process
-  start.pos = pose_to_eigen(goal_->p_init);
-  start.vel = twist_to_eigen(goal_->v_init);
-  start.acc = twist_to_eigen(goal_->a_init);
-  start.jrk = twist_to_eigen(goal_->j_init);
+  start.pos = kr::pose_to_eigen(as_goal.p_init);
+  start.vel = kr::twist_to_eigen(as_goal.v_init);
+  start.acc = kr::twist_to_eigen(as_goal.a_init);
+  start.jrk = kr::twist_to_eigen(as_goal.j_init);
 
   // Important: define use position, velocity, acceleration or jerk as control
   // inputs, note that the lowest order "false" term will be used as control
@@ -441,92 +132,55 @@ void LocalPlanServer::process_goal() {
   // in trajectory_tracker)
   start.use_yaw = false;
 
-  goal.pos = pose_to_eigen(goal_->p_final);
-  goal.vel = twist_to_eigen(goal_->v_final);
-  goal.acc = twist_to_eigen(goal_->a_final);
-  goal.jrk = twist_to_eigen(goal_->j_final);
+  goal.pos = kr::pose_to_eigen(as_goal.p_final);
+  goal.vel = kr::twist_to_eigen(as_goal.v_final);
+  goal.acc = kr::twist_to_eigen(as_goal.a_final);
+  goal.jrk = kr::twist_to_eigen(as_goal.j_final);
   goal.use_yaw = start.use_yaw;
   goal.use_pos = start.use_pos;
   goal.use_vel = start.use_vel;
   goal.use_acc = start.use_acc;
   goal.use_jrk = start.use_jrk;
 
-  planning_ros_msgs::VoxelMap local_map_cleared;
+  kr_planning_msgs::VoxelMap local_map_cleared, local_no_infla_map_cleared;
   local_map_cleared = clear_map_position(*local_map_ptr_, start.pos);
+  local_no_infla_map_cleared =
+      clear_map_position(*local_nofla_map_ptr_, start.pos);
 
   if (pub_cleared_map_) {
-    local_map_cleared_pub.publish(local_map_cleared);
+    local_map_cleared_pub_.publish(local_map_cleared);
     ROS_ERROR("Local map cleared published");
   }
 
-  bool local_planner_succeeded;
-  local_planner_succeeded = local_plan_process(start, goal, local_map_cleared);
+  // for visualization: publish a path connecting local start and local goal
+  vec_Vec3f sg;
+  sg.push_back(start.pos);
+  sg.push_back(goal.pos);
+  kr_planning_msgs::Path sg_msg = kr::path_to_ros(sg);
+  sg_msg.header.frame_id = frame_id_;
+  sg_pub.publish(sg_msg);
 
-  if (!local_planner_succeeded) {
-    // local plan fails
-    aborted_ = true;
-    if (local_as_->isActive()) {
-      ROS_WARN("Current local plan trail failed!");
-      local_as_->setAborted();
-    }
-  }
-
-  // get the trajectory from local planner, and process result
-  /***@yuwei: optimization based planner ***/
-  planning_ros_msgs::SplineTrajectory spline_msg;
-
-  if(use_opt_planner_){
-
-    spline_msg.header.frame_id = frame_id_;
-    spline_msg.dimensions = 3;
-
-    int piece_num =  opt_traj_.getPieceNum();
-    Eigen::VectorXd durs = opt_traj_.getDurations();
-
-    for (uint d = 0; d < 3; d++) {
-      planning_ros_msgs::Spline spline;
-      for (uint s = 0; s < piece_num; s++) {
-
-        planning_ros_msgs::Polynomial poly;
-
-        min_jerk::CoefficientMat coeff = opt_traj_[s].getCoeffMat(true);
-
-        for (uint c = 0; c < 6; c++) {
-          poly.coeffs.push_back(coeff(d,5-c));
-        }
-        poly.dt = durs[s];
-        poly.degree = 5;
-        spline.segs.push_back(poly);
-      }
-      spline.segments = piece_num;
-      spline.t_total = traj_total_time_;
-      spline_msg.data.push_back(spline);
-    }
-
-  }else{
-
-    // covert traj to a ros message
-    planning_ros_msgs::Trajectory traj_msg = toTrajectoryROSMsg(mp_traj_);
-    traj_msg.header.frame_id = frame_id_;
-    traj_pub.publish(traj_msg); // only for visualizations
-
-    spline_msg = traj_opt::SplineTrajectoryFromTrajectory(traj_msg);
-  }
-
-  std::cout << "  local_planner_succeeded   " << local_planner_succeeded << std::endl;
-  process_result(spline_msg, local_planner_succeeded);
-
+  process_result(planner_->plan_composite(start,
+                                          goal,
+                                          local_map_cleared,
+                                          local_no_infla_map_cleared,
+                                          &compute_time_front_end_,
+                                          &compute_time_back_end_,
+                                          &compute_time_poly_,
+                                          success_status_),
+                 as_goal.execution_time,
+                 as_goal.epoch);
 }
 
-planning_ros_msgs::VoxelMap LocalPlanServer::clear_map_position(
-    const planning_ros_msgs::VoxelMap& local_map_original, const Vec3f& start) {
+kr_planning_msgs::VoxelMap LocalPlanServer::clear_map_position(
+    const kr_planning_msgs::VoxelMap& local_map_original, const Vec3f& start) {
   // make a copy, not the most efficient way, but necessary because we need to
   // maintain both original and cleared maps
-  planning_ros_msgs::VoxelMap local_map_cleared;
+  kr_planning_msgs::VoxelMap local_map_cleared;
   local_map_cleared = local_map_original;
 
-  planning_ros_msgs::VoxelMap voxel_map;
-  
+  kr_planning_msgs::VoxelMap voxel_map;
+
   // Replaced with corresponding parameter value from VoxelMsg.msg
   int8_t val_free = voxel_map.val_free;
   ROS_WARN_ONCE("Value free is set as %d", val_free);
@@ -572,107 +226,384 @@ bool LocalPlanServer::is_outside_map(const Eigen::Vector3i& pn,
   return pn(0) < 0 || pn(0) >= dim(0) || pn(1) < 0 || pn(1) >= dim(1) ||
          pn(2) < 0 || pn(2) >= dim(2);
 }
+Eigen::MatrixXd compute_bvp_pva(const Eigen::VectorXd& state1,
+                                const Eigen::VectorXd& state2,
+                                double T) {
+  Eigen::Vector3d p0 = state1.head<3>();
+  Eigen::Vector3d v0 = state1.segment<3>(3);
+  Eigen::Vector3d a0 = state1.tail<3>();
+  Eigen::Vector3d pf = state2.head<3>();
+  Eigen::Vector3d vf = state2.segment<3>(3);
+  Eigen::Vector3d af = state2.tail<3>();
 
-bool LocalPlanServer::local_plan_process(
-    const MPL::Waypoint3D& start,
-    const MPL::Waypoint3D& goal,
-    const planning_ros_msgs::VoxelMap& map) {
-  // for visualization: publish a path connecting local start and local goal
-  vec_Vec3f sg;
-  sg.push_back(start.pos);
-  sg.push_back(goal.pos);
-  planning_ros_msgs::Path sg_msg = path_to_ros(sg);
-  std::string map_frame;  // set frame id
-  map_frame = map.header.frame_id;
-  sg_msg.header.frame_id = map_frame;
-  sg_pub.publish(sg_msg);
+  Eigen::MatrixXd time_mat(6, 6);
+  time_mat << 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, T,
+      std::pow(T, 2), std::pow(T, 3), std::pow(T, 4), std::pow(T, 5), 0, 1,
+      2 * T, 3 * std::pow(T, 2), 4 * std::pow(T, 3), 5 * std::pow(T, 4), 0, 0,
+      2, 6 * T, 12 * std::pow(T, 2), 20 * std::pow(T, 3);
 
-  /// Trajectory planning
-  setMap(mp_map_util_, map);
-  bool valid = false;
+  Eigen::MatrixXd pva_mat(6, 3);
+  pva_mat << p0, v0, a0, pf, vf, af;
 
-  Eigen::MatrixXd startState(3, 3), endState(3, 3);
+  Eigen::MatrixXd coef = time_mat.inverse() * pva_mat;
 
-  /***@yuwei: optimization based planner ***/
-
-  if(use_opt_planner_){
-
-    ROS_WARN("[LocalPlanServer] trigger opt_planner!!!!!");
-    startState <<   start.pos(0),  start.vel(0), start.acc(0),
-                    start.pos(1),  start.vel(1), start.acc(1),
-                    start.pos(2),  start.vel(2), start.acc(2);
-    endState <<   goal.pos(0),  goal.vel(0), goal.acc(0),
-                  goal.pos(1),  goal.vel(1), goal.acc(1),
-                  goal.pos(2),  goal.vel(2), goal.acc(2);
-
-
-    std::cout << "startState is " << startState << std::endl;
-    std::cout << "endState is " << endState << std::endl;
-    
-
-    valid = planner_manager_->localPlanner(startState, endState);
-    if (valid) {
-      opt_traj_ = planner_manager_->local_data_.traj_;
-      traj_total_time_ = opt_traj_.getTotalDuration();
-      ROS_WARN("[LocalPlanServer] planning success ! !!!!!");
-
-    }
-
-  }else{
-
-    ROS_WARN("[LocalPlanServer] trigger mp_planner!!!!!");
-    std::cout << "start.pos is " << start.pos.transpose() << std::endl;
-    std::cout << "goal.pos is "  << goal.pos.transpose()<< std::endl;
-    
-
-    mp_planner_util_->reset();
-    // start and new_goal contain full informaiton about
-    // position/velocity/acceleration
-    if(!use_3d_local_) 
-    {
-      MPL::Waypoint3D new_goal = goal;
-      new_goal.pos(2) = start.pos(2); // or else it cannot reach the local goal position.
-      valid = mp_planner_util_->plan(start, new_goal);
-    }else{
-      valid = mp_planner_util_->plan(start, goal);
-    }
-
-    if (valid) {
-      mp_traj_ = mp_planner_util_->getTraj();
-      traj_total_time_ = mp_traj_.getTotalTime();
-      ROS_WARN("[LocalPlanServer] planning success ! !!!!!");
-    }
-
-    // for visualization: publish expanded nodes as a point cloud
-    sensor_msgs::PointCloud expanded_ps =
-        vec_to_cloud(mp_planner_util_->getExpandedNodes());
-    expanded_ps.header.frame_id = map_frame;
-    expanded_cloud_pub.publish(expanded_ps);
-
-  }
-
-  return valid;
+  return coef;
 }
 
-// prevent concurrent planner modes
-void LocalPlanServer::goalCB() {
-  auto start_timer = std::chrono::high_resolution_clock::now();
-  goal_ = local_as_->acceptNewGoal();
-  // check_vel is true if local planner reaches global goal
+Eigen::MatrixXd computeShotTraj(Eigen::VectorXd state1,  // p0 v0 a0, size 9
+                                Eigen::VectorXd state2,
+                                double time_to_goal) {
+  /* ---------- get coefficient ---------- */
+  using namespace Eigen;
+  const Vector3d p0 = state1.head(3);
+  const Vector3d dp = state2.head(3) - p0;
+  const Vector3d v0 = state1.segment(3, 3);
+  const Vector3d dv = state2.segment(3, 3) - v0;
+  const Vector3d a0 = state1.tail(3);
+  // order = 5;
+  double t_d = time_to_goal;
+  MatrixXd coef(3, 6);
+  double t_d_2 = t_d * t_d;
+  double t_d_3 = t_d_2 * t_d;
+  double t_d_4 = t_d_3 * t_d;
+  const Vector3d delta_p = dp - v0 * t_d - 0.5 * a0 * t_d_2;
+  const Vector3d delta_v = dv - a0 * t_d;
+  const Vector3d delta_a = state2.tail(3) - a0;
+  Vector3d a = 1.0 / 120.0 *
+               (720.0 / (t_d_4 * t_d) * delta_p - 360.0 / t_d_4 * delta_v +
+                60.0 / t_d_3 * delta_a);
+  Vector3d b = 1.0 / 24.0 *
+               (-360.0 / t_d_4 * delta_p + 168.0 / t_d_3 * delta_v -
+                24.0 / t_d_2 * delta_a);
+  Vector3d c =
+      1.0 / 6.0 *
+      (60.0 / t_d_3 * delta_p - 24.0 / t_d_2 * delta_v + 3.0 / t_d * delta_a);
+  Vector3d d = 0.5 * a0;
+  Vector3d e = v0;
+  Vector3d f = p0;
+  // 1/24 *  * t^4  +  1/6 * alpha * t^3 + 1/2 * beta * t^2 + v0
+  // a*t^4 + b*t^3 + c*t^2 + v0*t + p0
+  coef.col(5) = a;
+  coef.col(4) = b;
+  coef.col(3) = c;
+  coef.col(2) = d;
+  coef.col(1) = e;
+  coef.col(0) = f;
+  return coef.transpose();
+}
+void normalizePosCoeffMat(double duration, Eigen::MatrixXd& coeffMat) {
+  double multiplier = 1.0;
+  for (int i = 0; i < coeffMat.rows(); i++) {
+    coeffMat.row(i) = coeffMat.row(i) * multiplier;
+    multiplier *= duration;
+  }
+}
 
-  if(!use_opt_planner_){
-    if (goal_->check_vel) {
-      // Tolerance for goal region, -1 means no limitation
-      mp_planner_util_->setTol(tol_pos_, goal_tol_vel_, goal_tol_acc_);
-    } else {
-      mp_planner_util_->setTol(tol_pos_, -1, -1);
+kr_planning_msgs::SplineTrajectory SplineTrajfromDiscreteTwoPoints(
+    const kr_planning_msgs::TrajectoryDiscretized& traj_dis_msg) {
+  // this function does not quite work since dt is too small(or not set
+  // properly due to N_ctrl N_state issue) This also needs to be updated with
+  // the update on TrajDescrtized msg
+
+  // int degree_plus1 = 6;
+  // double dt = traj_dis_msg.t[1] - traj_dis_msg.t[0];
+  kr_planning_msgs::SplineTrajectory traj_msg;
+  // traj_msg.header = traj_dis_msg.header;
+  // traj_msg.dimensions = 3;
+  // // prepare polynomial fit time vector
+  // kr_planning_msgs::Spline spline;
+  // for (int dim = 0; dim < 3; dim++) {
+  //   traj_msg.data.push_back(spline);
+  //   traj_msg.data[dim].t_total = traj_dis_msg.t[traj_dis_msg.t.size() - 1];
+  // }
+  // // calc coeff
+  // for (int traj_idx = 0; traj_idx < traj_dis_msg.pos.size() - 1; traj_idx++)
+  // {
+  //   // Eigen::MatrixXd pos_mat = Eigen::MatrixXd::Zero(degree_plus1, 3);
+  //   // create a vector of pos, vel, acc for traj_idx and next point
+  //   Eigen::VectorXd state1(9);
+  //   Eigen::VectorXd state2(9);
+  //   state1 << traj_dis_msg.pos[traj_idx].x, traj_dis_msg.pos[traj_idx].y,
+  //       traj_dis_msg.pos[traj_idx].z, traj_dis_msg.vel[traj_idx].x,
+  //       traj_dis_msg.vel[traj_idx].y, traj_dis_msg.vel[traj_idx].z,
+  //       traj_dis_msg.acc[traj_idx].x, traj_dis_msg.acc[traj_idx].y,
+  //       traj_dis_msg.acc[traj_idx].z;
+  //   state2 << traj_dis_msg.pos[traj_idx + 1].x,
+  //       traj_dis_msg.pos[traj_idx + 1].y, traj_dis_msg.pos[traj_idx + 1].z,
+  //       traj_dis_msg.vel[traj_idx + 1].x, traj_dis_msg.vel[traj_idx + 1].y,
+  //       traj_dis_msg.vel[traj_idx + 1].z, traj_dis_msg.acc[traj_idx + 1].x,
+  //       traj_dis_msg.acc[traj_idx + 1].y, traj_dis_msg.acc[traj_idx + 1].z;
+  //   std::cout << "state1: \n" << state1.transpose() << std::endl;
+  //   std::cout << "state2: \n" << state2.transpose() << std::endl;
+  //   // solve for coefficients
+  //   Eigen::MatrixXd coeff_mat = compute_bvp_pva(state1,  // p0 v0 a0, size 9
+  //                                               state2,
+  //                                               dt);
+
+  //   // 1.0);  // #this is because the whole thing is a unit coeff
+  //   normalizePosCoeffMat(dt, coeff_mat);
+  //   //
+  //   // input into the new message
+  //   for (int dim = 0; dim < 3; dim++) {
+  //     traj_msg.data[dim].segments++;
+  //     kr_planning_msgs::Polynomial p;
+  //     p.basis = p.STANDARD;
+  //     Eigen::VectorXd coeff_dim = coeff_mat.col(dim);
+  //     std::vector<float> std_vector(coeff_dim.data(),
+  //                                   coeff_dim.data() + coeff_dim.size());
+  //     p.coeffs = std_vector;
+  //     p.degree = degree_plus1 - 1;
+  //     p.dt = dt;
+  //     // p.start_index = traj_idx;
+  //     traj_msg.data[dim].segs.push_back(p);
+  //   }
+  // }
+
+  return traj_msg;
+}
+kr_planning_msgs::SplineTrajectory
+SplineTrajfromDiscrete(  // this method will make beginning and end have an
+                         // nonzero velocity issue
+    const kr_planning_msgs::TrajectoryDiscretized& traj_dis_msg) {
+  int degree_plus1 = 6;
+  double dt = traj_dis_msg.dt;
+  kr_planning_msgs::SplineTrajectory traj_msg;
+  traj_msg.header = traj_dis_msg.header;
+  traj_msg.dimensions = 3;
+  // prepare polynomial fit time vector
+  Eigen::VectorXd time_vec = Eigen::ArrayXd::LinSpaced(degree_plus1, 0, 1);
+  // create time matrix by taking this to different powers
+  Eigen::MatrixXd time_mat = Eigen::MatrixXd::Zero(degree_plus1, degree_plus1);
+  for (int i = 0; i < degree_plus1; i++) {
+    time_mat.col(i) = time_vec.array().pow(i);
+  }
+  kr_planning_msgs::Spline spline;
+  for (int dim = 0; dim < 3; dim++) traj_msg.data.push_back(spline);
+  // ROS_INFO("Time matrix is %f", time_mat);
+  for (int traj_idx = 0;
+       traj_idx + (degree_plus1 - 1) < traj_dis_msg.pos.size();  // in range
+       traj_idx += (degree_plus1 - 1)) {
+    // this is to have 1 repeat point to make sure things connect
+    for (int dim = 0; dim < 3; dim++)
+      traj_msg.data[dim].t_total = (traj_idx + (degree_plus1 - 1)) * dt;
+
+    Eigen::MatrixXd pos_mat = Eigen::MatrixXd::Zero(degree_plus1, 3);
+
+    // create a vector of positions
+    for (int j = 0; j < degree_plus1; j++) {
+      pos_mat(j, 0) = traj_dis_msg.pos[traj_idx + j].x;
+      pos_mat(j, 1) = traj_dis_msg.pos[traj_idx + j].y;
+      pos_mat(j, 2) = traj_dis_msg.pos[traj_idx + j].z;
+    }
+    // solve for coefficients
+    Eigen::MatrixXd coeff_mat = time_mat.inverse() * pos_mat;
+    // input into the new message
+    for (int dim = 0; dim < 3; dim++) {
+      traj_msg.data[dim].segments++;
+      kr_planning_msgs::Polynomial p;
+      p.basis = p.STANDARD;
+      Eigen::VectorXd coeff_dim = coeff_mat.col(dim);
+      std::vector<float> std_vector(coeff_dim.data(),
+                                    coeff_dim.data() + coeff_dim.size());
+      p.coeffs = std_vector;
+      p.degree = degree_plus1 - 1;
+      p.dt = dt * (degree_plus1 - 1);
+      // p.start_index = traj_idx;
+      traj_msg.data[dim].segs.push_back(p);
     }
   }
-  aborted_ = false;
-  process_all();
-  auto end_timer = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_timer - start_timer);
-  std::cout << "Local goalCB took"<<duration.count() << "micro sec"<< std::endl;
+
+  return traj_msg;
+}
+
+void LocalPlanServer::process_result(
+    const std::tuple<kr_planning_msgs::SplineTrajectory,  // search
+                     kr_planning_msgs::SplineTrajectory,  // continuous, then
+                                                          // discrete
+                     kr_planning_msgs::TrajectoryDiscretized>& traj_combined,
+    ros::Duration execution_time,
+    int epoch) {
+  kr_planning_msgs::SplineTrajectory search_traj_msg =
+      std::get<0>(traj_combined);
+  kr_planning_msgs::SplineTrajectory traj_msg = std::get<1>(traj_combined);
+  kr_planning_msgs::TrajectoryDiscretized traj_dis_msg =
+      std::get<2>(traj_combined);
+  double tracking_error = 0.0;
+  std::vector<geometry_msgs::Point> odom_pts;
+
+  bool solved = traj_msg.data.size() > 0;
+  if (!solved && traj_dis_msg.pos.size() > 0) {
+    traj_msg = SplineTrajfromDiscrete(traj_dis_msg);
+    solved = true;
+  }
+
+  if (!solved) {
+    // local plan fails
+    aborted_ = true;
+    if (local_as_->isActive()) {
+      ROS_WARN("Current local plan trial failed!");
+      traj_pub_.publish(kr_planning_msgs::SplineTrajectory());
+      // local_as_->setAborted(); //do not set aborted here, otherwise no return
+    }
+  } else {
+    ROS_WARN("[LocalPlanServer] Planning success!!!!!!");
+    traj_pub_.publish(traj_msg);
+
+    /////////////////////////////////////////////////////////////////////////////////////////////
+    // get the trajectory
+    kr_tracker_msgs::PolyTrackerActionGoal traj_act_msg;
+    traj_act_msg.goal.set_yaw = false;
+    traj_act_msg.goal.t_start = ros::Time::now();  // spline_traj_.header.stamp
+
+    if (!use_discrete_traj_) {  // different from converting discrete to
+                                // continuous, this if else actually runs
+                                // discrete tracker
+      traj_act_msg.goal.order = traj_msg.data[0].segs[0].degree;
+
+      int piece_num = traj_msg.data[0].segments;
+
+      traj_act_msg.goal.seg_x.resize(piece_num);
+      traj_act_msg.goal.seg_y.resize(piece_num);
+      traj_act_msg.goal.seg_z.resize(piece_num);
+
+      std::cout << "piece_num  " << piece_num << std::endl;
+
+      for (int i = 0; i < piece_num; ++i) {
+        for (uint c = 0; c <= traj_act_msg.goal.order; c++) {
+          traj_act_msg.goal.seg_x[i].coeffs.push_back(
+              traj_msg.data[0].segs[i].coeffs[c]);
+          traj_act_msg.goal.seg_y[i].coeffs.push_back(
+              traj_msg.data[1].segs[i].coeffs[c]);
+          traj_act_msg.goal.seg_z[i].coeffs.push_back(
+              traj_msg.data[2].segs[i].coeffs[c]);
+        }
+
+        traj_act_msg.goal.seg_x[i].dt = traj_msg.data[0].segs[i].dt;
+        traj_act_msg.goal.seg_x[i].degree = traj_msg.data[0].segs[i].degree;
+      }
+
+    }
+    /////////////////////////////////////////////////////////////////////////////////////////////
+    else {
+      // http://docs.ros.org/en/api/trajectory_msgs/html/msg/MultiDOFJointTrajectoryPoint.html
+      // use this can directly for control
+      traj_act_msg.goal.N =
+          traj_dis_msg.N_ctrl +
+          1;  // Tracker expect same number of things, so just add 1
+      traj_act_msg.goal.pos_pts = traj_dis_msg.pos;
+      traj_act_msg.goal.vel_pts = traj_dis_msg.vel;
+      traj_act_msg.goal.acc_pts = traj_dis_msg.acc;
+      traj_act_msg.goal.dt = traj_dis_msg.dt;
+    }
+
+    // publish the trajectory
+    if (use_tracker_client_ == false) { //this does not wait for tracker
+      // use client to send trajectory
+      // traj_goal_pub_.publish(traj_act_msg);
+      // std_srvs::Trigger trg;
+      // ros::service::call(poly_srv_name_, trg);
+      ROS_WARN("Not using tracker client, publish trajectory directly");
+    } else {
+      std::string tracker_str = "kr_trackers/PolyTracker";
+      kr_tracker_msgs::Transition transition_cmd;
+      transition_cmd.request.tracker = tracker_str;
+      traj_goal_ac_->sendGoal(traj_act_msg.goal);
+      srv_transition_.call(transition_cmd);
+      if (transition_cmd.response.success) ROS_INFO("Transition success!");
+      traj_goal_ac_->waitForResult(ros::Duration(20.0));
+      kr_tracker_msgs::PolyTrackerResultConstPtr result_ptr =
+          traj_goal_ac_->getResult();
+      tracking_error = result_ptr->total_tracking_error;
+      odom_pts = result_ptr->odom_history;
+      ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
+    }
+  }  // success case
+
+  // ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
+  // This node is a client of the trajectory tracker, it will send the
+  // tracking message wait for result after hardware execution to hopefully
+  // get things like tracking error
+
+  // This node is also a action server for plan two point, the
+  // client that will be calling it is the python simple script
+  // evalute_traj.py / evalute_traj_exp.py
+  kr_planning_msgs::PlanTwoPointResult result;
+  // evaluate trajectory for 5 steps, each step duration equals
+  // execution_time, get corresponding waypoints and record in result
+  // (result_->p_stop etc.) (evaluate the whole traj if execution_time is not
+  // set (i.e. not in replan mode))
+  double dt = execution_time.toSec();
+  int num_goals = 5;
+  if (dt <= 0) {
+    dt = 0.2;
+    num_goals = (int)(traj_total_time_ / 0.2);  // using dt = 0.2
+  }
+  std::cout << "num goals set" << std::endl;
+  // unclear what the following section does comment out for now
+  //  for (int i = 0; i < num_goals; i++) {
+  //    geometry_msgs::Pose p_fin;
+  //    geometry_msgs::Twist v_fin, a_fin, j_fin;
+
+  //   MPL::Waypoint3D pt_f = planner_->evaluate(dt * static_cast<double>(i));
+  //   // check if evaluation is successful, if not, set result.success to be
+  //   // false! (if failure case, a null Waypoint is returned)
+  //   if ((pt_f.pos(0) == 0) && (pt_f.pos(1) == 0) && (pt_f.pos(2) == 0) &&
+  //       (pt_f.vel(0) == 0) && (pt_f.vel(1) == 0) && (pt_f.vel(2) == 0)) {
+  //     result.success = 0;
+  //     ROS_WARN_STREAM(
+  //         "waypoint evaluation failed, set result.success to be false");
+  //     ROS_WARN_STREAM("trajectory total time:" << traj_total_time_);
+  //     ROS_WARN_STREAM("evaluating at:" << dt * static_cast<double>(i));
+  //   }
+
+  //   p_fin.position.x = pt_f.pos(0), p_fin.position.y = pt_f.pos(1),
+  //   p_fin.position.z = pt_f.pos(2);
+  //   p_fin.orientation.w = 1, p_fin.orientation.z = 0;
+  //   v_fin.linear.x = pt_f.vel(0), v_fin.linear.y = pt_f.vel(1),
+  //   v_fin.linear.z = pt_f.vel(2);
+  //   v_fin.angular.z = 0;
+  //   a_fin.linear.x = pt_f.acc(0), a_fin.linear.y = pt_f.acc(1),
+  //   a_fin.linear.z = pt_f.acc(2);
+  //   a_fin.angular.z = 0;
+  //   result.p_stop.push_back(p_fin);
+  //   result.v_stop.push_back(v_fin);
+  //   result.a_stop.push_back(a_fin);
+  //   result.j_stop.push_back(j_fin);  // TODO!!! j_fin never assigned
+  // }
+  // ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
+  // MPL::Waypoint3D pt = planner_->evaluate(traj_total_time_);
+  // result.traj_end.position.x = pt.pos(0);
+  // result.traj_end.position.y = pt.pos(1);
+  // result.traj_end.position.z = pt.pos(2);
+
+  result.tracking_error = tracking_error;
+  result.odom_pts = odom_pts;
+  // record trajectory in result
+  result.success = solved;  // set success status
+  result.policy_status =
+      success_status_;  // using this field for success status
+  result.search_traj = search_traj_msg;
+  result.traj = traj_msg;
+  result.traj.header.frame_id = frame_id_;
+
+  // execution_time (set in replanner)
+  // equals 1.0/local_replan_rate
+  result.execution_time = execution_time;  // execution_time (set in replanner)
+                                           // equals 1.0/local_replan_rate
+
+  result.epoch = epoch;
+  result.traj_end.orientation.w = 1.0;
+  result.traj_end.orientation.z = 0;
+  result.computation_time = compute_time_poly_;
+  // this is not done until after?
+  result.compute_time_front_end = compute_time_front_end_;
+  result.compute_time_back_end = compute_time_back_end_;
+  if (local_as_->isActive()) {
+    ROS_INFO("Current local plan trial is active & succeeded!");
+    local_as_->setSucceeded(result);
+  } else {
+    ROS_ERROR("Current local plan trial is not active !");
+  }
 }
 
 int main(int argc, char** argv) {
@@ -686,7 +617,6 @@ int main(int argc, char** argv) {
   while (nh.ok()) {
     ros::spinOnce();
     r.sleep();
-    // tpp.process_all();
   }
 
   return 0;

@@ -267,7 +267,7 @@ PositionCommand::ConstPtr TakeOffTracker::update(
     if (std::abs(accel) <= 1e-5) {
       goal_reached_ = true;
       ROS_INFO_STREAM_THROTTLE(
-          1, "Take off complete! You are now free to switch trackers!");
+          5, "Take off complete! You are now free to switch trackers!");
       if (as_->isActive()) {
         action_trackers::TakeOffResult res;
         res.at_goal = true;
@@ -286,7 +286,7 @@ PositionCommand::ConstPtr TakeOffTracker::update(
   if (dt > T) {
     goal_reached_ = true;
     ROS_INFO_STREAM_THROTTLE(
-        1, "Take off complete! You are now free to switch trackers!");
+        5, "Take off complete! You are now free to switch trackers!");
     if (as_->isActive()) {
       action_trackers::TakeOffResult res;
       res.at_goal = true;

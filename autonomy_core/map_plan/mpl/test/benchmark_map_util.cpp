@@ -11,7 +11,7 @@ class BenchmarkMapUtil : public benchmark::Fixture {
 
     // Initialize the map with val_free as the default value
     std::vector<signed char> base_map(dim(0) * dim(1) * dim(2),
-                                      planning_ros_msgs::VoxelMap::val_free);
+                                      kr_planning_msgs::VoxelMap::val_free);
 
     /* Modify the values of some voxels to not have a uniform map */
 
@@ -20,7 +20,7 @@ class BenchmarkMapUtil : public benchmark::Fixture {
       for (int y = 25; y < 375; y++) {
         for (int x = 25; x < 375; x++) {
           int idx = x + dim(0) * y + dim(0) * dim(1) * z;
-          base_map[idx] = planning_ros_msgs::VoxelMap::val_occ;
+          base_map[idx] = kr_planning_msgs::VoxelMap::val_occ;
         }
       }
     }
@@ -30,7 +30,7 @@ class BenchmarkMapUtil : public benchmark::Fixture {
       for (int y = 75; y < 325; y++) {
         for (int x = 75; x < 325; x++) {
           int idx = x + dim(0) * y + dim(0) * dim(1) * z;
-          base_map[idx] = planning_ros_msgs::VoxelMap::val_unknown;
+          base_map[idx] = kr_planning_msgs::VoxelMap::val_unknown;
         }
       }
     }

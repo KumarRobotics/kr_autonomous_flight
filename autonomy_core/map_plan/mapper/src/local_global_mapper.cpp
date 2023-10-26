@@ -8,11 +8,13 @@ LocalGlobalMapperNode::LocalGlobalMapperNode(const ros::NodeHandle& nh)
       cloud_name_, 1, &LocalGlobalMapperNode::cloudCallback, this);
 
   global_map_pub =
-      nh_.advertise<planning_ros_msgs::VoxelMap>("global_voxel_map", 1, true);
+      nh_.advertise<kr_planning_msgs::VoxelMap>("global_voxel_map", 1, true);
   storage_map_pub =
-      nh_.advertise<planning_ros_msgs::VoxelMap>("storage_voxel_map", 1, true);
+      nh_.advertise<kr_planning_msgs::VoxelMap>("storage_voxel_map", 1, true);
   local_map_pub =
-      nh_.advertise<planning_ros_msgs::VoxelMap>("local_voxel_map", 1, true);
+      nh_.advertise<kr_planning_msgs::VoxelMap>("local_voxel_map", 1, true);
+  local_map_no_inflation_pub =
+      nh_.advertise<kr_planning_msgs::VoxelMap>("local_voxel_no_inflation_map", 1, true);
 
   time_pub = nh_.advertise<sensor_msgs::Temperature>("/timing/mapper", 1);
 
@@ -46,7 +48,7 @@ LocalGlobalMapperNode::LocalGlobalMapperNode(const ros::NodeHandle& nh)
 
   // origin is the left lower corner of the voxel map, therefore, adding
   // this offset make the map centered around the given position
-  local_ori_offset_ = -local_dim_d / 2;
+  if (!local_ignore_offset_) local_ori_offset_ = -local_dim_d / 2;
 
   // Initialize maps.
   globalMapInit();
@@ -66,11 +68,13 @@ void LocalGlobalMapperNode::initParams() {
   nh_.param("robot_r", robot_r_, 0.2);
   nh_.param("robot_h", robot_h_, 0.0);
 
-  double global_map_cx, global_map_cy, global_map_cz;
+  double global_map_origin_x, global_map_origin_y, global_map_origin_z;
   nh_.param("global/resolution", global_map_info_.resolution, 2.0f);
-  nh_.param("global/center_x", global_map_cx, 0.0);
-  nh_.param("global/center_y", global_map_cy, 0.0);
-  nh_.param("global/center_z", global_map_cz, 0.0);
+
+  nh_.param("global/origin_x", global_map_origin_x, 0.0);
+  nh_.param("global/origin_y", global_map_origin_y, 0.0);
+  nh_.param("global/origin_z", global_map_origin_z, 0.0);
+
   nh_.param("global/range_x", global_map_dim_d_x_, 500.0);
   nh_.param("global/range_y", global_map_dim_d_y_, 500.0);
   nh_.param("global/range_z", global_map_dim_d_z_, 2.0);
@@ -84,9 +88,9 @@ void LocalGlobalMapperNode::initParams() {
 
   // map origin is the left lower corner of the voxel map, therefore, adding
   // an offset make the map centered around the given position
-  global_map_info_.origin.x = global_map_cx - global_map_dim_d_x_ / 2;
-  global_map_info_.origin.y = global_map_cy - global_map_dim_d_y_ / 2;
-  global_map_info_.origin.z = global_map_cz - global_map_dim_d_z_ / 2;
+  global_map_info_.origin.x = global_map_origin_x - global_map_dim_d_x_ / 2;
+  global_map_info_.origin.y = global_map_origin_y - global_map_dim_d_y_ / 2;
+  global_map_info_.origin.z = global_map_origin_z - global_map_dim_d_z_ / 2;
   global_map_info_.dim.x = static_cast<int>(
       ceil((global_map_dim_d_x_) / global_map_info_.resolution));
   global_map_info_.dim.y = static_cast<int>(
@@ -100,6 +104,9 @@ void LocalGlobalMapperNode::initParams() {
   nh_.param("local/range_z", local_map_dim_d_z_, 10.0);
   nh_.param("local/max_raycast_range", local_max_raycast_, 20.0);
   nh_.param("local/decay_times_to_empty", local_decay_times_to_empty_, 0);
+  // For planner standalone, we don't want to move the origin of the local map,
+  // otherwise leave this as false for standard operation.
+  nh_.param("local/ignore_offset", local_ignore_offset_, false);
 }
 
 void LocalGlobalMapperNode::globalMapInit() {
@@ -191,7 +198,7 @@ void LocalGlobalMapperNode::cropLocalMap(
   local_origin_map(2) = storage_map_info_.origin.z;
 
   // core function: crop local map from the storage map
-  planning_ros_msgs::VoxelMap local_voxel_map =
+  kr_planning_msgs::VoxelMap local_voxel_map =
       storage_voxel_mapper_->getInflatedLocalMap(local_origin_map, local_dim_d);
 
   // Transform local map by moving its origin. This is because we want the
@@ -207,6 +214,15 @@ void LocalGlobalMapperNode::cropLocalMap(
   // compensate for the drift)
   local_voxel_map.header.frame_id = map_frame_;
   local_map_pub.publish(local_voxel_map);
+
+  // do the same for the non inflated local map
+  kr_planning_msgs::VoxelMap local_voxel_map_non_inflated =
+      storage_voxel_mapper_->getLocalMap(local_origin_map, local_dim_d);
+  local_voxel_map_non_inflated.origin.x = local_origin_odom(0);
+  local_voxel_map_non_inflated.origin.y = local_origin_odom(1);
+  local_voxel_map_non_inflated.origin.z = local_origin_odom(2);
+  local_voxel_map_non_inflated.header.frame_id = map_frame_;
+  local_map_no_inflation_pub.publish(local_voxel_map_non_inflated);
 }
 
 void LocalGlobalMapperNode::getLidarPoses(
@@ -262,8 +278,7 @@ void LocalGlobalMapperNode::getLidarPoses(
   }
 }
 
-void LocalGlobalMapperNode::processCloud(
-    const sensor_msgs::PointCloud& cloud) {
+void LocalGlobalMapperNode::processCloud(const sensor_msgs::PointCloud& cloud) {
   if ((storage_voxel_mapper_ == nullptr) || (global_voxel_mapper_ == nullptr)) {
     ROS_WARN("voxel mapper not initialized!");
     return;
@@ -273,8 +288,8 @@ void LocalGlobalMapperNode::processCloud(
   geometry_msgs::Pose pose_odom_lidar;
   getLidarPoses(cloud.header, &pose_map_lidar, &pose_odom_lidar);
 
-  const Eigen::Affine3d T_map_lidar = toTF(pose_map_lidar);
-  const Eigen::Affine3d T_odom_lidar = toTF(pose_odom_lidar);
+  const Eigen::Affine3d T_map_lidar = kr::toTF(pose_map_lidar);
+  const Eigen::Affine3d T_odom_lidar = kr::toTF(pose_odom_lidar);
 
   // This is the lidar position in the odom frame, used for raytracing &
   // cropping local map
@@ -294,7 +309,7 @@ void LocalGlobalMapperNode::processCloud(
   double min_range = 0.75;  // points within this distance will be discarded
   double min_range_squared;
   min_range_squared = min_range * min_range;
-  const auto pts = cloud_to_vec_filter(cloud, min_range_squared);
+  const auto pts = kr::cloud_to_vec_filter(cloud, min_range_squared);
 
   timer.start();
   // local raytracing using lidar position in the map frame (not odom frame)
@@ -305,7 +320,7 @@ void LocalGlobalMapperNode::processCloud(
 
   // get and publish storage map (this is very slow)
   if (pub_storage_map_) {
-    planning_ros_msgs::VoxelMap storage_map =
+    kr_planning_msgs::VoxelMap storage_map =
         storage_voxel_mapper_->getInflatedMap();
     storage_map.header.frame_id = map_frame_;
     storage_map_pub.publish(storage_map);
@@ -339,7 +354,7 @@ void LocalGlobalMapperNode::processCloud(
               static_cast<double>(timer.elapsed().wall) / 1e6);
 
     counter_ = 0;
-    planning_ros_msgs::VoxelMap global_map =
+    kr_planning_msgs::VoxelMap global_map =
         global_voxel_mapper_->getInflatedMap();
     global_map.header.frame_id = map_frame_;
     global_map_pub.publish(global_map);

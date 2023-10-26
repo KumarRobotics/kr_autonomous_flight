@@ -12,8 +12,8 @@ find_package(
              kr_trackers
              kr_tracker_msgs
              kr_trackers_manager
-             planning_ros_utils
-             planning_ros_msgs
+             kr_planning_rviz_plugins
+             kr_planning_msgs
              traj_opt_ros
              motion_primitive_library)
 
@@ -29,10 +29,10 @@ add_action_files(
   ShortRange.action
   GoalDistance.action
   RunPath.action)
-generate_messages(DEPENDENCIES actionlib_msgs planning_ros_msgs kr_mav_msgs
+generate_messages(DEPENDENCIES actionlib_msgs kr_planning_msgs kr_mav_msgs
                   kr_tracker_msgs)
 
-catkin_package(CATKIN_DEPENDS kr_mav_msgs actionlib_msgs planning_ros_msgs
+catkin_package(CATKIN_DEPENDS kr_mav_msgs actionlib_msgs kr_planning_msgs
                               kr_tracker_msgs)
 
 # src/projector.cpp only used for previous experiments where we directly track A* (JPS) planned path

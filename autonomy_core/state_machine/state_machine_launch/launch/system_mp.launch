@@ -12,8 +12,6 @@
     <arg name="mag" default="mag"/>
 
     <arg name="depth_cam" default="DepthCamera"/>
-    <arg name="use_motion_primitive" default="true"/>
-    <arg name="min_dispersion_planner" default="false"/>
     <arg name="takeoff_height" default="5"/>
 	  <arg name="mass" default="1.74"/>
     <arg name="gains_file" default="$(find control_launch)/config/so3_control_gains.yaml"/>
@@ -56,18 +54,10 @@
 	</group>
 
     <!-- Controller -->
-    	<group if="$(arg use_motion_primitive)">
 	    <include file="$(find control_launch)/launch/control_mp.launch">
 		     <arg name="mass" value="$(arg mass)"/>
 		     <arg name="gains_file" value="$(arg gains_file)"/>
 	    </include>
-	</group>
-    	
-    	<group unless="$(arg use_motion_primitive)">
-	    <include file="$(find control_launch)/launch/control.launch">
-		     <arg name="mass" value="$(arg mass)"/>
-	    </include>
-	</group>
 
 
     <!-- Use RGBD -->
@@ -82,7 +72,6 @@
       <arg name="cloud" value="$(arg depth_cam)/points"/>
 		     <arg name="mapper_config" value="$(arg mapper_config)"/>
              <arg name="planner_config" value="$(arg planner_config)" />
-		     <arg name="use_mp" value="$(arg use_motion_primitive)"/>
 		     <arg name="robot" value="$(arg robot)"/>
 			 <arg name="lidar_frame" value="$(arg lidar_frame)"/>
 		</include>
@@ -97,8 +86,6 @@
 		     <arg name="cloud" value="$(arg lidar_cloud_topic)"/>
 		     <arg name="mapper_config" value="$(arg mapper_config)"/>
              <arg name="planner_config" value="$(arg planner_config)" />
-		     <arg name="use_mp" value="$(arg use_motion_primitive)"/>
-		     <arg name="min_dispersion_planner" value="$(arg min_dispersion_planner)"/>
 		     <arg name="robot" value="$(arg robot)"/>
 			 <arg name="lidar_frame" value="$(arg lidar_frame)"/>
 		</include>

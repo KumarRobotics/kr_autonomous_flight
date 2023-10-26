@@ -1,5 +1,5 @@
 # Action goal
-planning_ros_msgs/Path path
+kr_planning_msgs/Path path
 int64 epoch
 float32 local_replan_rate
 int16 global_replan_rate_factor

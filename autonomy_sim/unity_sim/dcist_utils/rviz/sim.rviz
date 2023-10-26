@@ -193,7 +193,7 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
-    - Class: planning_rviz_plugins/PathArray
+    - Class: kr_planning_rviz_plugins/PathArray
       Enabled: true
       ID: All
       LineColor: 204; 51; 204

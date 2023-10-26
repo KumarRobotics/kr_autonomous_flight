@@ -3,9 +3,10 @@
 /**
  * @brief Goal done callback function
  */
-void RePlanner::GlobalPathCb(const planning_ros_msgs::Path& path) {
+void RePlanner::GlobalPathCb(const kr_planning_msgs::Path& path) {
   global_path_.clear();
-  global_path_ = ros_to_path(path);  // extract the global path information
+  global_path_ = kr::ros_to_path(
+      path);  // extract the global path information
 }
 
 void RePlanner::EpochCb(const std_msgs::Int64& msg) {
@@ -53,7 +54,7 @@ void RePlanner::CmdCb(const kr_mav_msgs::PositionCommand& cmd) {
 }
 
 // map callback, update local_map_
-void RePlanner::LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
+void RePlanner::LocalMapCb(const kr_planning_msgs::VoxelMap::ConstPtr& msg) {
   if (map_counter_ == 0) {
     ROS_WARN("Got the first local voxel map!");
     // reset the local_map_last_timestamp_
@@ -103,7 +104,7 @@ void RePlanner::LocalMapCb(const planning_ros_msgs::VoxelMap::ConstPtr& msg) {
         // AbortReplan();
       } else {
         ROS_INFO_STREAM_THROTTLE(
-            1,
+            5,
             "Local map updated rate is stable, most recent update frequency "
             "is: "
                 << current_map_frequency << " Hz");
@@ -262,7 +263,7 @@ void RePlanner::setup_replanner() {
   };
 
   // set goal
-  planning_ros_msgs::PlanTwoPointGoal global_tpgoal;
+  kr_planning_msgs::PlanTwoPointGoal global_tpgoal;
   global_tpgoal.p_final = pose_goal_wrt_odom_;
   global_tpgoal.avoid_obstacles = avoid_obstacle_;
 
@@ -284,7 +285,7 @@ void RePlanner::setup_replanner() {
   }
   auto global_result = global_plan_client_->getResult();
   if (global_result->success) {
-    global_path_ = ros_to_path(
+    global_path_ = kr::ros_to_path(
         global_result->path);  // extract the global path information
     ROS_WARN("initial global plan succeeded!");
   } else {
@@ -316,7 +317,7 @@ void RePlanner::setup_replanner() {
   // Initial plan step 3: local plan
   // ##########################################################################################################
   // set goal
-  planning_ros_msgs::PlanTwoPointGoal local_tpgoal;
+  kr_planning_msgs::PlanTwoPointGoal local_tpgoal;
   state_machine::VecToPose(
       cmd_pos_, &local_tpgoal.p_init);  // use current position command as the
                                         // start position for local planner
@@ -439,7 +440,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
   }
 
   // set global goal
-  planning_ros_msgs::PlanTwoPointGoal global_tpgoal;
+  kr_planning_msgs::PlanTwoPointGoal global_tpgoal;
 
   // Important: for two reference frame system, we need to apply transform from
   // slam to odom so that the global goal in odom frame is adjusted to account
@@ -448,7 +449,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
   global_tpgoal.avoid_obstacles = avoid_obstacle_;
 
   // set local goal
-  planning_ros_msgs::PlanTwoPointGoal local_tpgoal;
+  kr_planning_msgs::PlanTwoPointGoal local_tpgoal;
   double eval_time =
       double(horizon) /
       local_replan_rate_;  // calculate evaluation time, i.e., beginning of
@@ -462,15 +463,15 @@ bool RePlanner::PlanTrajectory(int horizon) {
                                 &local_tpgoal.a_init,
                                 &local_tpgoal.j_init);
   Vec3f start_pos;
-  start_pos = pose_to_eigen(local_tpgoal.p_init);
+  start_pos = kr::pose_to_eigen(local_tpgoal.p_init);
 
   // Replan step 1: Global plan
   // ########################################################################################################
   // send goal to global plan server to replan (new goal will preempt old goals)
   if (global_replan_rate_factor_ > 1) {
     // calling global replan slower than calling local replan
-    ROS_INFO_STREAM("local replan rate is " << global_replan_rate_factor_
-                                            << "x global replan rate");
+    ROS_INFO_STREAM("[LG_replan_server]: Local replan rate is " << global_replan_rate_factor_
+                                            << "times global replan rate");
     if ((global_plan_counter_ % global_replan_rate_factor_) == 0) {
       global_plan_client_->sendGoal(global_tpgoal);
       // this is just for visualization purposes
@@ -507,6 +508,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
 
   // Replan step 3: local plan
   // ##########################################################################################################
+  ROS_INFO_STREAM("[LG_replan_server]:local replan rate is " << local_replan_rate_ << " Hz, horizon is " << horizon);
   // set vars
   local_tpgoal.avoid_obstacles = avoid_obstacle_;
   local_tpgoal.execution_time = ros::Duration(1.0 / local_replan_rate_);
@@ -558,7 +560,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
       last_traj_ = boost::make_shared<traj_opt::MsgTrajectory>(
           traj_opt::TrajDataFromSplineTrajectory(local_result->traj));
       last_plan_epoch_ = local_result->epoch;
-      // ROS_INFO_STREAM("Got local plan with epoch " << last_plan_epoch_);
+      ROS_INFO_STREAM("Got local plan with epoch " << last_plan_epoch_);
       failed_local_trials_ = 0;  // reset this
       return true;
     } else {
@@ -781,7 +783,8 @@ vec_Vec3f RePlanner::PathCropIntersect(const vec_Vec3f& path) {
   }
 
   // publish for visualization
-  planning_ros_msgs::Path local_path_msg_ = path_to_ros(cropped_path);
+  kr_planning_msgs::Path local_path_msg_ =
+      kr::path_to_ros(cropped_path);
   local_path_msg_.header.frame_id = map_frame_;
   cropped_path_pub_.publish(local_path_msg_);
 
@@ -826,7 +829,7 @@ vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f& path_original) {
   map_to_odom.orientation.z = transformStamped.transform.rotation.z;
 
   // TF transform from the map frame to odom frame
-  auto map_to_odom_tf = toTF(map_to_odom);
+  auto map_to_odom_tf = kr::toTF(map_to_odom);
   Vec3f waypoint_wrt_map;
 
   vec_Vec3f path_wrt_map;
@@ -837,7 +840,8 @@ vec_Vec3f RePlanner::TransformGlobalPath(const vec_Vec3f& path_original) {
   }
 
   // publish transformed global path for visualization
-  planning_ros_msgs::Path path_wrt_map_msg = path_to_ros(path_wrt_map);
+  kr_planning_msgs::Path path_wrt_map_msg =
+      kr::path_to_ros(path_wrt_map);
   path_wrt_map_msg.header.frame_id = map_frame_;
   global_path_wrt_map_pub_.publish(path_wrt_map_msg);
   return path_wrt_map;
@@ -1042,10 +1046,10 @@ RePlanner::RePlanner() : nh_("~") {
       "/timing/replanner/local_replan", 1);
 
   cropped_path_pub_ =
-      priv_nh.advertise<planning_ros_msgs::Path>("cropped_local_path", 1, true);
+      priv_nh.advertise<kr_planning_msgs::Path>("cropped_local_path", 1, true);
 
-  global_path_wrt_map_pub_ = priv_nh.advertise<planning_ros_msgs::Path>(
-      "global_path_wrt_map", 1, true);
+  global_path_wrt_map_pub_ =
+      priv_nh.advertise<kr_planning_msgs::Path>("global_path_wrt_map", 1, true);
 
   priv_nh.param("max_horizon", max_horizon_, 5);
   priv_nh.param("crop_radius", crop_radius_, 10.0);
@@ -1066,12 +1070,12 @@ RePlanner::RePlanner() : nh_("~") {
 
   // plan global path action client, auto spin option set to true
   global_plan_client_.reset(
-      new actionlib::SimpleActionClient<planning_ros_msgs::PlanTwoPointAction>(
+      new actionlib::SimpleActionClient<kr_planning_msgs::PlanTwoPointAction>(
           nh_, "plan_global_path", true));
 
   // plan local trajectory action client, auto spin option set to true
   local_plan_client_.reset(
-      new actionlib::SimpleActionClient<planning_ros_msgs::PlanTwoPointAction>(
+      new actionlib::SimpleActionClient<kr_planning_msgs::PlanTwoPointAction>(
           nh_, "plan_local_trajectory", true));
 
   // run trajectory action client

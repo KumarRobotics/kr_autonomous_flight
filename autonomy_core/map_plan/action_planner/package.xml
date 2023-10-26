@@ -26,13 +26,18 @@
   <depend>pcl_ros</depend>
   <depend>mapper</depend>
   <depend>jps3d</depend>
-  <depend>planning_ros_utils</depend>
-  <depend>planning_ros_msgs</depend>
+  <depend>kr_planning_rviz_plugins</depend>
+  <depend>kr_planning_msgs</depend>
   <depend>traj_opt_ros</depend>
   <depend>motion_primitive_library</depend>
   <depend>opt_planner</depend>
   <depend>decomp_ros_utils</depend>
   <depend>decomp_ros_msgs</depend>
+  <depend>motion_primitives</depend>
+  <depend>gcopter</depend>
+  <depend>kr_ilqr_optimizer</depend>
+  <depend>kr_trackers_msgs</depend>
+  <depend>param_env_msgs</depend>
 
   <export>
   </export>

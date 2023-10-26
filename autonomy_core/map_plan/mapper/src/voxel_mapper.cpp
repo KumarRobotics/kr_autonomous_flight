@@ -50,8 +50,8 @@ void VoxelMapper::setMapFree() {
   inflated_map_.setMap(origin_d_, dim_, base_map, res_);
 }
 
-planning_ros_msgs::VoxelMap VoxelMapper::getMap() {
-  planning_ros_msgs::VoxelMap voxel_map;
+kr_planning_msgs::VoxelMap VoxelMapper::getMap() {
+  kr_planning_msgs::VoxelMap voxel_map;
   voxel_map.origin.x = origin_d_(0);
   voxel_map.origin.y = origin_d_(1);
   voxel_map.origin.z = origin_d_(2);
@@ -76,8 +76,8 @@ planning_ros_msgs::VoxelMap VoxelMapper::getMap() {
   return voxel_map;
 }
 
-planning_ros_msgs::VoxelMap VoxelMapper::getInflatedMap() {
-  planning_ros_msgs::VoxelMap voxel_map;
+kr_planning_msgs::VoxelMap VoxelMapper::getInflatedMap() {
+  kr_planning_msgs::VoxelMap voxel_map;
   voxel_map.origin.x = origin_d_(0);
   voxel_map.origin.y = origin_d_(1);
   voxel_map.origin.z = origin_d_(2);
@@ -102,9 +102,62 @@ planning_ros_msgs::VoxelMap VoxelMapper::getInflatedMap() {
   return voxel_map;
 }
 
-planning_ros_msgs::VoxelMap VoxelMapper::getInflatedLocalMap(
+kr_planning_msgs::VoxelMap VoxelMapper::getLocalMap(
     const Eigen::Vector3d& ori_d, const Eigen::Vector3d& dim_d) {
-  planning_ros_msgs::VoxelMap voxel_map;
+  kr_planning_msgs::VoxelMap voxel_map;
+
+  voxel_map.resolution = res_;
+  voxel_map.origin.x = ori_d(0);
+  voxel_map.origin.y = ori_d(1);
+  voxel_map.origin.z = ori_d(2);
+
+  // Calculated dimesion of local voxel map in voxels
+  Eigen::Vector3i dim(dim_d(0) / res_, dim_d(1) / res_, dim_d(2) / res_);
+  voxel_map.dim.x = dim(0);
+  voxel_map.dim.y = dim(1);
+  voxel_map.dim.z = dim(2);
+
+  voxel_map.data.resize(dim(0) * dim(1) * dim(2), val_default_);
+
+  // Offset between the local map and the global map (in voxels)
+  Eigen::Vector3i offset = map_.floatToInt(ori_d);
+
+  // The voxel in the global map with index global_vox corresponds to the
+  // voxel in the local map with index local_vox
+  Eigen::Vector3i global_vox;
+  Eigen::Vector3i local_vox;
+
+  for (local_vox(2) = 0; local_vox(2) < dim(2); local_vox(2)++) {
+    for (local_vox(1) = 0; local_vox(1) < dim(1); local_vox(1)++) {
+      for (local_vox(0) = 0; local_vox(0) < dim(0); local_vox(0)++) {
+        global_vox = local_vox + offset;
+        int local_idx = local_vox(0)
+                        + dim(0) * local_vox(1)
+                        + dim(0) * dim(1) * local_vox(2);
+        // Check if inside the global map, outside portion will be regarded as
+        // occupied for safety
+        if ((global_vox(0) >= 0) && (global_vox(0) < dim_(0)) &&
+            (global_vox(1) >= 0) && (global_vox(1) < dim_(1)) &&
+            (global_vox(2) >= 0) && (global_vox(2) < dim_(2))) {
+          int global_idx = map_.getIndex(global_vox);
+          if (map_[global_idx] > val_even_) {
+            voxel_map.data[local_idx] = val_occ_;
+          } else if (map_[global_idx] >= val_free_) {
+            voxel_map.data[local_idx] = val_free_;
+          }
+        } else {
+          // Outside global map portion will be regarded as occupied for safety
+          voxel_map.data[local_idx] = val_occ_;
+        }
+      }
+    }
+  }
+  return voxel_map;
+}
+
+kr_planning_msgs::VoxelMap VoxelMapper::getInflatedLocalMap(
+    const Eigen::Vector3d& ori_d, const Eigen::Vector3d& dim_d) {
+  kr_planning_msgs::VoxelMap voxel_map;
 
   voxel_map.resolution = res_;
   voxel_map.origin.x = ori_d(0);
@@ -157,9 +210,9 @@ planning_ros_msgs::VoxelMap VoxelMapper::getInflatedLocalMap(
 
 // TODO(xu): This function is the same as sliceMap function in
 // data_conversions.cpp, should merge them.
-planning_ros_msgs::VoxelMap VoxelMapper::getInflatedOccMap(double h,
+kr_planning_msgs::VoxelMap VoxelMapper::getInflatedOccMap(double h,
                                                            double hh) {
-  planning_ros_msgs::VoxelMap voxel_map;
+  kr_planning_msgs::VoxelMap voxel_map;
   voxel_map.origin.x = origin_d_(0);
   voxel_map.origin.y = origin_d_(1);
   voxel_map.origin.z = 0;

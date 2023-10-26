@@ -190,7 +190,7 @@ PositionCommand::ConstPtr StoppingPolicy::update(
 
     // 3 possible cases:
     if (v0_norm < 0.2) {
-      ROS_INFO_STREAM_THROTTLE(1,
+      ROS_INFO_STREAM_THROTTLE(5,
                                "magnitude of initial velocity along axis "
                                    << axis
                                    << " is very small, which is: " << v0_norm
@@ -299,7 +299,7 @@ PositionCommand::ConstPtr StoppingPolicy::update(
   }
 
   if ((duration >= t_phase1 + t_phase2 + t_phase3) && (duration >= t_yaw)) {
-    ROS_INFO_THROTTLE(1.0,
+    ROS_INFO_THROTTLE(5.0,
                       "Stopping policy done! Keep publishing position command "
                       "to hover the quad...");
   }

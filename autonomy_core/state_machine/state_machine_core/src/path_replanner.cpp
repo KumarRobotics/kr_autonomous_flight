@@ -62,7 +62,7 @@ class PathRePlanner {
       pose_start.position.y = current_cmd_->position.y;
       pose_start.position.z = current_cmd_->position.z;
 
-      planning_ros_msgs::Path path;
+      kr_planning_msgs::Path path;
       // planning from current pose to goal
       if (plan_path(pose_start, pose_goal, pose_goals, &path)) {
         action_trackers::RunPathGoal rungoal;
@@ -77,7 +77,7 @@ class PathRePlanner {
   bool plan_path(const geometry_msgs::Pose& pose_start,
                  const geometry_msgs::Pose& pose_goal,
                  const std::vector<geometry_msgs::Pose>& pose_goals,
-                 planning_ros_msgs::Path* path) {
+                 kr_planning_msgs::Path* path) {
     action_planner::PlanPathGoal tpgoal;
     tpgoal.p_init = pose_start;
     tpgoal.p_final = pose_goal;

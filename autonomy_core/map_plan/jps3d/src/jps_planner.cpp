@@ -198,30 +198,8 @@ bool JPSPlanner<Dim>::plan(const Vecf<Dim>& start,
     return false;
   }
 
-  const Veci<Dim> true_goal_int = map_util_->floatToInt(goal);
- 
-  const uint n = 3;
-  Eigen::RowVectorXd try_diff(n);
-  try_diff << 0, -1, 1;
-
-  //loop through 3 dim and check if the neighboring cell is free, if anyone is free then plan to that goal
-  bool is_free = false;
-  Veci<Dim> goal_int = true_goal_int;
-  for (int i = 0; i < n; ++i) {
-    for (int j = 0; j < n; ++j) {
-      for (int k = 0; k < n ; ++k) {
-        goal_int(0) = true_goal_int(0) + try_diff(i);
-        goal_int(1) = true_goal_int(1) + try_diff(j);
-        goal_int(2) = true_goal_int(2) + try_diff(k);
-        if (map_util_->isFree(goal_int)) {
-          is_free = true;
-          break;
-        }
-      }
-    }
-  }    
-
-  if (!is_free) {
+  const Veci<Dim> goal_int = map_util_->floatToInt(goal);
+  if (!map_util_->isFree(goal_int)) {
     if (planner_verbose_)
       printf(ANSI_COLOR_RED "goal is not free!\n" ANSI_COLOR_RESET);
     status_ = 2;

@@ -88,9 +88,9 @@ void LocalGlobalMapperNode::initParams() {
 
   // map origin is the left lower corner of the voxel map, therefore, adding
   // an offset make the map centered around the given position
-  global_map_info_.origin.x = global_map_origin_x;
-  global_map_info_.origin.y = global_map_origin_y;
-  global_map_info_.origin.z = global_map_origin_z;
+  global_map_info_.origin.x = global_map_origin_x - global_map_dim_d_x_ / 2;
+  global_map_info_.origin.y = global_map_origin_y - global_map_dim_d_y_ / 2;
+  global_map_info_.origin.z = global_map_origin_z - global_map_dim_d_z_ / 2;
   global_map_info_.dim.x = static_cast<int>(
       ceil((global_map_dim_d_x_) / global_map_info_.resolution));
   global_map_info_.dim.y = static_cast<int>(

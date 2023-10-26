@@ -4,10 +4,10 @@
 #include <eigen_conversions/eigen_msg.h>
 #include <jps/jps_planner.h>  // jps related
 #include <jps/map_util.h>     // jps related
+#include <nav_msgs/Odometry.h>  // odometry
 #include <kr_planning_msgs/PlanTwoPointAction.h>
 #include <kr_planning_msgs/VoxelMap.h>
 #include <kr_planning_rviz_plugins/data_ros_utils.h>
-#include <nav_msgs/Odometry.h>  // odometry
 #include <action_planner/primitive_ros_utils.h>
 #include <ros/ros.h>
 #include <traj_opt_ros/ros_bridge.h>
@@ -262,6 +262,8 @@ void GlobalPlanServer::process_goal() {
   start.pos = kr::pose_to_eigen(odom_msg_->pose.pose);
   goal.pos = kr::pose_to_eigen(goal_->p_final);
 
+  std::cout<< "start: "<<start.pos<<std::endl;
+  std::cout<< "goal: "<<goal.pos<<std::endl;
   // call the planner
 
   if (!global_map_ptr_) {

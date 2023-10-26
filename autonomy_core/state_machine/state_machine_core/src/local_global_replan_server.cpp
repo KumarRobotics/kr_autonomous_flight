@@ -104,7 +104,7 @@ void RePlanner::LocalMapCb(const kr_planning_msgs::VoxelMap::ConstPtr& msg) {
         // AbortReplan();
       } else {
         ROS_INFO_STREAM_THROTTLE(
-            1,
+            5,
             "Local map updated rate is stable, most recent update frequency "
             "is: "
                 << current_map_frequency << " Hz");
@@ -560,7 +560,7 @@ bool RePlanner::PlanTrajectory(int horizon) {
       last_traj_ = boost::make_shared<traj_opt::MsgTrajectory>(
           traj_opt::TrajDataFromSplineTrajectory(local_result->traj));
       last_plan_epoch_ = local_result->epoch;
-      // ROS_INFO_STREAM("Got local plan with epoch " << last_plan_epoch_);
+      ROS_INFO_STREAM("Got local plan with epoch " << last_plan_epoch_);
       failed_local_trials_ = 0;  // reset this
       return true;
     } else {

@@ -6,6 +6,8 @@ Panels:
       Expanded:
         - /TF1/Frames1
         - /Env1/Environment1
+        - /Planner1/cropped_global_path_to_local_goal1
+        - /Maps1
         - /Estimation1/ground_truth_odom1/Shape1
         - /Estimation1/vio_corrected1/Shape1
         - /Estimation1/vio_corrected1/Covariance1
@@ -15,9 +17,8 @@ Panels:
         - /Estimation1/graphslam1/Shape1
         - /Estimation1/ukf_odom1/Shape1
         - /opt_planner1/sfc1
-        - /VoxelMap1
       Splitter Ratio: 0.5211267471313477
-    Tree Height: 892
+    Tree Height: 800
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -103,8 +104,8 @@ Visualization Manager:
       Displays:
         - Class: kr_planning_rviz_plugins/Path
           Enabled: true
-          LineColor: 204; 51; 204
-          LineScale: 0.4000000059604645
+          LineColor: 0; 0; 0
+          LineScale: 0.10000000149011612
           Name: global_path
           NodeColor: 85; 85; 255
           NodeScale: 0.5
@@ -153,8 +154,8 @@ Visualization Manager:
           Value: true
         - Class: kr_planning_rviz_plugins/Path
           Enabled: true
-          LineColor: 78; 154; 6
-          LineScale: 0.800000011920929
+          LineColor: 0; 0; 0
+          LineScale: 0.5
           Name: cropped_global_path_to_local_goal
           NodeColor: 255; 0; 0
           NodeScale: 0.75
@@ -166,7 +167,7 @@ Visualization Manager:
           AccScale: 0.014999999664723873
           AccVis: true
           Class: kr_planning_rviz_plugins/Trajectory
-          Enabled: true
+          Enabled: false
           JrkColor: 200; 20; 55
           JrkScale: 0.014999999664723873
           JrkVis: true
@@ -178,7 +179,7 @@ Visualization Manager:
           Queue Size: 10
           Topic: /quadrotor/local_plan_server/traj
           Unreliable: false
-          Value: true
+          Value: false
           VelColor: 85; 85; 255
           VelScale: 0.014999999664723873
           VelVis: true
@@ -188,7 +189,7 @@ Visualization Manager:
           YawTriangleScale: 0.5
           YawVis: true
         - Class: kr_planning_rviz_plugins/Path
-          Enabled: true
+          Enabled: false
           LineColor: 0; 170; 255
           LineScale: 0.5
           Name: coverage_path
@@ -197,7 +198,7 @@ Visualization Manager:
           Queue Size: 10
           Topic: /quadrotor/coverage_path_visualization
           Unreliable: false
-          Value: true
+          Value: false
       Enabled: true
       Name: Planner
     - Alpha: 1
@@ -214,8 +215,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 4.900000095367432
-            Min Value: 0.10000000149011612
+            Max Value: 4.125
+            Min Value: 1.125
             Value: true
           Axis: Z
           BoundScale: 0.5
@@ -257,7 +258,7 @@ Visualization Manager:
           Color: 252; 233; 79
           Color Transformer: FlatColor
           Decay Time: 0
-          Enabled: false
+          Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
           MeshAlpha: 0.10000000149011612
@@ -276,7 +277,7 @@ Visualization Manager:
           Unreliable: true
           Use Fixed Frame: true
           Use rainbow: true
-          Value: false
+          Value: true
       Enabled: true
       Name: Maps
     - Class: rviz/Group
@@ -507,82 +508,8 @@ Visualization Manager:
           Value: true
           VsColor: 0; 255; 0
           VsScale: 1
-      Enabled: true
+      Enabled: false
       Name: opt_planner
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /quadrotor/local_plan_server/trajectory_planner/kino_astar_list
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      BoundScale: 0.10000000149011612
-      Channel Name: intensity
-      Class: kr_planning_rviz_plugins/VoxelMap
-      Color: 255; 255; 255
-      Color Transformer: Intensity
-      Decay Time: 0
-      Enabled: true
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      MeshAlpha: 1
-      MeshColor: 0; 170; 255
-      MeshHeight: 0.5
-      Min Color: 0; 0; 0
-      Name: VoxelMap
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.5
-      State: Occupied
-      Style: Boxes
-      Topic: /quadrotor/mapper/global_voxel_map
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: true
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      BoundScale: 0.10000000149011612
-      Channel Name: intensity
-      Class: kr_planning_rviz_plugins/VoxelMap
-      Color: 255; 255; 255
-      Color Transformer: Intensity
-      Decay Time: 0
-      Enabled: true
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      MeshAlpha: 1
-      MeshColor: 0; 170; 255
-      MeshHeight: 0.5
-      Min Color: 0; 0; 0
-      Name: VoxelMap
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.25
-      State: Occupied
-      Style: Boxes
-      Topic: /quadrotor/mapper/local_voxel_map
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: true
     - Class: rviz/Marker
       Enabled: false
       Marker Topic: /visualizer/route
@@ -600,30 +527,30 @@ Visualization Manager:
       Queue Size: 100
       Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /visualizer/edge
       Name: Marker
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /visualizer/mesh
       Name: Marker
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - AccColor: 10; 200; 55
       AccScale: 0.019999999552965164
       AccVis: false
       Class: kr_planning_rviz_plugins/SplineTrajectory
       Enabled: true
-      Name: SplineTrajectory
+      Name: LocalBackend
       Num of samples: 100
-      PosColor: 204; 51; 204
-      PosScale: 0.10000000149011612
+      PosColor: 0; 204; 34
+      PosScale: 1
       Queue Size: 10
       Topic: /quadrotor/local_plan_server/trajectory
       Unreliable: false
@@ -631,6 +558,22 @@ Visualization Manager:
       VelColor: 85; 85; 255
       VelScale: 0.019999999552965164
       VelVis: true
+    - AccColor: 10; 200; 55
+      AccScale: 0.019999999552965164
+      AccVis: false
+      Class: kr_planning_rviz_plugins/SplineTrajectory
+      Enabled: true
+      Name: LocalFrontend
+      Num of samples: 100
+      PosColor: 204; 51; 204
+      PosScale: 0.75
+      Queue Size: 10
+      Topic: /quadrotor/local_plan_server/trajectory_planner/search_trajectory
+      Unreliable: false
+      Value: true
+      VelColor: 85; 85; 255
+      VelScale: 0.019999999552965164
+      VelVis: false
   Enabled: true
   Global Options:
     Background Color: 189; 234; 201
@@ -664,7 +607,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 58.76951599121094
+      Distance: 52.34391403198242
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -672,25 +615,25 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 1.1253174543380737
-        Y: 24.78578758239746
-        Z: -21.45096206665039
+        X: -2.034147024154663
+        Y: 19.4232120513916
+        Z: -23.147533416748047
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7647969126701355
+      Pitch: 1.2297964096069336
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 4.5754218101501465
+      Yaw: 4.050426006317139
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 2119
+  Height: 1946
   Hide Left Dock: false
   Hide Right Dock: true
-  QMainWindow State: 000000ff00000000fd00000004000000000000032500000752fc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b000000ab00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000dafb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000069000003e00000017800fffffffb000000260057006100790070006f0069006e00740020004e0061007600690067006100740069006f006e0100000455000003660000014b00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f00000252fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d000002520000012300fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000d7a00000057fc0100000002fb0000000800540069006d0065010000000000000d7a000005a600fffffffb0000000800540069006d0065010000000000000450000000000000000000000a490000075200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000003c4000006a5fc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b000000ab00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000dafb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000069000003840000017800fffffffb000000260057006100790070006f0069006e00740020004e0061007600690067006100740069006f006e01000003f9000003150000014b00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f00000252fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d000002520000012300fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000f0000000057fc0100000002fb0000000800540069006d0065010000000000000f00000005a600fffffffb0000000800540069006d0065010000000000000450000000000000000000000b30000006a500000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -701,6 +644,6 @@ Window Geometry:
     collapsed: true
   Waypoint Navigation:
     collapsed: false
-  Width: 3450
-  X: 0
-  Y: 54
+  Width: 3840
+  X: 3840
+  Y: 0

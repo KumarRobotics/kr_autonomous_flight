@@ -466,7 +466,7 @@ void LocalPlanServer::process_result(
       traj_act_msg.goal.seg_y.resize(piece_num);
       traj_act_msg.goal.seg_z.resize(piece_num);
 
-      std::cout << " piece_num  " << piece_num << std::endl;
+      std::cout << "piece_num  " << piece_num << std::endl;
 
       for (int i = 0; i < piece_num; ++i) {
         for (uint c = 0; c <= traj_act_msg.goal.order; c++) {
@@ -497,11 +497,12 @@ void LocalPlanServer::process_result(
     }
 
     // publish the trajectory
-    if (use_tracker_client_ == false) {
+    if (use_tracker_client_ == false) { //this does not wait for tracker
       // use client to send trajectory
-      traj_goal_pub_.publish(traj_act_msg);
-      std_srvs::Trigger trg;
-      ros::service::call(poly_srv_name_, trg);
+      // traj_goal_pub_.publish(traj_act_msg);
+      // std_srvs::Trigger trg;
+      // ros::service::call(poly_srv_name_, trg);
+      ROS_WARN("Not using tracker client, publish trajectory directly");
     } else {
       std::string tracker_str = "kr_trackers/PolyTracker";
       kr_tracker_msgs::Transition transition_cmd;
@@ -537,6 +538,7 @@ void LocalPlanServer::process_result(
     dt = 0.2;
     num_goals = (int)(traj_total_time_ / 0.2);  // using dt = 0.2
   }
+  std::cout << "num goals set" << std::endl;
   // unclear what the following section does comment out for now
   //  for (int i = 0; i < num_goals; i++) {
   //    geometry_msgs::Pose p_fin;

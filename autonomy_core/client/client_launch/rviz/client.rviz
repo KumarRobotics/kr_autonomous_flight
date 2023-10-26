@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /TF1/Frames1
         - /Env1/Environment1
-        - /Planner1/cropped_global_path_to_local_goal1
         - /Maps1
         - /Estimation1/ground_truth_odom1/Shape1
         - /Estimation1/vio_corrected1/Shape1
@@ -215,7 +214,7 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 4.125
+            Max Value: 5.125
             Min Value: 1.125
             Value: true
           Axis: Z
@@ -574,6 +573,20 @@ Visualization Manager:
       VelColor: 85; 85; 255
       VelScale: 0.019999999552965164
       VelVis: false
+    - Alpha: 0.20000000298023224
+      BoundColor: 255; 0; 0
+      Class: decomp_rviz_plugins/PolyhedronArray
+      Enabled: true
+      MeshColor: 0; 170; 255
+      Name: PolyhedronArray
+      Queue Size: 10
+      Scale: 0.10000000149011612
+      State: Mesh
+      Topic: /quadrotor/local_plan_server/trajectory_planner/sikangpolyhedron
+      Unreliable: false
+      Value: true
+      VsColor: 0; 255; 0
+      VsScale: 1
   Enabled: true
   Global Options:
     Background Color: 189; 234; 201
@@ -607,7 +620,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 52.34391403198242
+      Distance: 44.2454719543457
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -615,17 +628,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -2.034147024154663
-        Y: 19.4232120513916
-        Z: -23.147533416748047
+        X: 5.419249534606934
+        Y: 19.76426887512207
+        Z: -20.643688201904297
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.2297964096069336
+      Pitch: 1.269796371459961
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 4.050426006317139
+      Yaw: 2.5204217433929443
     Saved: ~
 Window Geometry:
   Displays:

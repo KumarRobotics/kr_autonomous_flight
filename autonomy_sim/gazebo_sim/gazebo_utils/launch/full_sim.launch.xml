@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!--  launch arguments  -->
+  <arg name="robot"               default="quadrotor"/>
+  <!-- <arg name="robot_base_link"     default="$(eval '\'$(var robot)\' + \'/base_link\'')"/> -->
+  <arg name="lidar_frame"         default="os1_lidar"/>
+  <arg name="imu_frame"         default="os1_imu"/>
+  <arg name="mass"                default="1.83"/>
+  <arg name="lidar_cloud_topic"   default="/falcon4/os1_cloud_node/points"/>
+  <arg name="gt_odom"             default="falcon4/ground_truth/odom"/>
+  <arg name="min_dispersion_planner" default="false"/>
+  <arg name="onboard_sensing"     default="false"/>
+
+  <arg name="launch_sim"          default="true"/>
+  <arg name="takeoff_height"      default="1.0"/>
+  <arg name="x"                   default="1.0"/>
+  <arg name="y"                   default="1.0"/>
+  <arg name="z"                   default="0.0"/>
+  <arg name="yaw"                 default="-0.0"/>
+  <!-- it controls whether a prefix will be added to the frame_id when use robot-state-publisher -->
+  <arg name="use_frame_prefix"    default="true"/> 
+
+  <arg name="gains_file"
+       default="$(find-pkg-share gazebo_utils)/config/falcon4_os1_so3_gains.yaml"/>
+
+  <!-- pick any world in mrsl_quadrotor_description/worlds  -->
+  <arg name="world_model"         default="levine"/>
+
+  <!--  start Gazebo  -->
+  <include file="$(find-pkg-share gazebo_utils)/launch/simulation.launch.xml">
+    <arg name="odom"        value="$(var gt_odom)"/>
+    <arg name="robot"       value="$(var robot)"/>
+    <arg name="world_model" value="$(var world_model)"/>
+    <arg name="x"           value="$(var x)"/>
+    <arg name="y"           value="$(var y)"/>
+    <arg name="z"           value="$(var z)"/>
+    <arg name="yaw"         value="$(var yaw)"/>
+    <arg name="use_frame_prefix" value="$(var use_frame_prefix)"/> 
+  </include>
+
+  <!--  frame-tree helpers  -->
+  <group>
+    <push-ros-namespace namespace="$(var robot)"/>
+
+    <!-- map → odom (identity) -->
+    <node pkg="tf2_ros" exec="static_transform_publisher"
+          name="map_odom_tf"
+          args="--x 0 --y 0 --z 0 --yaw 0 --pitch 0 --roll 0 --frame-id $(var robot)/map --child-frame-id $(var robot)/odom"/>
+
+    <!-- nav_msgs/Odometry → tf broadcaster -->
+    <node pkg="mrsl_quadrotor_utils" exec="msg_to_tf"
+          name="msg_to_tf" output="screen">
+      <remap from="msg" to="odom"/>
+      <param name="frame_id" value="$(var robot)/odom"/>
+      <param name="child_frame_id" value="$(var robot)/base_link"/>
+    </node>
+
+    <!-- some gazebo tf-->
+    <node pkg="tf2_ros" exec="static_transform_publisher"
+          name="gazebo_lidar_tf"
+          args="--x 0 --y 0 --z 0 --yaw 0 --pitch 0 --roll 0 --frame-id $(var robot)/$(var lidar_frame) --child-frame-id $(var robot)/base_link/$(var lidar_frame)"/>
+
+    <node pkg="tf2_ros" exec="static_transform_publisher"
+          name="gazebo_imu_tf"
+          args="--x 0 --y 0 --z 0 --yaw 0 --pitch 0 --roll 0 --frame-id $(var robot)/$(var imu_frame) --child-frame-id $(var robot)/base_link/$(var imu_frame)"/>
+  </group>
+
+  <!--  state-machine, client, …  -->
+  <!-- <include file="$(find-pkg-share state_machine_launch)/launch/system_mp.launch.xml">
+    <arg name="onboard_sensing"        value="$(var onboard_sensing)"/>
+    <arg name="robot"                  value="$(var robot)"/>
+    <arg name="lidar_frame"            value="$(var lidar_frame)"/>
+    <arg name="lidar_cloud_topic"      value="$(var lidar_cloud_topic)"/>
+    <arg name="mass"                   value="$(var mass)"/>
+    <arg name="min_dispersion_planner" value="$(var min_dispersion_planner)"/>
+    <arg name="takeoff_height"         value="$(var takeoff_height)"/>
+    <arg name="gains_file"             value="$(var gains_file)"/>
+  </include>
+
+  <include file="$(find-pkg-share client_launch)/launch/client.launch.xml">
+    <arg name="robot" value="$(var robot)"/>
+  </include> -->
+
+</launch>

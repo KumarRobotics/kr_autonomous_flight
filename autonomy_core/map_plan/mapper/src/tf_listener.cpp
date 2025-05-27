@@ -2,20 +2,25 @@
 
 namespace mapper {
 
-std::optional<geometry_msgs::Pose> TFListener::LookupTransform(
-    const std::string &target, const std::string &source,
-    const ros::Time &time) {
-  geometry_msgs::TransformStamped transformStamped;
+// std::optional<geometry_msgs::Pose> TFListener::LookupTransform(
+//     const std::string &target, const std::string &source,
+//     const ros::Time &time) {
+std::optional<geometry_msgs::msg::Pose> LookupTransform(
+    const std::string& target,
+    const std::string& source,
+    const rclcpp::Time& t){
+  geometry_msgs::msg::TransformStamped transformStamped;
   try {
     transformStamped =
         buffer_.lookupTransform(target, source, time, ros::Duration(0.4));
   } catch (tf2::TransformException &ex) {
-    ROS_WARN_THROTTLE(1, "Fail to find transform from [%s] to [%s]",
+    RCLCPP_WARN_STREAM(
+      rclcpp::get_logger("TFListener"), 1, "Fail to find transform from [%s] to [%s]",
                       source.c_str(), target.c_str());
     return {};
   }
 
-  geometry_msgs::Pose pose;
+  geometry_msgs::msg::Pose pose;
 
   pose.position.x = transformStamped.transform.translation.x;
   pose.position.y = transformStamped.transform.translation.y;

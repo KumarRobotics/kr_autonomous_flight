@@ -1,42 +1,42 @@
-cmake_minimum_required(VERSION 3.10)
-project(mapper)
+# cmake_minimum_required(VERSION 3.10)
+# project(mapper)
 
-set(CMAKE_CXX_STANDARD 17)
-find_package(
-  catkin REQUIRED
-  COMPONENTS roscpp
-             pcl_ros
-             image_geometry
-             kr_planning_msgs
-             kr_planning_rviz_plugins
-             depth_image_proc
-             sensor_msgs
-             eigen_conversions
-             tf_conversions
-             motion_primitive_library)
+# set(CMAKE_CXX_STANDARD 17)
+# find_package(
+#   catkin REQUIRED
+#   COMPONENTS roscpp
+#              pcl_ros
+#              image_geometry
+#              kr_planning_msgs
+#              kr_planning_rviz_plugins
+#              depth_image_proc
+#              sensor_msgs
+#              eigen_conversions
+#              tf_conversions
+#              motion_primitive_library)
              
-find_package(Boost REQUIRED COMPONENTS timer)
+# find_package(Boost REQUIRED COMPONENTS timer)
 
-catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME})
+# catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME})
 
-include_directories(${PROJECT_NAME} PUBLIC ${catkin_INCLUDE_DIRS} include)
+# include_directories(${PROJECT_NAME} PUBLIC ${catkin_INCLUDE_DIRS} include)
 
-add_library(${PROJECT_NAME} src/tf_listener.cpp src/voxel_mapper.cpp)
-target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES})
+# add_library(${PROJECT_NAME} src/tf_listener.cpp src/voxel_mapper.cpp)
+# target_link_libraries(${PROJECT_NAME} PUBLIC ${catkin_LIBRARIES})
 
-add_executable(local_global_mapper src/local_global_mapper.cpp)
-target_link_libraries(local_global_mapper PUBLIC ${PROJECT_NAME} Boost::timer)
+# add_executable(local_global_mapper src/local_global_mapper.cpp)
+# target_link_libraries(local_global_mapper PUBLIC ${PROJECT_NAME} Boost::timer)
 
 
-#----------------------------------------------------------------------------------
-# Add testing with GoogleTest
+# #----------------------------------------------------------------------------------
+# # Add testing with GoogleTest
 
-# To run test:
-#   catkin test mapper
-enable_testing()
+# # To run test:
+# #   catkin test mapper
+# enable_testing()
 
-catkin_add_gtest(test_voxel_mapper test/test_voxel_mapper.cpp)
-target_link_libraries(test_voxel_mapper ${catkin_LIBRARIES} ${PROJECT_NAME})
+# catkin_add_gtest(test_voxel_mapper test/test_voxel_mapper.cpp)
+# target_link_libraries(test_voxel_mapper ${catkin_LIBRARIES} ${PROJECT_NAME})
 
 #----------------------------------------------------------------------------------
 # Add microbenchmarking with Google Benchmark
@@ -62,3 +62,109 @@ target_link_libraries(test_voxel_mapper ${catkin_LIBRARIES} ${PROJECT_NAME})
 # target_link_libraries(benchmarking benchmark::benchmark ${PROJECT_NAME})
 
 
+cmake_minimum_required(VERSION 3.10)
+project(mapper)
+
+# Use C++17
+set(CMAKE_CXX_STANDARD 17)
+
+# -----------------------------------------------------------------------------
+# 1) ament & ROS 2 packages instead of catkin
+find_package(ament_cmake        REQUIRED)
+find_package(rclcpp             REQUIRED)
+find_package(pcl_ros            REQUIRED)
+find_package(image_geometry     REQUIRED)
+find_package(kr_planning_msgs   REQUIRED)
+find_package(kr_planning_rviz_plugins REQUIRED)
+find_package(depth_image_proc   REQUIRED)
+find_package(sensor_msgs        REQUIRED)
+find_package(eigen_conversions  REQUIRED)
+find_package(tf2_eigen          REQUIRED)
+find_package(motion_primitive_library REQUIRED)
+find_package(Boost              REQUIRED COMPONENTS timer)
+
+# -----------------------------------------------------------------------------
+# 2) Build your library
+add_library(${PROJECT_NAME}
+  src/tf_listener.cpp
+  src/voxel_mapper.cpp
+)
+# Declare dependencies for include dirs and link targets
+ament_target_dependencies(${PROJECT_NAME}
+  rclcpp
+  pcl_ros
+  image_geometry
+  kr_planning_msgs
+  kr_planning_rviz_plugins
+  depth_image_proc
+  sensor_msgs
+  eigen_conversions
+  tf2_eigen
+  motion_primitive_library
+)
+# Link the Boost::timer target
+target_link_libraries(${PROJECT_NAME} PUBLIC Boost::timer)
+
+# -----------------------------------------------------------------------------
+# 3) Build your node
+add_executable(local_global_mapper src/local_global_mapper.cpp)
+ament_target_dependencies(local_global_mapper rclcpp)
+target_link_libraries(local_global_mapper PUBLIC ${PROJECT_NAME} Boost::timer)
+
+# -----------------------------------------------------------------------------
+# 4) Testing with ament_cmake_gtest
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+
+  ament_add_gtest(test_voxel_mapper test/test_voxel_mapper.cpp)
+  if(TARGET test_voxel_mapper)
+    ament_target_dependencies(test_voxel_mapper
+      rclcpp
+      pcl_ros
+      image_geometry
+      kr_planning_msgs
+      kr_planning_rviz_plugins
+      depth_image_proc
+      sensor_msgs
+      eigen_conversions
+      tf2_eigen
+      motion_primitive_library
+    )
+    target_link_libraries(test_voxel_mapper PUBLIC ${PROJECT_NAME} Boost::timer)
+  endif()
+endif()
+
+# -----------------------------------------------------------------------------
+# 5) Install rules
+install(
+  TARGETS
+    ${PROJECT_NAME}
+    local_global_mapper
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(
+  DIRECTORY include/
+  DESTINATION include/${PROJECT_NAME}
+)
+
+# -----------------------------------------------------------------------------
+# 6) Export & finalize
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(
+  rclcpp
+  pcl_ros
+  image_geometry
+  kr_planning_msgs
+  kr_planning_rviz_plugins
+  depth_image_proc
+  sensor_msgs
+  eigen_conversions
+  tf2_eigen
+  motion_primitive_library
+  Boost
+)
+ament_package()

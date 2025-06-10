@@ -1,4 +1,4 @@
-#include <eigen_conversions/eigen_msg.h>
+// #include <eigen_conversions/eigen_msg.h>
 // #include <nav_msgs/Odometry.h>
 #include <nav_msgs/msg/odometry.hpp>
 #include <kr_planning_rviz_plugins/data_ros_utils.h>
@@ -11,6 +11,8 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/msg/point_cloud.hpp>
 #include <std_msgs/msg/bool.hpp>
+#include <std_msgs/msg/header.hpp>
+#include <geometry_msgs/msg/pose.hpp>
 
 #include <boost/timer/timer.hpp>
 #include <memory>
@@ -27,7 +29,7 @@ class LocalGlobalMapperNode : public rclcpp::Node {
  public:
   /**
    * @brief Local Global Mapper Constructor
-   * @param nh ROS Node handler
+   * @param options  Node options for rclcpp::Node
    */
   // explicit LocalGlobalMapperNode(const ros::NodeHandle& nh);
   explicit LocalGlobalMapperNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
@@ -56,9 +58,9 @@ class LocalGlobalMapperNode : public rclcpp::Node {
    * @param pose_odom_lidar_ptr  Output tf from lidar to odom
    */
   // void getLidarPoses(const std_msgs::Header& cloud_header,
-  //                    geometry_msgs::Pose* pose_map_lidar_ptr,
-  //                    geometry_msgs::Pose* pose_odom_lidar_ptr);
-  void getLidarPoses(const std_msgs:msg::Header& cloud_header,
+  //                    geometry_msgs::msg::Pose* pose_map_lidar_ptr,
+  //                    geometry_msgs::msg::Pose* pose_odom_lidar_ptr);
+  void getLidarPoses(const std_msgs::msg::Header& cloud_header,
                      geometry_msgs::msg::Pose* pose_map_lidar_ptr,
                      geometry_msgs::msg::Pose* pose_odom_lidar_ptr);
 
@@ -104,9 +106,9 @@ class LocalGlobalMapperNode : public rclcpp::Node {
   std::unique_ptr<mapper::VoxelMapper> storage_voxel_mapper_;  // mapper
   // std::unique_ptr<VoxelMapper> local_voxel_mapper_;  // mapper
 
-  kr_planning_msgs::VoxelMap global_map_info_;
-  kr_planning_msgs::VoxelMap storage_map_info_;
-  kr_planning_msgs::VoxelMap local_map_info_;
+  kr_planning_msgs::msg::VoxelMap global_map_info_;
+  kr_planning_msgs::msg::VoxelMap storage_map_info_;
+  kr_planning_msgs::msg::VoxelMap local_map_info_;
 
   // ros::NodeHandle nh_;
   // ros::Subscriber cloud_sub;
@@ -114,12 +116,12 @@ class LocalGlobalMapperNode : public rclcpp::Node {
   // ros::Publisher storage_map_pub;
   // ros::Publisher local_map_pub;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cloud_sub;
-  rclcpp::Publisher<kr_planning_msgs::VoxelMap>::SharedPtr global_map_pub;
-  rclcpp::Publisher<kr_planning_msgs::VoxelMap>::SharedPtr storage_map_pub;
-  rclcpp::Publisher<kr_planning_msgs::VoxelMap>::SharedPtr local_map_pub;
+  rclcpp::Publisher<kr_planning_msgs::msg::VoxelMap>::SharedPtr global_map_pub;
+  rclcpp::Publisher<kr_planning_msgs::msg::VoxelMap>::SharedPtr storage_map_pub;
+  rclcpp::Publisher<kr_planning_msgs::msg::VoxelMap>::SharedPtr local_map_pub;
 
   // ros::Publisher global_occ_map_pub;
-  ros::Publisher local_voxel_map_pub;
+  // ros::Publisher local_voxel_map_pub;
   // ros::Publisher local_cloud_pub;
 
   bool real_robot_;         // define it's real-robot experiment or not
@@ -149,8 +151,7 @@ class LocalGlobalMapperNode : public rclcpp::Node {
   double local_max_raycast_, global_max_raycast_;  // maximum raycasting range
   double occ_map_height_;
   Eigen::Vector3d local_ori_offset_;
-  bool pub_storage_map_ =
-      false;  // don't set this as true unless you're debugging, it's very slow
+  bool pub_storage_map_ = false;  // don't set this as true unless you're debugging, it's very slow
 
   int update_interval_;
   int counter_ = 0;

@@ -1,4 +1,5 @@
 #include "mapper/local_global_mapper.h"
+#include <sensor_msgs/point_cloud_conversion.hpp>
 
 // LocalGlobalMapperNode::LocalGlobalMapperNode(const ros::NodeHandle& nh)
 //     : nh_(nh) {
@@ -9,16 +10,15 @@ LocalGlobalMapperNode::LocalGlobalMapperNode(const rclcpp::NodeOptions & options
   // cloud_sub = nh_.subscribe(
   //     cloud_name_, 1, &LocalGlobalMapperNode::cloudCallback, this);
   cloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-      cloud_name_, std::bind(&LocalGlobalMapperNode::cloudCallback, this,
-                                std::placeholders::_1));
+      cloud_name_, 1,[this](sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+        this->cloudCallback(msg);});
 
   // global_map_pub =
-  //     nh_.advertise<kr_planning_msgs::VoxelMap>("global_voxel_map", 1, true);
+  //     nh_.advertise<kr_planning_msgs::msg::VoxelMap>("global_voxel_map", 1, true);
   // storage_map_pub =
-  //     nh_.advertise<kr_planning_msgs::VoxelMap>("storage_voxel_map", 1, true);
+  //     nh_.advertise<kr_planning_msgs::msg::VoxelMap>("storage_voxel_map", 1, true);
   // local_map_pub =
-  //     nh_.advertise<kr_planning_msgs::VoxelMap>("local_voxel_map", 1, true);
-
+  //     nh_.advertise<kr_planning_msgs::msg::VoxelMap>("local_voxel_map", 1, true);
   // time_pub = nh_.advertise<sensor_msgs::Temperature>("/timing/mapper", 1);
   global_map_pub = this->create_publisher<kr_planning_msgs::msg::VoxelMap>(
       "global_voxel_map", 1);
@@ -199,6 +199,7 @@ void LocalGlobalMapperNode::globalMapInit() {
       new mapper::VoxelMapper(global_origin,
                               global_dim_d,
                               global_res,
+                              this->get_logger(),
                               global_val_default,
                               global_decay_times_to_empty_));
 
@@ -239,6 +240,7 @@ void LocalGlobalMapperNode::storageMapInit() {
       new mapper::VoxelMapper(storage_origin,
                               storage_dim_d,
                               res,
+                              this->get_logger(),
                               storage_val_default,
                               local_decay_times_to_empty_));
 }
@@ -270,7 +272,7 @@ void LocalGlobalMapperNode::cropLocalMap(
   local_origin_map(2) = storage_map_info_.origin.z;
 
   // core function: crop local map from the storage map
-  // kr_planning_msgs::VoxelMap local_voxel_map =
+  // kr_planning_msgs::msg::VoxelMap local_voxel_map =
   //     storage_voxel_mapper_->getInflatedLocalMap(local_origin_map, local_dim_d);
   kr_planning_msgs::msg::VoxelMap local_voxel_map =
   storage_voxel_mapper_->getInflatedLocalMap(local_origin_map, local_dim_d);
@@ -296,7 +298,7 @@ void LocalGlobalMapperNode::getLidarPoses(
     geometry_msgs::msg::Pose* pose_map_lidar_ptr,
     geometry_msgs::msg::Pose* pose_odom_lidar_ptr) {
   // get the transform from fixed frame to lidar frame
-  static mapper::TFListener tf_listener;
+  static mapper::TFListener tf_listener(this->shared_from_this());
   if (real_robot_) {
     // for real robot, the point cloud frame_id may not exist in the tf tree,
     // manually defining it here.
@@ -351,8 +353,8 @@ void LocalGlobalMapperNode::getLidarPoses(
     return;
   }
 
-  geometry_msgs::Pose pose_map_lidar;
-  geometry_msgs::Pose pose_odom_lidar;
+  geometry_msgs::msg::Pose pose_map_lidar;
+  geometry_msgs::msg::Pose pose_odom_lidar;
   getLidarPoses(cloud.header, &pose_map_lidar, &pose_odom_lidar);
 
   const Eigen::Affine3d T_map_lidar = kr::toTF(pose_map_lidar);
@@ -388,7 +390,7 @@ void LocalGlobalMapperNode::getLidarPoses(
 
   // get and publish storage map (this is very slow)
   if (pub_storage_map_) {
-    // kr_planning_msgs::VoxelMap storage_map =
+    // kr_planning_msgs::msg::VoxelMap storage_map =
     //     storage_voxel_mapper_->getInflatedMap();
     kr_planning_msgs::msg::VoxelMap storage_map =
         storage_voxel_mapper_->getInflatedMap();
@@ -425,7 +427,7 @@ void LocalGlobalMapperNode::getLidarPoses(
               static_cast<double>(timer.elapsed().wall) / 1e6);
 
     counter_ = 0;
-    kr_planning_msgs::VoxelMap global_map =
+    kr_planning_msgs::msg::VoxelMap global_map =
         global_voxel_mapper_->getInflatedMap();
     global_map.header.frame_id = map_frame_;
     // global_map_pub.publish(global_map);
@@ -442,7 +444,7 @@ void LocalGlobalMapperNode::cloudCallback(
        const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
  RCLCPP_WARN_ONCE(this->get_logger(),"[Mapper]: got the point cloud!");
   sensor_msgs::msg::PointCloud cloud;
-  sensor_msgs::msg::convertPointCloud2ToPointCloud(*msg, cloud);
+  sensor_msgs::convertPointCloud2ToPointCloud(*msg, cloud);
   processCloud(cloud);
 }
 

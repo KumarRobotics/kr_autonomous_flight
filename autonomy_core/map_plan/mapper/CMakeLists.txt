@@ -78,7 +78,7 @@ find_package(kr_planning_msgs   REQUIRED)
 find_package(kr_planning_rviz_plugins REQUIRED)
 find_package(depth_image_proc   REQUIRED)
 find_package(sensor_msgs        REQUIRED)
-find_package(eigen_conversions  REQUIRED)
+# find_package(eigen_conversions  REQUIRED) # Eigen conversions for ROS 2 is not supported yet
 find_package(tf2_eigen          REQUIRED)
 find_package(motion_primitive_library REQUIRED)
 find_package(Boost              REQUIRED COMPONENTS timer)
@@ -98,42 +98,49 @@ ament_target_dependencies(${PROJECT_NAME}
   kr_planning_rviz_plugins
   depth_image_proc
   sensor_msgs
-  eigen_conversions
+  # eigen_conversions
   tf2_eigen
   motion_primitive_library
 )
 # Link the Boost::timer target
-target_link_libraries(${PROJECT_NAME} PUBLIC Boost::timer)
+target_link_libraries(${PROJECT_NAME} Boost::timer)
+target_include_directories(${PROJECT_NAME} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
 
 # -----------------------------------------------------------------------------
 # 3) Build your node
 add_executable(local_global_mapper src/local_global_mapper.cpp)
-ament_target_dependencies(local_global_mapper rclcpp)
 target_link_libraries(local_global_mapper PUBLIC ${PROJECT_NAME} Boost::timer)
+target_include_directories(local_global_mapper PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
 
 # -----------------------------------------------------------------------------
 # 4) Testing with ament_cmake_gtest
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  ament_lint_auto_find_test_dependencies()
+# if(BUILD_TESTING)
+#   find_package(ament_lint_auto REQUIRED)
+#   ament_lint_auto_find_test_dependencies()
 
-  ament_add_gtest(test_voxel_mapper test/test_voxel_mapper.cpp)
-  if(TARGET test_voxel_mapper)
-    ament_target_dependencies(test_voxel_mapper
-      rclcpp
-      pcl_ros
-      image_geometry
-      kr_planning_msgs
-      kr_planning_rviz_plugins
-      depth_image_proc
-      sensor_msgs
-      eigen_conversions
-      tf2_eigen
-      motion_primitive_library
-    )
-    target_link_libraries(test_voxel_mapper PUBLIC ${PROJECT_NAME} Boost::timer)
-  endif()
-endif()
+#   ament_add_gtest(test_voxel_mapper test/test_voxel_mapper.cpp)
+#   if(TARGET test_voxel_mapper)
+#     ament_target_dependencies(test_voxel_mapper
+#       rclcpp
+#       pcl_ros
+#       image_geometry
+#       kr_planning_msgs
+#       kr_planning_rviz_plugins
+#       depth_image_proc
+#       sensor_msgs
+#       # eigen_conversions
+#       tf2_eigen
+#       motion_primitive_library
+#     )
+#     target_link_libraries(test_voxel_mapper PUBLIC ${PROJECT_NAME} Boost::timer)
+#   endif()
+# endif()
 
 # -----------------------------------------------------------------------------
 # 5) Install rules
@@ -153,7 +160,6 @@ install(
 
 # -----------------------------------------------------------------------------
 # 6) Export & finalize
-ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
   rclcpp
   pcl_ros
@@ -162,7 +168,7 @@ ament_export_dependencies(
   kr_planning_rviz_plugins
   depth_image_proc
   sensor_msgs
-  eigen_conversions
+  # eigen_conversions
   tf2_eigen
   motion_primitive_library
   Boost

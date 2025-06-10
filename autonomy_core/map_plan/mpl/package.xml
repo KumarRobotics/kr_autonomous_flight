@@ -4,13 +4,17 @@
   <description> search-based motion primitive planning library</description>
   <author>Sikang Liu</author>
   <maintainer email="sikang@seas.upenn.edu">Sikang Liu</maintainer>
+  <maintainer email="jiuzl@seas.upenn.edu">Jiuzhou Lei</maintainer>
   <license>Apache-2.0</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>kr_planning_msgs</depend>
+  <depend>Eigen3</depend>
+  <depend>Boost</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>

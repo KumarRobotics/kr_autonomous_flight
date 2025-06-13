@@ -147,10 +147,12 @@ target_include_directories(local_global_mapper PUBLIC
 install(
   TARGETS
     ${PROJECT_NAME}
+  LIBRARY DESTINATION lib/${PROJECT_NAME}
+)
+install(
+  TARGETS
     local_global_mapper
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 install(

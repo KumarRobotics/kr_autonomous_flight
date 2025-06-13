@@ -12,4 +12,4 @@
 ## Note
 sensor_msgs::msg::pointcloud is still used in the code, suggested to migrate to pointcloud2 in the future
 
-Test relevant files are not updated in either the src file or compiled in CMAKELISTS.TXT    
+Test relevant files are not updated in either the cpp file or compiled in CMAKELISTS.TXT    

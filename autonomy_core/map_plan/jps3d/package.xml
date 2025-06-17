@@ -4,13 +4,15 @@
   <version>1.0.0</version>
   <description>The jps3d package</description>
   <maintainer email="sikang@seas.upenn.edu">sikang</maintainer>
+  <maintainer email="jiuzl1379@gmail.com">Jiuzhou Lei</maintainer>
 
   <license>BSD-3-Clause</license>
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>kr_planning_msgs</depend>
 
   <export>
+    <build_type>ament_cmake</build_type>
   </export>
 
 </package>

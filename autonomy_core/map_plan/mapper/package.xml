@@ -3,23 +3,31 @@
   <name>mapper</name>
   <version>0.0.1</version>
   <description>The mapper package</description>
+
   <maintainer email="sikang@seas.upenn.edu">sikang</maintainer>
   <maintainer email="liuxu@seas.upenn.edu">Xu Liu</maintainer>
   <maintainer email="guilhermenardari@gmail.com">Guilherme Nardari</maintainer>
   <maintainer email="quchao@seas.upenn.edu">Chao Qu</maintainer>
+  <maintainer email="jiuzl@seas.upenn.edu">Jiuzhou Lei</maintainer>
 
   <license>Penn Software License</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <!-- ament build system -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend>roscpp</depend>
+  <!-- ROS 2 runtime dependencies -->
+  <depend>rclcpp</depend>
   <depend>pcl_ros</depend>
   <depend>image_geometry</depend>
   <depend>kr_planning_msgs</depend>
   <depend>kr_planning_rviz_plugins</depend>
   <depend>sensor_msgs</depend>
   <depend>depth_image_proc</depend>
-  <depend>tf_conversions</depend>
-  <depend>eigen_conversions</depend>
+  <depend>tf2_eigen</depend>
+  <!-- <depend>eigen_conversions</depend> -->
+  <depend>motion_primitive_library</depend>
 
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 </package>

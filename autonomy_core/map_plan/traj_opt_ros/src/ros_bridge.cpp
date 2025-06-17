@@ -3,38 +3,40 @@
 
 namespace traj_opt {
 
-TrajRosBridge::TrajRosBridge() : nh_("~") {
-  pub_ =
-      nh_.advertise<kr_planning_msgs::SplineTrajectory>("trajectory", 1, true);
+TrajRosBridge::TrajRosBridge(): rclcpp::Node("traj_ros_bridge") {
+  // pub_ =
+  //     nh_.advertise<kr_planning_msgs::msg::SplineTrajectory>("trajectory", 1, true);
+  pub_ = this->create_publisher<kr_planning_msgs::msg::SplineTrajectory>(
+      "trajectory", 1);
 }
 TrajRosBridge &TrajRosBridge::instance() {
   static TrajRosBridge inst;
   return inst;
 }
-void TrajRosBridge::publish_msg(const kr_planning_msgs::SplineTrajectory &msg,
+void TrajRosBridge::publish_msg(const kr_planning_msgs::msg::SplineTrajectory &msg,
                                 std::string frame_id) {
-  kr_planning_msgs::SplineTrajectory msgc = msg;
+  kr_planning_msgs::msg::SplineTrajectory msgc = msg;
   msgc.header.frame_id = frame_id;
-  instance().pub_.publish(msgc);
+  instance().pub_->publish(msgc);
 }
 void TrajRosBridge::publish_msg(const TrajData &data, std::string frame_id) {
   publish_msg(SplineTrajectoryFromTrajData(data), frame_id);
 }
 
 // these convert functions can be written more cleanly with templates
-kr_planning_msgs::SplineTrajectory SplineTrajectoryFromTrajData(
+kr_planning_msgs::msg::SplineTrajectory SplineTrajectoryFromTrajData(
     const TrajData &data) {
-  kr_planning_msgs::SplineTrajectory traj;
-  traj.header.stamp = ros::Time::now();
+  kr_planning_msgs::msg::SplineTrajectory traj;
+  traj.header.stamp = rclcpp::Clock().now();
   traj.header.frame_id = "map";
 
   traj.dimension_names = data.dimension_names;
   traj.dimensions = data.dimensions;
   // copy all fields
   for (auto spline : data.data) {
-    kr_planning_msgs::Spline s;
+    kr_planning_msgs::msg::Spline s;
     for (auto poly : spline.segs) {
-      kr_planning_msgs::Polynomial p;
+      kr_planning_msgs::msg::Polynomial p;
       p.degree = poly.degree;
       p.dt = poly.dt;
       p.basis = poly.basis;
@@ -49,7 +51,7 @@ kr_planning_msgs::SplineTrajectory SplineTrajectoryFromTrajData(
 }
 
 TrajData TrajDataFromSplineTrajectory(
-    const kr_planning_msgs::SplineTrajectory &msg) {
+    const kr_planning_msgs::msg::SplineTrajectory &msg) {
   TrajData data;
   // copy all fields
   data.dimension_names = msg.dimension_names;
@@ -93,9 +95,9 @@ int Factorial(int n) {
   return results[n];     // undefined behavior if n > 12
 }
 
-kr_planning_msgs::SplineTrajectory SplineTrajectoryFromTrajectory(
-    const kr_planning_msgs::Trajectory &msg) {
-  kr_planning_msgs::SplineTrajectory traj;
+kr_planning_msgs::msg::SplineTrajectory SplineTrajectoryFromTrajectory(
+    const kr_planning_msgs::msg::Trajectory &msg) {
+  kr_planning_msgs::msg::SplineTrajectory traj;
   traj.header = msg.header;
 
   double T = 0.0;
@@ -104,14 +106,14 @@ kr_planning_msgs::SplineTrajectory SplineTrajectoryFromTrajectory(
   }
 
   for (uint d = 0; d < 3; d++) {
-    kr_planning_msgs::Spline spline;
+    kr_planning_msgs::msg::Spline spline;
     for (uint s = 0; s < msg.primitives.size(); s++) {
       const std::vector<double> *co;
       // get correct field
       if (d == 0) co = &(msg.primitives.at(s).cx);
       if (d == 1) co = &(msg.primitives.at(s).cy);
       if (d == 2) co = &(msg.primitives.at(s).cz);
-      kr_planning_msgs::Polynomial poly;
+      kr_planning_msgs::msg::Polynomial poly;
       for (uint c = 0; c < co->size(); c++) {
         uint cr = co->size() - 1 - c;
         poly.coeffs.push_back(co->at(cr) * std::pow(msg.primitives.at(s).t, c) /

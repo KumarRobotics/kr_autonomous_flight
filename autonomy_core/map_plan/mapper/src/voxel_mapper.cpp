@@ -1,12 +1,12 @@
 #include "mapper/voxel_mapper.h"
 
-#include <ros/ros.h>
 
 namespace mapper {
 
 VoxelMapper::VoxelMapper(const Eigen::Vector3d& origin,
                          const Eigen::Vector3d& dim,
                          double res,
+                         const rclcpp::Logger& logger,
                          int8_t default_val,
                          int decay_times_to_empty) {
   origin_d_ = Eigen::Vector3d::Zero();
@@ -25,7 +25,7 @@ VoxelMapper::VoxelMapper(const Eigen::Vector3d& origin,
 
   int val_temp = val_occ_ + val_add_;
   if (val_temp > 128) {
-    ROS_ERROR_STREAM("val_occ + val_add is larger than 128, the value is: "
+    RCLCPP_ERROR_STREAM(logger, "val_occ + val_add is larger than 128, the value is: "
                      << val_temp
                      << ", this will cause overflow!!! "
                         "Reducing it to < 128 now...");
@@ -50,8 +50,8 @@ void VoxelMapper::setMapFree() {
   inflated_map_.setMap(origin_d_, dim_, base_map, res_);
 }
 
-kr_planning_msgs::VoxelMap VoxelMapper::getMap() {
-  kr_planning_msgs::VoxelMap voxel_map;
+kr_planning_msgs::msg::VoxelMap VoxelMapper::getMap() {
+  kr_planning_msgs::msg::VoxelMap voxel_map;
   voxel_map.origin.x = origin_d_(0);
   voxel_map.origin.y = origin_d_(1);
   voxel_map.origin.z = origin_d_(2);
@@ -76,8 +76,8 @@ kr_planning_msgs::VoxelMap VoxelMapper::getMap() {
   return voxel_map;
 }
 
-kr_planning_msgs::VoxelMap VoxelMapper::getInflatedMap() {
-  kr_planning_msgs::VoxelMap voxel_map;
+kr_planning_msgs::msg::VoxelMap VoxelMapper::getInflatedMap() {
+  kr_planning_msgs::msg::VoxelMap voxel_map;
   voxel_map.origin.x = origin_d_(0);
   voxel_map.origin.y = origin_d_(1);
   voxel_map.origin.z = origin_d_(2);
@@ -102,9 +102,9 @@ kr_planning_msgs::VoxelMap VoxelMapper::getInflatedMap() {
   return voxel_map;
 }
 
-kr_planning_msgs::VoxelMap VoxelMapper::getInflatedLocalMap(
+kr_planning_msgs::msg::VoxelMap VoxelMapper::getInflatedLocalMap(
     const Eigen::Vector3d& ori_d, const Eigen::Vector3d& dim_d) {
-  kr_planning_msgs::VoxelMap voxel_map;
+  kr_planning_msgs::msg::VoxelMap voxel_map;
 
   voxel_map.resolution = res_;
   voxel_map.origin.x = ori_d(0);
@@ -157,9 +157,9 @@ kr_planning_msgs::VoxelMap VoxelMapper::getInflatedLocalMap(
 
 // TODO(xu): This function is the same as sliceMap function in
 // data_conversions.cpp, should merge them.
-kr_planning_msgs::VoxelMap VoxelMapper::getInflatedOccMap(double h,
+kr_planning_msgs::msg::VoxelMap VoxelMapper::getInflatedOccMap(double h,
                                                            double hh) {
-  kr_planning_msgs::VoxelMap voxel_map;
+  kr_planning_msgs::msg::VoxelMap voxel_map;
   voxel_map.origin.x = origin_d_(0);
   voxel_map.origin.y = origin_d_(1);
   voxel_map.origin.z = 0;

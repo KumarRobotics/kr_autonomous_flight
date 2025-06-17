@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="gazebo_gui" default="true"/>
+  <arg name="robot" default="quadrotor"/>
+  <arg name="robot_frame" default="$(eval '\'$(var robot)\' + \'/base_link\'')"/>
+  <arg name="world_model" default="$(env FLA_ENV D60)"/>
+  <arg name="odom" default="falcon4/ground_truth/odom"/>  
+  <arg name="x" default="0.5"/>
+  <arg name="y" default="0.5"/>
+  <arg name="z" default="0.0"/>
+  <arg name="yaw" default="0.0"/>
+  <arg name="use_frame_prefix" default="true"/>
+
+  <!-- ROS2 UPDATE LAUNCH THE GAZEBO WORLD, SPAWN THE ROBOT, LAUNCH THE GAZEBO_ROS_BRIDGE IN ONE LAUNCH FILE-->
+  <include file="$(find-pkg-share mrsl_quadrotor_launch)/launch/gazebo_spawn.launch.xml">
+    <arg name="world" value="$(var world_model)"/>
+    <arg name="mav_name" value="$(var robot)"/>
+    <arg name="mav_type" value="falcon4_os1_16_256"/>
+    <arg name="x" value="$(var x)"/>
+    <arg name="y" value="$(var y)"/>
+    <arg name="z" value="$(var z)"/>
+    <arg name="Y" value="$(var yaw)"/>
+    <arg name="use_frame_prefix" value="$(var use_frame_prefix)"/>
+  </include>
+
+
+  <!-- <include launch="$(find-pkg-share mrsl_quadrotor_launch)/launch/gazebo.launch.py">
+    <arg name="world" value="$(var world_model)"/>
+    <arg name="gui" value="$(var gazebo_gui)"/>
+  </include> -->
+
+  <group>
+    <push-ros-namespace namespace="$(var robot)"/>
+
+    <node pkg="mrsl_quadrotor_utils"
+          exec="change_header"
+          name="change_header"
+          output="screen">
+      <remap from="odom_in" to="/$(var odom)"/>
+      <remap from="odom_out" to="raw_odom"/>
+      <param name="robot_frame" value="$(var robot_frame)"/>
+      <param name="world_frame" value="$(var robot)/map"/>
+    </node>
+
+    <node pkg="mrsl_quadrotor_utils"
+          exec="change_odom"
+          name="change_odom">
+      <remap from="odom_in" to="raw_odom"/>
+      <remap from="odom_out" to="odom"/>
+      <param name="dt_thr" value="0.5"/>
+    </node>
+  </group>
+
+  <!-- <include launch="$(find-pkg-share mrsl_quadrotor_launch)/launch/spawn.launch.py">
+    <arg name="mav_name" value="$(var robot)"/>
+    <arg name="mav_type" value="falcon4_os1_16_256"/> -->
+    <!-- Higher resolution lidar (commented out for performance) -->
+    <!-- <arg name="mav_type" value="falcon4_os1_64_512"/> -->
+    <!-- <arg name="x" value="$(var x)"/>
+    <arg name="y" value="$(var y)"/>
+    <arg name="z" value="$(var z)"/>
+    <arg name="Y" value="$(var yaw)"/>
+  </include> -->
+
+</launch>

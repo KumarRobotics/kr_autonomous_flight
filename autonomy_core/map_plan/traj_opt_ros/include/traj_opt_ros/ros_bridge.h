@@ -1,9 +1,10 @@
 // Copyright 2016 Michael Watterson
 #pragma once
 
-#include <kr_planning_msgs/SplineTrajectory.h>
-#include <kr_planning_msgs/Trajectory.h>
-#include <ros/ros.h>
+#include <kr_planning_msgs/msg/spline_trajectory.hpp>
+#include <kr_planning_msgs/msg/trajectory.hpp>
+// #include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include <string>
 
@@ -11,10 +12,10 @@
 
 namespace traj_opt {
 
-class TrajRosBridge {
+class TrajRosBridge: public rclcpp::Node {
  public:
   // make sure to run ros::init() before calling this function or it won't work
-  static void publish_msg(const kr_planning_msgs::SplineTrajectory &msg,
+  static void publish_msg(const kr_planning_msgs::msg::SplineTrajectory &msg,
                           std::string frame_id = "map");
 
   static void publish_msg(const TrajData &data, std::string frame_id = "map");
@@ -24,17 +25,18 @@ class TrajRosBridge {
  private:
   TrajRosBridge();
   static TrajRosBridge &instance();
-  ros::NodeHandle nh_;
-  ros::Publisher pub_;
+//   ros::NodeHandle nh_;
+//   ros::Publisher pub_;
+  rclcpp::Publisher<kr_planning_msgs::msg::SplineTrajectory>::SharedPtr pub_;
 };
 
-kr_planning_msgs::SplineTrajectory SplineTrajectoryFromTrajData(
+kr_planning_msgs::msg::SplineTrajectory SplineTrajectoryFromTrajData(
     const TrajData &data);
 
 TrajData TrajDataFromSplineTrajectory(
-    const kr_planning_msgs::SplineTrajectory &msg);
+    const kr_planning_msgs::msg::SplineTrajectory &msg);
 
-kr_planning_msgs::SplineTrajectory SplineTrajectoryFromTrajectory(
-    const kr_planning_msgs::Trajectory &msg);
+kr_planning_msgs::msg::SplineTrajectory SplineTrajectoryFromTrajectory(
+    const kr_planning_msgs::msg::Trajectory &msg);
 
 }  // namespace traj_opt

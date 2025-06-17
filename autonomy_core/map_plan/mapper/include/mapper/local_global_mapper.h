@@ -1,10 +1,18 @@
-#include <eigen_conversions/eigen_msg.h>
-#include <nav_msgs/Odometry.h>
+// #include <eigen_conversions/eigen_msg.h>
+// #include <nav_msgs/Odometry.h>
+#include <nav_msgs/msg/odometry.hpp>
 #include <kr_planning_rviz_plugins/data_ros_utils.h>
-#include <ros/ros.h>
-#include <sensor_msgs/Temperature.h>
-#include <sensor_msgs/point_cloud_conversion.h>
-#include <std_msgs/Bool.h>
+// #include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
+// #include <sensor_msgs/Temperature.h>
+// #include <sensor_msgs/point_cloud_conversion.h>
+// #include <std_msgs/Bool.h>
+#include <sensor_msgs/msg/temperature.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/msg/point_cloud.hpp>
+#include <std_msgs/msg/bool.hpp>
+#include <std_msgs/msg/header.hpp>
+#include <geometry_msgs/msg/pose.hpp>
 
 #include <boost/timer/timer.hpp>
 #include <memory>
@@ -17,14 +25,14 @@
 using boost::timer::cpu_timer;
 using boost::timer::cpu_times;
 
-class LocalGlobalMapperNode {
+class LocalGlobalMapperNode : public rclcpp::Node {
  public:
   /**
    * @brief Local Global Mapper Constructor
-   * @param nh ROS Node handler
+   * @param options  Node options for rclcpp::Node
    */
-  explicit LocalGlobalMapperNode(const ros::NodeHandle& nh);
-
+  // explicit LocalGlobalMapperNode(const ros::NodeHandle& nh);
+  explicit LocalGlobalMapperNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
  private:
   /**
    * @brief Reads parameters from ROS parameter server
@@ -49,23 +57,28 @@ class LocalGlobalMapperNode {
    * @param pose_map_lidar_ptr  Output tf from lidar to map
    * @param pose_odom_lidar_ptr  Output tf from lidar to odom
    */
-  void getLidarPoses(const std_msgs::Header& cloud_header,
-                     geometry_msgs::Pose* pose_map_lidar_ptr,
-                     geometry_msgs::Pose* pose_odom_lidar_ptr);
+  // void getLidarPoses(const std_msgs::Header& cloud_header,
+  //                    geometry_msgs::msg::Pose* pose_map_lidar_ptr,
+  //                    geometry_msgs::msg::Pose* pose_odom_lidar_ptr);
+  void getLidarPoses(const std_msgs::msg::Header& cloud_header,
+                     geometry_msgs::msg::Pose* pose_map_lidar_ptr,
+                     geometry_msgs::msg::Pose* pose_odom_lidar_ptr);
 
   /**
    * @brief Adds input cloud to storage map, publishes new local map and global
    * map (if enough msgs were received)
    * @param cloud Input cloud message
    */
-  void processCloud(const sensor_msgs::PointCloud& cloud);
+  // void processCloud(const sensor_msgs::PointCloud& cloud);
+  void processCloud(const sensor_msgs::msg::PointCloud& cloud);
 
   /**
    * @brief Point Cloud topic callback. Will convert from
    * sensor_msgs::PointCloud2 to sensor_msgs::PointCloud
    * @param msg Const pointer to input cloud message
    */
-  void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg);
+  // void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg);
+  void cloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
   /**
    * @brief Allocates memory for the global mapper and initializes the arrays
@@ -86,24 +99,29 @@ class LocalGlobalMapperNode {
   cpu_timer timer;
 
   // Timing stuff
-  ros::Publisher time_pub;
+  // ros::Publisher time_pub;
+  rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr time_pub;
 
   std::unique_ptr<mapper::VoxelMapper> global_voxel_mapper_;   // mapper
   std::unique_ptr<mapper::VoxelMapper> storage_voxel_mapper_;  // mapper
   // std::unique_ptr<VoxelMapper> local_voxel_mapper_;  // mapper
 
-  kr_planning_msgs::VoxelMap global_map_info_;
-  kr_planning_msgs::VoxelMap storage_map_info_;
-  kr_planning_msgs::VoxelMap local_map_info_;
+  kr_planning_msgs::msg::VoxelMap global_map_info_;
+  kr_planning_msgs::msg::VoxelMap storage_map_info_;
+  kr_planning_msgs::msg::VoxelMap local_map_info_;
 
-  ros::NodeHandle nh_;
-  ros::Subscriber cloud_sub;
-  ros::Publisher global_map_pub;
-  ros::Publisher storage_map_pub;
-  ros::Publisher local_map_pub;
+  // ros::NodeHandle nh_;
+  // ros::Subscriber cloud_sub;
+  // ros::Publisher global_map_pub;
+  // ros::Publisher storage_map_pub;
+  // ros::Publisher local_map_pub;
+  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cloud_sub;
+  rclcpp::Publisher<kr_planning_msgs::msg::VoxelMap>::SharedPtr global_map_pub;
+  rclcpp::Publisher<kr_planning_msgs::msg::VoxelMap>::SharedPtr storage_map_pub;
+  rclcpp::Publisher<kr_planning_msgs::msg::VoxelMap>::SharedPtr local_map_pub;
 
   // ros::Publisher global_occ_map_pub;
-  ros::Publisher local_voxel_map_pub;
+  // ros::Publisher local_voxel_map_pub;
   // ros::Publisher local_cloud_pub;
 
   bool real_robot_;         // define it's real-robot experiment or not
@@ -133,8 +151,7 @@ class LocalGlobalMapperNode {
   double local_max_raycast_, global_max_raycast_;  // maximum raycasting range
   double occ_map_height_;
   Eigen::Vector3d local_ori_offset_;
-  bool pub_storage_map_ =
-      false;  // don't set this as true unless you're debugging, it's very slow
+  bool pub_storage_map_ = false;  // don't set this as true unless you're debugging, it's very slow
 
   int update_interval_;
   int counter_ = 0;

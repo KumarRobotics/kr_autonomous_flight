@@ -6,7 +6,7 @@ jobs:
   name: runner / pylint
   runs-on: ubuntu-latest
   steps:
-   - uses: actions/checkout@v2
+   - uses: actions/checkout@v4
    - uses: dciborow/action-pylint@0.0.4
      with:
        github_token: ${{ secrets.KR_AUTONOMOUS_FLIGHT_TOKEN_REVIEWDOG }}

@@ -1,15 +1,17 @@
-gains:
-  pos: { x: 4.0, y: 4.0, z: 4.0 }
-  vel: { x: 3.5, y: 3.5, z: 3.5 }
-  ki: { x: 0.00, y: 0.00, z: 0.00 }
-  kib: { x: 0.00, y: 0.00, z: 0.00 }
-  rot: { x: 8.0, y: 8.0, z: 6.0 }
-  ang: { x: 5.0, y: 5.0, z: 5.0}
+/**:
+  ros__parameters:
+    gains:
+      pos: { x: 4.0, y: 4.0, z: 4.0 }
+      vel: { x: 3.5, y: 3.5, z: 3.5 }
+      ki: { x: 0.00, y: 0.00, z: 0.00 }
+      kib: { x: 0.00, y: 0.00, z: 0.00 }
+      rot: { x: 8.0, y: 8.0, z: 6.0 }
+      ang: { x: 5.0, y: 5.0, z: 5.0}
 
-corrections:
-  kf: 0.0e-08
-  r: 0.0
-  p: 0.0
+    corrections:
+      kf: 0.0e-08
+      r: 0.0
+      p: 0.0
 
-max_pos_int: 0.3
-max_pos_int_b: 0.3
+    max_pos_int: 0.3
+    max_pos_int_b: 0.3

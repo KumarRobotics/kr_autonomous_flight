@@ -1,0 +1,58 @@
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription
+from launch.conditions import IfCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.substitutions import FindPackageShare
+
+
+def generate_launch_description():
+    robot = LaunchConfiguration('robot')
+    record_bag = LaunchConfiguration('record_bag')
+
+    ouster_decoder_launch = PathJoinSubstitution([
+        FindPackageShare('real_experiment_launch'), 'launch', 'ouster_decoder.launch.py'
+    ])
+    publish_tf_launch = PathJoinSubstitution([
+        FindPackageShare('real_experiment_launch'), 'launch', 'publish_tf.launch.py'
+    ])
+    record_bag_max_seam_launch = PathJoinSubstitution([
+        FindPackageShare('real_experiment_launch'), 'launch', 'special_purposes', 'record_bag_max_seam.launch.py'
+    ])
+
+    return LaunchDescription([
+        DeclareLaunchArgument('mapper_config', default_value=PathJoinSubstitution([
+            FindPackageShare('map_plan_launch'), 'config', 'mapper.yaml'
+        ])),
+        DeclareLaunchArgument('onboard_sensing', default_value='true'),
+        DeclareLaunchArgument('record_bag', default_value='true'),
+        DeclareLaunchArgument('robot', default_value='quadrotor'),
+
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource([ouster_decoder_launch]),
+            launch_arguments={
+                'robot': robot,
+                'sensor_hostname': '192.168.100.12',
+                'udp_dest': '192.168.100.1',
+                'lidar_port': '7502',
+                'imu_port': '7503',
+                'replay': 'false',
+                'lidar_mode': '1024x10',
+                'metadata': 'ouster_metadata.json',
+            }.items(),
+        ),
+
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource([publish_tf_launch]),
+            launch_arguments={
+                'robot': robot,
+                'robot_frame_id': [robot, '/base_link'],
+                'vio_imu_frame_id': [robot, '/ovc_camera_link'],
+            }.items(),
+        ),
+
+        GroupAction(
+            actions=[IncludeLaunchDescription(PythonLaunchDescriptionSource([record_bag_max_seam_launch]))],
+            condition=IfCondition(record_bag),
+        ),
+    ])

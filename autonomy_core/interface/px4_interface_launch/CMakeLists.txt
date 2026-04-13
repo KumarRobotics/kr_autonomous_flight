@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 project(px4_interface_launch)
 
-find_package(catkin REQUIRED)
-catkin_package()
+find_package(ament_cmake REQUIRED)
 
-install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME})
+
+ament_package()

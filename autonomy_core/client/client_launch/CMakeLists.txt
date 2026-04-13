@@ -1,5 +1,15 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 project(client_launch)
 
-find_package(catkin REQUIRED)
-catkin_package()
+find_package(ament_cmake REQUIRED)
+
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME})
+
+install(DIRECTORY config
+  DESTINATION share/${PROJECT_NAME})
+
+install(DIRECTORY rviz
+  DESTINATION share/${PROJECT_NAME})
+
+ament_package()

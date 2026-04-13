@@ -1,5 +1,7 @@
-server_wait_timeout: 0.5
-need_imu: false
-need_output_data: true
-use_attitude_safety_catch: false
-max_attitude_angle: 0.43
+/**:
+  ros__parameters:
+    server_wait_timeout: 0.5
+    need_imu: false
+    need_output_data: true
+    use_attitude_safety_catch: false
+    max_attitude_angle: 0.43

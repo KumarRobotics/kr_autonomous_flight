@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<package format="2">
+<package format="3">
   <name>traj_opt_ros</name>
   <version>0.0.1</version>
   <description>The traj_opt_ros package</description>
@@ -8,13 +8,14 @@
 
   <license>Penn Software License</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend>roscpp</depend>
+  <depend>rclcpp</depend>
   <depend>kr_planning_msgs</depend>
+  <depend>eigen</depend>
 
   <export>
-    <!-- <rviz plugin="${prefix}/plugin_description.xml"/> -->
+    <build_type>ament_cmake</build_type>
   </export>
 
 </package>

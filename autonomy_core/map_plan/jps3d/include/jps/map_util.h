@@ -5,7 +5,7 @@
 #pragma once
 
 #include "jps/data_type.h"
-#include <kr_planning_msgs/VoxelMap.h>
+#include <kr_planning_msgs/msg/voxel_map.hpp>
 
 namespace JPS {
 
@@ -101,7 +101,7 @@ class MapUtil {
   /// Map entity
   Tmap map_;
 
-  kr_planning_msgs::VoxelMap voxel_map;
+  kr_planning_msgs::msg::VoxelMap voxel_map;
 
  protected:
   /// Resolution

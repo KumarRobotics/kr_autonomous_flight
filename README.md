@@ -23,6 +23,14 @@ Please refer to [our Wiki page](https://github.com/KumarRobotics/kr_autonomous_f
 
 [Simulation experiments in fast, autonomous flight in urban and rural environments](https://www.youtube.com/watch?v=l1esgtJ4C6s)
 
+## ROS2 Support (Experimental)
+
+An experimental ROS2 Jazzy Jalisco (Ubuntu 24.04) port of this stack lives on the [`ros2_dev`](https://github.com/KumarRobotics/kr_autonomous_flight/tree/ros2_dev) branch. It is built on top of [`feature/integrate_lidar_3d_planner_default`](https://github.com/KumarRobotics/kr_autonomous_flight/tree/feature/integrate_lidar_3d_planner_default), which adds two capabilities beyond `master`:
+- a **3D optimization-based planner** (gcopter-family trajectory optimization integrated into the action planner), and
+- support for both **LIDAR + VIO** and **LIDAR-only** autonomous flight modalities (the stack can now fly without a visual-inertial frontend when lighting / texture conditions make VIO unreliable).
+
+Every package, launch file, Docker image, and CI workflow on `ros2_dev` has been adapted for ROS2 Jazzy. **This port has not been extensively tested or experimented with and is not the version used to produce any of the results shown in our papers or videos above.** It is provided as a starting point for developers who want to use kr_autonomous_flight under ROS2. Several external dependencies pulled via `external_*.yaml` (`kr_trackers_manager`, `kr_mav_control`, `faster-lio`, `mrsl_quadrotor`, etc.) are still ROS1-only and must themselves be ported before a full end-to-end build succeeds. See [`ROS2_MIGRATION_REPORT.md`](https://github.com/KumarRobotics/kr_autonomous_flight/blob/ros2_dev/ROS2_MIGRATION_REPORT.md) for a detailed per-package breakdown and the list of known follow-ups.
+
 ## Contributing
 Report issues: Open an [issue](https://github.com/KumarRobotics/kr_autonomous_flight/issues) on Github.
 

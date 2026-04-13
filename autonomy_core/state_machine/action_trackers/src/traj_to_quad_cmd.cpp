@@ -1,10 +1,10 @@
 
 #include <action_trackers/traj_to_quad_cmd.h>
 #include <angles/angles.h>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 namespace traj_opt {
 
-using kr_mav_msgs::PositionCommand;
+using kr_mav_msgs::msg::PositionCommand;
 
 void EvaluateTrajectory(const boost::shared_ptr<Trajectory>& traj,
                         double dt,
@@ -51,7 +51,7 @@ PositionCommand EvaluateTrajectory(const boost::shared_ptr<Trajectory>& traj,
 }
 
 bool EvaluateTrajectoryPos(const boost::shared_ptr<Trajectory>& traj,
-                           const nav_msgs::Odometry::ConstPtr& odom,
+                           const nav_msgs::msg::Odometry::ConstSharedPtr& odom,
                            double err_max,
                            double t_des,
                            double ddt,
@@ -69,8 +69,12 @@ bool EvaluateTrajectoryPos(const boost::shared_ptr<Trajectory>& traj,
 
   Eigen::Vector2d diff_xy(val(0) - pos(0), val(1) - pos(1));
   if (diff_xy.norm() >= err_max) {
-    ROS_WARN_THROTTLE(10,"Distance between odom and traj in xy too large! It is: %f \n",
-           diff_xy.norm());
+    static rclcpp::Clock s_clock(RCL_ROS_TIME);
+    RCLCPP_WARN_THROTTLE(rclcpp::get_logger("traj_to_quad_cmd"),
+                         s_clock,
+                         10000,
+                         "Distance between odom and traj in xy too large! It is: %f",
+                         diff_xy.norm());
     return_v = false;  // return false
   }
   EvaluateTrajectory(traj, t_des, out);

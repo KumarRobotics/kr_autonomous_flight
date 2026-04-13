@@ -9,8 +9,8 @@ traj_opt::VecD Make4d(const traj_opt::VecD& vec) {
   return out;
 }
 
-void VecToPose(const traj_opt::VecD& valn, geometry_msgs::Pose* pos) {
-  if (pos != NULL) {
+void VecToPose(const traj_opt::VecD& valn, geometry_msgs::msg::Pose* pos) {
+  if (pos != nullptr) {
     traj_opt::VecD val = Make4d(valn);
     pos->position.x = val(0), pos->position.y = val(1),
     pos->position.z = val(2);
@@ -19,8 +19,8 @@ void VecToPose(const traj_opt::VecD& valn, geometry_msgs::Pose* pos) {
   }
 }
 
-void VecToTwist(const traj_opt::VecD& valn, geometry_msgs::Twist* vel) {
-  if (vel != NULL) {
+void VecToTwist(const traj_opt::VecD& valn, geometry_msgs::msg::Twist* vel) {
+  if (vel != nullptr) {
     traj_opt::VecD val = Make4d(valn);
     vel->linear.x = val(0), vel->linear.y = val(1), vel->linear.z = val(2);
     vel->angular.z = val(3);
@@ -29,11 +29,11 @@ void VecToTwist(const traj_opt::VecD& valn, geometry_msgs::Twist* vel) {
 
 void EvaluateToMsgs(boost::shared_ptr<traj_opt::Trajectory> traj,
                     double dt,
-                    geometry_msgs::Pose* pos,
-                    geometry_msgs::Twist* vel,
-                    geometry_msgs::Twist* acc,
-                    geometry_msgs::Twist* jrk) {
-  if (traj == NULL) return;
+                    geometry_msgs::msg::Pose* pos,
+                    geometry_msgs::msg::Twist* vel,
+                    geometry_msgs::msg::Twist* acc,
+                    geometry_msgs::msg::Twist* jrk) {
+  if (traj == nullptr) return;
   traj_opt::VecD val;
   traj->evaluate(dt, 0, val);
   VecToPose(val, pos);

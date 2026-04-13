@@ -1,14 +1,17 @@
-#include <action_trackers/TakeOffAction.h>
-#include <actionlib/server/simple_action_server.h>
-#include <kr_tracker_msgs/LineTrackerGoal.h>
-#include <kr_tracker_msgs/TrackerStatus.h>
+#include <action_trackers/action/take_off.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
+#include <kr_tracker_msgs/msg/line_tracker_goal.hpp>
+#include <kr_tracker_msgs/msg/tracker_status.hpp>
 #include <kr_trackers/initial_conditions.h>
 #include <kr_trackers_manager/Tracker.h>
-#include <ros/ros.h>
-#include <tf/transform_datatypes.h>
+#include <tf2/utils.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include <Eigen/Geometry>
 #include <cmath>
+#include <memory>
+#include <string>
 
 /*
  * This controller is designed only to take the quad off the ground.
@@ -29,28 +32,36 @@
  *
  */
 
-using kr_mav_msgs::PositionCommand;
-using kr_tracker_msgs::TrackerStatus;
+using kr_mav_msgs::msg::PositionCommand;
+using kr_tracker_msgs::msg::TrackerStatus;
 
 class TakeOffTracker : public kr_trackers_manager::Tracker {
  public:
+  using TakeOff = action_trackers::action::TakeOff;
+  using GoalHandleTakeOff = rclcpp_action::ServerGoalHandle<TakeOff>;
+
   TakeOffTracker(void);
 
-  void Initialize(const ros::NodeHandle& nh) override;
-  bool Activate(const PositionCommand::ConstPtr& cmd) override;
+  void Initialize(const rclcpp::Node::SharedPtr& parent_nh) override;
+  bool Activate(const PositionCommand::ConstSharedPtr& cmd) override;
   void Deactivate(void) override;
 
-  PositionCommand::ConstPtr update(
-      const nav_msgs::Odometry::ConstPtr& msg) override;
+  PositionCommand::ConstSharedPtr update(
+      const nav_msgs::msg::Odometry::ConstSharedPtr& msg) override;
   uint8_t status() const override;
 
  private:
-  void goal_callback();
-  void odomTocmd(const nav_msgs::Odometry& msg, PositionCommand& cmd);
+  rclcpp_action::GoalResponse handleGoal(
+      const rclcpp_action::GoalUUID& uuid,
+      std::shared_ptr<const TakeOff::Goal> goal);
+  rclcpp_action::CancelResponse handleCancel(
+      const std::shared_ptr<GoalHandleTakeOff> goal_handle);
+  void handleAccepted(const std::shared_ptr<GoalHandleTakeOff> goal_handle);
+
+  void odomTocmd(const nav_msgs::msg::Odometry& msg, PositionCommand& cmd);
   void zeroGains(PositionCommand& cmd);
   void halfGains(PositionCommand& cmd);
 
-  ros::Subscriber sub_goal_;
   bool pos_set_, goal_set_, goal_reached_, ramp_up_done_, failed_, overshot_;
   bool params_ok;
   double epsilon_;
@@ -58,7 +69,7 @@ class TakeOffTracker : public kr_trackers_manager::Tracker {
   double take_off_h_, start_thrust_;
   double ground_z_, overshot_thrust_;
   bool active_;
-  ros::Time ramp_start_time_, traj_start_time_;
+  rclcpp::Time ramp_start_time_, traj_start_time_;
 
   Eigen::Vector3f start_pos_, goal_pos_, pos_;
   Eigen::Vector3f translation_dir_;
@@ -66,8 +77,9 @@ class TakeOffTracker : public kr_trackers_manager::Tracker {
   double kx_[3], kv_[3];
 
   // action lib
-  std::unique_ptr<actionlib::SimpleActionServer<action_trackers::TakeOffAction>>
-      as_;
+  rclcpp::Node::SharedPtr nh_;
+  rclcpp_action::Server<TakeOff>::SharedPtr as_;
+  std::shared_ptr<GoalHandleTakeOff> current_goal_handle_;
 };
 
 TakeOffTracker::TakeOffTracker(void)
@@ -96,46 +108,54 @@ void TakeOffTracker::halfGains(PositionCommand& cmd) {
   cmd.kx[2] *= 0.5;
 }
 
-void TakeOffTracker::Initialize(const ros::NodeHandle& nh) {
-  nh.param("gains/pos/x", kx_[0], 2.5);
-  nh.param("gains/pos/y", kx_[1], 2.5);
-  nh.param("gains/pos/z", kx_[2], 5.0);
-  nh.param("gains/vel/x", kv_[0], 2.2);
-  nh.param("gains/vel/y", kv_[1], 2.2);
-  nh.param("gains/vel/z", kv_[2], 4.0);
+void TakeOffTracker::Initialize(const rclcpp::Node::SharedPtr& parent_nh) {
+  nh_ = parent_nh;
+  nh_->declare_parameter("gains.pos.x", 2.5);
+  nh_->declare_parameter("gains.pos.y", 2.5);
+  nh_->declare_parameter("gains.pos.z", 5.0);
+  nh_->declare_parameter("gains.vel.x", 2.2);
+  nh_->declare_parameter("gains.vel.y", 2.2);
+  nh_->declare_parameter("gains.vel.z", 4.0);
+  nh_->get_parameter("gains.pos.x", kx_[0]);
+  nh_->get_parameter("gains.pos.y", kx_[1]);
+  nh_->get_parameter("gains.pos.z", kx_[2]);
+  nh_->get_parameter("gains.vel.x", kv_[0]);
+  nh_->get_parameter("gains.vel.y", kv_[1]);
+  nh_->get_parameter("gains.vel.z", kv_[2]);
 
-  ros::NodeHandle priv_nh(nh, "take_off_tracker");
-
-  priv_nh.param("min_thrust",
-                min_thrust_,
-                -5.0);  // see top of file, in m/s/s. This number should be
-                        // negative! If it is 0, the quad would be in hover
-  priv_nh.param("max_thrust", max_thrust_, 5.0);  // see top of file, in m/s/s
-  priv_nh.param("thrust_rate",
-                thrust_rate_,
-                10.0);  // rate of change of thrust in ramp up (m/s/s/s)
-  priv_nh.param("epsilon", epsilon_, 0.05);
+  // see top of file, in m/s/s. This number should be negative! If it is 0,
+  // the quad would be in hover.
+  nh_->declare_parameter("take_off_tracker.min_thrust", -5.0);
+  nh_->declare_parameter("take_off_tracker.max_thrust", 5.0);
+  nh_->declare_parameter("take_off_tracker.thrust_rate", 10.0);
+  nh_->declare_parameter("take_off_tracker.epsilon", 0.05);
+  nh_->get_parameter("take_off_tracker.min_thrust", min_thrust_);
+  nh_->get_parameter("take_off_tracker.max_thrust", max_thrust_);
+  nh_->get_parameter("take_off_tracker.thrust_rate", thrust_rate_);
+  nh_->get_parameter("take_off_tracker.epsilon", epsilon_);
 
   double min_takeoff = max_thrust_ * max_thrust_ * max_thrust_ / thrust_rate_ /
                            thrust_rate_ / 6.0 +
                        0.01;
-  ROS_INFO_STREAM("Minimum takeoff height should be " << min_takeoff);
+  RCLCPP_INFO_STREAM(nh_->get_logger(),
+                     "Minimum takeoff height should be " << min_takeoff);
 
-  as_.reset(new actionlib::SimpleActionServer<action_trackers::TakeOffAction>(
-      nh, "take_off", false));
-  // Register goal and preempt callbacks
-  as_->registerGoalCallback(boost::bind(&TakeOffTracker::goal_callback, this));
-
-  as_->start();
+  as_ = rclcpp_action::create_server<TakeOff>(
+      nh_,
+      "take_off",
+      std::bind(&TakeOffTracker::handleGoal, this, std::placeholders::_1,
+                std::placeholders::_2),
+      std::bind(&TakeOffTracker::handleCancel, this, std::placeholders::_1),
+      std::bind(&TakeOffTracker::handleAccepted, this, std::placeholders::_1));
 }
 
-bool TakeOffTracker::Activate(const PositionCommand::ConstPtr& cmd) {
-  ROS_INFO_STREAM("Activate with pos_set_ " << pos_set_);
+bool TakeOffTracker::Activate(const PositionCommand::ConstSharedPtr& cmd) {
+  RCLCPP_INFO_STREAM(nh_->get_logger(), "Activate with pos_set_ " << pos_set_);
 
   if (!params_ok) {
-    ROS_ERROR(
-        "Params have conflics!! Refusing to activate controller. Please read "
-        "take_off_tracker.cpp!");
+    RCLCPP_ERROR(nh_->get_logger(),
+                 "Params have conflics!! Refusing to activate controller. "
+                 "Please read take_off_tracker.cpp!");
     active_ = false;
   } else {
     active_ = true;
@@ -151,12 +171,17 @@ void TakeOffTracker::Deactivate(void) {
   failed_ = false;
 }
 // copies odom to position command
-void TakeOffTracker::odomTocmd(const nav_msgs::Odometry& msg,
+void TakeOffTracker::odomTocmd(const nav_msgs::msg::Odometry& msg,
                                PositionCommand& cmd) {
   cmd.position.x = msg.pose.pose.position.x;
   cmd.position.y = msg.pose.pose.position.y;
   cmd.position.z = msg.pose.pose.position.z;
-  cmd.yaw = tf::getYaw(msg.pose.pose.orientation);
+  tf2::Quaternion q(
+      msg.pose.pose.orientation.x, msg.pose.pose.orientation.y,
+      msg.pose.pose.orientation.z, msg.pose.pose.orientation.w);
+  double roll_tmp, pitch_tmp, yaw_tmp;
+  tf2::Matrix3x3(q).getRPY(roll_tmp, pitch_tmp, yaw_tmp);
+  cmd.yaw = yaw_tmp;
 
   // damp velocities
   cmd.velocity.x = 0;
@@ -174,17 +199,22 @@ void TakeOffTracker::odomTocmd(const nav_msgs::Odometry& msg,
   cmd.jerk.z = 0;
 }
 
-PositionCommand::ConstPtr TakeOffTracker::update(
-    const nav_msgs::Odometry::ConstPtr& msg) {
+PositionCommand::ConstSharedPtr TakeOffTracker::update(
+    const nav_msgs::msg::Odometry::ConstSharedPtr& msg) {
   pos_(0) = msg->pose.pose.position.x;
   pos_(1) = msg->pose.pose.position.y;
   pos_(2) = msg->pose.pose.position.z;
-  yaw_ = tf::getYaw(msg->pose.pose.orientation);
+  tf2::Quaternion q(
+      msg->pose.pose.orientation.x, msg->pose.pose.orientation.y,
+      msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
+  double roll_tmp, pitch_tmp, yaw_tmp;
+  tf2::Matrix3x3(q).getRPY(roll_tmp, pitch_tmp, yaw_tmp);
+  yaw_ = yaw_tmp;
   pos_set_ = true;
 
-  if (!active_) return PositionCommand::Ptr();
+  if (!active_) return PositionCommand::ConstSharedPtr();
 
-  PositionCommand::Ptr cmd(new PositionCommand);
+  auto cmd = std::make_shared<PositionCommand>();
   cmd->header.stamp = msg->header.stamp;
   cmd->header.frame_id = msg->header.frame_id;
   cmd->yaw = start_yaw_;
@@ -196,16 +226,18 @@ PositionCommand::ConstPtr TakeOffTracker::update(
     odomTocmd(*msg, *cmd);
     cmd->acceleration.z = min_thrust_;
     ground_z_ = cmd->position.z;
-    ramp_start_time_ = msg->header.stamp;
+    ramp_start_time_ = rclcpp::Time(msg->header.stamp);
     zeroGains(*cmd);
     return cmd;
   }
+
+  rclcpp::Time stamp(msg->header.stamp);
 
   // goal is set
   if (!ramp_up_done_) {
     odomTocmd(*msg, *cmd);
     halfGains(*cmd);
-    double ramp_dt = (msg->header.stamp - ramp_start_time_).toSec();
+    double ramp_dt = (stamp - ramp_start_time_).seconds();
     double accel;
     if (!failed_)
       accel = std::min(min_thrust_ + ramp_dt * thrust_rate_, max_thrust_);
@@ -217,30 +249,36 @@ PositionCommand::ConstPtr TakeOffTracker::update(
       if (accel == min_thrust_) {
         goal_set_ = false;
         failed_ = false;
-        if (as_->isActive()) as_->setAborted();
+        if (current_goal_handle_ && current_goal_handle_->is_active()) {
+          auto res = std::make_shared<TakeOff::Result>();
+          current_goal_handle_->abort(res);
+          current_goal_handle_.reset();
+        }
       }
     }
     cmd->acceleration.z = accel;
     if (accel == max_thrust_) {
       if (cmd->position.z - ground_z_ >= epsilon_) {
-        ROS_INFO_STREAM("Epsilon reached! Switching to min jerk trajectory");
+        RCLCPP_INFO_STREAM(nh_->get_logger(),
+                           "Epsilon reached! Switching to min jerk trajectory");
         ramp_up_done_ = true;
-        traj_start_time_ = msg->header.stamp;
+        traj_start_time_ = stamp;
         start_thrust_ = accel;
         start_pos_ = pos_;
         start_yaw_ = yaw_;
       } else {
-        ROS_ERROR("Max thrust reached, but takeoff not detected");
+        RCLCPP_ERROR(nh_->get_logger(),
+                     "Max thrust reached, but takeoff not detected");
         failed_ = true;
       }
     }
     if (cmd->position.z - ground_z_ > take_off_h_) {
-      ROS_WARN("Overshot during take off, slowing down");
+      RCLCPP_WARN(nh_->get_logger(), "Overshot during take off, slowing down");
       ramp_up_done_ = true;
       overshot_ = true;
       cmd->position.z = take_off_h_ + ground_z_;
       // Set current pose as final
-      ramp_start_time_ = msg->header.stamp;
+      ramp_start_time_ = stamp;
       start_pos_ = pos_;
       start_yaw_ = yaw_;
       overshot_thrust_ = cmd->acceleration.z;
@@ -250,7 +288,7 @@ PositionCommand::ConstPtr TakeOffTracker::update(
   }
 
   if (overshot_) {
-    double ramp_dt = (msg->header.stamp - ramp_start_time_).toSec();
+    double ramp_dt = (stamp - ramp_start_time_).seconds();
     double accel;
     if (overshot_thrust_ > 0)
       accel = std::max(overshot_thrust_ - ramp_dt * thrust_rate_, 0.0);
@@ -266,12 +304,14 @@ PositionCommand::ConstPtr TakeOffTracker::update(
 
     if (std::abs(accel) <= 1e-5) {
       goal_reached_ = true;
-      ROS_INFO_STREAM_THROTTLE(
-          5, "Take off complete! You are now free to switch trackers!");
-      if (as_->isActive()) {
-        action_trackers::TakeOffResult res;
-        res.at_goal = true;
-        as_->setSucceeded(res);
+      RCLCPP_INFO_STREAM_THROTTLE(
+          nh_->get_logger(), *nh_->get_clock(), 5000,
+          "Take off complete! You are now free to switch trackers!");
+      if (current_goal_handle_ && current_goal_handle_->is_active()) {
+        auto res = std::make_shared<TakeOff::Result>();
+        res->at_goal = true;
+        current_goal_handle_->succeed(res);
+        current_goal_handle_.reset();
       }
     }
     return cmd;
@@ -280,17 +320,19 @@ PositionCommand::ConstPtr TakeOffTracker::update(
   double a0 = start_thrust_;
   double pf = take_off_h_ + ground_z_ - start_pos_(2);
 
-  double dt = (msg->header.stamp - traj_start_time_).toSec();
+  double dt = (stamp - traj_start_time_).seconds();
   double T = std::sqrt(14 * pf / a0);
 
   if (dt > T) {
     goal_reached_ = true;
-    ROS_INFO_STREAM_THROTTLE(
-        5, "Take off complete! You are now free to switch trackers!");
-    if (as_->isActive()) {
-      action_trackers::TakeOffResult res;
-      res.at_goal = true;
-      as_->setSucceeded(res);
+    RCLCPP_INFO_STREAM_THROTTLE(
+        nh_->get_logger(), *nh_->get_clock(), 5000,
+        "Take off complete! You are now free to switch trackers!");
+    if (current_goal_handle_ && current_goal_handle_->is_active()) {
+      auto res = std::make_shared<TakeOff::Result>();
+      res->at_goal = true;
+      current_goal_handle_->succeed(res);
+      current_goal_handle_.reset();
     }
     dt = T;
   }
@@ -338,19 +380,36 @@ PositionCommand::ConstPtr TakeOffTracker::update(
   cmd->position.x = start_pos_(0), cmd->position.y = start_pos_(1);
   cmd->yaw = start_yaw_, cmd->yaw_dot = 0.0;
 
-  if (as_->isActive()) {
+  if (current_goal_handle_ && current_goal_handle_->is_active()) {
     // publish feedback
-    action_trackers::TakeOffFeedback feedback;
-    feedback.time_remaining = 0;
-    // feedback.time_remaining = T - dt;
-    as_->publishFeedback(feedback);
+    auto feedback = std::make_shared<TakeOff::Feedback>();
+    feedback->time_remaining = 0;
+    // feedback->time_remaining = T - dt;
+    current_goal_handle_->publish_feedback(feedback);
   }
 
   return cmd;
 }
 
-void TakeOffTracker::goal_callback() {
-  take_off_h_ = as_->acceptNewGoal()->height;
+rclcpp_action::GoalResponse TakeOffTracker::handleGoal(
+    const rclcpp_action::GoalUUID& uuid,
+    std::shared_ptr<const TakeOff::Goal> goal) {
+  (void)uuid;
+  (void)goal;
+  return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+}
+
+rclcpp_action::CancelResponse TakeOffTracker::handleCancel(
+    const std::shared_ptr<GoalHandleTakeOff> goal_handle) {
+  (void)goal_handle;
+  return rclcpp_action::CancelResponse::ACCEPT;
+}
+
+void TakeOffTracker::handleAccepted(
+    const std::shared_ptr<GoalHandleTakeOff> goal_handle) {
+  // equivalent to ROS1 goal_callback: triggered when a new goal is accepted.
+  current_goal_handle_ = goal_handle;
+  take_off_h_ = goal_handle->get_goal()->height;
 
   if (goal_set_ || goal_reached_ || ramp_up_done_) {
     return;
@@ -363,12 +422,13 @@ void TakeOffTracker::goal_callback() {
   ramp_up_done_ = false;
   overshot_ = false;
 
-  ROS_INFO_STREAM("Accepted goal takeoff of " << take_off_h_);
+  RCLCPP_INFO_STREAM(nh_->get_logger(),
+                     "Accepted goal takeoff of " << take_off_h_);
 }
 
 uint8_t TakeOffTracker::status() const {
   return goal_reached_ ? TrackerStatus::SUCCEEDED : TrackerStatus::ACTIVE;
 }
 
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(TakeOffTracker, kr_trackers_manager::Tracker);
+#include <pluginlib/class_list_macros.hpp>
+PLUGINLIB_EXPORT_CLASS(TakeOffTracker, kr_trackers_manager::Tracker)

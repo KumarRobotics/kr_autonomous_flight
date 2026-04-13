@@ -1,43 +1,50 @@
-#include <action_trackers/LandAction.h>
-#include <actionlib/server/simple_action_server.h>
-#include <kr_mav_msgs/PositionCommand.h>
-#include <kr_tracker_msgs/TrackerStatus.h>
+#include <action_trackers/action/land.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
+#include <kr_mav_msgs/msg/position_command.hpp>
+#include <kr_tracker_msgs/msg/tracker_status.hpp>
 #include <kr_trackers_manager/Tracker.h>
-#include <ros/ros.h>
-#include <tf/transform_datatypes.h>
+#include <tf2/utils.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include <Eigen/Geometry>
+#include <memory>
+#include <string>
 
 /* This tracker should land no matter what height or mass offset
  *
  */
 
-using kr_mav_msgs::PositionCommand;
+using kr_mav_msgs::msg::PositionCommand;
 
 class LandTracker : public kr_trackers_manager::Tracker {
- private:
-  double done_epsilon_;  // will stop when the position command is _ m below the
-                         // odom
-  double land_vel_;  // landing velocity. With no ground effect, will hit the
-                     // ground with this v
-  double land_acc_;  // rate at which we reach the landing vel
-
  public:
+  using Land = action_trackers::action::Land;
+  using GoalHandleLand = rclcpp_action::ServerGoalHandle<Land>;
+
   LandTracker() = default;
 
-  void Initialize(const ros::NodeHandle &nh) override;
-  bool Activate(const PositionCommand::ConstPtr &cmd) override;
+  void Initialize(const rclcpp::Node::SharedPtr &parent_nh) override;
+  bool Activate(const PositionCommand::ConstSharedPtr &cmd) override;
   void Deactivate() override;
 
-  PositionCommand::ConstPtr update(
-      const nav_msgs::Odometry::ConstPtr &msg) override;
+  PositionCommand::ConstSharedPtr update(
+      const nav_msgs::msg::Odometry::ConstSharedPtr &msg) override;
   uint8_t status() const override;
 
  private:
-  void goal_callback();
+  rclcpp_action::GoalResponse handleGoal(
+      const rclcpp_action::GoalUUID &uuid,
+      std::shared_ptr<const Land::Goal> goal);
+  rclcpp_action::CancelResponse handleCancel(
+      const std::shared_ptr<GoalHandleLand> goal_handle);
+  void handleAccepted(const std::shared_ptr<GoalHandleLand> goal_handle);
+
   // action lib
-  std::unique_ptr<actionlib::SimpleActionServer<action_trackers::LandAction>>
-      as_;
+  rclcpp::Node::SharedPtr nh_;
+  rclcpp_action::Server<Land>::SharedPtr as_;
+  // active goal handle (only one at a time is tracked)
+  std::shared_ptr<GoalHandleLand> current_goal_handle_;
 
   double kx_[3], kv_[3];
   Eigen::Vector3f pos_, cmd_pos_;
@@ -48,49 +55,67 @@ class LandTracker : public kr_trackers_manager::Tracker {
   bool active_{false};
   bool done_landing_{false};
   bool start_landing_{false};
-  ros::Time old_t;
+  rclcpp::Time old_t;
+
+  double done_epsilon_;  // will stop when the position command is _ m below the
+                         // odom
+  double land_vel_;  // landing velocity. With no ground effect, will hit the
+                     // ground with this v
+  double land_acc_;  // rate at which we reach the landing vel
 };
 
-void LandTracker::Initialize(const ros::NodeHandle &nh) {
-  nh.param("gains/pos/x", kx_[0], 2.5);
-  nh.param("gains/pos/y", kx_[1], 2.5);
-  nh.param("gains/pos/z", kx_[2], 5.0);
-  nh.param("gains/vel/x", kv_[0], 2.2);
-  nh.param("gains/vel/y", kv_[1], 2.2);
-  nh.param("gains/vel/z", kv_[2], 4.0);
+void LandTracker::Initialize(const rclcpp::Node::SharedPtr &parent_nh) {
+  nh_ = parent_nh;
+  nh_->declare_parameter("gains.pos.x", 2.5);
+  nh_->declare_parameter("gains.pos.y", 2.5);
+  nh_->declare_parameter("gains.pos.z", 5.0);
+  nh_->declare_parameter("gains.vel.x", 2.2);
+  nh_->declare_parameter("gains.vel.y", 2.2);
+  nh_->declare_parameter("gains.vel.z", 4.0);
+  nh_->get_parameter("gains.pos.x", kx_[0]);
+  nh_->get_parameter("gains.pos.y", kx_[1]);
+  nh_->get_parameter("gains.pos.z", kx_[2]);
+  nh_->get_parameter("gains.vel.x", kv_[0]);
+  nh_->get_parameter("gains.vel.y", kv_[1]);
+  nh_->get_parameter("gains.vel.z", kv_[2]);
   kx_[0] *= 0.1;
   kx_[1] *= 0.1;
   kx_[2] *= 0.1;
 
-  ros::NodeHandle priv_nh(nh, "land_tracker");
-  priv_nh.param("epsilon", done_epsilon_, 2.0);  // see top of file
-  priv_nh.param("vel", land_vel_, 1.0);          // see top of file
-  priv_nh.param("acc", land_acc_, 2.0);          // see top of file
+  nh_->declare_parameter("land_tracker.epsilon", 2.0);
+  nh_->declare_parameter("land_tracker.vel", 1.0);
+  nh_->declare_parameter("land_tracker.acc", 2.0);
+  nh_->get_parameter("land_tracker.epsilon", done_epsilon_);
+  nh_->get_parameter("land_tracker.vel", land_vel_);
+  nh_->get_parameter("land_tracker.acc", land_acc_);
 
   if (kx_[2] * done_epsilon_ > 9.4) {
     done_epsilon_ = 9.4 / kx_[2];
-    ROS_WARN_STREAM("Done Epsilon too large setting to " << done_epsilon_);
+    RCLCPP_WARN_STREAM(nh_->get_logger(),
+                       "Done Epsilon too large setting to " << done_epsilon_);
   }
 
-  as_.reset(new actionlib::SimpleActionServer<action_trackers::LandAction>(
-      nh, "land", false));
-  // Register goal and preempt callbacks
-  as_->registerGoalCallback(boost::bind(&LandTracker::goal_callback, this));
-
-  as_->start();
+  as_ = rclcpp_action::create_server<Land>(
+      nh_,
+      "land",
+      std::bind(&LandTracker::handleGoal, this, std::placeholders::_1,
+                std::placeholders::_2),
+      std::bind(&LandTracker::handleCancel, this, std::placeholders::_1),
+      std::bind(&LandTracker::handleAccepted, this, std::placeholders::_1));
 }
+
 void LandTracker::Deactivate() { active_ = false; }
 
-bool LandTracker::Activate(const PositionCommand::ConstPtr &cmd) {
+bool LandTracker::Activate(const PositionCommand::ConstSharedPtr &cmd) {
   if (!pos_set_) {
-    ROS_ERROR("Do not have odom");
+    RCLCPP_ERROR(nh_->get_logger(), "Do not have odom");
     return false;
   }
   done_landing_ = false;
   start_landing_ = false;
   vel_z = 0;
 
-  if (cmd == NULL) {
+  if (cmd == nullptr) {
     cmd_pos_ = pos_;
   } else {
     cmd_pos_ << cmd->position.x, cmd->position.y, cmd->position.z;
@@ -100,32 +125,55 @@ bool LandTracker::Activate(const PositionCommand::ConstPtr &cmd) {
   return true;
 }
 
-void LandTracker::goal_callback() {
-  as_->acceptNewGoal();
+rclcpp_action::GoalResponse LandTracker::handleGoal(
+    const rclcpp_action::GoalUUID &uuid,
+    std::shared_ptr<const Land::Goal> goal) {
+  (void)uuid;
+  (void)goal;
+  return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+}
+
+rclcpp_action::CancelResponse LandTracker::handleCancel(
+    const std::shared_ptr<GoalHandleLand> goal_handle) {
+  (void)goal_handle;
+  return rclcpp_action::CancelResponse::ACCEPT;
+}
+
+void LandTracker::handleAccepted(
+    const std::shared_ptr<GoalHandleLand> goal_handle) {
+  // equivalent to the old goal_callback: triggered when a new goal arrives.
+  current_goal_handle_ = goal_handle;
   start_yaw_ = yaw_;
 
   if (!active_) {
-    action_trackers::LandResult res;
-    res.success = false;
-    as_->setSucceeded(res);
+    auto res = std::make_shared<Land::Result>();
+    res->success = false;
+    goal_handle->succeed(res);
+    current_goal_handle_.reset();
     return;
   }
   start_landing_ = true;
 }
 
-PositionCommand::ConstPtr LandTracker::update(
-    const nav_msgs::Odometry::ConstPtr &msg) {
-  float dt = (msg->header.stamp - old_t).toSec();
-  old_t = msg->header.stamp;
+PositionCommand::ConstSharedPtr LandTracker::update(
+    const nav_msgs::msg::Odometry::ConstSharedPtr &msg) {
+  rclcpp::Time stamp(msg->header.stamp);
+  float dt = (stamp - old_t).seconds();
+  old_t = stamp;
 
   pos_(0) = msg->pose.pose.position.x;
   pos_(1) = msg->pose.pose.position.y;
   pos_(2) = msg->pose.pose.position.z;
-  yaw_ = tf::getYaw(msg->pose.pose.orientation);
+  tf2::Quaternion q(
+      msg->pose.pose.orientation.x, msg->pose.pose.orientation.y,
+      msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
+  double roll_tmp, pitch_tmp, yaw_tmp;
+  tf2::Matrix3x3(q).getRPY(roll_tmp, pitch_tmp, yaw_tmp);
+  yaw_ = static_cast<float>(yaw_tmp);
   pos_set_ = true;
-  if (!active_) return PositionCommand::Ptr();
+  if (!active_) return PositionCommand::ConstSharedPtr();
 
-  PositionCommand::Ptr cmd(new PositionCommand);
+  auto cmd = std::make_shared<PositionCommand>();
   cmd->header.stamp = msg->header.stamp;
   cmd->header.frame_id = msg->header.frame_id;
   cmd->yaw = start_yaw_;
@@ -143,14 +191,16 @@ PositionCommand::ConstPtr LandTracker::update(
 
     // check epsilon
     if (cmd_pos_(2) + done_epsilon_ < pos_(2)) {
-      ROS_INFO("Finished Landing");
+      RCLCPP_INFO(nh_->get_logger(), "Finished Landing");
       done_landing_ = true;
     }
   }
-  if (as_->isActive() && done_landing_) {
-    action_trackers::LandResult res;
-    res.success = true;
-    as_->setSucceeded(res);
+  if (current_goal_handle_ && current_goal_handle_->is_active() &&
+      done_landing_) {
+    auto res = std::make_shared<Land::Result>();
+    res->success = true;
+    current_goal_handle_->succeed(res);
+    current_goal_handle_.reset();
   }
 
   cmd->position.x = cmd_pos_(0), cmd->position.y = cmd_pos_(1),
@@ -161,9 +211,9 @@ PositionCommand::ConstPtr LandTracker::update(
 }
 
 uint8_t LandTracker::status() const {
-  return active_ ? kr_tracker_msgs::TrackerStatus::ACTIVE
-                 : kr_tracker_msgs::TrackerStatus::SUCCEEDED;
+  return active_ ? kr_tracker_msgs::msg::TrackerStatus::ACTIVE
+                 : kr_tracker_msgs::msg::TrackerStatus::SUCCEEDED;
 }
 
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(LandTracker, kr_trackers_manager::Tracker);
+#include <pluginlib/class_list_macros.hpp>
+PLUGINLIB_EXPORT_CLASS(LandTracker, kr_trackers_manager::Tracker)

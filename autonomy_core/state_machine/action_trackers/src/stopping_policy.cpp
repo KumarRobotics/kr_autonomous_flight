@@ -1,15 +1,16 @@
-#include <actionlib/server/simple_action_server.h>
-#include <kr_tracker_msgs/LineTrackerGoal.h>
-#include <kr_tracker_msgs/TrackerStatus.h>
+#include <rclcpp/rclcpp.hpp>
+#include <kr_tracker_msgs/msg/line_tracker_goal.hpp>
+#include <kr_tracker_msgs/msg/tracker_status.hpp>
 #include <kr_trackers_manager/Tracker.h>
-#include <ros/ros.h>
-#include <tf/transform_datatypes.h>
+#include <tf2/utils.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include <Eigen/Geometry>
 #include <cmath>
+#include <memory>
 
-using kr_mav_msgs::PositionCommand;
-using kr_tracker_msgs::TrackerStatus;
+using kr_mav_msgs::msg::PositionCommand;
+using kr_tracker_msgs::msg::TrackerStatus;
 
 /*
  * Constant jerk stopping policy
@@ -18,15 +19,16 @@ using kr_tracker_msgs::TrackerStatus;
 class StoppingPolicy : public kr_trackers_manager::Tracker {
  public:
   StoppingPolicy() = default;
-  void Initialize(const ros::NodeHandle& nh) override;
-  bool Activate(const PositionCommand::ConstPtr& cmd) override;
+  void Initialize(const rclcpp::Node::SharedPtr& parent_nh) override;
+  bool Activate(const PositionCommand::ConstSharedPtr& cmd) override;
   void Deactivate() override;
 
-  PositionCommand::ConstPtr update(
-      const nav_msgs::Odometry::ConstPtr& msg) override;
+  PositionCommand::ConstSharedPtr update(
+      const nav_msgs::msg::Odometry::ConstSharedPtr& msg) override;
   uint8_t status() const override;
 
  private:
+  rclcpp::Node::SharedPtr nh_;
   bool active_{false};
   bool odom_first_call_{true};
   double j_xy_des_, a_xy_des_, j_z_des_, a_z_des_, a_yaw_des_;
@@ -35,21 +37,25 @@ class StoppingPolicy : public kr_trackers_manager::Tracker {
   Eigen::Vector4d cmd_pos_, cmd_vel_, cmd_acc_, cmd_jrk_;
   Eigen::VectorXd p0_, v0_, a0_, j0_, a0_dir_xyz_;
   double v0_dir_yaw_;
-  ros::Time t0_;
+  rclcpp::Time t0_;
 };
 
-void StoppingPolicy::Initialize(const ros::NodeHandle& nh) {
-  ros::NodeHandle priv_nh(nh, "stopping_policy");
-
-  priv_nh.param("acc_xy_des", a_xy_des_, 10.0);
-  priv_nh.param("jerk_xy_des", j_xy_des_, 10.0);
-  priv_nh.param("acc_z_des", a_z_des_, 5.0);
-  priv_nh.param("jerk_z_des", j_z_des_, 5.0);
-  priv_nh.param("acc_yaw_des", a_yaw_des_, 0.1);
+void StoppingPolicy::Initialize(const rclcpp::Node::SharedPtr& parent_nh) {
+  nh_ = parent_nh;
+  nh_->declare_parameter("stopping_policy.acc_xy_des", 10.0);
+  nh_->declare_parameter("stopping_policy.jerk_xy_des", 10.0);
+  nh_->declare_parameter("stopping_policy.acc_z_des", 5.0);
+  nh_->declare_parameter("stopping_policy.jerk_z_des", 5.0);
+  nh_->declare_parameter("stopping_policy.acc_yaw_des", 0.1);
+  nh_->get_parameter("stopping_policy.acc_xy_des", a_xy_des_);
+  nh_->get_parameter("stopping_policy.jerk_xy_des", j_xy_des_);
+  nh_->get_parameter("stopping_policy.acc_z_des", a_z_des_);
+  nh_->get_parameter("stopping_policy.jerk_z_des", j_z_des_);
+  nh_->get_parameter("stopping_policy.acc_yaw_des", a_yaw_des_);
 }
 
-bool StoppingPolicy::Activate(const PositionCommand::ConstPtr& cmd) {
-  if (cmd != NULL) {
+bool StoppingPolicy::Activate(const PositionCommand::ConstSharedPtr& cmd) {
+  if (cmd != nullptr) {
     prev_duration_ = 0;
     p0_ = Eigen::Matrix<double, Eigen::Dynamic, 1>::Zero(4, 1);
     v0_ = Eigen::Matrix<double, Eigen::Dynamic, 1>::Zero(4, 1);
@@ -80,16 +86,17 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr& cmd) {
       }
 
       if (std::abs(a0_(axis)) > a_des_abs) {
-        ROS_WARN_STREAM(
+        RCLCPP_WARN_STREAM(
+            nh_->get_logger(),
             "[StoppingPolicy:] initial acceleration is "
-            << std::abs(a0_(axis))
-            << ", which is larger than stopping policy max acceleration of "
-            << a_des_abs
-            << ". This is not normal since the stopping policy max "
-               "acceleration "
-               "should be no smaller than acceleration along the trajectory. "
-               "Either plan less aggressive trajectories or increase stopping "
-               "policy max acceleration!");
+                << std::abs(a0_(axis))
+                << ", which is larger than stopping policy max acceleration of "
+                << a_des_abs
+                << ". This is not normal since the stopping policy max "
+                   "acceleration "
+                   "should be no smaller than acceleration along the trajectory. "
+                   "Either plan less aggressive trajectories or increase stopping "
+                   "policy max acceleration!");
         a0_(axis) = std::clamp(a0_(axis), -a_des_abs, a_des_abs);
       }
     }
@@ -101,17 +108,17 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr& cmd) {
 
     j0_ << cmd->jerk.x, cmd->jerk.y, cmd->jerk.z, 0.0;
     cmd_jrk_ = j0_;
-    // t0_ = cmd->header.stamp;
     active_ = true;
-    ROS_WARN("Stopping policy activated!");
+    RCLCPP_WARN(nh_->get_logger(), "Stopping policy activated!");
     // IMPORTANT: resetting odom_first_call_ flag to make sure duration starts
     // from 0
     odom_first_call_ = true;
-    ROS_WARN_STREAM("vx:" << cmd->velocity.x << "vy:" << cmd->velocity.y
-                          << "vz:" << cmd->velocity.z);
+    RCLCPP_WARN_STREAM(nh_->get_logger(),
+                       "vx:" << cmd->velocity.x << "vy:" << cmd->velocity.y
+                             << "vz:" << cmd->velocity.z);
     return true;
   } else {
-    ROS_ERROR("Need starting command to stop");
+    RCLCPP_ERROR(nh_->get_logger(), "Need starting command to stop");
   }
 
   return false;
@@ -119,30 +126,32 @@ bool StoppingPolicy::Activate(const PositionCommand::ConstPtr& cmd) {
 
 void StoppingPolicy::Deactivate() {
   active_ = false;
-  ROS_INFO("Stopping policy deactivated");
+  RCLCPP_INFO(nh_->get_logger(), "Stopping policy deactivated");
 }
 
-PositionCommand::ConstPtr StoppingPolicy::update(
-    const nav_msgs::Odometry::ConstPtr& msg) {
+PositionCommand::ConstSharedPtr StoppingPolicy::update(
+    const nav_msgs::msg::Odometry::ConstSharedPtr& msg) {
   // this function is called whenever there's odometry msg, even if stopping
   // policy is deactivated
   if (!active_) {
     // return empty command, otherwise it will conflict with existing position
     // commands
-    return PositionCommand::Ptr();
+    return PositionCommand::ConstSharedPtr();
   }
 
-  ros::Time stamp = msg->header.stamp;
+  rclcpp::Time stamp(msg->header.stamp);
   if (odom_first_call_) {
-    ROS_INFO_STREAM("This is stopping first call, duration is reset as 0!");
+    RCLCPP_INFO_STREAM(
+        nh_->get_logger(),
+        "This is stopping first call, duration is reset as 0!");
     t0_ = stamp;
     odom_first_call_ = false;
   }
 
-  double duration = (stamp - t0_).toSec();
+  double duration = (stamp - t0_).seconds();
   if (duration >= 2.0) {
-    ROS_INFO_THROTTLE(
-        1,
+    RCLCPP_INFO_THROTTLE(
+        nh_->get_logger(), *nh_->get_clock(), 1000,
         "It has been %f seconds since the triggering of stopping policy.",
         duration);
   }
@@ -190,12 +199,12 @@ PositionCommand::ConstPtr StoppingPolicy::update(
 
     // 3 possible cases:
     if (v0_norm < 0.2) {
-      ROS_INFO_STREAM_THROTTLE(5,
-                               "magnitude of initial velocity along axis "
-                                   << axis
-                                   << " is very small, which is: " << v0_norm
-                                   << " m/s, stopping policy directly setting "
-                                      "velocity along this axis to 0");
+      RCLCPP_INFO_STREAM_THROTTLE(
+          nh_->get_logger(), *nh_->get_clock(), 5000,
+          "magnitude of initial velocity along axis "
+              << axis << " is very small, which is: " << v0_norm
+              << " m/s, stopping policy directly setting "
+                 "velocity along this axis to 0");
       t_phase1 = 0;
       t_phase2 = 0;
       t_phase3 = 0;
@@ -207,13 +216,14 @@ PositionCommand::ConstPtr StoppingPolicy::update(
       t_phase2 = 0;  // no constant acceleration phase in this case
       // update j_des so that the robot stops exactly when acc is is decreased
       // from a0 to 0
-      ROS_WARN_STREAM_THROTTLE(
-          1,
+      RCLCPP_WARN_STREAM_THROTTLE(
+          nh_->get_logger(), *nh_->get_clock(), 1000,
           "[Stopping policy:] Special case where phase 3 can completely stop "
           "the robot, original jerk is: "
               << j_des_abs);
       j_des_abs = pow(a0, 2) / (2 * v0_norm);
-      ROS_WARN_STREAM("jerk is increased to: " << j_des_abs);
+      RCLCPP_WARN_STREAM(nh_->get_logger(),
+                         "jerk is increased to: " << j_des_abs);
       t_phase3 = std::abs(0 - a0) / j_des_abs;  // from a0 to 0
     } else if (total_deacc_abs > v0_norm) {
       // Case 2: a_des_abs will not be reached, using geometric method to
@@ -236,16 +246,19 @@ PositionCommand::ConstPtr StoppingPolicy::update(
 
     // check: all durations should be non-negative
     if (t_phase1 < 0 || t_phase2 < 0 || t_phase3 < 0) {
-      ROS_ERROR_STREAM(
+      RCLCPP_ERROR_STREAM(
+          nh_->get_logger(),
           "[StoppingPolicy:] time for one of the phases is negative, "
           "t_phase1: "
-          << t_phase1 << " t_phase2: " << t_phase2 << " t_phase3:" << t_phase3
-          << " this is not correct!");
+              << t_phase1 << " t_phase2: " << t_phase2
+              << " t_phase3:" << t_phase3 << " this is not correct!");
     }
     if (duration < 0) {
-      ROS_ERROR_STREAM("[StoppingPolicy:] duration is negative:"
-                       << duration << ", this is not correct!");
-      ROS_ERROR_STREAM(
+      RCLCPP_ERROR_STREAM(nh_->get_logger(),
+                          "[StoppingPolicy:] duration is negative:"
+                              << duration << ", this is not correct!");
+      RCLCPP_ERROR_STREAM(
+          nh_->get_logger(),
           "[StoppingPolicy:] duration is negative, investigate into this!!!");
     }
 
@@ -299,13 +312,14 @@ PositionCommand::ConstPtr StoppingPolicy::update(
   }
 
   if ((duration >= t_phase1 + t_phase2 + t_phase3) && (duration >= t_yaw)) {
-    ROS_INFO_THROTTLE(5.0,
-                      "Stopping policy done! Keep publishing position command "
-                      "to hover the quad...");
+    RCLCPP_INFO_THROTTLE(
+        nh_->get_logger(), *nh_->get_clock(), 5000,
+        "Stopping policy done! Keep publishing position command "
+        "to hover the quad...");
   }
 
-  PositionCommand::Ptr cmd(new PositionCommand);
-  cmd->header.stamp = stamp;
+  auto cmd = std::make_shared<PositionCommand>();
+  cmd->header.stamp = msg->header.stamp;
   cmd->header.frame_id = msg->header.frame_id;
 
   cmd->position.x = cmd_pos_(0), cmd->position.y = cmd_pos_(1),
@@ -325,5 +339,5 @@ uint8_t StoppingPolicy::status() const {
   return active_ ? TrackerStatus::ACTIVE : TrackerStatus::SUCCEEDED;
 }
 
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(StoppingPolicy, kr_trackers_manager::Tracker);
+#include <pluginlib/class_list_macros.hpp>
+PLUGINLIB_EXPORT_CLASS(StoppingPolicy, kr_trackers_manager::Tracker)

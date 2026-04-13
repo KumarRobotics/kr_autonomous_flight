@@ -3,8 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import geometry_msgs.msg as GM
-import tf
-import rospy
+import tf_transformations
 import numpy
 
 
@@ -26,20 +25,35 @@ def odom_to_pose(msg):
 
 
 def transform_inverse(msg):
+    # Inverts a TransformStamped by computing the 4x4 matrix inverse.
+    # The previous implementation used tf.Transformer which is ROS1-only.
     transform = GM.TransformStamped()
     transform.header = msg.header
-    t = tf.Transformer(True, rospy.Duration.from_sec(0.1))
-    msg.header.frame_id = "a"
-    msg.child_frame_id = "b"
-    t.setTransform(msg)
-    (trans, rot) = t.lookupTransform("b", "a", rospy.Time(0))
-    transform.transform.translation.x = trans[0]
-    transform.transform.translation.y = trans[1]
-    transform.transform.translation.z = trans[2]
-    transform.transform.rotation.x = rot[0]
-    transform.transform.rotation.y = rot[1]
-    transform.transform.rotation.z = rot[2]
-    transform.transform.rotation.w = rot[3]
+    trans = (
+        msg.transform.translation.x,
+        msg.transform.translation.y,
+        msg.transform.translation.z,
+    )
+    rot = (
+        msg.transform.rotation.x,
+        msg.transform.rotation.y,
+        msg.transform.rotation.z,
+        msg.transform.rotation.w,
+    )
+    mat = tf_transformations.concatenate_matrices(
+        tf_transformations.translation_matrix(trans),
+        tf_transformations.quaternion_matrix(rot),
+    )
+    inv_mat = tf_transformations.inverse_matrix(mat)
+    inv_trans = tf_transformations.translation_from_matrix(inv_mat)
+    inv_rot = tf_transformations.quaternion_from_matrix(inv_mat)
+    transform.transform.translation.x = inv_trans[0]
+    transform.transform.translation.y = inv_trans[1]
+    transform.transform.translation.z = inv_trans[2]
+    transform.transform.rotation.x = inv_rot[0]
+    transform.transform.rotation.y = inv_rot[1]
+    transform.transform.rotation.z = inv_rot[2]
+    transform.transform.rotation.w = inv_rot[3]
     return transform
 
 

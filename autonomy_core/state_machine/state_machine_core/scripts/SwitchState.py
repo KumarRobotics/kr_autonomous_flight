@@ -1,15 +1,15 @@
+# TODO: smach is ROS1-only. This file will not work under ROS2 until the smach
+# ecosystem is ported (smach_ros2 or yasmin). The rospy -> rclpy translation
+# below is best-effort; the smach state machine itself needs a separate migration.
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import threading
 
-import roslib
 import smach
-import rospy
 import nav_msgs.msg as NM
-
-roslib.load_manifest("smach_ros")
 
 __all__ = ["SwitchState"]
 
@@ -44,10 +44,21 @@ class SwitchState(smach.State):
 
         self._trigger_event.clear()
 
-        self._sub = rospy.Subscriber(self._topic, self._topic_type, self._cb, callback_args=ud)
+        # quad_monitor is expected to carry a reference to the rclpy Node (set by
+        # main_state_machine) so that subscriptions can be created here.
+        node = getattr(self.quad_monitor, "node", None)
+        if node is None:
+            # Fallback: the smach code expects a ROS context; warn and stall.
+            self._trigger_event.wait()
+            return "invalid"
+
+        self._sub = node.create_subscription(
+            self._topic_type, self._topic,
+            lambda msg: self._cb(msg, ud), 10
+        )
 
         self._trigger_event.wait()
-        self._sub.unregister()
+        node.destroy_subscription(self._sub)
 
         if self.preempt_requested():
             self.service_preempt()
@@ -70,7 +81,9 @@ class SwitchState(smach.State):
                     self.quad_monitor.trajectory = msg.traj
                 if type(msg.path_data) == type(NM.Path()):
                     if len(msg.path_data.poses) >= 2:
-                        rospy.logerr("Setting path")
+                        node = getattr(self.quad_monitor, "node", None)
+                        if node is not None:
+                            node.get_logger().error("Setting path")
                         self.quad_monitor.pose_goal = msg.path_data.poses[1].pose
 
         self._trigger_event.set()

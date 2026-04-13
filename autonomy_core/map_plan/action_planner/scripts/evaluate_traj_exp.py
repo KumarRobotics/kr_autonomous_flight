@@ -1,21 +1,24 @@
 #!/usr/bin/env python3
-import rospy
+import time
+import rclpy
+from rclpy.node import Node
+from rclpy.action import ActionClient
+from rclpy.duration import Duration
 # from kr_planning_msgs.msg import SplineTrajectory
-from kr_planning_msgs.msg import PlanTwoPointAction, PlanTwoPointGoal, VoxelMap
+from kr_planning_msgs.action import PlanTwoPoint
+from kr_planning_msgs.msg import VoxelMap
 from kr_mav_msgs.msg import PositionCommand, OutputData
-from kr_tracker_msgs.msg import PolyTrackerGoal, PolyTrackerAction, LineTrackerAction, LineTrackerGoal
+from kr_tracker_msgs.action import PolyTracker, LineTracker
 import numpy as np
 # import matplotlib.pyplot as plt
 import pandas as pd
 from copy import deepcopy
 from geometry_msgs.msg import Point
 from visualization_msgs.msg import MarkerArray, Marker
-from actionlib import SimpleActionClient
 from std_srvs.srv import Empty, Trigger
 from kr_tracker_msgs.srv import Transition
 from nav_msgs.msg import Odometry
-import random 
-import actionlib
+import random
 # from std_msgs.msg import Bool
 from std_msgs.msg import Int32
 from tqdm import tqdm
@@ -70,11 +73,12 @@ def evaluate(msg, t, deriv_num):
 
 
 class Evaluater:
-    def __init__(self):
+    def __init__(self, node):
+        self.node = node
         # print("reading "+filename)
         # self.start_goals = pd.read_csv(filename)
-        # self.path_pub = rospy.Publisher('/local_plan_server0/plan_local_trajectory/goal', PlanTwoPointActionGoal, queue_size=10, latch=True)
-        # self.client = SimpleActionClient('/local_plan_server0/plan_local_trajectory', PlanTwoPointAction)
+        # self.path_pub = node.create_publisher(PlanTwoPointActionGoal, '/local_plan_server0/plan_local_trajectory/goal', 10)
+        # self.client = ActionClient(node, PlanTwoPoint, '/local_plan_server0/plan_local_trajectory')
         self.client_list = []
         self.client_name_list = []
         self.client_name_front_list = []
@@ -83,53 +87,67 @@ class Evaluater:
         self.num_planners = 10
         self.num_trials = 3
         for i in range(self.num_planners): #  0, 1, 2, ... not gonna include the one with no suffix
-            self.client_list.append(SimpleActionClient('/local_plan_server'+str(i)+'/plan_local_trajectory', PlanTwoPointAction))
-             # self.client2 = SimpleActionClient('/local_plan_server2/plan_local_trajectory', PlanTwoPointAction)
-        # self.client3 = SimpleActionClient('/local_plan_server3/plan_local_trajectory', PlanTwoPointAction)
+            self.client_list.append(ActionClient(node, PlanTwoPoint, '/local_plan_server'+str(i)+'/plan_local_trajectory'))
+             # self.client2 = ActionClient(node, PlanTwoPoint, '/local_plan_server2/plan_local_trajectory')
+        # self.client3 = ActionClient(node, PlanTwoPoint, '/local_plan_server3/plan_local_trajectory')
 
-        self.start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10, latch=True)
-
-
-        self.mav_name    = rospy.get_param('/local_plan_server0/mav_name')
-        self.map_type    = rospy.get_param('/local_plan_server0/map_name')
-        self.mav_radius  = rospy.get_param('/local_plan_server0/mav_radius')
+        self.start_and_goal_pub = node.create_publisher(MarkerArray, '/start_and_goal', 10)
 
 
-        self.wait_for_things = rospy.get_param('/local_plan_server0/trajectory_planner/use_tracker_client')
-        self.map_read_mode = rospy.get_param('/' + self.map_type + "/map/mode")
+        node.declare_parameter('/local_plan_server0/mav_name', '')
+        node.declare_parameter('/local_plan_server0/map_name', '')
+        node.declare_parameter('/local_plan_server0/mav_radius', 0.0)
+        node.declare_parameter('/local_plan_server0/trajectory_planner/use_tracker_client', False)
+        self.mav_name    = node.get_parameter('/local_plan_server0/mav_name').value
+        self.map_type    = node.get_parameter('/local_plan_server0/map_name').value
+        self.mav_radius  = node.get_parameter('/local_plan_server0/mav_radius').value
 
-        self.fix_start_end_location = (self.map_type == "read_grid_map" and self.map_read_mode == 1) # or structure_map 
-        
-        self.map_origin_x = rospy.get_param('/' + self.map_type + "/map/x_origin")
-        self.map_origin_y = rospy.get_param('/' + self.map_type + "/map/y_origin")
-        self.map_origin_z = rospy.get_param('/' + self.map_type + "/map/z_origin")
 
-        self.map_range_x = rospy.get_param('/' + self.map_type + "/map/x_size")
-        self.map_range_y = rospy.get_param('/' + self.map_type + "/map/y_size")
-        self.map_range_z = rospy.get_param('/' + self.map_type + "/map/z_size")
+        self.wait_for_things = node.get_parameter('/local_plan_server0/trajectory_planner/use_tracker_client').value
+        node.declare_parameter('/' + self.map_type + "/map/mode", 0)
+        self.map_read_mode = node.get_parameter('/' + self.map_type + "/map/mode").value
 
-        self.inflate_radius = rospy.get_param('/' + self.map_type + "/map/inflate_radius")
-        
-        self.set_state_pub      = rospy.Publisher( '/' + self.mav_name + '/set_state', PositionCommand, queue_size=1, latch=False)
-        # self.client_tracker = actionlib.SimpleActionClient('/quadrotor/trackers_manager/poly_tracker/PolyTracker', PolyTrackerAction)
-        self.client_line_tracker = actionlib.SimpleActionClient('/' + self.mav_name + '/trackers_manager/line_tracker_min_jerk/LineTracker', LineTrackerAction)
-        rospy.Subscriber("global_cloud", PointCloud2, self.point_clouds_callback) # this needs to be ready early
+        self.fix_start_end_location = (self.map_type == "read_grid_map" and self.map_read_mode == 1) # or structure_map
 
-        # self.change_map_pub     = rospy.Publisher('/' + self.map_name + '/change_map', Int32, queue_size=1)
-        self.change_map_pub  = rospy.ServiceProxy('/' + self.map_type + '/change_map', changeMap)
+        node.declare_parameter('/' + self.map_type + "/map/x_origin", 0.0)
+        node.declare_parameter('/' + self.map_type + "/map/y_origin", 0.0)
+        node.declare_parameter('/' + self.map_type + "/map/z_origin", 0.0)
+        node.declare_parameter('/' + self.map_type + "/map/x_size", 0.0)
+        node.declare_parameter('/' + self.map_type + "/map/y_size", 0.0)
+        node.declare_parameter('/' + self.map_type + "/map/z_size", 0.0)
+        node.declare_parameter('/' + self.map_type + "/map/inflate_radius", 0.0)
+        self.map_origin_x = node.get_parameter('/' + self.map_type + "/map/x_origin").value
+        self.map_origin_y = node.get_parameter('/' + self.map_type + "/map/y_origin").value
+        self.map_origin_z = node.get_parameter('/' + self.map_type + "/map/z_origin").value
+
+        self.map_range_x = node.get_parameter('/' + self.map_type + "/map/x_size").value
+        self.map_range_y = node.get_parameter('/' + self.map_type + "/map/y_size").value
+        self.map_range_z = node.get_parameter('/' + self.map_type + "/map/z_size").value
+
+        self.inflate_radius = node.get_parameter('/' + self.map_type + "/map/inflate_radius").value
+
+        self.set_state_pub      = node.create_publisher(PositionCommand, '/' + self.mav_name + '/set_state', 1)
+        # self.client_tracker = ActionClient(node, PolyTracker, '/quadrotor/trackers_manager/poly_tracker/PolyTracker')
+        self.client_line_tracker = ActionClient(node, LineTracker, '/' + self.mav_name + '/trackers_manager/line_tracker_min_jerk/LineTracker')
+        node.create_subscription(PointCloud2, "global_cloud", self.point_clouds_callback, 10) # this needs to be ready early
+
+        # self.change_map_pub     = node.create_publisher(Int32, '/' + self.map_name + '/change_map', 1)
+        self.change_map_pub  = node.create_client(changeMap, '/' + self.map_type + '/change_map')
 
 
         print("waiting for tracker trigger service")
-        rospy.wait_for_service(poly_service_name)
-        # self.poly_trigger = rospy.ServiceProxy(poly_service_name, Trigger)
-        self.transition_tracker = rospy.ServiceProxy(line_service_name, Transition)
-        rospy.Subscriber('/' + self.mav_name + "/odom", Odometry, self.odom_callback)
+        self.poly_service_client = node.create_client(Trigger, poly_service_name)
+        while not self.poly_service_client.wait_for_service(timeout_sec=1.0):
+            node.get_logger().info("Waiting for poly tracker service...")
+        # self.poly_trigger = node.create_client(Trigger, poly_service_name)
+        self.transition_tracker_client = node.create_client(Transition, line_service_name)
+        node.create_subscription(Odometry, '/' + self.mav_name + "/odom", self.odom_callback, 10)
         self.effort_temp = 0.0 # these need to be defined before the callback
         self.effort_counter = 0
-        rospy.Subscriber('/' + self.mav_name + "/quadrotor_simulator_so3/output_data", OutputData, self.sim_output_callback)
-        rospy.logwarn("Change topic name of OutputData on real quadrotor")
+        node.create_subscription(OutputData, '/' + self.mav_name + "/quadrotor_simulator_so3/output_data", self.sim_output_callback, 10)
+        node.get_logger().warn("Change topic name of OutputData on real quadrotor")
 
-        # rospy.Subscriber("/local_plan_server0/trajectory", SplineTrajectory, self.callback)
+        # node.create_subscription(SplineTrajectory, "/local_plan_server0/trajectory", self.callback, 10)
         self.success = np.zeros((self.num_trials, self.num_planners), dtype=bool)
         self.success_detail = -2*np.ones((self.num_trials, self.num_planners), dtype=int)
         self.traj_time = np.zeros((self.num_trials, self.num_planners))
@@ -178,9 +196,9 @@ class Evaluater:
             #check dist is far and collision free
             if dis > 0.7 * self.map_range_x and not self.evaluate_collision([Point(x=start[0], y=start[1], z=start[2]), Point(x=goal[0], y=goal[1], z=goal[2])], tol):
                 break
-            
+
         if curr_sample_idx >= max_iter:
-            rospy.logerr("Failed to sample a start and goal pair far enough apart && collision free")
+            self.node.get_logger().error("Failed to sample a start and goal pair far enough apart && collision free")
             start_end_feasible = False
         return start, goal, start_end_feasible
 
@@ -216,8 +234,8 @@ class Evaluater:
             pts = pts[::10]
         # tqdm.write("odom length = " + str( len(pts)))
         if self.kdtree is None:
-            rospy.sleep(0.1)
-            rospy.logerr("No KD Tree, skipping collision check")
+            time.sleep(0.1)
+            self.node.get_logger().error("No KD Tree, skipping collision check")
             return True # assume collision
         for pt_idx in range(len(pts)):
             pt = pts[pt_idx]
@@ -237,7 +255,7 @@ class Evaluater:
         if np.sqrt(min_sq_dist) < tol:
 
             if tol == self.mav_radius:
-                rospy.logwarn("Collision Detected")
+                self.node.get_logger().warn("Collision Detected")
                 print("np.sqrt(min_sq_dist) is ", np.sqrt(min_sq_dist))
             return True
         else:
@@ -265,44 +283,52 @@ class Evaluater:
         start_and_goal = MarkerArray()
         start = Marker()
         start.header.frame_id = "map"
-        start.header.stamp = rospy.Time.now()
+        start.header.stamp = self.node.get_clock().now().to_msg()
         start.pose.position = msg.p_init.position
-        start.pose.orientation.w = 1
-        start.color.g = 1
-        start.color.a = 1
+        start.pose.orientation.w = 1.0
+        start.color.g = 1.0
+        start.color.a = 1.0
         start.type = 2
-        start.scale.x = start.scale.y = start.scale.z = 1
+        start.scale.x = start.scale.y = start.scale.z = 1.0
         goal = deepcopy(start)
         goal.pose.position = msg.p_final.position
         goal.id = 1
-        goal.color.r = 1
-        goal.color.g = 0
+        goal.color.r = 1.0
+        goal.color.g = 0.0
         start_and_goal.markers.append(start)
         start_and_goal.markers.append(goal)
         # self.path_pub.publish(msg)
         self.start_and_goal_pub.publish(start_and_goal) # viz
     def publisher(self):
-        search_planner_text = rospy.get_param('/local_plan_server0/trajectory_planner/search_planner_text')
-        opt_planner_text = rospy.get_param('/local_plan_server0/trajectory_planner/opt_planner_text')
+        self.node.declare_parameter('/local_plan_server0/trajectory_planner/search_planner_text', [''])
+        self.node.declare_parameter('/local_plan_server0/trajectory_planner/opt_planner_text', [''])
+        search_planner_text = self.node.get_parameter('/local_plan_server0/trajectory_planner/search_planner_text').value
+        opt_planner_text = self.node.get_parameter('/local_plan_server0/trajectory_planner/opt_planner_text').value
         print("Running ", self.num_planners, "planner combinations for", self.num_trials, "trials", "on map", self.map_type)
         for i in range(self.num_planners):
             print("waiting for action server ", i)
             self.client_list[i].wait_for_server()
-            planner_name_front = search_planner_text[rospy.get_param('/local_plan_server'+str(i)+'/trajectory_planner/search_planner_type')]
-            planner_name_back  = opt_planner_text[rospy.get_param('/local_plan_server'+str(i)+'/trajectory_planner/opt_planner_type')]
+            self.node.declare_parameter('/local_plan_server'+str(i)+'/trajectory_planner/search_planner_type', 0)
+            self.node.declare_parameter('/local_plan_server'+str(i)+'/trajectory_planner/opt_planner_type', 0)
+            planner_name_front = search_planner_text[self.node.get_parameter('/local_plan_server'+str(i)+'/trajectory_planner/search_planner_type').value]
+            planner_name_back  = opt_planner_text[self.node.get_parameter('/local_plan_server'+str(i)+'/trajectory_planner/opt_planner_type').value]
             self.client_name_front_list.append(planner_name_front)
             self.client_name_back_list.append(planner_name_back)
             self.client_name_list.append(planner_name_front + '+'+ planner_name_back)
-       
-            
+
+
         print("All action server connected, number of planners = ", self.num_planners)
         now = datetime.now()
         file_name_save_time = now.strftime("%m-%d_%H-%M-%S")
 
-        param_names = rospy.get_param_names()
+        # TODO: ROS2 has no direct equivalent to rospy.get_param_names() for arbitrary
+        # global parameters; only parameters declared on this node are visible here.
         params = {}
-        for name in param_names:
-            params[name] = rospy.get_param(name)
+        for name in self.node._parameters.keys() if hasattr(self.node, '_parameters') else []:
+            try:
+                params[name] = self.node.get_parameter(name).value
+            except Exception:
+                pass
 
         with open('ECI_params_'+file_name_save_time+'.yaml', 'w') as f:
             yaml.dump(params, f)
@@ -317,15 +343,19 @@ class Evaluater:
                                      'tracking_error(m) avg', 'collision_frontend', 'collision_status','dist_to_goal(m)'])
 
                 for i in tqdm(range(self.num_trials)):
-                    if rospy.is_shutdown():
+                    if not rclpy.ok():
                         break
                     ######## CHANGE MAP ######
                     seed_val = i +3000
                     random.seed(seed_val)
 
 
-                    map_response = self.change_map_pub(seed = seed_val) # this is only active when using structure map
-                    rospy.sleep(7) # maze map is still reading files sequentially
+                    change_map_req = changeMap.Request()
+                    change_map_req.seed = seed_val
+                    change_map_future = self.change_map_pub.call_async(change_map_req) # this is only active when using structure map
+                    rclpy.spin_until_future_complete(self.node, change_map_future)
+                    map_response = change_map_future.result()
+                    time.sleep(7) # maze map is still reading files sequentially
                         # When change_map returns, the map is changed, but becuase delay, wait a little longer
                     # print(map_response)
                     start_end_feasible = True
@@ -334,7 +364,7 @@ class Evaluater:
                     if not use_odom_bool: # hopefully this is always the case, we can specify the start
                         pos_msg = PositionCommand() # change position in simulator
                         pos_msg.header.frame_id = "map"
-                        pos_msg.header.stamp = rospy.Time.now()
+                        pos_msg.header.stamp = self.node.get_clock().now().to_msg()
 
                         if self.fix_start_end_location:
                             start = np.array([-9.0, -4, 1.0])
@@ -347,15 +377,15 @@ class Evaluater:
                         pos_msg.position.y = start[1]
                         pos_msg.position.z = start[2]
 
-                        pos_msg.velocity.x = 0
-                        pos_msg.velocity.y = 0
-                        pos_msg.velocity.z = 0
+                        pos_msg.velocity.x = 0.0
+                        pos_msg.velocity.y = 0.0
+                        pos_msg.velocity.z = 0.0
                         pos_msg.yaw = random.uniform(-np.pi,np.pi)
 
- 
+
                         ##### GO TO START #####
-                    if not use_odom_bool and self.wait_for_things:  #this needs to be done for every client 
-                        traj_act_msg = LineTrackerGoal()
+                    if not use_odom_bool and self.wait_for_things:  #this needs to be done for every client
+                        traj_act_msg = LineTracker.Goal()
                         traj_act_msg.x = pos_msg.position.x
                         traj_act_msg.y = pos_msg.position.y
                         traj_act_msg.z = pos_msg.position.z
@@ -363,26 +393,33 @@ class Evaluater:
                         traj_act_msg.v_des = 0.0
                         traj_act_msg.a_des = 0.0
                         traj_act_msg.relative = False
-                        traj_act_msg.t_start = rospy.Time.now()
-                        traj_act_msg.duration = rospy.Duration(line_tracker_flight_time)
-                        self.client_line_tracker.send_goal(traj_act_msg)# first change tracker goal msg
-                        #wait while tracker's goal is not received
-                        while True:
-                            rospy.sleep(0.1)
-                            state = self.client_line_tracker.get_state()
-                            if state == 1:
-                                tqdm.write("Line Tracker Goal Received")
-                                break
-                            rospy.loginfo_throttle(0.5,f"Waiting for line tracker goal. Current State: {state}")
-                        # state = self.client_line_tracker.get_state() # make sure it received it
-                        # print(f"After sent goal: Action State: {state}")
-                        response = self.transition_tracker('kr_trackers/LineTrackerMinJerk')
+                        traj_act_msg.t_start = self.node.get_clock().now().to_msg()
+                        traj_act_msg.duration = Duration(seconds=line_tracker_flight_time).to_msg()
+                        line_send_goal_future = self.client_line_tracker.send_goal_async(traj_act_msg)# first change tracker goal msg
+                        rclpy.spin_until_future_complete(self.node, line_send_goal_future)
+                        line_goal_handle = line_send_goal_future.result()
+                        if line_goal_handle is not None and line_goal_handle.accepted:
+                            tqdm.write("Line Tracker Goal Received")
+                        else:
+                            self.node.get_logger().info("Waiting for line tracker goal.")
+                        # Call the transition_tracker service
+                        transition_req = Transition.Request()
+                        transition_req.tracker = 'kr_trackers/LineTrackerMinJerk'
+                        transition_future = self.transition_tracker_client.call_async(transition_req)
+                        rclpy.spin_until_future_complete(self.node, transition_future)
+                        response = transition_future.result()
                         # self.set_state_pub.publish(pos_msg) #then change state so no error remain
 
                         tqdm.write(response.message)
 
-                        self.client_line_tracker.wait_for_result(rospy.Duration.from_sec(line_tracker_flight_time + 3.0)) #flying
-                        response = self.client_line_tracker.get_result()
+                        if line_goal_handle is not None and line_goal_handle.accepted:
+                            get_result_future = line_goal_handle.get_result_async()
+                            rclpy.spin_until_future_complete(self.node, get_result_future,
+                                                              timeout_sec=line_tracker_flight_time + 3.0) #flying
+                            result_wrapper = get_result_future.result()
+                            response = result_wrapper.result if result_wrapper is not None else None
+                        else:
+                            response = None
                         if response is not None:
                             tqdm.write("Line Tracker Finished")
                         else:
@@ -390,7 +427,7 @@ class Evaluater:
 
 
                         ##### SET GOAL #####
-                    msg = PlanTwoPointGoal()
+                    msg = PlanTwoPoint.Goal()
                     if use_odom_bool:
                         msg.p_init.position = self.odom_data # if starting from current position
                         msg.p_final.position.z = self.odom_data.z # this is usually hardware, so z is more sensitive
@@ -403,26 +440,31 @@ class Evaluater:
                     msg.check_vel = False
 
                     self.send_start_goal_viz(msg)
+                    goal_handles = []
                     for client_idx in range(self.num_planners):
                         client = self.client_list[client_idx]
-                        client.send_goal(msg) #motion
+                        send_goal_future = client.send_goal_async(msg) #motion
+                        rclpy.spin_until_future_complete(self.node, send_goal_future)
+                        goal_handles.append(send_goal_future.result())
                     result_list = []
                     valid_result = True
                     for client_idx in range(self.num_planners):
-                        client = self.client_list[client_idx]
+                        goal_handle = goal_handles[client_idx]
 
-                        self.effort_temp = 0.0 # 
+                        self.effort_temp = 0.0 #
                         self.effort_counter = 1 # to avoid divide by zero
 
                         # Waits for the server to finish performing the action.
-                        if self.wait_for_things:
-                            client.wait_for_result(rospy.Duration.from_sec(20.0)) 
-                        else:
-                            client.wait_for_result(rospy.Duration.from_sec(20.0)) 
-                
+                        result = None
+                        if goal_handle is not None and goal_handle.accepted:
+                            get_result_future = goal_handle.get_result_async()
+                            rclpy.spin_until_future_complete(self.node, get_result_future, timeout_sec=20.0)
+                            if get_result_future.done():
+                                result_wrapper = get_result_future.result()
+                                result = result_wrapper.result if result_wrapper is not None else None
+
                         # stop accumulating the effort
                         self.effort[i,client_idx] = self.effort_temp / self.effort_counter
-                        result = client.get_result()
                         if not result:
                             tqdm.write("Server Failure: trial " + str(i) + " planner: " + str(client_idx))
                             valid_result = False
@@ -499,10 +541,14 @@ class Evaluater:
 
 
         #save results
-        param_names = rospy.get_param_names()
+        # TODO: ROS2 has no direct equivalent to rospy.get_param_names() for arbitrary
+        # global parameters; only parameters declared on this node are visible here.
         params = {}
-        for name in param_names:
-            params[name] = rospy.get_param(name)
+        for name in self.node._parameters.keys() if hasattr(self.node, '_parameters') else []:
+            try:
+                params[name] = self.node.get_parameter(name).value
+            except Exception:
+                pass
         data_all = {}
 
         data_all['success'] = self.success
@@ -583,15 +629,18 @@ class Evaluater:
            
 
 def subscriber():
-    rospy.init_node('evaluate_traj')
-    Evaluater()
+    rclpy.init()
+    node = rclpy.create_node('evaluate_traj')
+    Evaluater(node)
 
     # spin() simply keeps python from exiting until this node is stopped
-    # rospy.spin()
+    # rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
 
 
 if __name__ == '__main__':
     try:
         subscriber()
-    except rospy.ROSInterruptException:
+    except KeyboardInterrupt:
         pass

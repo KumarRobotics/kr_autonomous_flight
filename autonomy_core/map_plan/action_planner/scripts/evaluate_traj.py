@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-import rospy
+import time
+import rclpy
+from rclpy.node import Node
+from rclpy.action import ActionClient
 # from kr_planning_msgs.msg import SplineTrajectory
-from kr_planning_msgs.msg import PlanTwoPointAction, PlanTwoPointGoal
+from kr_planning_msgs.action import PlanTwoPoint
+from rclpy.duration import Duration
 import numpy as np
 # import matplotlib.pyplot as plt
 import pandas as pd
 from copy import deepcopy
 from visualization_msgs.msg import MarkerArray, Marker
-from actionlib import SimpleActionClient
 from std_srvs.srv import Empty
 
 # filename = '/home/laura/autonomy_ws/src/kr_autonomous_flight/autonomy_core/map_plan/action_planner/scripts/map_balls_start_goal.csv'
@@ -42,16 +45,17 @@ def evaluate(msg, t, deriv_num):
 
 
 class Evaluater:
-    def __init__(self):
+    def __init__(self, node):
+        self.node = node
         # print("reading "+filename)
         # self.start_goals = pd.read_csv(filename)
-        # self.path_pub = rospy.Publisher('/local_plan_server/plan_local_trajectory/goal', PlanTwoPointActionGoal, queue_size=10, latch=True)
-        self.client = SimpleActionClient('/local_plan_server/plan_local_trajectory', PlanTwoPointAction)
-        self.client2 = SimpleActionClient('/local_plan_server2/plan_local_trajectory', PlanTwoPointAction)
-        self.client3 = SimpleActionClient('/local_plan_server3/plan_local_trajectory', PlanTwoPointAction)
+        # self.path_pub = node.create_publisher(PlanTwoPointActionGoal, '/local_plan_server/plan_local_trajectory/goal', 10)
+        self.client = ActionClient(node, PlanTwoPoint, '/local_plan_server/plan_local_trajectory')
+        self.client2 = ActionClient(node, PlanTwoPoint, '/local_plan_server2/plan_local_trajectory')
+        self.client3 = ActionClient(node, PlanTwoPoint, '/local_plan_server3/plan_local_trajectory')
 
-        self.start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10, latch=True)
-        # rospy.Subscriber("/local_plan_server/trajectory", SplineTrajectory, self.callback)
+        self.start_and_goal_pub = node.create_publisher(MarkerArray, '/start_and_goal', 10)
+        # node.create_subscription(SplineTrajectory, "/local_plan_server/trajectory", self.callback, 10)
         self.num_trials = 20
         self.success = np.zeros(self.num_trials, dtype=bool)
         self.traj_time = np.zeros(self.num_trials)
@@ -75,28 +79,29 @@ class Evaluater:
             t_vec = np.append(t_vec, t)
             jerk_sq = np.append(jerk_sq, (np.linalg.norm(evaluate(traj, t, 3)))**2 )
         return np.sqrt(np.trapz(jerk_sq, t_vec))/traj.data[0].t_total
-        
+
 
     def computeCost(self, traj, rho):
-        time = traj.data[0].t_total
-        cost = rho*time + self.computeJerk(traj)
+        time_total = traj.data[0].t_total
+        cost = rho*time_total + self.computeJerk(traj)
         return cost
 
     def publisher(self):
         print("waiting for map server")
-        rospy.wait_for_service('/image_to_map')
-        map_client = rospy.ServiceProxy('/image_to_map', Empty)
-        map_client()
+        map_client = self.node.create_client(Empty, '/image_to_map')
+        while not map_client.wait_for_service(timeout_sec=1.0):
+            self.node.get_logger().info("Waiting for /image_to_map service...")
+        map_client.call_async(Empty.Request())
 
         print("waiting for action server")
         self.client.wait_for_server()
 
         # for i in range(self.start_goals.shape[0]):
-        #     if rospy.is_shutdown():
+        #     if not rclpy.ok():
         #         break
 
         #     print(i)
-        #     msg = PlanTwoPointGoal()
+        #     msg = PlanTwoPoint.Goal()
         #     msg.p_init.position.x = self.start_goals['xi'][i]
         #     msg.p_init.position.y = self.start_goals['yi'][i]
         #     msg.p_init.position.z = 5
@@ -108,21 +113,21 @@ class Evaluater:
 
         for i in range(self.num_trials):
             print(i)
-            if rospy.is_shutdown():
+            if not rclpy.ok():
                 break
             if (i > 0):
-                map_client()
+                map_client.call_async(Empty.Request())
                 #TODO(Laura): actually send map ?
-                rospy.sleep(2)
-            msg = PlanTwoPointGoal()
+                time.sleep(2)
+            msg = PlanTwoPoint.Goal()
             msg.p_init.position.x = 1.25
             msg.p_init.position.y = 1.25
-            msg.p_init.position.z = 5
+            msg.p_init.position.z = 5.0
             # msg.v_init.linear.x = 2
             # msg.v_init.linear.y = 2
             msg.p_final.position.x = 19.5
             msg.p_final.position.y = 10 - 1.25
-            msg.p_final.position.z = 5
+            msg.p_final.position.z = 5.0
 
 
 
@@ -131,31 +136,36 @@ class Evaluater:
             start_and_goal = MarkerArray()
             start = Marker()
             start.header.frame_id = "map"
-            start.header.stamp = rospy.Time.now()
+            start.header.stamp = self.node.get_clock().now().to_msg()
             start.pose.position = msg.p_init.position
-            start.pose.orientation.w = 1
-            start.color.g = 1
-            start.color.a = 1
+            start.pose.orientation.w = 1.0
+            start.color.g = 1.0
+            start.color.a = 1.0
             start.type = 2
-            start.scale.x = start.scale.y = start.scale.z = 1
+            start.scale.x = start.scale.y = start.scale.z = 1.0
             goal = deepcopy(start)
             goal.pose.position = msg.p_final.position
             goal.id = 1
-            goal.color.r = 1
-            goal.color.g = 0
+            goal.color.r = 1.0
+            goal.color.g = 0.0
             start_and_goal.markers.append(start)
             start_and_goal.markers.append(goal)
             # self.path_pub.publish(msg)
             self.start_and_goal_pub.publish(start_and_goal)
-            self.client.send_goal(msg)
+
+            # Action client goal send + wait (was self.client.send_goal(msg) + wait_for_result)
+            send_goal_future = self.client.send_goal_async(msg)
+            rclpy.spin_until_future_complete(self.node, send_goal_future)
+            goal_handle = send_goal_future.result()
+            result = None
+            if goal_handle is not None and goal_handle.accepted:
+                get_result_future = goal_handle.get_result_async()
+                rclpy.spin_until_future_complete(self.node, get_result_future, timeout_sec=3.0)
+                if get_result_future.done():
+                    result = get_result_future.result().result
             # self.client2.send_goal(msg)
             # self.client3.send_goal(msg)
-            # Waits for the server to finish performing the action.
-            self.client.wait_for_result(rospy.Duration.from_sec(3.0))
-            # self.client2.wait_for_result(rospy.Duration.from_sec(5.0))
-            # self.client3.wait_for_result(rospy.Duration.from_sec(5.0))
 
-            result = self.client.get_result()
             #TODO(Laura) check if the path is collision free and feasible
             if result:
                 self.success[i] = result.success
@@ -190,15 +200,18 @@ class Evaluater:
 
 
 def subscriber():
-    rospy.init_node('evaluate_traj')
-    Evaluater()
+    rclpy.init()
+    node = rclpy.create_node('evaluate_traj')
+    Evaluater(node)
 
     # spin() simply keeps python from exiting until this node is stopped
-    # rospy.spin()
+    # rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
 
 
 if __name__ == '__main__':
     try:
         subscriber()
-    except rospy.ROSInterruptException:
+    except KeyboardInterrupt:
         pass

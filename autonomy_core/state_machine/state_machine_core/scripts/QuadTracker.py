@@ -4,20 +4,21 @@ from __future__ import print_function
 
 import threading
 import copy
-import rospy
 
 import kr_mav_msgs.msg as QuadM
 import geometry_msgs.msg as GM
 import std_msgs.msg as SM
 import sensor_msgs.msg as SMS
 import nav_msgs.msg as NM
-import tf
+import tf_transformations
+from tf2_ros import Buffer, TransformListener
 from Utils import pose_to_transform, odom_to_pose
 import numpy as np
 
 
 class QuadTracker:
-    def __init__(self, abort_topic):
+    def __init__(self, node, abort_topic):
+        self.node = node
         self.lock = threading.Lock()
         self.homeP = None
         self.abort = False
@@ -26,17 +27,21 @@ class QuadTracker:
         self.yaw = None
         self.ground = None
         # self.polaris_goal = None
-        self.takeoff_height = rospy.get_param("~takeoff_height", 1.5)
-        # self.xml_file = rospy.get_param("~xml_file", "")
-        self.landing_height = rospy.get_param("~landing_height", -5.05)
-        self.sub = rospy.Subscriber("~odom", NM.Odometry, self.odom_call_back, queue_size=1)
-        self.subC = rospy.Subscriber(
-            "position_cmd", QuadM.PositionCommand, self.cmd_call_back, queue_size=1
+        if not node.has_parameter("takeoff_height"):
+            node.declare_parameter("takeoff_height", 1.5)
+        self.takeoff_height = node.get_parameter("takeoff_height").value
+        # self.xml_file = node.get_parameter("xml_file").value
+        if not node.has_parameter("landing_height"):
+            node.declare_parameter("landing_height", -5.05)
+        self.landing_height = node.get_parameter("landing_height").value
+        self.sub = node.create_subscription(NM.Odometry, "odom", self.odom_call_back, 1)
+        self.subC = node.create_subscription(
+            QuadM.PositionCommand, "position_cmd", self.cmd_call_back, 1
         )
-        self.subA = rospy.Subscriber(abort_topic, SM.Empty, self.abort_call_back, queue_size=1)
+        self.subA = node.create_subscription(SM.Empty, abort_topic, self.abort_call_back, 1)
         self.waypoints = None
-        self.way_sub = rospy.Subscriber("waypoints", NM.Path, self.way_cb, queue_size=1)
-        self.lidar_sub = rospy.Subscriber("~height", SMS.Range, self.lidar_cb, queue_size=10)
+        self.way_sub = node.create_subscription(NM.Path, "waypoints", self.way_cb, 1)
+        self.lidar_sub = node.create_subscription(SMS.Range, "height", self.lidar_cb, 10)
         self.avoid = True
         self.waypoints = None
         # self.trajectory = None
@@ -49,7 +54,8 @@ class QuadTracker:
         self.v_des = 100
         self.et = False
         self.pose_goals = None
-        self.listener = tf.TransformListener()
+        self.tf_buffer = Buffer()
+        self.listener = TransformListener(self.tf_buffer, node)
         self.rel_z = 1.0
         # max allowed trials to re-enter replanner
         self.max_replan_trials = None
@@ -64,7 +70,7 @@ class QuadTracker:
             self.rel_z = msg.range
 
     def way_cb(self, msg):
-        rospy.loginfo("Got waypoints")
+        self.node.get_logger().info("Got waypoints")
         self.waypoints = msg
 
     def cmd_call_back(self, msg):
@@ -95,7 +101,7 @@ class QuadTracker:
                 msg.pose.pose.orientation.z,
                 msg.pose.pose.orientation.w,
             )
-            euler = tf.transformations.euler_from_quaternion(quaternion)
+            euler = tf_transformations.euler_from_quaternion(quaternion)
             self.yaw = euler[2]
 
     def set_home_from_air(self):
@@ -105,7 +111,7 @@ class QuadTracker:
             self.ground = copy.copy(self.pos)
             # current hight + pre defined landing height - takeoff height
             self.ground.z += self.landing_height - self.takeoff_height
-            rospy.logwarn("Setting landing height to %f m", self.ground.z)
+            self.node.get_logger().warn("Setting landing height to %f m" % self.ground.z)
 
     def set_home_from_ground(self):
         with self.lock:
@@ -113,7 +119,7 @@ class QuadTracker:
             self.ground = copy.copy(self.pos)
             self.ground.z += self.landing_height
             self.homeP.z += self.takeoff_height
-            rospy.logwarn("Setting takeoff_height height to %f m", self.homeP.z)
+            self.node.get_logger().warn("Setting takeoff_height height to %f m" % self.homeP.z)
             # self.homeP.y += 2.0
             self.homeY = self.yaw
 

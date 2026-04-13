@@ -1,11 +1,18 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
+# TODO: smach is ROS1-only. This file will not work under ROS2 until the smach
+# ecosystem is ported (smach_ros2 or yasmin). The rospy -> rclpy translation
+# below is best-effort; the smach state machine itself (including
+# smach_ros.SimpleActionState) needs a separate migration. In ROS2 the action
+# client API is asynchronous (send_goal_async / get_result_async), so the
+# SimpleActionState wrapper used here has no direct equivalent.
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import copy
-import rospy
+import time
 
 import smach
 import smach_ros
@@ -23,7 +30,7 @@ class StoppingPolicyDone(smach.State):
 
     def execute(self, _userdata):
         print("[state_machine:] waiting for stopping policy to finish, wait time is: ", self.wait_for_stop, " seconds. Change this param in main_state_machine.py if needed.\n")
-        rospy.sleep(self.wait_for_stop)
+        time.sleep(self.wait_for_stop)
         print("[state_machine:] robot should have COMPLETELY STOPPED, otherwise, increase the wait_for_stop in main_state_machine.py!.\n")
         return "done"
 

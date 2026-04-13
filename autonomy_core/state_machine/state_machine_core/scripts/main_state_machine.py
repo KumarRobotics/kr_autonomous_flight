@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 
+# TODO: smach is ROS1-only. This file will not work under ROS2 until the smach
+# ecosystem is ported (smach_ros2 or yasmin). The rospy -> rclpy translation
+# below is best-effort; the smach state machine itself needs a separate
+# migration.
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 from multiprocessing.pool import ThreadPool
-import rospy
+import rclpy
+from rclpy.node import Node
 import smach
 import smach_ros
 import kr_planning_msgs.msg as MHL
@@ -24,38 +30,58 @@ import Replanner
 
 def main():
 
-    rospy.init_node("smach_state_machine")
+    rclpy.init()
+    node = rclpy.create_node("smach_state_machine")
 
     # local_replan_rate parameter should be set in the ros parameter YAML file under the state_machine field
-    if rospy.has_param("~state_machine/local_replan_rate"):
-        local_replan_rate = rospy.get_param("~state_machine/local_replan_rate")
+    if node.has_parameter("state_machine/local_replan_rate"):
+        local_replan_rate = node.get_parameter("state_machine/local_replan_rate").value
         print("[State machine:] Setting local_replan_rate as:", local_replan_rate)
     else:
-        raise Exception("[State machine:] state_machine/local_replan_rate is not set in the ros param YAML file!")
+        # Attempt to declare and read, raising if still unset
+        node.declare_parameter("state_machine/local_replan_rate", rclpy.Parameter.Type.DOUBLE)
+        try:
+            local_replan_rate = node.get_parameter("state_machine/local_replan_rate").value
+        except Exception:
+            raise Exception("[State machine:] state_machine/local_replan_rate is not set in the ros param YAML file!")
+        print("[State machine:] Setting local_replan_rate as:", local_replan_rate)
 
     # global_replan_rate_factor parameter should be set in the ros parameter YAML file under the state_machine field
-    if rospy.has_param("~state_machine/global_replan_rate_factor"):
-        global_replan_rate_factor = rospy.get_param("~state_machine/global_replan_rate_factor")
+    if node.has_parameter("state_machine/global_replan_rate_factor"):
+        global_replan_rate_factor = node.get_parameter("state_machine/global_replan_rate_factor").value
         print("[State machine:] Setting global_replan_rate_factor as:", global_replan_rate_factor)
     else:
-        raise Exception("[State machine:] state_machine/global_replan_rate_factor is not set in the ros param YAML file!")
+        node.declare_parameter("state_machine/global_replan_rate_factor", rclpy.Parameter.Type.DOUBLE)
+        try:
+            global_replan_rate_factor = node.get_parameter("state_machine/global_replan_rate_factor").value
+        except Exception:
+            raise Exception("[State machine:] state_machine/global_replan_rate_factor is not set in the ros param YAML file!")
+        print("[State machine:] Setting global_replan_rate_factor as:", global_replan_rate_factor)
 
     # max_replan_trials parameter should be set in the ros parameter YAML file under the state_machine field
-    if rospy.has_param("~state_machine/max_replan_trials"):
-        max_replan_trials = rospy.get_param("~state_machine/max_replan_trials")
+    if node.has_parameter("state_machine/max_replan_trials"):
+        max_replan_trials = node.get_parameter("state_machine/max_replan_trials").value
         print("[State machine:] Setting max_replan_trials as:", max_replan_trials)
     else:
-        raise Exception("[State machine:] state_machine/max_replan_trials is not set in the ros param YAML file!")
+        node.declare_parameter("state_machine/max_replan_trials", rclpy.Parameter.Type.INTEGER)
+        try:
+            max_replan_trials = node.get_parameter("state_machine/max_replan_trials").value
+        except Exception:
+            raise Exception("[State machine:] state_machine/max_replan_trials is not set in the ros param YAML file!")
+        print("[State machine:] Setting max_replan_trials as:", max_replan_trials)
 
     # Create holder for tracker object
-    quad_tracker = QuadTracker(rospy.names.get_namespace() + "abort")
+    namespace = node.get_namespace()
+    if not namespace.endswith("/"):
+        namespace += "/"
+    quad_tracker = QuadTracker(node, namespace + "abort")
     quad_tracker.local_replan_rate = local_replan_rate
     quad_tracker.global_replan_rate_factor = global_replan_rate_factor
     quad_tracker.max_replan_trials = max_replan_trials
     quad_tracker.avoid = True  # obstacle avoidance in planner
 
     # Seconds to wait for the stopping policy to finish, should be large enough so that the robot fully stops
-    
+
     # THIS IS VERY SAFETY CRITICAL! DO NOT CHANGE UNLESS YOU ARE SURE!
     # TODO(xu:) get feedback from stopping policy, instead of hard-coding a wait time
     wait_for_stop = 5.0
@@ -89,9 +115,11 @@ def main():
         )
 
         # motor on state
+        motor_on_state = PublishBoolMsgState("motors", True)
+        motor_on_state.quad_monitor = quad_tracker
         smach.StateMachine.add(
             "MotorOn",
-            PublishBoolMsgState("motors", True),
+            motor_on_state,
             transitions={
                 "succeeded": "WaitForOne",
                 "failed": "Off"
@@ -104,9 +132,11 @@ def main():
                                transitions={"done": "Idle"})
 
         # mavros arm state
+        mavros_arm_state = ArmDisarmMavros("mavros/cmd/arming", True)
+        mavros_arm_state.quad_monitor = quad_tracker
         smach.StateMachine.add(
             "MavrosArm",
-            ArmDisarmMavros("mavros/cmd/arming", True),
+            mavros_arm_state,
             transitions={
                 "succeeded": "WaitForOne",
                 "failed": "Off"
@@ -114,9 +144,11 @@ def main():
         )
 
         # mavros disarm state
+        mavros_disarm_state = ArmDisarmMavros("mavros/cmd/arming", False)
+        mavros_disarm_state.quad_monitor = quad_tracker
         smach.StateMachine.add(
             "MavrosDisarm",
-            ArmDisarmMavros("mavros/cmd/arming", False),
+            mavros_disarm_state,
             transitions={
                 "succeeded": "Off",
                 "failed": "Off"
@@ -124,9 +156,11 @@ def main():
         )
 
         # motor off state
+        motor_off_state = PublishBoolMsgState("motors", False)
+        motor_off_state.quad_monitor = quad_tracker
         smach.StateMachine.add(
             "MotorOff",
-            PublishBoolMsgState("motors", False),
+            motor_off_state,
             transitions={
                 "succeeded": "MavrosDisarm",
                 "failed": "MotorOff"
@@ -259,7 +293,10 @@ def main():
     smach_thread = pool.apply_async(sm_with_monitor.execute)
 
     # Wait for ctrl-c
-    rospy.spin()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
 
     # stop the introspection server
     sis.stop()
@@ -268,6 +305,9 @@ def main():
     sm_with_monitor.request_preempt()
 
     smach_thread.wait()
+
+    node.destroy_node()
+    rclpy.shutdown()
 
 
 if __name__ == "__main__":

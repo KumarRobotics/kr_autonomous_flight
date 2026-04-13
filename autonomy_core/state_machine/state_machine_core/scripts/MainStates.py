@@ -1,8 +1,15 @@
+# TODO: smach is ROS1-only. This file will not work under ROS2 until the smach
+# ecosystem is ported (smach_ros2 or yasmin). The rospy -> rclpy translation
+# below is best-effort; the smach state machine itself (including
+# smach_ros.SimpleActionState and smach_ros.ServiceState) needs a separate
+# migration.
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import rospy
+import time
+
 import smach
 import smach_ros
 import std_msgs.msg as msgs
@@ -13,6 +20,11 @@ import geometry_msgs.msg as GM
 import action_trackers.msg as AT
 
 
+def _node(quad_monitor):
+    """Return the rclpy Node attached to the quad_monitor (set by main)."""
+    return getattr(quad_monitor, "node", None)
+
+
 # Waits for offbaord signal. then takes off
 class WaitForOffboard(smach.State):
     def state_cb(self, msg):
@@ -21,23 +33,30 @@ class WaitForOffboard(smach.State):
     def __init__(self, quad_monitor, topic):
         smach.State.__init__(self, outcomes=["done", "failed"])
         self.mode = None
-        self.mr_sub = rospy.Subscriber(topic, MRM.State, self.state_cb, queue_size=5)
         self.quad_monitor = quad_monitor
+        self.topic = topic
+        self._sub = None
+        node = _node(quad_monitor)
+        if node is not None:
+            self._sub = node.create_subscription(MRM.State, topic, self.state_cb, 5)
         self.timeout = 100
 
     def execute(self, _userdata):
         self.timeout = 100
-        r = rospy.Rate(10)
+        node = _node(self.quad_monitor)
         while True:
-            rospy.logwarn_throttle(1, "Waiting for offboard. Current mode is " + str(self.mode))
+            if node is not None:
+                node.get_logger().warn("Waiting for offboard. Current mode is " + str(self.mode),
+                                       throttle_duration_sec=1.0)
             if self.mode is None:
                 self.timeout -= 1
             if self.timeout <= 0:
-                rospy.logerr("Wait time reached, is px4 running and mapped correctly?")
+                if node is not None:
+                    node.get_logger().error("Wait time reached, is px4 running and mapped correctly?")
                 return "failed"
             if self.mode is not None and self.mode == "OFFBOARD":
                 return "done"
-            r.sleep()
+            time.sleep(0.1)
 
 
 class GetWaypoints(smach.State):
@@ -46,11 +65,17 @@ class GetWaypoints(smach.State):
     def __init__(self, quad_monitor):
         smach.State.__init__(self, outcomes=["succeeded", "multi", "failed"])
         self.quad_monitor = quad_monitor
-        self.reset_pub = rospy.Publisher("reset", GM.PoseStamped, queue_size=10)
+        node = _node(quad_monitor)
+        if node is not None:
+            self.reset_pub = node.create_publisher(GM.PoseStamped, "reset", 10)
+        else:
+            self.reset_pub = None
 
     def execute(self, _userdata):
+        node = _node(self.quad_monitor)
         if self.quad_monitor.waypoints is None or len(self.quad_monitor.waypoints.poses) == 0:
-            rospy.logerr("Failed to get waypoints")
+            if node is not None:
+                node.get_logger().error("Failed to get waypoints")
             return "failed"
 
         # record all waypoints
@@ -67,10 +92,12 @@ class GetWaypoints(smach.State):
         ps = GM.PoseStamped()
         ps.header = self.quad_monitor.waypoints.header
         ps.pose = self.quad_monitor.pose_goal
-        self.reset_pub.publish(ps)
+        if self.reset_pub is not None:
+            self.reset_pub.publish(ps)
 
         if len(self.quad_monitor.waypoints.poses) > 1:
-            rospy.loginfo(f"Multiple waypoints: {len(self.quad_monitor.waypoints.poses)}")
+            if node is not None:
+                node.get_logger().info(f"Multiple waypoints: {len(self.quad_monitor.waypoints.poses)}")
             return "multi"
 
         return "succeeded"
@@ -83,7 +110,11 @@ class RetryWaypoints(smach.State):
     def __init__(self, quad_monitor):
         smach.State.__init__(self, outcomes=["succeeded", "failed"])
         self.quad_monitor = quad_monitor
-        self.reset_pub = rospy.Publisher("reset", GM.PoseStamped, queue_size=10)
+        node = _node(quad_monitor)
+        if node is not None:
+            self.reset_pub = node.create_publisher(GM.PoseStamped, "reset", 10)
+        else:
+            self.reset_pub = None
         self.num_trials = 1
         self.max_trials = quad_monitor.max_replan_trials
 
@@ -101,19 +132,20 @@ class RetryWaypoints(smach.State):
         ps = GM.PoseStamped()
         ps.header = self.quad_monitor.waypoints.header
         ps.pose = self.quad_monitor.pose_goal
-        self.reset_pub.publish(ps)
+        if self.reset_pub is not None:
+            self.reset_pub.publish(ps)
 
         return "succeeded"
 
 class WaitState(smach.State):
     """Publishes an LED status"""
 
-    def __init__(self, time):
+    def __init__(self, time_sec):
         smach.State.__init__(self, outcomes=["done"])
-        self.time = time
+        self.time = time_sec
 
     def execute(self, _userdata):
-        rospy.sleep(self.time)
+        time.sleep(self.time)
         if self.preempt_requested():
             self.service_preempt()
         return "done"
@@ -124,16 +156,20 @@ class ArmDisarmMavros(smach.State):
         smach.State.__init__(self, outcomes=["succeeded", "failed"])
         self.service = service
         self.value = value
+        self.quad_monitor = None  # set externally if needed
         # setup internal msgs
 
     def execute(self, _userdata):
-        # rospy.wait_for_service(self.service)
-
+        node = _node(self.quad_monitor) if self.quad_monitor is not None else None
+        if node is None:
+            return "succeeded"
         try:
-            arm = rospy.ServiceProxy(self.service, MR.CommandBool)
-            arm(self.value)
-        except rospy.ServiceException as e:
-            rospy.logerr(f"Error thrown while trying to arm motors {str(self.value)}: {e}")
+            client = node.create_client(MR.CommandBool, self.service)
+            req = MR.CommandBool.Request()
+            req.value = self.value
+            client.call_async(req)
+        except Exception as e:
+            node.get_logger().error(f"Error thrown while trying to arm motors {str(self.value)}: {e}")
             return "succeeded"
         return "succeeded"
 
@@ -143,30 +179,42 @@ class PublishBoolMsgState(smach.State):
 
     def __init__(self, topic, value):
         smach.State.__init__(self, outcomes=["succeeded", "failed"])
-        self.pub = rospy.Publisher(topic, msgs.Bool, queue_size=1)
+        self.topic = topic
+        self.pub = None
+        self.quad_monitor = None  # set externally if needed
         # setup internal msgs
         msg = msgs.Bool()
         msg.data = value
         self.msg = msg
 
     def execute(self, _userdata):
+        node = _node(self.quad_monitor) if self.quad_monitor is not None else None
+        if node is None:
+            return "failed"
         try:
+            if self.pub is None:
+                self.pub = node.create_publisher(msgs.Bool, self.topic, 1)
             self.pub.publish(self.msg)
-        except rospy.ServiceException as e:
-            rospy.logerr(f"Error thrown while executing condition callback {str(self._cond_cb)}: {e}")
+        except Exception as e:
+            node.get_logger().error(
+                f"Error thrown while executing condition callback: {e}"
+            )
             return "failed"
         return "succeeded"
 
 
 class TrackerTransition(smach_ros.ServiceState):
     def execute(self, _userdata):
-
-        rospy.wait_for_service(self.service_name)
+        node = _node(self.quad_monitor)
+        if node is None:
+            return "aborted"
         try:
-            self.prox(self.req)
+            while not self.prox.wait_for_service(timeout_sec=1.0):
+                node.get_logger().info(f"Waiting for service {self.service_name}")
+            self.prox.call_async(self.req)
             return "succeeded"
-        except rospy.ServiceException as e:
-            rospy.logerr(
+        except Exception as e:
+            node.get_logger().error(
                 f"Error thrown while executing condition callback {str(self.execute)}: {e}"
             )
             return "aborted"
@@ -176,10 +224,18 @@ class TrackerTransition(smach_ros.ServiceState):
         self.quad_monitor = quad_monitor
         self.safety_critical = safety_critical
         smach.State.__init__(self, outcomes=["succeeded", "aborted", "preempted"])
-        self.req = TM.TransitionRequest()
+        self.req = TM.Transition.Request()
         self.req.tracker = tracker
-        self.service_name = rospy.names.get_namespace() + service
-        self.prox = rospy.ServiceProxy(self.service_name, TM.Transition)
+        # Preserve the namespace handling: a leading "/" indicates absolute topic
+        node = _node(quad_monitor)
+        namespace = node.get_namespace() if node is not None else "/"
+        if not namespace.endswith("/"):
+            namespace += "/"
+        self.service_name = namespace + service
+        if node is not None:
+            self.prox = node.create_client(TM.Transition, self.service_name)
+        else:
+            self.prox = None
 
 
 # Define States Which Need Extra Data (ex. home, goal, etc)
@@ -193,8 +249,12 @@ class TakingOff(smach_ros.SimpleActionState):
 
     def __init__(self, action_topic, quad_tracker):
         self.quad_tracker = quad_tracker
+        node = _node(quad_tracker)
+        namespace = node.get_namespace() if node is not None else "/"
+        if not namespace.endswith("/"):
+            namespace += "/"
         smach_ros.SimpleActionState.__init__(
-            self, rospy.names.get_namespace() + action_topic, AT.TakeOffAction, goal_cb=self.goal_cb
+            self, namespace + action_topic, AT.TakeOffAction, goal_cb=self.goal_cb
         )
 
 
@@ -206,8 +266,10 @@ class SetHomeHere(smach.State):
     def execute(self, _userdata):
         try:
             self.quad_tracker.set_home_from_air()
-        except rospy.ServiceException as e:
-            rospy.logerr(f"Error thrown while executing set home here {e}")
+        except Exception as e:
+            node = _node(self.quad_tracker)
+            if node is not None:
+                node.get_logger().error(f"Error thrown while executing set home here {e}")
             return "failed"
         return "succeeded"
 
@@ -222,6 +284,10 @@ class Landing(smach_ros.SimpleActionState):
 
     def __init__(self, action_topic, quad_tracker):
         self.quad_tracker = quad_tracker
+        node = _node(quad_tracker)
+        namespace = node.get_namespace() if node is not None else "/"
+        if not namespace.endswith("/"):
+            namespace += "/"
         smach_ros.SimpleActionState.__init__(
-            self, rospy.names.get_namespace() + action_topic, AT.LandAction, goal_cb=self.goal_cb
+            self, namespace + action_topic, AT.LandAction, goal_cb=self.goal_cb
         )

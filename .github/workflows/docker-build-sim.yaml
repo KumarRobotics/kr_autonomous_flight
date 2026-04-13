@@ -6,18 +6,18 @@ on:
   workflow_dispatch:
   workflow_run:
     workflows: ["docker-build-state-machine"]
-    branches: [master]
+    branches: [ros2_dev]
     types:
       - completed
   push:
     paths:
     - 'autonomy_sim/**'
-    branches: [master]
+    branches: [ros2_dev]
   # DO NOT add a schedule. This build will be triggered by base schedule.
 
 jobs:
   main:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
       -
@@ -44,7 +44,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: kumarrobotics/autonomy:sim
+          tags: kumarrobotics/autonomy:sim-jazzy
           file: ./autonomy_sim/Dockerfile
           platforms: linux/amd64,linux/arm64
       -

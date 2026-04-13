@@ -1,5 +1,8 @@
+# TODO: these external packages are ROS1-only. Port each dependency to its ROS2
+# equivalent (where one exists) before `vcs import` will produce a workspace
+# that builds on the ros2_dev branch.
 repositories:
-  # remember to remove other versions of ouster_example repo first 
+  # remember to remove other versions of ouster_example repo first
   ouster_example:
     type: git
     url: http://github.com/ouster-lidar/ouster_example.git

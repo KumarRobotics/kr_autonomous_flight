@@ -5,14 +5,14 @@ on:
   push:
     paths:
     - 'autonomy_core/base/**'
-    branches: [master]
+    branches: [ros2_dev]
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * 0'
 
 jobs:
   main:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
       -
@@ -33,7 +33,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: kumarrobotics/autonomy:base
+          tags: kumarrobotics/autonomy:base-jazzy
           file: ./autonomy_core/base/Dockerfile
           platforms: linux/amd64,linux/arm64
       -

@@ -1,3 +1,7 @@
+# TODO: these external packages are ROS1-only. Port each dependency to its ROS2
+# equivalent (where one exists) before `vcs import < external_all.yaml` will
+# produce a workspace that builds on the ros2_dev branch. This file is
+# intentionally left as-is for now; the ROS2 port tracks the ROS1 repo list.
 repositories:
 
   # msckf_vio:

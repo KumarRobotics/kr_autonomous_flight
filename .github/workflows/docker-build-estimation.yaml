@@ -5,19 +5,19 @@ name: docker-build-estimation
 on:
   workflow_run:
     workflows: ["docker-build-base"]
-    branches: [master]
+    branches: [ros2_dev]
     types:
       - completed
   push:
     paths:
     - 'autonomy_core/estimation/**'
-    branches: [master]
+    branches: [ros2_dev]
   workflow_dispatch:
   # DO NOT add a schedule. This build will be triggered by base schedule.
 
 jobs:
   main:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
       -
@@ -38,7 +38,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: kumarrobotics/autonomy:estimation
+          tags: kumarrobotics/autonomy:estimation-jazzy
           file: ./autonomy_core/estimation/Dockerfile
           platforms: linux/amd64,linux/arm64
       -

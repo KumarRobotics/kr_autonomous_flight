@@ -5,19 +5,19 @@ name: docker-build-control
 on:
   workflow_run:
     workflows: ["docker-build-base"]
-    branches: [master]
+    branches: [ros2_dev]
     types:
       - completed
   workflow_dispatch:
   push:
     paths:
     - 'autonomy_core/control/**'
-    branches: [master]
+    branches: [ros2_dev]
   # DO NOT add a schedule. This build will be triggered by base schedule.
 
 jobs:
   main:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
       -
@@ -44,7 +44,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: kumarrobotics/autonomy:control
+          tags: kumarrobotics/autonomy:control-jazzy
           file: ./autonomy_core/control/Dockerfile
           platforms: linux/amd64,linux/arm64
       -

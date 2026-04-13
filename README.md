@@ -1,5 +1,5 @@
 > [!NOTE]
-> ## You are on the `dev/ros2` branch — ROS2 support for kr_autonomous_flight.
+> ## You are on the `ros2_dev` branch — ROS2 support for kr_autonomous_flight.
 >
 > This branch ports the entire `kr_autonomous_flight` stack from **ROS1 Noetic** (Ubuntu 20.04) to **ROS2 Jazzy Jalisco** (Ubuntu 24.04) — the latest ROS2 LTS. It is built on top of the [`feature/integrate_lidar_3d_planner_default`](https://github.com/KumarRobotics/kr_autonomous_flight/tree/feature/integrate_lidar_3d_planner_default) branch, which adds support for the **3D planner** and both **LIDAR + VIO** and **LIDAR-only** autonomous flight configurations. It is provided to help developers who want to use kr_autonomous_flight with ROS2.
 >
@@ -9,16 +9,27 @@
 
 ![alt text](https://github.com/KumarRobotics/kr_autonomous_flight/blob/master/docs/falcon4-compressed.jpg)
 
-# Branch Notice: 
+# Branch Notice:
 ## Prereq
-clone this repo 
-vcs import < external_all.yaml # pull dependency
-vcs import < motion_primitives/deps_ssh.repos # pull dependency of motion primitives for dispersion stuff
+Targets ROS2 Jazzy Jalisco on Ubuntu 24.04.
+
+```bash
+# clone this repo, then from the workspace root:
+source /opt/ros/jazzy/setup.bash
+vcs import < external_all.yaml  # pull dependencies (see TODO in that file — these are still ROS1-only)
+vcs import < motion_primitives/deps_ssh.repos  # pull motion primitives dispersion deps
 rosdep install --from-paths src --ignore-src -r -y
 sudo apt install libspdlog-dev
+colcon build --symlink-install
+source install/setup.bash
+```
 
-
-
+### ROS1 bags -> ROS2 conversion
+The demo bags that ship with the ROS1 `master` branch were recorded under
+Noetic and are not directly playable by `ros2 bag play`. Convert them first
+with the `rosbags-convert` CLI from the `rosbags` pip package
+(`pip install rosbags`), which rewrites `.bag` files into the ROS2 SQLite
+(`db3`) format that `ros2 bag play` understands.
 
 This is the autonomous flight code stack used at KumarRobotics, providing a complete solution for GPS-denied quadcopter autonomy. It has been tested extensively in challenging urban and rural (under forest canopy) environments.
 

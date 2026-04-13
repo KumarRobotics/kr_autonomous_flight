@@ -6,18 +6,18 @@ on:
   workflow_dispatch:
   workflow_run:
     workflows: ["docker-build-map-plan"]
-    branches: [master]
+    branches: [ros2_dev]
     types:
       - completed
   push:
     paths:
     - 'autonomy_core/client/**'
-    branches: [master]
+    branches: [ros2_dev]
   # DO NOT add a schedule. This build will be triggered by base schedule.
 
 jobs:
   main:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
       -
@@ -44,7 +44,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: kumarrobotics/autonomy:client
+          tags: kumarrobotics/autonomy:client-jazzy
           file: ./autonomy_core/client/Dockerfile
           platforms: linux/amd64,linux/arm64
       -

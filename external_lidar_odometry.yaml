@@ -1,3 +1,6 @@
+# TODO: these external packages are ROS1-only. Port each dependency to its ROS2
+# equivalent (where one exists) before `vcs import` will produce a workspace
+# that builds on the ros2_dev branch.
 repositories:
   faster-lio:
     type: git

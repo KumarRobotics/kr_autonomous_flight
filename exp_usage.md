@@ -3,9 +3,9 @@
 
 Install dependencies:
 
-$ sudo apt install  python3-catkin-tools python3-rosdep python3-rosinstall python3-vcstool ros-noetic-tf2-sensor-msgs ros-noetic-twist-mux \
-   ros-noetic-vision-msgs python3-yaml python3-pycryptodome python3-gnupg libsuitesparse-dev libv4l-dev libceres-dev \
-   ros-noetic-random-numbers ros-noetic-mavros-msgs libsdl-dev libsdl-image1.2-dev
+$ sudo apt install python3-colcon-common-extensions python3-rosdep python3-vcstool ros-jazzy-tf2-sensor-msgs ros-jazzy-twist-mux \
+   ros-jazzy-vision-msgs python3-yaml python3-pycryptodome python3-gnupg libsuitesparse-dev libv4l-dev libceres-dev \
+   ros-jazzy-random-numbers ros-jazzy-mavros-msgs libsdl-dev libsdl-image1.2-dev
 
 $ sudo apt-get update -y
 
@@ -17,7 +17,7 @@ Clone Repo: (Make sure you have ssh key setup)
 
 git clone git@github.com:ljarin/kr_autonomous_flight.git
 
-git checkout dev_not_fixed_dt
+git checkout ros2_dev
 
 vcs import < external_all.yaml
 
@@ -27,7 +27,7 @@ rosdep install --from-paths src --ignore-src -r -y
 
 sudo apt install libspdlog-dev
 
-sudo apt-get install ros-noetic-ompl
+sudo apt-get install ros-jazzy-ompl
 
 sudo apt install python3-pcl
 
@@ -41,7 +41,7 @@ To change planner, change `tracker_params_mp.yaml`, to run planner quickly witho
 - one terminal run :
 
 ```
-roslaunch map_plan_launch run_in_sim.launch 
+ros2 launch map_plan_launch run_in_sim.launch.py
 ```
 
 
@@ -49,7 +49,7 @@ roslaunch map_plan_launch run_in_sim.launch
 
 
 ```
-rosrun rqt_mav_manager rqt_mav_manager
+ros2 run rqt_mav_manager rqt_mav_manager
 
 ```
 
@@ -57,14 +57,14 @@ click "motors on" and "take off"
 
 
 
-- one terminal run: 
+- one terminal run:
 
 ```
-rosrun action_planner evaluate_traj_exp.py
+ros2 run action_planner evaluate_traj_exp.py
 ```
 
 
-To change map back to image one, see `run_in_sim.launch `
+To change map back to image one, see `run_in_sim.launch.py`
 
 
-For experiment, directly run `run_in_exp.launch ` to change quadrotor name
+For experiment, directly run `run_in_exp.launch.py` to change quadrotor name

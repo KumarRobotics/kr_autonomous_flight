@@ -1,6 +1,9 @@
-FROM nvidia/cudagl:11.4.2-base-ubuntu20.04
-
-RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub
+# TODO: restore CUDA runtime support (original used nvidia/cudagl:11.4.2-base-ubuntu20.04).
+# The nvidia/cudagl lineage was EOL'd and there is no drop-in Jazzy + CUDA image.
+# osrf/ros:jazzy-desktop-full covers graphics needs (rviz2, gazebo harmonic) but
+# compute-oriented CUDA workloads (e.g. yolov8 inference) will need a follow-up
+# that either layers CUDA onto this image or switches to nvidia/cuda:12.x-runtime-ubuntu24.04.
+FROM osrf/ros:jazzy-desktop-full
 
 #Run the frontend first so it doesn't throw an error later
 RUN export DEBIAN_FRONTEND=noninteractive \
@@ -39,22 +42,18 @@ ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 
-# ROS Setup
+# ROS2 Jazzy tools. The osrf/ros:jazzy-desktop-full base already ships the ROS2
+# apt source, colcon, rosdep, and the desktop-full metapackage, so we only need
+# to pull in the extra packages the autonomy stack depends on.
 RUN sudo apt-get update \
-    && sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list' \
-    && curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add - \
-    && sudo apt-get update \
     && sudo apt-get install -y \
-      python3-catkin-tools \
+      python3-colcon-common-extensions \
       python3-rosdep \
-      python3-rosinstall \
       python3-vcstool \
-      ros-noetic-catkin \
-      ros-noetic-rosbash \
-      ros-noetic-desktop \
-      ros-noetic-pcl-ros \
-      ros-noetic-tf2-geometry-msgs \
-    && sudo rosdep init \
+      ros-jazzy-pcl-ros \
+      ros-jazzy-tf2-geometry-msgs \
+      ros-jazzy-tf2-ros \
+    && (sudo rosdep init || true) \
     && rosdep update
 
 COPY autonomy_core/base/docker/entrypoint.sh /entrypoint.sh

@@ -1,12 +1,11 @@
 FROM kumarrobotics/autonomy:state_machine
 
-RUN mkdir -p /root/sim_ws/src 
+RUN mkdir -p /root/sim_ws/src
 WORKDIR /root/sim_ws
 COPY pkgs src/pkgs
-RUN rm src/pkgs/rosflight_msgs/CATKIN_IGNORE
-RUN catkin init && catkin config --extend /root/state_machine_ws/devel \
-    && catkin build -j8 -DCMAKE_BUILD_TYPE=RelWithDebInfo 
+RUN rm -f src/pkgs/rosflight_msgs/COLCON_IGNORE
+RUN . /root/state_machine_ws/install/setup.sh \
+    && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
 COPY docker/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
-

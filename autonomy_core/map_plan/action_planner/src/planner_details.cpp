@@ -3,22 +3,38 @@
 #include <kr_planning_rviz_plugins/spline_trajectory_visual.h>
 
 #include <iostream>
+
+namespace {
+// Helper that emulates ROS1 nh.param(name, var, default) in ROS2.
+// Declares parameter if not already declared, then retrieves its value.
+template <typename T>
+void get_param_or(rclcpp::Node* node,
+                  const std::string& name,
+                  T& var,
+                  const T& def) {
+  if (!node->has_parameter(name)) {
+    node->declare_parameter<T>(name, def);
+  }
+  node->get_parameter(name, var);
+}
+}  // namespace
+
 //
 // Double Descrisption Planner
 //
 void OptPlanner::iLQR_Planner::setup() {
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
-  ROS_WARN("[LocalPlanServer:] iLQR planner mode!!!!!");
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"[LocalPlanServer:] iLQR planner mode!!!!!");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
   bool subscribe_to_traj = false;
   bool publish_optimized_traj = false;
   bool publish_viz = true;  // N sample, time limit
   // ros::NodeHandle nh = ros::NodeHandle("~");  // to get parameters
   double dt_ilqr;
-  nh_.param("ilqr_dt", dt_ilqr, 0.1);
-  ROS_INFO("dt_ilqr = : %f", dt_ilqr);
+  get_param_or(node_, "ilqr_dt", dt_ilqr, 0.1);
+  RCLCPP_INFO(node_->get_logger(),"dt_ilqr = : %f", dt_ilqr);
   sampler_.reset(
-      new SplineTrajSampler(nh_,
+      new SplineTrajSampler(node_,
                             subscribe_to_traj,
                             publish_optimized_traj,
                             publish_viz,
@@ -26,15 +42,15 @@ void OptPlanner::iLQR_Planner::setup() {
                                         // automatically return +1 elements
                                         // this is the number of controls
 }
-kr_planning_msgs::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
+kr_planning_msgs::msg::TrajectoryDiscretized OptPlanner::iLQR_Planner::plan_discrete(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
-    const kr_planning_msgs::VoxelMap& map) {
-  ROS_WARN("[iLQR] Discrete Planning");
+    const kr_planning_msgs::msg::VoxelMap& map) {
+  RCLCPP_WARN(node_->get_logger(),"[iLQR] Discrete Planning");
   Eigen::VectorXd start_state(7);
   start_state << start.pos(0), start.pos(1), start.pos(2), start.vel(0),
       start.vel(1), start.vel(2), start.yaw;
-  kr_planning_msgs::TrajectoryDiscretized result_discrete =
+  kr_planning_msgs::msg::TrajectoryDiscretized result_discrete =
       sampler_->sample_and_refine_trajectory(
           start_state, search_path_msg_, this->hPolys, this->allo_ts);
   if (result_discrete.pos.size() == 0) {
@@ -85,25 +101,25 @@ MPL::Waypoint3D OptPlanner::iLQR_Planner::evaluate(double t) {
 }
 
 void OptPlanner::DoubleDescription::setup() {
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
-  ROS_WARN("[LocalPlanServer:] Double Description planner mode!!!!!");
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"[LocalPlanServer:] Double Description planner mode!!!!!");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
   mp_map_util_ = std::make_shared<MPL::VoxelMapUtil>();
 
   /* initialize main modules */
   planner_manager_.reset(new opt_planner::PlannerManager);
-  planner_manager_->initPlanModules(nh_, mp_map_util_, frame_id_);
+  planner_manager_->initPlanModules(node_, mp_map_util_, frame_id_);
 
   // TODO(xu:) not differentiating between 2D and 3D, causing extra resource
   // usage for 2D case, this needed to be changed in both planner util as well
   // as map util, which requires the slicing map function
 }
 
-kr_planning_msgs::SplineTrajectory OptPlanner::DoubleDescription::plan(
+kr_planning_msgs::msg::SplineTrajectory OptPlanner::DoubleDescription::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
-    const kr_planning_msgs::VoxelMap& map) {
-  ROS_WARN("[LocalPlanServer] trigger opt_planner!!!!!");
+    const kr_planning_msgs::msg::VoxelMap& map) {
+  RCLCPP_WARN(node_->get_logger(),"[LocalPlanServer] trigger opt_planner!!!!!");
   setMap(mp_map_util_, map);
   Eigen::MatrixXd startState(3, 3), endState(3, 3);
   startState << start.pos(0), start.vel(0), start.acc(0), start.pos(1),
@@ -117,10 +133,10 @@ kr_planning_msgs::SplineTrajectory OptPlanner::DoubleDescription::plan(
     opt_traj_ = planner_manager_->local_data_.traj_;
     traj_total_time_ = opt_traj_.getTotalDuration();
   } else {
-    return kr_planning_msgs::SplineTrajectory();
+    return kr_planning_msgs::msg::SplineTrajectory();
   }
 
-  kr_planning_msgs::SplineTrajectory spline_msg;
+  kr_planning_msgs::msg::SplineTrajectory spline_msg;
   spline_msg.header.frame_id = frame_id_;
   spline_msg.dimensions = 3;
 
@@ -128,9 +144,9 @@ kr_planning_msgs::SplineTrajectory OptPlanner::DoubleDescription::plan(
   Eigen::VectorXd durs = opt_traj_.getDurations();
 
   for (uint d = 0; d < 3; d++) {
-    kr_planning_msgs::Spline spline;
+    kr_planning_msgs::msg::Spline spline;
     for (uint s = 0; s < piece_num; s++) {
-      kr_planning_msgs::Polynomial poly;
+      kr_planning_msgs::msg::Polynomial poly;
 
       min_jerk::CoefficientMat coeff = opt_traj_[s].getCoeffMat(true);
 
@@ -158,24 +174,24 @@ MPL::Waypoint3D OptPlanner::DoubleDescription::evaluate(double t) {
 }
 
 void OptPlanner::GCOPTER::setup() {
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
-  ROS_WARN("[LocalPlanServer:] GCOPTER Optimization planner mode!!!!!");
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"[LocalPlanServer:] GCOPTER Optimization planner mode!!!!!");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
 
   /* initialize main modules */
   // ros::NodeHandle nh = ros::NodeHandle("~");
-  planner_manager_.reset(new gcopter::GcopterPlanner(nh_, frame_id_));
-  ROS_WARN("[LocalPlanServer:] GCOPTER setup complete");
+  planner_manager_.reset(new gcopter::GcopterPlanner(node_, frame_id_));
+  RCLCPP_WARN(node_->get_logger(),"[LocalPlanServer:] GCOPTER setup complete");
 }
 
-kr_planning_msgs::SplineTrajectory OptPlanner::GCOPTER::plan(
+kr_planning_msgs::msg::SplineTrajectory OptPlanner::GCOPTER::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
-    const kr_planning_msgs::VoxelMap& map) {
-  ROS_WARN("[LocalPlanServer] trigger opt_planner!!!!!");
+    const kr_planning_msgs::msg::VoxelMap& map) {
+  RCLCPP_WARN(node_->get_logger(),"[LocalPlanServer] trigger opt_planner!!!!!");
 
-  ROS_WARN_STREAM("[GCOPTER]: Vel Norm:" << start.vel.norm());
-  ROS_WARN_STREAM("[GCOPTER]: Acc Norm:" << start.acc.norm());
+  RCLCPP_WARN_STREAM(node_->get_logger(),"[GCOPTER]: Vel Norm:" << start.vel.norm());
+  RCLCPP_WARN_STREAM(node_->get_logger(),"[GCOPTER]: Acc Norm:" << start.acc.norm());
   Eigen::MatrixXd startState(3, 3), endState(3, 3);
   startState << start.pos(0), start.vel(0), start.acc(0), start.pos(1),
       start.vel(1), start.acc(1), start.pos(2), start.vel(2), start.acc(2);
@@ -196,10 +212,10 @@ kr_planning_msgs::SplineTrajectory OptPlanner::GCOPTER::plan(
     opt_traj_ = planner_manager_->getTraj();
     traj_total_time_ = opt_traj_.getTotalDuration();
   } else {
-    return kr_planning_msgs::SplineTrajectory();
+    return kr_planning_msgs::msg::SplineTrajectory();
   }
 
-  kr_planning_msgs::SplineTrajectory spline_msg;
+  kr_planning_msgs::msg::SplineTrajectory spline_msg;
   spline_msg.header.frame_id = frame_id_;
   spline_msg.dimensions = 3;
 
@@ -207,9 +223,9 @@ kr_planning_msgs::SplineTrajectory OptPlanner::GCOPTER::plan(
   Eigen::VectorXd durs = opt_traj_.getDurations();
 
   for (uint d = 0; d < 3; d++) {
-    kr_planning_msgs::Spline spline;
+    kr_planning_msgs::msg::Spline spline;
     for (uint s = 0; s < piece_num; s++) {
-      kr_planning_msgs::Polynomial poly;
+      kr_planning_msgs::msg::Polynomial poly;
 
       auto coeff = opt_traj_[s].normalizePosCoeffMat();
 
@@ -241,46 +257,47 @@ MPL::Waypoint3D OptPlanner::GCOPTER::evaluate(double t) {
 //
 
 void SearchPlanner::UniformInputSampling::setup() {
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
-  ROS_WARN("[LocalPlanServer:] MPL planner mode!!!!!");
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"[LocalPlanServer:] MPL planner mode!!!!!");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
 
   // set up visualization publisher for mpl planner
   expanded_cloud_pub =
-      nh_.advertise<sensor_msgs::PointCloud>("expanded_cloud", 1, true);
+      node_->create_publisher<sensor_msgs::msg::PointCloud>(
+          "expanded_cloud", rclcpp::QoS(1).transient_local());
 
   // set up mpl planner
-  nh_.param("debug", debug_, false);
-  nh_.param("verbose", verbose_, false);
+  get_param_or(node_, "debug", debug_, false);
+  get_param_or(node_, "verbose", verbose_, false);
 
   double dt;
   double W, v_fov;
   int ndt, max_num;
-  nh_.param("tol_pos", tol_pos_, 0.5);
-  nh_.param("global_goal_tol_vel", goal_tol_vel_, 0.5);
-  nh_.param("global_goal_tol_acc", goal_tol_acc_, 0.5);
+  get_param_or(node_, "tol_pos", tol_pos_, 0.5);
+  get_param_or(node_, "global_goal_tol_vel", goal_tol_vel_, 0.5);
+  get_param_or(node_, "global_goal_tol_acc", goal_tol_acc_, 0.5);
   /// Execution time for each primitive
-  nh_.param("dt", dt, 1.0);
-  nh_.param("ndt", ndt, -1);
-  nh_.param("max_num", max_num, -1);
-  nh_.param("heuristic_weight", W, 10.0);
-  nh_.param("vertical_semi_fov", v_fov, 0.392);
+  get_param_or(node_, "dt", dt, 1.0);
+  get_param_or(node_, "ndt", ndt, -1);
+  get_param_or(node_, "max_num", max_num, -1);
+  get_param_or(node_, "heuristic_weight", W, 10.0);
+  get_param_or(node_, "vertical_semi_fov", v_fov, 0.392);
 
   mp_map_util_ = std::make_shared<MPL::VoxelMapUtil>();
 
-  nh_.param("use_3d_local", use_3d_local_, false);
+  get_param_or(node_, "use_3d_local", use_3d_local_, false);
 
   double vz_max, az_max, jz_max, uz_max;
-  nh_.param("max_v_z", vz_max, 2.0);
-  nh_.param("max_a_z", az_max, 1.0);
-  nh_.param("max_j_z", jz_max, 1.0);
-  nh_.param("max_u_z", uz_max, 1.0);
+  get_param_or(node_, "max_v_z", vz_max, 2.0);
+  get_param_or(node_, "max_a_z", az_max, 1.0);
+  get_param_or(node_, "max_j_z", jz_max, 1.0);
+  get_param_or(node_, "max_u_z", uz_max, 1.0);
 
   double v_max, a_max, j_max, u_max;
-  nh_.param("max_v", v_max, 2.0);
-  nh_.param("max_a", a_max, 1.0);
-  nh_.param("max_j", j_max, 1.0);
-  nh_.param("max_u", u_max, 1.0);
+  get_param_or(node_, "max_v", v_max, 2.0);
+  get_param_or(node_, "max_a", a_max, 1.0);
+  get_param_or(node_, "max_j", j_max, 1.0);
+  get_param_or(node_, "max_u", u_max, 1.0);
 
   // Important: set motion primitive control inputs
   vec_E<VecDf> U;
@@ -319,11 +336,11 @@ void SearchPlanner::UniformInputSampling::setup() {
   mp_planner_util_->setLPAstar(false);  // Use Astar
 }
 
-kr_planning_msgs::SplineTrajectory SearchPlanner::UniformInputSampling::plan(
+kr_planning_msgs::msg::SplineTrajectory SearchPlanner::UniformInputSampling::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
-    const kr_planning_msgs::VoxelMap& map) {
-  ROS_WARN("[MPL] trigger mp_planner!!!!!");
+    const kr_planning_msgs::msg::VoxelMap& map) {
+  RCLCPP_WARN(node_->get_logger(),"[MPL] trigger mp_planner!!!!!");
 
   setMap(mp_map_util_, map);
   if (action_server_goal_.check_vel) {
@@ -350,15 +367,15 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::UniformInputSampling::plan(
     mp_traj_ = mp_planner_util_->getTraj();
     traj_total_time_ = mp_traj_.getTotalTime();
   } else {
-    return kr_planning_msgs::SplineTrajectory();
+    return kr_planning_msgs::msg::SplineTrajectory();
   }
 
   // for visualization: publish expanded nodes as a point cloud
-  sensor_msgs::PointCloud expanded_ps =
+  sensor_msgs::msg::PointCloud expanded_ps =
       kr::vec_to_cloud(mp_planner_util_->getExpandedNodes());
   expanded_ps.header.frame_id = frame_id_;
-  expanded_cloud_pub.publish(expanded_ps);
-  kr_planning_msgs::Trajectory traj_msg = toTrajectoryROSMsg(mp_traj_);
+  expanded_cloud_pub->publish(expanded_ps);
+  kr_planning_msgs::msg::Trajectory traj_msg = toTrajectoryROSMsg(mp_traj_);
   traj_msg.header.frame_id = frame_id_;
   auto spline_msg = traj_opt::SplineTrajectoryFromTrajectory(traj_msg);
   return spline_msg;
@@ -373,26 +390,27 @@ MPL::Waypoint3D SearchPlanner::UniformInputSampling::evaluate(double t) {
 //
 
 void SearchPlanner::Dispersion::setup() {
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
-  ROS_WARN("[LocalPlanServer:] Dispersion planner mode!!!!!");
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
-  nh_.param("tol_pos", tol_pos_, 0.5);
-  ROS_INFO_STREAM("Position tolerance: " << tol_pos_);
-  nh_.param<std::string>("heuristic", heuristic_, "min_time");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"[LocalPlanServer:] Dispersion planner mode!!!!!");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
+  get_param_or(node_, "tol_pos", tol_pos_, 0.5);
+  RCLCPP_INFO_STREAM(node_->get_logger(),"Position tolerance: " << tol_pos_);
+  get_param_or<std::string>(node_, "heuristic", heuristic_, "min_time");
 
   std::string graph_file;
-  nh_.param<std::string>("dispersion/graph_file", graph_file, "");
-  ROS_INFO("Reading graph file %s", graph_file.c_str());
+  get_param_or<std::string>(node_, "dispersion.graph_file", graph_file, "");
+  RCLCPP_INFO(node_->get_logger(),"Reading graph file %s", graph_file.c_str());
   graph_ = std::make_shared<motion_primitives::MotionPrimitiveGraph>(
       motion_primitives::read_motion_primitive_graph(graph_file));
   visited_pub_ =
-      nh_.advertise<visualization_msgs::MarkerArray>("visited", 1, true);
+      node_->create_publisher<visualization_msgs::msg::MarkerArray>(
+          "visited", rclcpp::QoS(1).transient_local());
 }
 
-kr_planning_msgs::SplineTrajectory SearchPlanner::Dispersion::plan(
+kr_planning_msgs::msg::SplineTrajectory SearchPlanner::Dispersion::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
-    const kr_planning_msgs::VoxelMap& map) {
+    const kr_planning_msgs::msg::VoxelMap& map) {
   // TODO(Laura) cleanup if(compute_first_mp) blocks
 
   // TODO(Laura) hardcoded for 2D
@@ -402,13 +420,13 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Dispersion::plan(
   Eigen::VectorXd goal_state(graph_->state_dim());
   goal_state << goal.pos(0), goal.pos(1), goal.vel(0), goal.vel(1), goal.acc(0),
       goal.acc(1);
-  const kr_planning_msgs::SplineTrajectory last_traj =
+  const kr_planning_msgs::msg::SplineTrajectory last_traj =
       action_server_goal_.last_traj;
   double eval_time = action_server_goal_.eval_time;
   int planner_start_index = -1;
   bool compute_first_mp = last_traj.data.size() > 0;
   if (!compute_first_mp)
-    ROS_WARN("Missing last trajectory (stopping policy may have run)");
+    RCLCPP_WARN(node_->get_logger(),"Missing last trajectory (stopping policy may have run)");
   int seg_num = -1;
   double finished_segs_time = 0;
   std::shared_ptr<motion_primitives::MotionPrimitive> mp;
@@ -432,7 +450,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Dispersion::plan(
     }
     // todo(laura) what to do if eval time is past the end of the traj
     if (seg_num == -1) seg_num = last_traj.data[0].segments - 1;
-    ROS_INFO_STREAM("Seg num " << seg_num);
+    RCLCPP_INFO_STREAM(node_->get_logger(),"Seg num " << seg_num);
 
     // The planner will start at the end of the current segment, so we get
     // its end index.
@@ -441,7 +459,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Dispersion::plan(
     mp = motion_primitives::recover_mp_from_SplineTrajectory(
         last_traj, graph_, seg_num);
     start_state = mp->end_state_;
-    ROS_INFO_STREAM("Planner adjusted start: " << mp->end_state_.transpose());
+    RCLCPP_INFO_STREAM(node_->get_logger(),"Planner adjusted start: " << mp->end_state_.transpose());
   }
 
   options_ = {.start_state = start_state,
@@ -465,7 +483,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Dispersion::plan(
   // graph_index_!=last_graph.graph_index didn't work
 
   motion_primitives::GraphSearch gs(*graph_, map, options_);
-  const auto start_time = ros::Time::now();
+  const auto start_time = node_->now();
 
   auto [path, nodes] = gs.Search();
   const auto visited_marray =
@@ -475,15 +493,15 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Dispersion::plan(
                                              0.1,
                                              false,
                                              options_.fixed_z);
-  visited_pub_.publish(visited_marray);
+  visited_pub_->publish(visited_marray);
   bool planner_start_too_close_to_goal =
       motion_primitives::StatePosWithin(options_.start_state,
                                         options_.goal_state,
                                         graph_->spatial_dim(),
                                         options_.distance_threshold);
   if (path.empty() && !planner_start_too_close_to_goal) {
-    ROS_ERROR("Graph search failed, aborting action server.");
-    return kr_planning_msgs::SplineTrajectory();
+    RCLCPP_ERROR(node_->get_logger(),"Graph search failed, aborting action server.");
+    return kr_planning_msgs::msg::SplineTrajectory();
   }
   if (compute_first_mp) {
     // To our planned trajectory, we add a cropped motion primitive that is
@@ -517,7 +535,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Dispersion::plan(
             cropped_poly_coeffs(i, cropped_poly_coeffs.cols() - 3);
       }
     }
-    ROS_INFO_STREAM("Cropped start " << cropped_start.transpose());
+    RCLCPP_INFO_STREAM(node_->get_logger(),"Cropped start " << cropped_start.transpose());
 
     auto first_mp =
         graph_->createMotionPrimitivePtrFromGraph(cropped_start, start.pos);
@@ -535,10 +553,10 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::Dispersion::plan(
     path.insert(path.begin(), first_mp);
   }
 
-  ROS_INFO("Graph search succeeded.");
+  RCLCPP_INFO(node_->get_logger(),"Graph search succeeded.");
 
-  const auto total_time = (ros::Time::now() - start_time).toSec();
-  ROS_INFO("Finished planning. Planning time %f s", total_time);
+  const auto total_time = (node_->now() - start_time).seconds();
+  RCLCPP_INFO(node_->get_logger(),"Finished planning. Planning time %f s", total_time);
 
   auto spline_msg = motion_primitives::path_to_spline_traj_msg(
       path, map.header, options_.fixed_z);
@@ -559,9 +577,9 @@ MPL::Waypoint3D SearchPlanner::Dispersion::evaluate(double t) {
   return waypoint;
 }
 
-kr_planning_msgs::SplineTrajectory
+kr_planning_msgs::msg::SplineTrajectory
 path_to_spline_traj(  // this function needs float
-    kr_planning_msgs::Path path,
+    kr_planning_msgs::msg::Path path,
     float velocity) {
   float total_dist = 0.0;
 
@@ -595,10 +613,10 @@ path_to_spline_traj(  // this function needs float
   waypoints.push_back(pt1);
 
 
-  kr_planning_msgs::SplineTrajectory spline_traj;
+  kr_planning_msgs::msg::SplineTrajectory spline_traj;
   spline_traj.dimensions = 3;
   for (int i = 0; i < 3; i++) {
-    kr_planning_msgs::Spline spline;
+    kr_planning_msgs::msg::Spline spline;
     spline_traj.data.push_back(spline);
   }
   float accumulative_dist = 0.0;
@@ -624,7 +642,7 @@ path_to_spline_traj(  // this function needs float
     for (int dim = 0; dim < 3; dim++) {
       float v0_dim = vec_between(dim) / distance * v0_norm;
       float vf_dim = vec_between(dim) / distance * vf;
-      kr_planning_msgs::Polynomial seg;
+      kr_planning_msgs::msg::Polynomial seg;
       seg.degree = 5;  // Chosen a little arbitrarily
       seg.dt = t_seg;
 
@@ -645,46 +663,47 @@ path_to_spline_traj(  // this function needs float
 }
 
 void SearchPlanner::Geometric::setup() {
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
-  ROS_WARN("[LocalPlanServer:] JPS planner mode!!!!!");
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"[LocalPlanServer:] JPS planner mode!!!!!");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
 
   // Hardcoded 3d, will make performance worse in 2d
   jps_3d_map_util_ = std::make_shared<JPS::VoxelMapUtil>();
   jps_3d_util_ = std::make_shared<JPS::JPSPlanner3D>(verbose_);
   jps_3d_util_->setMapUtil(jps_3d_map_util_);
-  path_pub_ = nh_.advertise<kr_planning_msgs::Path>("path", 1, true);
+  path_pub_ = node_->create_publisher<kr_planning_msgs::msg::Path>(
+      "path", rclcpp::QoS(1).transient_local());
 }
 
-kr_planning_msgs::SplineTrajectory SearchPlanner::Geometric::plan(
+kr_planning_msgs::msg::SplineTrajectory SearchPlanner::Geometric::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
-    const kr_planning_msgs::VoxelMap& map) {
-  spline_traj_ = kr_planning_msgs::SplineTrajectory();
+    const kr_planning_msgs::msg::VoxelMap& map) {
+  spline_traj_ = kr_planning_msgs::msg::SplineTrajectory();
   setMap(jps_3d_map_util_, map);
   jps_3d_util_->updateMap();
   if (!jps_3d_util_->plan(start.pos, goal.pos, 1.0, true)) {
-    ROS_WARN("Failed to plan a JPS path!");
+    RCLCPP_WARN(node_->get_logger(),"Failed to plan a JPS path!");
   } else {
 
 
-    kr_planning_msgs::Path path = kr::path_to_ros(jps_3d_util_->getPath());
+    kr_planning_msgs::msg::Path path = kr::path_to_ros(jps_3d_util_->getPath());
     path.header.frame_id = frame_id_;
-    path.header.stamp = ros::Time::now();
-    path_pub_.publish(path);
+    path.header.stamp = node_->now();
+    path_pub_->publish(path);
 
     std::cout << "path.lenth is " << path.waypoints.size() << std::endl;
 
 
     double velocity;
-    nh_.param("max_v", velocity, 2.0);
+    get_param_or(node_, "max_v", velocity, 2.0);
     spline_traj_ = path_to_spline_traj(path, static_cast<float>(velocity));
 
     std::cout << "spline_traj_.lenth is " << spline_traj_.data.size() << std::endl;
 
 
     spline_traj_.header.frame_id = frame_id_;
-    spline_traj_.header.stamp = ros::Time::now();
+    spline_traj_.header.stamp = node_->now();
     traj_total_time_ = spline_traj_.data[0].t_total;
       std::cout << "spline_traj_.data[0].t_total is " << spline_traj_.data[0].t_total  << std::endl;
 
@@ -702,43 +721,46 @@ MPL::Waypoint3D SearchPlanner::Geometric::evaluate(double t) {
 }
 
 void SearchPlanner::PathThrough::setup() {
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
-  ROS_WARN("[LocalPlanServer:] Path through mode!!!!!");
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"[LocalPlanServer:] Path through mode!!!!!");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
 
-  path_pub_ = nh_.advertise<kr_planning_msgs::Path>("path", 1, true);
+  path_pub_ = node_->create_publisher<kr_planning_msgs::msg::Path>(
+      "path", rclcpp::QoS(1).transient_local());
   high_level_planner_sub_ =
-      nh_.subscribe("/quadrotor/global_plan_server/path",
-                    1,
-                    &SearchPlanner::PathThrough::highLevelPlannerCB,
-                    this);
+      node_->create_subscription<kr_planning_msgs::msg::Path>(
+          "/quadrotor/global_plan_server/path",
+          1,
+          std::bind(&SearchPlanner::PathThrough::highLevelPlannerCB,
+                    this,
+                    std::placeholders::_1));
 }
 
 void SearchPlanner::PathThrough::highLevelPlannerCB(
-    const kr_planning_msgs::Path& path) {
-  path_ = path;
-  ROS_INFO_STREAM("[Local Plan Search]: Passing through global plan!");
+    const kr_planning_msgs::msg::Path::ConstSharedPtr path) {
+  path_ = *path;
+  RCLCPP_INFO_STREAM(node_->get_logger(),"[Local Plan Search]: Passing through global plan!");
 }
 
-kr_planning_msgs::SplineTrajectory SearchPlanner::PathThrough::plan(
+kr_planning_msgs::msg::SplineTrajectory SearchPlanner::PathThrough::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
-    const kr_planning_msgs::VoxelMap& map) {
+    const kr_planning_msgs::msg::VoxelMap& map) {
   (void)map;
   if (path_.waypoints.empty()) {
-    ROS_WARN("No path received yet!");
-    return kr_planning_msgs::SplineTrajectory();
+    RCLCPP_WARN(node_->get_logger(),"No path received yet!");
+    return kr_planning_msgs::msg::SplineTrajectory();
   }
-  kr_planning_msgs::Path path = path_;
+  kr_planning_msgs::msg::Path path = path_;
   path.header.frame_id = frame_id_;
-  path.header.stamp = ros::Time::now();
-  path_pub_.publish(path);
+  path.header.stamp = node_->now();
+  path_pub_->publish(path);
 
   double velocity;
-  nh_.param("max_v", velocity, 2.0);
+  get_param_or(node_, "max_v", velocity, 2.0);
   spline_traj_ = path_to_spline_traj(path, velocity);
   spline_traj_.header.frame_id = frame_id_;
-  spline_traj_.header.stamp = ros::Time::now();
+  spline_traj_.header.stamp = node_->now();
   traj_total_time_ = spline_traj_.data[0].t_total;
 
   return spline_traj_;
@@ -756,43 +778,44 @@ MPL::Waypoint3D SearchPlanner::PathThrough::evaluate(double t) {
 
 // rrt
 void SearchPlanner::Sampling::setup() {
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
-  ROS_WARN("[LocalPlanServer:] RRT planner mode!!!!!");
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"[LocalPlanServer:] RRT planner mode!!!!!");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
 
   // ros::NodeHandle nh = ros::NodeHandle("~");
-  rrtplanner_.reset(new gcopter::GcopterPlanner(nh_, frame_id_));
-  path_pub_ = nh_.advertise<kr_planning_msgs::Path>("path", 1, true);
+  rrtplanner_.reset(new gcopter::GcopterPlanner(node_, frame_id_));
+  path_pub_ = node_->create_publisher<kr_planning_msgs::msg::Path>(
+      "path", rclcpp::QoS(1).transient_local());
 }
 
-kr_planning_msgs::SplineTrajectory SearchPlanner::Sampling::plan(
+kr_planning_msgs::msg::SplineTrajectory SearchPlanner::Sampling::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
-    const kr_planning_msgs::VoxelMap& map) {
-  spline_traj_ = kr_planning_msgs::SplineTrajectory();
+    const kr_planning_msgs::msg::VoxelMap& map) {
+  spline_traj_ = kr_planning_msgs::msg::SplineTrajectory();
 
   rrtplanner_->setMap(map);
   std::vector<Eigen::Vector3d> route;
 
   if (!rrtplanner_->planRRT(start.pos, goal.pos, route)) {
-    ROS_WARN("Failed to plan a RRT path!");
+    RCLCPP_WARN(node_->get_logger(),"Failed to plan a RRT path!");
   } else {
     path_.clear();
     for (auto& wp : route) {
       path_.push_back(wp);
     }
 
-    kr_planning_msgs::Path path = kr::path_to_ros(path_);
+    kr_planning_msgs::msg::Path path = kr::path_to_ros(path_);
     path.header.frame_id = frame_id_;
-    path.header.stamp = ros::Time::now();
-    path_pub_.publish(path);
+    path.header.stamp = node_->now();
+    path_pub_->publish(path);
 
     //@yuwei: constant velocity
     double velocity;
-    nh_.param("max_v", velocity, 2.0);
+    get_param_or(node_, "max_v", velocity, 2.0);
     spline_traj_ = path_to_spline_traj(path, velocity);
     spline_traj_.header.frame_id = frame_id_;
-    spline_traj_.header.stamp = ros::Time::now();
+    spline_traj_.header.stamp = node_->now();
     traj_total_time_ = spline_traj_.data[0].t_total;
   }
   return spline_traj_;
@@ -810,20 +833,21 @@ MPL::Waypoint3D SearchPlanner::Sampling::evaluate(double t) {
 
 // sst
 void SearchPlanner::DynSampling::setup() {
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
-  ROS_WARN("[LocalPlanServer:] SST planner mode!!!!!");
-  ROS_WARN("+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
+  RCLCPP_WARN(node_->get_logger(),"[LocalPlanServer:] SST planner mode!!!!!");
+  RCLCPP_WARN(node_->get_logger(),"+++++++++++++++++++++++++++++++++++");
 
   // ros::NodeHandle nh = ros::NodeHandle("~");
-  sstplanner_.reset(new gcopter::GcopterPlanner(nh_, frame_id_));
-  path_pub_ = nh_.advertise<kr_planning_msgs::Path>("path", 1, true);
+  sstplanner_.reset(new gcopter::GcopterPlanner(node_, frame_id_));
+  path_pub_ = node_->create_publisher<kr_planning_msgs::msg::Path>(
+      "path", rclcpp::QoS(1).transient_local());
 }
 
-kr_planning_msgs::SplineTrajectory SearchPlanner::DynSampling::plan(
+kr_planning_msgs::msg::SplineTrajectory SearchPlanner::DynSampling::plan(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
-    const kr_planning_msgs::VoxelMap& map) {
-  spline_traj_ = kr_planning_msgs::SplineTrajectory();
+    const kr_planning_msgs::msg::VoxelMap& map) {
+  spline_traj_ = kr_planning_msgs::msg::SplineTrajectory();
 
   Eigen::MatrixXd startState(3, 3), endState(3, 3);
   startState << start.pos(0), start.vel(0), start.acc(0), start.pos(1),
@@ -835,7 +859,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::DynSampling::plan(
   std::vector<Eigen::VectorXd> route;
 
   if (!sstplanner_->planSST(startState, endState, route)) {
-    ROS_WARN("Failed to plan a SST path!");
+    RCLCPP_WARN(node_->get_logger(),"Failed to plan a SST path!");
   } else {
     path_.clear();
     for (auto& wp : route) {
@@ -843,10 +867,10 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::DynSampling::plan(
       // std::cout << "wp.head(3)" << wp.head(3).transpose() << std::endl;
     }
 
-    kr_planning_msgs::Path path = kr::path_to_ros(path_);
+    kr_planning_msgs::msg::Path path = kr::path_to_ros(path_);
     path.header.frame_id = frame_id_;
-    path.header.stamp = ros::Time::now();
-    path_pub_.publish(path);
+    path.header.stamp = node_->now();
+    path_pub_->publish(path);
 
     //@yuwei: constant velocity
     // double velocity;
@@ -855,10 +879,10 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::DynSampling::plan(
     spline_traj_.dimensions = 3;
     int piece_num = route.size() - 1;
     for (uint d = 0; d < 3; d++) {
-      kr_planning_msgs::Spline spline;
+      kr_planning_msgs::msg::Spline spline;
       double total_time = 0.0;
       for (uint s = 0; s < piece_num; s++) {
-        kr_planning_msgs::Polynomial poly;
+        kr_planning_msgs::msg::Polynomial poly;
         double dt = route.at(s)(9);
         Eigen::Matrix<double, 3, 3> coeff;
         coeff.col(0) = route.at(s).head(3);                        // position
@@ -879,7 +903,7 @@ kr_planning_msgs::SplineTrajectory SearchPlanner::DynSampling::plan(
     }
 
     spline_traj_.header.frame_id = frame_id_;
-    spline_traj_.header.stamp = ros::Time::now();
+    spline_traj_.header.stamp = node_->now();
     traj_total_time_ = spline_traj_.data[0].t_total;
   }
   return spline_traj_;
@@ -897,59 +921,60 @@ MPL::Waypoint3D SearchPlanner::DynSampling::evaluate(double t) {
 
 void CompositePlanner::setup() {
   int search_planner_type_id, opt_planner_type_id;
-  nh_.param("search_planner_type", search_planner_type_id, -1);
-  nh_.param("opt_planner_type", opt_planner_type_id, -1);
-  nh_.param("path_sampling_dt", path_sampling_dt_, 0.0);
+  get_param_or(node_, "search_planner_type", search_planner_type_id, -1);
+  get_param_or(node_, "opt_planner_type", opt_planner_type_id, -1);
+  get_param_or(node_, "path_sampling_dt", path_sampling_dt_, 0.0);
 
-  search_traj_pub_ = nh_.advertise<kr_planning_msgs::SplineTrajectory>(
-      "search_trajectory", 1, true);
+  search_traj_pub_ =
+      node_->create_publisher<kr_planning_msgs::msg::SplineTrajectory>(
+          "search_trajectory", rclcpp::QoS(1).transient_local());
 
   poly_gen_map_util_ = std::make_shared<MPL::VoxelMapUtil>();
   poly_generator_.reset(new opt_planner::PlannerManager);
-  poly_generator_->initPlanModules(nh_, poly_gen_map_util_, frame_id_);
+  poly_generator_->initPlanModules(node_, poly_gen_map_util_, frame_id_);
 
   switch (search_planner_type_id) {
     case 0:
       search_planner_type_ =
-          new SearchPlanner::UniformInputSampling(nh_, frame_id_);
+          new SearchPlanner::UniformInputSampling(node_, frame_id_);
       break;
     case 1:
-      search_planner_type_ = new SearchPlanner::Dispersion(nh_, frame_id_);
+      search_planner_type_ = new SearchPlanner::Dispersion(node_, frame_id_);
       break;
     case 2:
-      search_planner_type_ = new SearchPlanner::Geometric(nh_, frame_id_);
+      search_planner_type_ = new SearchPlanner::Geometric(node_, frame_id_);
       break;
     case 3:
-      search_planner_type_ = new SearchPlanner::PathThrough(nh_, frame_id_);
+      search_planner_type_ = new SearchPlanner::PathThrough(node_, frame_id_);
       break;
     case 4:
       search_planner_type_ =
-          new SearchPlanner::Sampling(nh_, frame_id_);  // RRT
+          new SearchPlanner::Sampling(node_, frame_id_);  // RRT
       break;
     case 5:
       search_planner_type_ =
-          new SearchPlanner::DynSampling(nh_, frame_id_);  // SST
+          new SearchPlanner::DynSampling(node_, frame_id_);  // SST
       break;
     // case 4:
     //   search_planner_type_ = new
     //   SearchPlanner::SingleBVP(nh_, frame_id_); break;
     default:
-      ROS_ERROR("No search planner selected; cannot continue");
+      RCLCPP_ERROR(node_->get_logger(),"No search planner selected; cannot continue");
       return;
   }
 
   switch (opt_planner_type_id) {
     case 0:
-      opt_planner_type_ = new OptPlanner::DoubleDescription(nh_, frame_id_);
+      opt_planner_type_ = new OptPlanner::DoubleDescription(node_, frame_id_);
       break;
     case 1:
-      opt_planner_type_ = new OptPlanner::GCOPTER(nh_, frame_id_);
+      opt_planner_type_ = new OptPlanner::GCOPTER(node_, frame_id_);
       break;
     case 2:
-      opt_planner_type_ = new OptPlanner::iLQR_Planner(nh_, frame_id_);
+      opt_planner_type_ = new OptPlanner::iLQR_Planner(node_, frame_id_);
       break;
     default:
-      ROS_ERROR("No opt planner selected; will use search planner only.");
+      RCLCPP_ERROR(node_->get_logger(),"No opt planner selected; will use search planner only.");
       break;
   }
 
@@ -961,14 +986,14 @@ void CompositePlanner::setup() {
   }
 }
 
-std::tuple<kr_planning_msgs::SplineTrajectory,
-           kr_planning_msgs::SplineTrajectory,
-           kr_planning_msgs::TrajectoryDiscretized>
+std::tuple<kr_planning_msgs::msg::SplineTrajectory,
+           kr_planning_msgs::msg::SplineTrajectory,
+           kr_planning_msgs::msg::TrajectoryDiscretized>
 CompositePlanner::plan_composite(
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
-    const kr_planning_msgs::VoxelMap& map,
-    const kr_planning_msgs::VoxelMap& map_no_inflation,
+    const kr_planning_msgs::msg::VoxelMap& map,
+    const kr_planning_msgs::msg::VoxelMap& map_no_inflation,
     float* compute_time_front_end,
     float* compute_time_back_end,
     float* compute_time_poly,
@@ -976,20 +1001,20 @@ CompositePlanner::plan_composite(
   // success status = 0: no success 1: front success 2: poly_gen_success 3: back
   // success
   auto start_timer = std::chrono::high_resolution_clock::now();
-  kr_planning_msgs::SplineTrajectory search_result =
+  kr_planning_msgs::msg::SplineTrajectory search_result =
       search_planner_type_->plan(start, goal, map);
   auto end_timer = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
       end_timer - start_timer);
   *compute_time_front_end = duration.count() / 1000.0;
 
-  kr_planning_msgs::SplineTrajectory opt_result_continuous;
-  kr_planning_msgs::TrajectoryDiscretized opt_result_discretized;
+  kr_planning_msgs::msg::SplineTrajectory opt_result_continuous;
+  kr_planning_msgs::msg::TrajectoryDiscretized opt_result_discretized;
 
   auto empty_result =
-      std::make_tuple(kr_planning_msgs::SplineTrajectory(),
-                      kr_planning_msgs::SplineTrajectory(),
-                      kr_planning_msgs::TrajectoryDiscretized());
+      std::make_tuple(kr_planning_msgs::msg::SplineTrajectory(),
+                      kr_planning_msgs::msg::SplineTrajectory(),
+                      kr_planning_msgs::msg::TrajectoryDiscretized());
 
   // if result is empty, then just return an empty SplineTrajectory
   if (search_result.data.size() == 0) {
@@ -997,7 +1022,7 @@ CompositePlanner::plan_composite(
     return empty_result;
   }
   success_status = 1;
-  search_traj_pub_.publish(search_result);
+  search_traj_pub_->publish(search_result);
 
   if (opt_planner_type_ != nullptr) {
     opt_planner_type_->search_path_msg_ = search_result;
@@ -1026,7 +1051,7 @@ CompositePlanner::plan_composite(
         end_timer - start_timer);
     *compute_time_poly = duration.count() / 1000.0;
     if (!poly_success) {
-      ROS_ERROR("[Local Planner]:Corridor generation fails!\n");
+      RCLCPP_ERROR(node_->get_logger(),"[Local Planner]:Corridor generation fails!\n");
       return empty_result;
     }
 
@@ -1069,7 +1094,7 @@ std::vector<Eigen::Vector3d> PlannerType::SamplePath(double dt) {
 }
 
 // bool PlannerType::has_collision(double dt,
-//                                 const kr_planning_msgs::VoxelMap& map)
+//                                 const kr_planning_msgs::msg::VoxelMap& map)
 // {
 //   std::cout << "traj_total_time_ is " << traj_total_time_ << std::endl;
 //   for(double cur_time = 0.0; cur_time <= traj_total_time_; cur_time += dt)

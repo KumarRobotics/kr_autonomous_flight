@@ -4,7 +4,11 @@
 #include <action_planner/data_conversions.h>
 #include <action_planner/primitive_ros_utils.h>
 #include <jps/jps_planner.h>
-#include <kr_planning_msgs/PlanTwoPointAction.h>
+#include <kr_planning_msgs/action/plan_two_point.hpp>
+#include <kr_planning_msgs/msg/spline_trajectory.hpp>
+#include <kr_planning_msgs/msg/trajectory_discretized.hpp>
+#include <kr_planning_msgs/msg/voxel_map.hpp>
+#include <kr_planning_msgs/msg/path.hpp>
 #include <kr_planning_rviz_plugins/data_ros_utils.h>  //vec_to_cloud
 #include <motion_primitives/graph_search.h>
 #include <motion_primitives/utils.h>
@@ -12,13 +16,15 @@
 #include <mpl_collision/map_util.h>
 #include <mpl_planner/map_planner.h>
 #include <plan_manage/planner_manager.h>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/point_cloud.hpp>
 #include <traj_opt_ros/ros_bridge.h>
 #include <traj_utils/planning_visualization.h>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include <gcopter/planner.hpp>
 // #include "altro/altro.hpp"
 #include <kr_ilqr_optimizer/spline_trajectory_sampler.hpp>
-// #include <kr_planning_msgs/Traj.h>
 
 #include <chrono>
 #include <memory>
@@ -27,89 +33,101 @@
 
 class PlannerType {
  public:
-  explicit PlannerType(const ros::NodeHandle& nh, const std::string& frame_id)
-      : nh_(nh), frame_id_(frame_id) {}
+  using PlanTwoPoint = kr_planning_msgs::action::PlanTwoPoint;
+  using Goal = PlanTwoPoint::Goal;
+
+  explicit PlannerType(rclcpp::Node* node, const std::string& frame_id)
+      : node_(node), frame_id_(frame_id) {}
+  virtual ~PlannerType() = default;
   virtual void setup() = 0;
   // always called by individual planner
-  virtual kr_planning_msgs::SplineTrajectory plan(
+  virtual kr_planning_msgs::msg::SplineTrajectory plan(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
-      const kr_planning_msgs::VoxelMap& map) {
-    ROS_WARN("[Plannner Details]:plan spline not implemented for this planner");
-    // std::logic_error("Function not yet implemented");
-    return kr_planning_msgs::SplineTrajectory();
+      const kr_planning_msgs::msg::VoxelMap& map) {
+    (void)start;
+    (void)goal;
+    (void)map;
+    RCLCPP_WARN(
+        node_->get_logger(),
+        "[Plannner Details]:plan spline not implemented for this planner");
+    return kr_planning_msgs::msg::SplineTrajectory();
   }
-  virtual kr_planning_msgs::TrajectoryDiscretized plan_discrete(
+  virtual kr_planning_msgs::msg::TrajectoryDiscretized plan_discrete(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
-      const kr_planning_msgs::VoxelMap& map) {
-    ROS_WARN(
+      const kr_planning_msgs::msg::VoxelMap& map) {
+    (void)start;
+    (void)goal;
+    (void)map;
+    RCLCPP_WARN(
+        node_->get_logger(),
         "[Plannner Details]:plan discrete not implemented for this planner");
-    // std::logic_error("Function not yet implemented");
-    return kr_planning_msgs::TrajectoryDiscretized();
+    return kr_planning_msgs::msg::TrajectoryDiscretized();
   }  // this does not have to be implemented
 
   // always called by composite planner
-  virtual std::tuple<kr_planning_msgs::SplineTrajectory,
-                     kr_planning_msgs::SplineTrajectory,
-                     kr_planning_msgs::TrajectoryDiscretized>
+  virtual std::tuple<kr_planning_msgs::msg::SplineTrajectory,
+                     kr_planning_msgs::msg::SplineTrajectory,
+                     kr_planning_msgs::msg::TrajectoryDiscretized>
   plan_composite(const MPL::Waypoint3D& start,
                  const MPL::Waypoint3D& goal,
-                 const kr_planning_msgs::VoxelMap& map,
-                 const kr_planning_msgs::VoxelMap& map_no_inflation,
+                 const kr_planning_msgs::msg::VoxelMap& map,
+                 const kr_planning_msgs::msg::VoxelMap& map_no_inflation,
                  float* compute_time_front_end,
                  float* compute_time_back_end,
                  float* compute_time_poly,
                  int& success_status) {
-    ROS_ERROR("[Plannner Details]:plan composite not implemented");
-    // std::logic_error("Function not yet implemented");
-    return std::make_tuple(kr_planning_msgs::SplineTrajectory(),
-                           kr_planning_msgs::SplineTrajectory(),
-                           kr_planning_msgs::TrajectoryDiscretized());
+    (void)start;
+    (void)goal;
+    (void)map;
+    (void)map_no_inflation;
+    (void)compute_time_front_end;
+    (void)compute_time_back_end;
+    (void)compute_time_poly;
+    (void)success_status;
+    RCLCPP_ERROR(node_->get_logger(),
+                 "[Plannner Details]:plan composite not implemented");
+    return std::make_tuple(kr_planning_msgs::msg::SplineTrajectory(),
+                           kr_planning_msgs::msg::SplineTrajectory(),
+                           kr_planning_msgs::msg::TrajectoryDiscretized());
   }
 
   virtual MPL::Waypoint3D evaluate(double t) = 0;
-  void setGoal(const kr_planning_msgs::PlanTwoPointGoal& goal) {
-    action_server_goal_ = goal;
-  }
+  void setGoal(const Goal& goal) { action_server_goal_ = goal; }
   double getTotalTrajTime() { return traj_total_time_; }
   void setSearchPath(const std::vector<Eigen::Vector3d>& search_path) {
     search_path_ = search_path;
   }
   std::vector<Eigen::Vector3d> SamplePath(double dt);
 
-  bool has_collision(const kr_planning_msgs::VoxelMap& map);
+  bool has_collision(const kr_planning_msgs::msg::VoxelMap& map);
 
-  ros::NodeHandle nh_;
+  rclcpp::Node* node_;
   std::string frame_id_;
   double traj_total_time_;
   // TODO(Laura) not sure if this is the best way to pass the search path
   std::vector<Eigen::Vector3d> search_path_;
-  kr_planning_msgs::SplineTrajectory search_path_msg_;
+  kr_planning_msgs::msg::SplineTrajectory search_path_msg_;
   // If replanning, some planners requires the previous trajectory which is
   // contained in the action server goal
-  kr_planning_msgs::PlanTwoPointGoal action_server_goal_;
+  Goal action_server_goal_;
   std::vector<Eigen::MatrixXd> hPolys;  // opt needs to have these
   Eigen::VectorXd allo_ts;
 };
 
 class CompositePlanner : public PlannerType {
  public:
-  explicit CompositePlanner(const ros::NodeHandle& nh,
-                            const std::string& frame_id)
-      : PlannerType(nh, frame_id) {}
+  explicit CompositePlanner(rclcpp::Node* node, const std::string& frame_id)
+      : PlannerType(node, frame_id) {}
   void setup();
-  // kr_planning_msgs::SplineTrajectory plan(
-  //     const MPL::Waypoint3D& start,
-  //     const MPL::Waypoint3D& goal,
-  //     const kr_planning_msgs::VoxelMap& map);
-  std::tuple<kr_planning_msgs::SplineTrajectory,
-             kr_planning_msgs::SplineTrajectory,
-             kr_planning_msgs::TrajectoryDiscretized>
+  std::tuple<kr_planning_msgs::msg::SplineTrajectory,
+             kr_planning_msgs::msg::SplineTrajectory,
+             kr_planning_msgs::msg::TrajectoryDiscretized>
   plan_composite(const MPL::Waypoint3D& start,
                  const MPL::Waypoint3D& goal,
-                 const kr_planning_msgs::VoxelMap& map,
-                 const kr_planning_msgs::VoxelMap& map_no_inflation,
+                 const kr_planning_msgs::msg::VoxelMap& map,
+                 const kr_planning_msgs::msg::VoxelMap& map_no_inflation,
                  float* compute_time_front_end,
                  float* compute_time_back_end,
                  float* compute_time_poly,
@@ -117,10 +135,11 @@ class CompositePlanner : public PlannerType {
   MPL::Waypoint3D evaluate(double t);
 
  private:
-  PlannerType* search_planner_type_;
-  PlannerType* opt_planner_type_;
+  PlannerType* search_planner_type_{nullptr};
+  PlannerType* opt_planner_type_{nullptr};
   double path_sampling_dt_;
-  ros::Publisher search_traj_pub_;
+  rclcpp::Publisher<kr_planning_msgs::msg::SplineTrajectory>::SharedPtr
+      search_traj_pub_;
   opt_planner::PlannerManager::Ptr poly_generator_;
   std::shared_ptr<MPL::VoxelMapUtil> poly_gen_map_util_;
 };
@@ -129,35 +148,32 @@ namespace OptPlanner {
 
 class iLQR_Planner : public PlannerType {
  public:
-  explicit iLQR_Planner(const ros::NodeHandle& nh, const std::string& frame_id)
-      : PlannerType(nh, frame_id) {}
+  explicit iLQR_Planner(rclcpp::Node* node, const std::string& frame_id)
+      : PlannerType(node, frame_id) {}
 
   void setup();
-  kr_planning_msgs::TrajectoryDiscretized plan_discrete(
+  kr_planning_msgs::msg::TrajectoryDiscretized plan_discrete(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
-      const kr_planning_msgs::VoxelMap& map);
+      const kr_planning_msgs::msg::VoxelMap& map);
   MPL::Waypoint3D evaluate(double t);
 
  private:
   SplineTrajSampler::Ptr sampler_;
   double ilqr_sampling_dt_ = 0.1;
-  // currently initialized another planner just to get polytopes, maybe consider
-  // moving only that function out
   std::vector<Eigen::VectorXd> opt_traj_;  // empty if no solution yet
 };
 
 class DoubleDescription : public PlannerType {
  public:
-  explicit DoubleDescription(const ros::NodeHandle& nh,
-                             const std::string& frame_id)
-      : PlannerType(nh, frame_id) {}
+  explicit DoubleDescription(rclcpp::Node* node, const std::string& frame_id)
+      : PlannerType(node, frame_id) {}
 
   void setup();
-  kr_planning_msgs::SplineTrajectory plan(
+  kr_planning_msgs::msg::SplineTrajectory plan(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
-      const kr_planning_msgs::VoxelMap& map);
+      const kr_planning_msgs::msg::VoxelMap& map);
   MPL::Waypoint3D evaluate(double t);
 
  private:
@@ -168,14 +184,14 @@ class DoubleDescription : public PlannerType {
 
 class GCOPTER : public PlannerType {
  public:
-  explicit GCOPTER(const ros::NodeHandle& nh, const std::string& frame_id)
-      : PlannerType(nh, frame_id) {}
+  explicit GCOPTER(rclcpp::Node* node, const std::string& frame_id)
+      : PlannerType(node, frame_id) {}
 
   void setup();
-  kr_planning_msgs::SplineTrajectory plan(
+  kr_planning_msgs::msg::SplineTrajectory plan(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
-      const kr_planning_msgs::VoxelMap& map);
+      const kr_planning_msgs::msg::VoxelMap& map);
   MPL::Waypoint3D evaluate(double t);
 
  private:
@@ -188,15 +204,14 @@ class GCOPTER : public PlannerType {
 namespace SearchPlanner {
 class UniformInputSampling : public PlannerType {
  public:
-  explicit UniformInputSampling(const ros::NodeHandle& nh,
-                                const std::string& frame_id)
-      : PlannerType(nh, frame_id) {}
+  explicit UniformInputSampling(rclcpp::Node* node, const std::string& frame_id)
+      : PlannerType(node, frame_id) {}
 
   void setup();
-  kr_planning_msgs::SplineTrajectory plan(
+  kr_planning_msgs::msg::SplineTrajectory plan(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
-      const kr_planning_msgs::VoxelMap& map);
+      const kr_planning_msgs::msg::VoxelMap& map);
   MPL::Waypoint3D evaluate(double t);
 
  private:
@@ -207,19 +222,20 @@ class UniformInputSampling : public PlannerType {
   bool verbose_;
   double tol_pos_, goal_tol_vel_, goal_tol_acc_;
   bool use_3d_local_;
-  ros::Publisher expanded_cloud_pub;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr
+      expanded_cloud_pub;
 };
 
 class Dispersion : public PlannerType {
  public:
-  explicit Dispersion(const ros::NodeHandle& nh, const std::string& frame_id)
-      : PlannerType(nh, frame_id) {}
+  explicit Dispersion(rclcpp::Node* node, const std::string& frame_id)
+      : PlannerType(node, frame_id) {}
 
   void setup();
-  kr_planning_msgs::SplineTrajectory plan(
+  kr_planning_msgs::msg::SplineTrajectory plan(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
-      const kr_planning_msgs::VoxelMap& map);
+      const kr_planning_msgs::msg::VoxelMap& map);
   MPL::Waypoint3D evaluate(double t);
 
  private:
@@ -228,91 +244,93 @@ class Dispersion : public PlannerType {
   std::shared_ptr<motion_primitives::MotionPrimitiveGraph> graph_;
   std::vector<std::shared_ptr<motion_primitives::MotionPrimitive>>
       dispersion_traj_;
-  ros::Publisher visited_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+      visited_pub_;
   motion_primitives::GraphSearch::Option options_;
 };
 
 class Geometric : public PlannerType {
  public:
-  explicit Geometric(const ros::NodeHandle& nh, const std::string& frame_id)
-      : PlannerType(nh, frame_id) {}
+  explicit Geometric(rclcpp::Node* node, const std::string& frame_id)
+      : PlannerType(node, frame_id) {}
 
   void setup();
-  kr_planning_msgs::SplineTrajectory plan(
+  kr_planning_msgs::msg::SplineTrajectory plan(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
-      const kr_planning_msgs::VoxelMap& map);
+      const kr_planning_msgs::msg::VoxelMap& map);
   MPL::Waypoint3D evaluate(double t);
 
  private:
   std::shared_ptr<JPS::JPSPlanner3D> jps_3d_util_;
   std::shared_ptr<JPS::VoxelMapUtil> jps_3d_map_util_;
   bool verbose_{true};
-  kr_planning_msgs::SplineTrajectory spline_traj_;
-  ros::Publisher path_pub_;
+  kr_planning_msgs::msg::SplineTrajectory spline_traj_;
+  rclcpp::Publisher<kr_planning_msgs::msg::Path>::SharedPtr path_pub_;
 };
 
 class PathThrough : public PlannerType {
  public:
-  explicit PathThrough(const ros::NodeHandle& nh, const std::string& frame_id)
-      : PlannerType(nh, frame_id) {}
+  explicit PathThrough(rclcpp::Node* node, const std::string& frame_id)
+      : PlannerType(node, frame_id) {}
 
   void setup();
-  kr_planning_msgs::SplineTrajectory plan(
+  kr_planning_msgs::msg::SplineTrajectory plan(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
-      const kr_planning_msgs::VoxelMap& map);
+      const kr_planning_msgs::msg::VoxelMap& map);
   MPL::Waypoint3D evaluate(double t);
 
  private:
-  void highLevelPlannerCB(const kr_planning_msgs::Path& path);
+  void highLevelPlannerCB(const kr_planning_msgs::msg::Path::ConstSharedPtr path);
   bool verbose_{true};
-  kr_planning_msgs::SplineTrajectory spline_traj_;
-  ros::Publisher path_pub_;
-  ros::Subscriber high_level_planner_sub_;
-  kr_planning_msgs::Path path_ = kr_planning_msgs::Path();
+  kr_planning_msgs::msg::SplineTrajectory spline_traj_;
+  rclcpp::Publisher<kr_planning_msgs::msg::Path>::SharedPtr path_pub_;
+  rclcpp::Subscription<kr_planning_msgs::msg::Path>::SharedPtr
+      high_level_planner_sub_;
+  kr_planning_msgs::msg::Path path_ = kr_planning_msgs::msg::Path();
 };
 
 // SST
 class DynSampling : public PlannerType {
  public:
-  explicit DynSampling(const ros::NodeHandle& nh, const std::string& frame_id)
-      : PlannerType(nh, frame_id) {}
+  explicit DynSampling(rclcpp::Node* node, const std::string& frame_id)
+      : PlannerType(node, frame_id) {}
 
   void setup();
-  kr_planning_msgs::SplineTrajectory plan(
+  kr_planning_msgs::msg::SplineTrajectory plan(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
-      const kr_planning_msgs::VoxelMap& map);
+      const kr_planning_msgs::msg::VoxelMap& map);
   MPL::Waypoint3D evaluate(double t);
 
  private:
   gcopter::GcopterPlanner::Ptr sstplanner_;
   bool verbose_{true};
   vec_Vecf<3> path_;
-  kr_planning_msgs::SplineTrajectory spline_traj_;
-  ros::Publisher path_pub_;
+  kr_planning_msgs::msg::SplineTrajectory spline_traj_;
+  rclcpp::Publisher<kr_planning_msgs::msg::Path>::SharedPtr path_pub_;
 };
 
 // RRT
 class Sampling : public PlannerType {
  public:
-  explicit Sampling(const ros::NodeHandle& nh, const std::string& frame_id)
-      : PlannerType(nh, frame_id) {}
+  explicit Sampling(rclcpp::Node* node, const std::string& frame_id)
+      : PlannerType(node, frame_id) {}
 
   void setup();
-  kr_planning_msgs::SplineTrajectory plan(
+  kr_planning_msgs::msg::SplineTrajectory plan(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
-      const kr_planning_msgs::VoxelMap& map);
+      const kr_planning_msgs::msg::VoxelMap& map);
   MPL::Waypoint3D evaluate(double t);
 
  private:
   gcopter::GcopterPlanner::Ptr rrtplanner_;
   bool verbose_{true};
   vec_Vecf<3> path_;
-  kr_planning_msgs::SplineTrajectory spline_traj_;
-  ros::Publisher path_pub_;
+  kr_planning_msgs::msg::SplineTrajectory spline_traj_;
+  rclcpp::Publisher<kr_planning_msgs::msg::Path>::SharedPtr path_pub_;
 };
 
 }  // namespace SearchPlanner

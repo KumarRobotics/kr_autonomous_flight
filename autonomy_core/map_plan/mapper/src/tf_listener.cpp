@@ -1,21 +1,30 @@
 #include "mapper/tf_listener.h"
 
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <tf2/exceptions.h>
+
 namespace mapper {
 
-std::optional<geometry_msgs::Pose> TFListener::LookupTransform(
-    const std::string &target, const std::string &source,
-    const ros::Time &time) {
-  geometry_msgs::TransformStamped transformStamped;
+std::optional<geometry_msgs::msg::Pose> TFListener::LookupTransform(
+    const std::string& target,
+    const std::string& source,
+    const rclcpp::Time& time,
+    rclcpp::Logger logger) {
+  geometry_msgs::msg::TransformStamped transformStamped;
   try {
-    transformStamped =
-        buffer_.lookupTransform(target, source, time, ros::Duration(0.4));
-  } catch (tf2::TransformException &ex) {
-    ROS_WARN_THROTTLE(1, "Fail to find transform from [%s] to [%s]",
-                      source.c_str(), target.c_str());
+    transformStamped = buffer_.lookupTransform(
+        target, source, time, tf2::durationFromSec(0.4));
+  } catch (const tf2::TransformException& ex) {
+    RCLCPP_WARN_THROTTLE(logger,
+                         *buffer_.getClock(),
+                         1000,
+                         "Fail to find transform from [%s] to [%s]",
+                         source.c_str(),
+                         target.c_str());
     return {};
   }
 
-  geometry_msgs::Pose pose;
+  geometry_msgs::msg::Pose pose;
 
   pose.position.x = transformStamped.transform.translation.x;
   pose.position.y = transformStamped.transform.translation.y;

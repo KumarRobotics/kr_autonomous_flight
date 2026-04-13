@@ -1,29 +1,34 @@
 <?xml version="1.0"?>
-<package format="2">
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>action_planner</name>
   <version>0.0.0</version>
   <description>The action_planner package</description>
 
-  
   <maintainer email="liuxu@seas.upenn.edu">Xu Liu</maintainer>
   <maintainer email="yztao@seas.upenn.edu">Yuezhan Tao</maintainer>
   <maintainer email="quchao@seas.upenn.edu">Chao Qu</maintainer>
-  
+
   <license>Penn Software License</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>message_generation</build_depend>
-  <exec_depend>message_runtime</exec_depend>
-  <build_depend>actionlib_msgs</build_depend>
-  <exec_depend>actionlib_msgs</exec_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend>dynamic_reconfigure</depend>
-  <depend>roscpp</depend>
-  <depend>actionlib</depend>
-  <depend>eigen_conversions</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
+  <depend>action_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>tf2</depend>
   <depend>tf2_ros</depend>
-  <depend>tf_conversions</depend>
+  <depend>tf2_eigen</depend>
+  <depend>tf2_geometry_msgs</depend>
   <depend>pcl_ros</depend>
+  <depend>pcl_conversions</depend>
+  <depend>eigen</depend>
   <depend>mapper</depend>
   <depend>jps3d</depend>
   <depend>kr_planning_rviz_plugins</depend>
@@ -36,9 +41,13 @@
   <depend>motion_primitives</depend>
   <depend>gcopter</depend>
   <depend>kr_ilqr_optimizer</depend>
-  <depend>kr_trackers_msgs</depend>
+  <depend>kr_tracker_msgs</depend>
   <depend>param_env_msgs</depend>
 
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
   <export>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>

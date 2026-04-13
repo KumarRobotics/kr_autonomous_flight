@@ -1,6 +1,6 @@
 #pragma once
 
-#include <kr_planning_msgs/VoxelMap.h>
+#include <kr_planning_msgs/msg/voxel_map.hpp>
 
 #include <Eigen/Geometry>
 #include <boost/multi_array.hpp>
@@ -86,29 +86,29 @@ class VoxelMapper {
 
   /**
    * @brief Get the Map object
-   * @return kr_planning_msgs::VoxelMap 
+   * @return kr_planning_msgs::msg::VoxelMap 
    */
-  kr_planning_msgs::VoxelMap getMap();
+  kr_planning_msgs::msg::VoxelMap getMap();
 
   /**
    * @brief Get the Inflated Map object
-   * @return kr_planning_msgs::VoxelMap 
+   * @return kr_planning_msgs::msg::VoxelMap 
    */
-  kr_planning_msgs::VoxelMap getInflatedMap();
+  kr_planning_msgs::msg::VoxelMap getInflatedMap();
 
   /**
    * @brief Crop a local voxel map from the global not inflated voxel map
    * @param ori The origin of the local voxel map (most negative corner)
    * @param dim the range of the local voxel map in world units
    */
-  kr_planning_msgs::VoxelMap getLocalMap(const Eigen::Vector3d& ori_d, 
+  kr_planning_msgs::msg::VoxelMap getLocalMap(const Eigen::Vector3d& ori_d, 
                                           const Eigen::Vector3d& dim_d);
   /**
    * @brief Crop a local voxel map from the global inflated voxel map
    * @param ori The origin of the local voxel map (most negative corner)
    * @param dim the range of the local voxel map in world units
    */
-  kr_planning_msgs::VoxelMap getInflatedLocalMap(const Eigen::Vector3d& ori,
+  kr_planning_msgs::msg::VoxelMap getInflatedLocalMap(const Eigen::Vector3d& ori,
                                                   const Eigen::Vector3d& dim);
 
   /**
@@ -118,7 +118,7 @@ class VoxelMapper {
    * refers to how much space (in either direction) along the z-axis is going to
    * be considered for the 2D slice.
    */
-  kr_planning_msgs::VoxelMap getInflatedOccMap(double h, double hh = 0);
+  kr_planning_msgs::msg::VoxelMap getInflatedOccMap(double h, double hh = 0);
 
   /**
    * @brief Add point cloud to map and inflated map
@@ -211,16 +211,16 @@ class VoxelMapper {
   double res_;                      // Resolution used for both maps
 
   // Possible voxel values taken from VoxelMap.msg
-  int8_t val_free_    = kr_planning_msgs::VoxelMap::val_free;
-  int8_t val_occ_     = kr_planning_msgs::VoxelMap::val_occ;
-  int8_t val_unknown_ = kr_planning_msgs::VoxelMap::val_unknown;
-  int8_t val_even_    = kr_planning_msgs::VoxelMap::val_even;
-  int8_t val_default_ = kr_planning_msgs::VoxelMap::val_default;
+  int8_t val_free_    = kr_planning_msgs::msg::VoxelMap::VAL_FREE;
+  int8_t val_occ_     = kr_planning_msgs::msg::VoxelMap::VAL_OCC;
+  int8_t val_unknown_ = kr_planning_msgs::msg::VoxelMap::VAL_UNKNOWN;
+  int8_t val_even_    = kr_planning_msgs::msg::VoxelMap::VAL_EVEN;
+  int8_t val_default_ = kr_planning_msgs::msg::VoxelMap::VAL_DEFAULT;
 
   // Be careful of overflow (should always be within -128 and 128 range)
   // Add val_add to the voxel whenever a point lies in it. Should always be less
   // than 27 to avoid overflow (should always be within -128 and 128 range)
-  int8_t val_add_ = kr_planning_msgs::VoxelMap::val_add;
+  int8_t val_add_ = kr_planning_msgs::msg::VoxelMap::VAL_ADD;
 
   // Value decay (voxels will disappear if unobserved for
   // ((val_occ - val_even) / val_decay times)

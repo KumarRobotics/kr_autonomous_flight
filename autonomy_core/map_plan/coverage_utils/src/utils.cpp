@@ -1,5 +1,6 @@
 #include <utils.h>
 
+#include <geometry_msgs/msg/point.hpp>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -98,10 +99,10 @@ std::vector<pt> PreprocessData(const std::string& fname) {
   return pt_vec;
 }
 
-kr_planning_msgs::Path path_to_ros(const vec_Vec3f& path, double h) {
-  kr_planning_msgs::Path msg;
+kr_planning_msgs::msg::Path path_to_ros(const vec_Vec3f& path, double h) {
+  kr_planning_msgs::msg::Path msg;
   for (const auto& itt : path) {
-    geometry_msgs::Point this_pt;
+    geometry_msgs::msg::Point this_pt;
     this_pt.x = itt(0);
     this_pt.y = itt(1);
     this_pt.z = h;

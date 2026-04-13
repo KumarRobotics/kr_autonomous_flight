@@ -1,21 +1,21 @@
 #pragma once
-#include <kr_planning_msgs/Path.h>
-#include <ros/ros.h>
+#include <geometry_msgs/msg/polygon_stamped.hpp>
+#include <kr_planning_msgs/msg/path.hpp>
+#include <rclcpp/rclcpp.hpp>
 #include <utils.h>
 
 #include <Eigen/StdVector>
 #include <string>
 
-class CoveragePlanner {
+class CoveragePlanner : public rclcpp::Node {
  public:
   CoveragePlanner();
   void RunPlanner();
 
  private:
-  ros::NodeHandle nh_;
-  ros::NodeHandle pnh_;
-  ros::Publisher path_pub_;
-  ros::Publisher all_points_pub_;
-  ros::Publisher initial_polygon_publisher_;
+  rclcpp::Publisher<kr_planning_msgs::msg::Path>::SharedPtr path_pub_;
+  rclcpp::Publisher<kr_planning_msgs::msg::Path>::SharedPtr all_points_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
+      initial_polygon_publisher_;
   std::string fname_;
 };

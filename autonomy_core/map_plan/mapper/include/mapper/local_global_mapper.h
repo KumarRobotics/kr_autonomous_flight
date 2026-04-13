@@ -1,10 +1,12 @@
-#include <eigen_conversions/eigen_msg.h>
-#include <nav_msgs/Odometry.h>
 #include <kr_planning_rviz_plugins/data_ros_utils.h>
-#include <ros/ros.h>
-#include <sensor_msgs/Temperature.h>
-#include <sensor_msgs/point_cloud_conversion.h>
-#include <std_msgs/Bool.h>
+#include <nav_msgs/msg/odometry.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/point_cloud.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/msg/temperature.hpp>
+#include <sensor_msgs/point_cloud_conversion.hpp>
+#include <std_msgs/msg/bool.hpp>
+#include <std_msgs/msg/header.hpp>
 
 #include <boost/timer/timer.hpp>
 #include <memory>
@@ -17,13 +19,12 @@
 using boost::timer::cpu_timer;
 using boost::timer::cpu_times;
 
-class LocalGlobalMapperNode {
+class LocalGlobalMapperNode : public rclcpp::Node {
  public:
   /**
    * @brief Local Global Mapper Constructor
-   * @param nh ROS Node handler
    */
-  explicit LocalGlobalMapperNode(const ros::NodeHandle& nh);
+  LocalGlobalMapperNode();
 
  private:
   /**
@@ -34,10 +35,6 @@ class LocalGlobalMapperNode {
   /**
    * @brief Crops the local map from the storage map, transforms it to odometry
    * frame and publishes
-   * @param center_position_map  Robot position in map frame (for sampling the
-   * storage map)
-   * @param center_position_odom  Robot position in odom frame (to shift the
-   * local map)
    */
   void cropLocalMap(const Eigen::Vector3d& center_position_map,
                     const Eigen::Vector3d& center_position_odom);
@@ -45,27 +42,22 @@ class LocalGlobalMapperNode {
   /**
    * @brief Lookup the transform from lidar to map frame and from lidar to odom
    * frame
-   * @param cloud_header  Input cloud message header
-   * @param pose_map_lidar_ptr  Output tf from lidar to map
-   * @param pose_odom_lidar_ptr  Output tf from lidar to odom
    */
-  void getLidarPoses(const std_msgs::Header& cloud_header,
-                     geometry_msgs::Pose* pose_map_lidar_ptr,
-                     geometry_msgs::Pose* pose_odom_lidar_ptr);
+  void getLidarPoses(const std_msgs::msg::Header& cloud_header,
+                     geometry_msgs::msg::Pose* pose_map_lidar_ptr,
+                     geometry_msgs::msg::Pose* pose_odom_lidar_ptr);
 
   /**
    * @brief Adds input cloud to storage map, publishes new local map and global
    * map (if enough msgs were received)
-   * @param cloud Input cloud message
    */
-  void processCloud(const sensor_msgs::PointCloud& cloud);
+  void processCloud(const sensor_msgs::msg::PointCloud& cloud);
 
   /**
-   * @brief Point Cloud topic callback. Will convert from
-   * sensor_msgs::PointCloud2 to sensor_msgs::PointCloud
-   * @param msg Const pointer to input cloud message
+   * @brief Point Cloud topic callback. Will convert from PointCloud2 to
+   * PointCloud
    */
-  void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg);
+  void cloudCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg);
 
   /**
    * @brief Allocates memory for the global mapper and initializes the arrays
@@ -86,45 +78,34 @@ class LocalGlobalMapperNode {
   cpu_timer timer;
 
   // Timing stuff
-  ros::Publisher time_pub;
+  rclcpp::Publisher<sensor_msgs::msg::Temperature>::SharedPtr time_pub;
 
-  std::unique_ptr<mapper::VoxelMapper> global_voxel_mapper_;   // mapper
-  std::unique_ptr<mapper::VoxelMapper> storage_voxel_mapper_;  // mapper
-  // std::unique_ptr<VoxelMapper> local_voxel_mapper_;  // mapper
+  std::unique_ptr<mapper::VoxelMapper> global_voxel_mapper_;
+  std::unique_ptr<mapper::VoxelMapper> storage_voxel_mapper_;
 
-  kr_planning_msgs::VoxelMap global_map_info_;
-  kr_planning_msgs::VoxelMap storage_map_info_;
-  kr_planning_msgs::VoxelMap local_map_info_;
+  kr_planning_msgs::msg::VoxelMap global_map_info_;
+  kr_planning_msgs::msg::VoxelMap storage_map_info_;
+  kr_planning_msgs::msg::VoxelMap local_map_info_;
 
-  ros::NodeHandle nh_;
-  ros::Subscriber cloud_sub;
-  ros::Publisher global_map_pub;
-  ros::Publisher storage_map_pub;
-  ros::Publisher local_map_pub;
-  ros::Publisher local_map_no_inflation_pub;
+  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cloud_sub;
+  rclcpp::Publisher<kr_planning_msgs::msg::VoxelMap>::SharedPtr global_map_pub;
+  rclcpp::Publisher<kr_planning_msgs::msg::VoxelMap>::SharedPtr storage_map_pub;
+  rclcpp::Publisher<kr_planning_msgs::msg::VoxelMap>::SharedPtr local_map_pub;
+  rclcpp::Publisher<kr_planning_msgs::msg::VoxelMap>::SharedPtr
+      local_map_no_inflation_pub;
 
-  // ros::Publisher global_occ_map_pub;
-  // ros::Publisher local_voxel_map_pub; #Yifei commented out this, not used anywhere
+  bool real_robot_;
+  std::string map_frame_;
+  std::string odom_frame_;
 
-  // ros::Publisher local_cloud_pub;
+  std::string lidar_frame_;
+  std::string cloud_name_;
 
-  bool real_robot_;         // define it's real-robot experiment or not
-  std::string map_frame_;   // map frame
-  std::string odom_frame_;  // odom frame
+  vec_Vec3i global_infla_array_;
+  vec_Vec3i local_infla_array_;
 
-  std::string lidar_frame_;  // lidar frame
-  std::string cloud_name_;   // cloud msg name frame
-  // std::string odom_name_;    // odom msg name frame
-  // nav_msgs::Odometry last_odom_; // record of robot odom
-  // bool odom_received_ = false;
-
-  vec_Vec3i global_infla_array_;  // inflation array
-  vec_Vec3i local_infla_array_;   // inflation array
-
-  // number of times of decay for an occupied voxel to be decayed into empty
-  // cell, 0 means no decay
-  int local_decay_times_to_empty_;   // for local and storage map
-  int global_decay_times_to_empty_;  // for global map
+  int local_decay_times_to_empty_;
+  int global_decay_times_to_empty_;
 
   double robot_r_, robot_h_;
   bool global_use_robot_dim_xy_;
@@ -132,12 +113,11 @@ class LocalGlobalMapperNode {
   double global_map_dim_d_x_, global_map_dim_d_y_, global_map_dim_d_z_;
   double local_map_dim_d_x_, local_map_dim_d_y_, local_map_dim_d_z_;
 
-  double local_max_raycast_, global_max_raycast_;  // maximum raycasting range
+  double local_max_raycast_, global_max_raycast_;
   double occ_map_height_;
-  Eigen::Vector3d local_ori_offset_{ Eigen::Vector3d::Zero() };
+  Eigen::Vector3d local_ori_offset_{Eigen::Vector3d::Zero()};
   bool local_ignore_offset_;
-  bool pub_storage_map_ =
-      false;  // don't set this as true unless you're debugging, it's very slow
+  bool pub_storage_map_ = false;
 
   int update_interval_;
   int counter_ = 0;

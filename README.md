@@ -134,9 +134,16 @@ sudo docker run --rm --gpus all nvidia/cuda:12.4.0-base-ubuntu24.04 nvidia-smi
 
 ### Pull prebuilt images
 
-Once published, the ROS2 Jazzy images will be tagged `kumarrobotics/autonomy:<component>-jazzy`. *(Placeholder — the `-jazzy` image tags are not yet published to Docker Hub; the CI badges at the top of this README build these images from the `ros2_dev` branch.)*
+> [!WARNING]
+> **No prebuilt ROS2 images exist yet.** The `-jazzy` image tags below are a **naming placeholder** — they are **not** published to Docker Hub at this time. Running `docker pull kumarrobotics/autonomy:<component>-jazzy` right now will fail with a "manifest not found" error. For now, skip to [Build the images locally](#build-the-images-locally) below.
+>
+> Once the `ros2_dev` branch's CI workflows have been enabled on KumarRobotics' GitHub Actions runners, the CI badges at the top of this README will publish these images automatically, and the `docker pull` commands below will start working. Until then, they are documentation of the **intended** tag convention only.
+
+When the `-jazzy` tags are published (tracking convention — not yet live):
 
 ```bash
+# NOTE: these tags do not yet exist on Docker Hub. Use the "Build the
+# images locally" section below until CI publishes them.
 docker pull kumarrobotics/autonomy:base-jazzy
 docker pull kumarrobotics/autonomy:client-jazzy
 docker pull kumarrobotics/autonomy:control-jazzy

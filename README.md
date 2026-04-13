@@ -392,6 +392,93 @@ The network / driver / calibration steps are largely framework-independent, so t
 - **`ros2 launch gazebo_utils full_sim.launch.py` cannot find `gazebo_ros`.** The ROS1 `gazebo_ros` bridge is not available on Jazzy. Install `ros-jazzy-ros-gz` + `ros-jazzy-ros-gz-sim` (Gazebo Harmonic bridge) instead.
 - **SLOAM / sloam_msgs will not build.** Those packages are still ROS1-only on the upstream. Use the `ros2_dev` branch of [XuRobotics/SLIDE_SLAM](https://github.com/XuRobotics/SLIDE_SLAM) which has a working ROS2 port of `sloam_msgs` and swap it in via `src/`.
 
+# Testing the ROS2 port
+
+For a detailed, per-package breakdown of what was migrated and the open follow-up items, see [ROS2_MIGRATION_REPORT.md](ROS2_MIGRATION_REPORT.md).
+
+The `tests/` directory ships a three-layer test suite that guards against mechanical regressions in the ROS1 → ROS2 Jazzy port. The primary layer is pure bash + ripgrep + awk and can be run against an unbuilt workspace on any POSIX shell — **no ROS2 installation required** — so reviewers and CI runners can confirm in seconds that the in-tree packages are still ROS2-shaped. See [`tests/README.md`](tests/README.md) for the full layout.
+
+## Layer 1 — Static checks (`tests/static/check_ros2_port.sh`)
+
+A self-contained bash runner. No Python, no ROS2, no colcon. Just invoke it from the repo root:
+
+```bash
+bash tests/static/check_ros2_port.sh
+```
+
+*(Typical output is a colorized list of `[PASS]` / `[FAIL]` / `[SKIP]` lines followed by a summary of the form `N checks, P passed, F failed, S skipped`. Run the command above locally to get the current count — the numbers shift as the port progresses.)*
+
+The runner is organized into 14 sections labeled A–N. Each section guards one family of regressions that the port could reintroduce:
+
+- **A. `package.xml` build_type** — every in-tree manifest is `format="3"` and declares `<build_type>ament_cmake\|ament_python</build_type>`.
+- **B. `CMakeLists.txt` ament scaffold** — every `CMakeLists.txt` calls `find_package(ament_cmake REQUIRED)` and ends with `ament_package()`; no `catkin_package()` / `catkin REQUIRED COMPONENTS` remnants.
+- **C. C++ header hygiene** — no `#include <ros/ros.h>` / `<nodelet/nodelet.h>` / `<tf/transform_listener.h>` / `<actionlib/*>` / `<dynamic_reconfigure/*>` in any in-tree source.
+- **D. C++ API hygiene** — no `ros::NodeHandle`, `ros::Publisher`, `ros::Time::now()`, `ROS_INFO`, `ROS_WARN`, etc. in stripped (comment-free) source.
+- **E. Python `rospy` hygiene** — no `import rospy`, `rospy.init_node`, `rospy.get_param`, `rospy.Time.now()`, etc. in stripped Python source.
+- **F. `tf` → `tf2` hygiene** — no `import tf` (without the `2`) in Python; no `tf/transform_*` C++ headers.
+- **G. Launch files** — every `*.launch` XML is accompanied by a `*.launch.py`; no stray legacy XML launches.
+- **H. `.action` interface generation** — every `.action` file lives in a package whose `CMakeLists.txt` calls `rosidl_generate_interfaces(...)` and whose `package.xml` declares `rosidl_default_generators` / `rosidl_default_runtime` / the `rosidl_interface_packages` group.
+- **I. Pluginlib plugins** — every `PLUGINLIB_EXPORT_CLASS` call has a matching `pluginlib_export_plugin_description_file(...)`.
+- **J. Components** — every `RCLCPP_COMPONENTS_REGISTER_NODE` has a matching `rclcpp_components_register_nodes(...)`.
+- **K. Docker hygiene** — no `FROM nvidia/cudagl:*` or `FROM ros:noetic-*` in any Dockerfile; no `catkin build` / `source /opt/ros/noetic/setup.bash` in any in-tree shell script.
+- **L. GitHub Actions** — every `docker-build-*.yaml` triggers off `branches: [ros2_dev]` and produces a `-jazzy` tag.
+- **M. `external_*.yaml` TODOs** — every vcstool manifest has a top-of-file TODO comment flagging that its entries are still ROS1-only.
+- **N. Dangling launch includes** — every `IncludeLaunchDescription(...)` that references a local `*.launch.py` points at a file that actually exists.
+
+Options:
+
+```bash
+VERBOSE=1 bash tests/static/check_ros2_port.sh     # dump full details on every match
+NO_COLOR=1 bash tests/static/check_ros2_port.sh    # disable ANSI colors (CI logs)
+```
+
+## Layer 2 — pytest mirror (`tests/python/`)
+
+A one-to-one `pytest` mirror of the bash runner, structured so that CI dashboards can report per-check pass / fail with assertion diffs. This layer exists because bash `[FAIL]` lines are harder for most CI runners to surface than pytest output.
+
+```bash
+pip install pytest
+pytest tests/python -v
+```
+
+The pytest files are named `test_section_<letter>.py` to make the mapping to the bash sections obvious. The two layers are kept in sync — if you add a check to `tests/static/check_ros2_port.sh`, add a matching pytest case in the same PR.
+
+## Layer 3 — Launch-graph smoke test (`tests/integration/launch_smoke_test.sh`)
+
+A runtime parse-only check that walks every `*.launch.py` in the tree and runs `ros2 launch --print-description` on it. `--print-description` resolves the `LaunchDescription` without actually starting any nodes, so this layer:
+
+- Requires `ros2` on `$PATH`.
+- Does **not** require a built workspace — you can run it from an unbuilt source checkout.
+- Reports `[OK]` / `[FAIL]` / `[TIMEOUT]` per launch file with a summary of the form `N launches, X OK, Y failed, Z timeout`.
+
+```bash
+source /opt/ros/jazzy/setup.bash
+bash tests/integration/launch_smoke_test.sh
+```
+
+Options:
+
+```bash
+LAUNCH_TIMEOUT=30 bash tests/integration/launch_smoke_test.sh
+VERBOSE=1 bash tests/integration/launch_smoke_test.sh
+NO_COLOR=1 bash tests/integration/launch_smoke_test.sh
+```
+
+If `ros2` or GNU `timeout` is missing, the script exits with code `77` (the autotools "skipped" convention) so CI runners without a ROS2 environment treat it as skipped rather than failed.
+
+## What has NOT been tested
+
+These runtime items need a real ROS2 Jazzy environment and a successful `colcon build`; they are **out of scope** for the three layers above and remain open follow-ups. The full list lives in [`ROS2_MIGRATION_REPORT.md`](ROS2_MIGRATION_REPORT.md) Section 6; the short version:
+
+- **`colcon build` end-to-end** — blocked on external dependency ports (`kr_trackers_manager`, `kr_mav_control`, `DecompROS`, `msckf_vio`, `mrsl_quadrotor`, `faster-lio`, etc.).
+- **`rclcpp_action` round-trips** — the `LocalPlanServer` / `GlobalPlanServer` / `LandTracker` / `TakeOffTracker` / `ActionTrajectoryTracker` / `local_global_replan_server` goal/feedback/result flow.
+- **Pluginlib tracker load** — `kr_trackers_manager` needs to `createInstance` each of the four ported trackers and call `Initialize`.
+- **Component loading** — `fla_ukf::FLAUKFNodelet` and `mavros_interface::SO3CmdToMavros` inside a `component_container`.
+- **Gazebo Harmonic bring-up** — blocked on `mrsl_quadrotor`'s Gazebo Classic → Harmonic migration.
+- **`mapper` VoxelMap ingest** — the `message_filters` TF-synced point-cloud pipeline on a real bag.
+- **Full SLAM demo** — playing a converted ROS2 bag through the LIDAR+VIO stack end-to-end.
+- **TF tree correctness** — `<robot_ns>/odom` → `<robot_ns>/map` drift correction by the SLAM module.
+
 ## High-level code structure
 
 ![alt text](https://github.com/KumarRobotics/kr_autonomous_flight/blob/master/docs/autonomy_stack_pipeline.png)

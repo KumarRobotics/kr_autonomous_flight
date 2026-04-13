@@ -9,7 +9,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <tbb/parallel_invoke.h>
 #include <tf2_eigen/tf2_eigen.hpp>
-#include <tf2_ros/buffer.h>
+#include <tf2_ros/buffer.hpp>
 #include <tf2_ros/transform_listener.hpp>
 
 #include <boost/timer/timer.hpp>

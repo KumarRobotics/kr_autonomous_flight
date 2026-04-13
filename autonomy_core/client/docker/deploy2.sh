@@ -9,6 +9,6 @@ docker run --gpus all -it \
     --rm \
     --privileged \
     --network=host \
-    --name client \
-    kumarrobotics/autonomy:client \
-    roslaunch client_launch client.launch
+    --name client_ros2 \
+    kumarrobotics/autonomy:client-jazzy \
+    ros2 launch client_launch client.launch.py

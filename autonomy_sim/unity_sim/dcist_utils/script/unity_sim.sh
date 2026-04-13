@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Performs the same functions as roslaunch dcist_utils full_sim.launch, 
+# Performs the same functions as ros2 launch dcist_utils full_sim.launch.py, 
 # but separates out the launches in tmux for more convenient usage.
 
 MAV_NAME=quadrotor
@@ -29,22 +29,22 @@ fi
 tmux setw -g mouse on
 
 tmux rename-window -t $SESSION_NAME "Core/Client"
-tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; roscore" Enter
+tmux send-keys -t $SESSION_NAME "echo "ROS2: no roscore needed"" Enter
 tmux split-window -t $SESSION_NAME
-tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 1; export DISPLAY=${CURRENT_DISPLAY}; roslaunch client_launch client.launch robot:=${MAV_NAME}" Enter
+tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 1; export DISPLAY=${CURRENT_DISPLAY}; ros2 launch client_launch client.launch.py robot:=${MAV_NAME}" Enter
 tmux select-layout -t $SESSION_NAME tiled
 
 tmux new-window -t $SESSION_NAME -n "Sim"
-tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 1; export DISPLAY=${CURRENT_DISPLAY}; roslaunch dcist_utils sim_quad.launch robot:=${MAV_NAME} odom:=${ODOM_TOPIC}" Enter
+tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 1; export DISPLAY=${CURRENT_DISPLAY}; ros2 launch dcist_utils sim_quad.launch.py robot:=${MAV_NAME} odom:=${ODOM_TOPIC}" Enter
 tmux split-window -t $SESSION_NAME
-tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 15; export DISPLAY=${CURRENT_DISPLAY}; export ROS_NAMESPACE=${MAV_NAME}; rosrun arl_unity_ros_air rosflight_offboard.py __name:=robot" Enter
+tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 15; export DISPLAY=${CURRENT_DISPLAY}; export ROS_NAMESPACE=${MAV_NAME}; ros2 run arl_unity_ros_air rosflight_offboard --ros-args -r __node:=robot" Enter
 tmux select-layout -t $SESSION_NAME tiled
 
 tmux new-window -t $SESSION_NAME -n "SM/Planner"
-tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 1; export DISPLAY=${CURRENT_DISPLAY}; roslaunch state_machine_launch system_mp.launch robot:=${MAV_NAME} min_dispersion_planner:=${MIN_DISPERSION_PLANNER}" Enter
+tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 1; export DISPLAY=${CURRENT_DISPLAY}; ros2 launch state_machine_launch system_mp.launch.py robot:=${MAV_NAME} min_dispersion_planner:=${MIN_DISPERSION_PLANNER}" Enter
 if ${MIN_DISPERSION_PLANNER}; then
   tmux split-window -t $SESSION_NAME
-  tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 1; export DISPLAY=${CURRENT_DISPLAY}; roslaunch motion_primitives cpp_action_server.launch robot:=${MAV_NAME}" Enter
+  tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 1; export DISPLAY=${CURRENT_DISPLAY}; ros2 launch motion_primitives cpp_action_server.launch.py robot:=${MAV_NAME}" Enter
 fi
 tmux select-layout -t $SESSION_NAME tiled
 

@@ -4,7 +4,7 @@
 [Laura](mailto:laurajar@seas.upenn.edu)
 
 ## Overview
-This package bring together different planners into one place and launches a [action server](http://wiki.ros.org/actionlib) for motion planning. 
+This package brings together different planners into one place and launches a [ROS2 action server](https://docs.ros.org/en/jazzy/Tutorials/Intermediate/Writing-an-Action-Server-Client/Cpp.html) for motion planning.
 
 ## Slides
 Add a link to the slides here
@@ -13,7 +13,7 @@ Add a link to the slides here
 See the kr_autonomous_flight for installation instructions, some of the dependencies are from Laura's fork
 
 ## Running
-`autonomy_core/map_plan/map_plan_launch/launch/planner_standalone.launch` launches the planner by itself. It will launch the action server and a rviz node for visualization. Additionally `rosrun action_planner publish_plantwopointaction.py` can be used to publish a start and goal to the action server.
+`autonomy_core/map_plan/map_plan_launch/launch/planner_standalone.launch.py` launches the planner by itself. It will launch the action server and an rviz2 node for visualization. Additionally `ros2 run action_planner publish_plantwopointaction.py` can be used to publish a start and goal to the action server.
 
 JPS and GCOPTER running togeher can crash.
 

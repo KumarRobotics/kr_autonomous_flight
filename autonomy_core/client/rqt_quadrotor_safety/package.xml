@@ -1,4 +1,6 @@
-<package>
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>rqt_quadrotor_safety</name>
   <version>0.1.0</version>
   <description>Provides a GUI plugin for MAV Manager.</description>
@@ -11,19 +13,22 @@
 
   <author>Dinesh Thakur</author>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_python</buildtool_depend>
 
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>kr_planning_msgs</run_depend>
-  <run_depend>mavros_msgs</run_depend>
-  <run_depend>python3-rospkg</run_depend>
-  <run_depend>rostopic</run_depend>
-  <run_depend>rqt_gui</run_depend>
-  <run_depend>rqt_gui_py</run_depend>
-
-  <run_depend>mav_manager</run_depend>
+  <depend>rclpy</depend>
+  <depend>rqt_gui</depend>
+  <depend>rqt_gui_py</depend>
+  <depend>python_qt_binding</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>kr_planning_msgs</depend>
+  <depend>kr_mav_msgs</depend>
+  <depend>tf_transformations</depend>
+  <exec_depend>python3-numpy</exec_depend>
 
   <export>
+    <build_type>ament_python</build_type>
     <rqt_gui plugin="${prefix}/plugin.xml"/>
   </export>
 </package>

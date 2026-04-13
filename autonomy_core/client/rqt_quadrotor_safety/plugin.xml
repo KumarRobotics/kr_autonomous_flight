@@ -1,4 +1,4 @@
-<library path="src">
+<library path="rqt_quadrotor_safety">
   <class name="QuadrotorSafety" type="rqt_quadrotor_safety.quadrotor_safety.QuadrotorSafety" base_class_type="rqt_gui_py::Plugin">
     <description>
       A Python GUI plugin to steer a quadrotor with a geometry_msgs/Twist message.

@@ -1,12 +1,10 @@
 # Copyright (c) 2016, Mike Watterson and Dinesh Thankur
 
-from __future__ import print_function, division
-
 import os
 from math import log10, floor
-import rospkg
 
-import rospy
+from ament_index_python.packages import get_package_share_directory
+
 from python_qt_binding import loadUi
 
 try:
@@ -15,7 +13,8 @@ try:
 except ImportError:
     # PyQt5
     from python_qt_binding.QtWidgets import QWidget
-from rqt_gui_py.plugin import Plugin
+
+from qt_gui.plugin import Plugin
 
 import std_msgs.msg
 import kr_planning_msgs.msg as MHL
@@ -23,7 +22,14 @@ from nav_msgs.msg import Odometry
 import kr_mav_msgs.msg as QM
 import numpy as np
 
-from tf.transformations import euler_from_quaternion
+try:
+    from tf_transformations import euler_from_quaternion
+except ImportError:  # pragma: no cover - fallback for systems without tf_transformations
+    from transforms3d.euler import quat2euler
+
+    def euler_from_quaternion(q):
+        # transforms3d uses (w, x, y, z) order; tf uses (x, y, z, w)
+        return quat2euler((q[3], q[0], q[1], q[2]))
 
 
 def round_str(x, sig=3):
@@ -38,15 +44,17 @@ class QuadrotorSafety(Plugin):
         super(QuadrotorSafety, self).__init__(context)
         self.setObjectName("QuadrotorSafety")
 
+        # rqt_gui_py provides an rclpy Node via context.node in ROS2
+        self._node = context.node
+
         self.odom_count = 0
         self.command_count = 0
 
-        self._publisher = None
-
         self._widget = QWidget()
-        rp = rospkg.RosPack()
         ui_file = os.path.join(
-            rp.get_path("rqt_quadrotor_safety"), "resource", "QuadrotorSafety.ui"
+            get_package_share_directory("rqt_quadrotor_safety"),
+            "resource",
+            "QuadrotorSafety.ui",
         )
         loadUi(ui_file, self._widget)
         self._widget.setObjectName("QuadrotorSafetyUi")
@@ -56,14 +64,22 @@ class QuadrotorSafety(Plugin):
             )
         context.add_widget(self._widget)
 
-        # rostopics
-        self.odom_sub = rospy.Subscriber("odom", Odometry, self.odom_cb, queue_size=10)
-        self.command_sub = rospy.Subscriber(
-            "position_cmd", QM.PositionCommand, self.command_cb, queue_size=10
+        # ROS2 topics
+        self.odom_sub = self._node.create_subscription(
+            Odometry, "odom", self.odom_cb, 10
         )
-        self.state_trigger = rospy.Publisher("state_trigger", MHL.StateTransition, queue_size=1)
-        self.replan_state_trigger = rospy.Publisher("replan_state_trigger", std_msgs.msg.String, queue_size=1)
-        self.motors_pub = rospy.Publisher("motors", std_msgs.msg.Bool, queue_size=1)
+        self.command_sub = self._node.create_subscription(
+            QM.PositionCommand, "position_cmd", self.command_cb, 10
+        )
+        self.state_trigger = self._node.create_publisher(
+            MHL.StateTransition, "state_trigger", 1
+        )
+        self.replan_state_trigger = self._node.create_publisher(
+            std_msgs.msg.String, "replan_state_trigger", 1
+        )
+        self.motors_pub = self._node.create_publisher(
+            std_msgs.msg.Bool, "motors", 1
+        )
 
         # normal operations
         self._widget.motors_on_push_button.pressed.connect(self._on_motors_on_pressed_empty)
@@ -136,7 +152,9 @@ class QuadrotorSafety(Plugin):
 
     def publish_replan_string(self, string):
         # this will be subscribed by replanner
-        self.replan_state_trigger.publish(string)
+        msg = std_msgs.msg.String()
+        msg.data = string
+        self.replan_state_trigger.publish(msg)
 
     def _on_motors_on_pressed_empty(self):
         self.publish_string("motors_on")
@@ -162,10 +180,31 @@ class QuadrotorSafety(Plugin):
     def execute_waypoints_pressed(self):
         self.publish_string("waypoints")
 
-    def _unregister_publisher(self):
-        if self._publisher is not None:
-            self._publisher.unregister()
-            self._publisher = None
-
     def shutdown_plugin(self):
-        self._unregister_publisher()
+        # Destroy publishers/subscriptions so rclpy releases them cleanly.
+        if hasattr(self, "_node") and self._node is not None:
+            for handle in (
+                getattr(self, "odom_sub", None),
+                getattr(self, "command_sub", None),
+            ):
+                if handle is not None:
+                    try:
+                        self._node.destroy_subscription(handle)
+                    except Exception:
+                        pass
+            for handle in (
+                getattr(self, "state_trigger", None),
+                getattr(self, "replan_state_trigger", None),
+                getattr(self, "motors_pub", None),
+            ):
+                if handle is not None:
+                    try:
+                        self._node.destroy_publisher(handle)
+                    except Exception:
+                        pass
+
+    def save_settings(self, plugin_settings, instance_settings):
+        pass
+
+    def restore_settings(self, plugin_settings, instance_settings):
+        pass

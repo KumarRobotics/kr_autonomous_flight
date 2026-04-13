@@ -1,3 +1,12 @@
+> [!NOTE]
+> ## You are on the `dev/ros2` branch — ROS2 support for kr_autonomous_flight.
+>
+> This branch ports the entire `kr_autonomous_flight` stack from **ROS1 Noetic** (Ubuntu 20.04) to **ROS2 Jazzy Jalisco** (Ubuntu 24.04) — the latest ROS2 LTS. It is built on top of the [`feature/integrate_lidar_3d_planner_default`](https://github.com/KumarRobotics/kr_autonomous_flight/tree/feature/integrate_lidar_3d_planner_default) branch, which adds support for the **3D planner** and both **LIDAR + VIO** and **LIDAR-only** autonomous flight configurations. It is provided to help developers who want to use kr_autonomous_flight with ROS2.
+>
+> **Note:** this ROS2 port has **not been as extensively tested or experimented with** as the ROS1 version. If you want the version used to produce the results in our papers, or the most battle-tested setup, please use the [`master`](https://github.com/KumarRobotics/kr_autonomous_flight/tree/master) branch (ROS1 Noetic, Ubuntu 20.04), or the [`feature/integrate_lidar_3d_planner_default`](https://github.com/KumarRobotics/kr_autonomous_flight/tree/feature/integrate_lidar_3d_planner_default) branch if you specifically need 3D planning or LIDAR-only flight under ROS1.
+>
+> Issues and pull requests that improve the ROS2 port are very welcome.
+
 ![alt text](https://github.com/KumarRobotics/kr_autonomous_flight/blob/master/docs/falcon4-compressed.jpg)
 
 # Branch Notice: 

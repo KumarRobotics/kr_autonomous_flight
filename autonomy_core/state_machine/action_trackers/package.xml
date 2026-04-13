@@ -32,6 +32,9 @@
   <depend>action_msgs</depend>
   <depend>builtin_interfaces</depend>
 
+  <depend>pluginlib</depend>
+  <depend>angles</depend>
+
   <depend>kr_trackers</depend>
   <depend>kr_mav_msgs</depend>
   <depend>kr_tracker_msgs</depend>

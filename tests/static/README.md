@@ -10,7 +10,7 @@ Two Bash files and this README:
 
 ```
 tests/static/
-  check_ros2_port.sh   # runner (14 sections A-N + 2 sub-checks)
+  check_ros2_port.sh   # runner (17 sections A-Q + 2 sub-checks)
   lib.sh               # colors, counters, comment-strippers, file listers
   README.md            # this file
 ```
@@ -65,6 +65,9 @@ not a TTY).
 | **L** | Every `Node(package='<managed>', executable='<y>')` resolves to an `add_executable` target or an `install(PROGRAMS)` entry in `<managed>`'s `CMakeLists.txt` |
 | **M** | No duplicate raw `declare_parameter("key", ...)` calls across files within the same package (wrapper calls `*_declare_or_get<T>(...)` are ignored) |
 | **N** | Dockerfiles / CI workflows / shell scripts contain no `noetic`, `ubuntu:20.04`, `roslaunch`, `rosrun`, `rosbag`, `catkin build`, `source /opt/ros/noetic`, etc. |
+| **O** | Every `#include <pkg/...>` in a managed package's C/C++ sources resolves to an entry in that package's `package.xml` (via `<depend>`, `<build_depend>`, `<exec_depend>`, `<test_depend>` or `<buildtool_depend>`). Owning-package is resolved by walking up the directory tree. System libs (`Eigen`, `boost`, `pcl`, `gtsam`, `opencv2`, `gtest`, `benchmark`, `yaml-cpp`, `fmt`, `glog`, `tbb`, POSIX headers) are exempt because they're pulled via `find_package` + `target_link_libraries`, not `<depend>`. An include-prefix → package-name map is built from `<pkg>/include/<subdir>` so that cross-package includes whose top-level dir name differs from the package name (e.g. `mpl_collision/` → `motion_primitive_library`) resolve correctly. |
+| **P** | For every `Node(package='<managed>', executable='<y>', parameters=[{'k': v, ...}])` in a `*.launch.py`, every literal dict key `k` is declared in the target package's C++/Python source as `declare_parameter("k", ...)` (template or plain form), `get_param_or(node, "k", ...)`, or `declare_parameter_if_not_declared(node, "k", ...)`. Catches the classic ROS2 bug where a launch file passes a parameter that the target node silently ignores because it never calls `declare_parameter`. Only dict-literal `parameters=[{...}]` is analyzed; yaml-file-path parameters, `ComposableNode`s, and dynamically-built `params` variables are skipped. Packages outside the 22 managed list are also skipped. |
+| **Q** | Every `*.sh` / `*.bash` under `autonomy_*/` and `tests/` passes `bash -n`. Skipped (with a clear reason) when `bash -n` isn't usable in the runtime sandbox. |
 
 Two sub-checks report as **warnings** (non-fatal):
 

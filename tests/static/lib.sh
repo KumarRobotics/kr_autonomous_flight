@@ -235,3 +235,48 @@ list_ci_workflows() {
   local root="$1"
   find "$root/.github" -type f \( -name '*.yaml' -o -name '*.yml' \) 2>/dev/null | LC_ALL=C sort
 }
+
+# ---------------------------------------------------------------------------
+# Section O/P helpers
+# ---------------------------------------------------------------------------
+# Print every `<depend>NAME</depend>` / `<build_depend>` / `<exec_depend>` /
+# `<test_depend>` / `<buildtool_depend>` NAME from a package.xml, one per line,
+# stripped of whitespace. Works on single-line or multi-line tag forms but
+# assumes the token is the entire tag body.
+package_xml_depends() {
+  local xml="$1"
+  [[ -f "$xml" ]] || return 0
+  grep -oE '<(depend|build_depend|exec_depend|test_depend|buildtool_depend|build_export_depend|run_depend|depend_on)>[[:space:]]*[A-Za-z0-9_.-]+[[:space:]]*</[a-z_]+>' "$xml" 2>/dev/null \
+    | sed -E 's/<[^>]+>//g' \
+    | awk 'NF { gsub(/[[:space:]]/, ""); print }' \
+    | LC_ALL=C sort -u
+}
+
+# Print the `<name>` of a package.xml file (first occurrence only).
+package_xml_name() {
+  local xml="$1"
+  [[ -f "$xml" ]] || return 0
+  grep -oE '<name>[[:space:]]*[A-Za-z0-9_]+[[:space:]]*</name>' "$xml" 2>/dev/null \
+    | head -1 \
+    | sed -E 's/<[^>]+>//g' \
+    | awk '{ gsub(/[[:space:]]/, ""); print }'
+}
+
+# Walk up from file's dirname to find the nearest enclosing package.xml.
+# Prints the absolute path to the package.xml or empty string.
+find_owning_package_xml() {
+  local f="$1"
+  local d
+  d="$(dirname "$f")"
+  while [[ "$d" != "/" && "$d" != "." && -n "$d" ]]; do
+    if [[ -f "$d/package.xml" ]]; then
+      printf '%s\n' "$d/package.xml"
+      return 0
+    fi
+    local parent
+    parent="$(dirname "$d")"
+    [[ "$parent" == "$d" ]] && break
+    d="$parent"
+  done
+  return 0
+}

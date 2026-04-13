@@ -3,7 +3,7 @@
 #define ESTIMATION_PKGS_FLA_UKF_INCLUDE_FLA_UKF_FLA_UKF_H_
 
 #include <Eigen/Core>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <array>
 #include <deque>
 #include <utility>
@@ -85,30 +85,30 @@ class FLAUKF {
   void SetFloorChangeThreshold(Scalar_t t);
   void SetFloorMergeThreshold(Scalar_t t);
 
-  bool ProcessUpdate(const InputVec &u, const ros::Time &time);
+  bool ProcessUpdate(const InputVec &u, const rclcpp::Time &time);
 
   bool MeasurementUpdateSE3(const MeasCamVec &z, const MeasCamCov &RnCam,
-                            const ros::Time &time);
+                            const rclcpp::Time &time);
   MeasCamVec MeasurementModelSE3(const StateVec &x);
 
   bool MeasurementUpdateLaser(const MeasLaserVec &z,
                               const MeasLaserCov &RnLaser,
-                              const ros::Time &time);
+                              const rclcpp::Time &time);
   MeasLaserVec MeasurementModelLaser(const StateVec &x);
 
   bool MeasurementUpdateHeight(const MeasHeightVec &z,
                                const MeasHeightCov &RnHeight,
-                               const ros::Time &time);
+                               const rclcpp::Time &time);
   MeasHeightVec MeasurementModelHeight(const StateVec &x);
 
   bool MeasurementUpdateGps(const MeasGpsVec &z, const MeasGpsCov &RnGps,
-                            const ros::Time &time);
+                            const rclcpp::Time &time);
 
   bool MeasurementUpdateYaw(const MeasYawVec &z, const MeasYawCov &RnYaw,
-                            const ros::Time &time);
+                            const rclcpp::Time &time);
 
   bool MeasurementUpdateVio(const MeasVioVec &z, const MeasVioCov &RnVio,
-                            const ros::Time &time);
+                            const rclcpp::Time &time);
   MeasVioVec MeasurementModelVio(const StateVec &x);
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -149,12 +149,12 @@ class FLAUKF {
   // process model
   StateVec ProcessModel(const StateVec &x, const InputVec &u,
                         const ProcNoiseVec &w, Scalar_t dt);
-  bool PropagateAprioriCovariance(const ros::Time time);
+  bool PropagateAprioriCovariance(const rclcpp::Time time);
 
   // State
   StateVec xa_;
   StateCov Pa_;
-  ros::Time prev_proc_update_time_;
+  rclcpp::Time prev_proc_update_time_{0, 0, RCL_ROS_TIME};
 
   // Initial process update indicator
   bool init_process_;
@@ -180,7 +180,7 @@ class FLAUKF {
   Scalar_t floor_change_threshold_;
   std::vector<Scalar_t> known_floor_heights_;
   Scalar_t floor_merge_threshold_;
-  std::deque<std::pair<ros::Time, Scalar_t>> height_hist_;
+  std::deque<std::pair<rclcpp::Time, Scalar_t>> height_hist_;
 #if 0
   double height_hist_duration_;
 #else

@@ -86,7 +86,7 @@ void FLAUKF::SetParameters(Scalar_t _alpha, Scalar_t _beta, Scalar_t _kappa) {
   kappa_ = _kappa;
 }
 
-bool FLAUKF::ProcessUpdate(const InputVec &u, const ros::Time &time) {
+bool FLAUKF::ProcessUpdate(const InputVec &u, const rclcpp::Time &time) {
   // Init Time
   Scalar_t dt;
   if (!init_process_ || !init_meas_) {
@@ -95,7 +95,7 @@ bool FLAUKF::ProcessUpdate(const InputVec &u, const ros::Time &time) {
     return false;
   }
 
-  dt = (time - prev_proc_update_time_).toSec();
+  dt = (time - prev_proc_update_time_).seconds();
   prev_proc_update_time_ = time;
 
   constexpr unsigned int L_proc = state_count_ + proc_noise_count_;
@@ -213,7 +213,7 @@ FLAUKF::StateVec FLAUKF::ProcessModel(const StateVec &x, const InputVec &u,
 
 bool FLAUKF::MeasurementUpdateLaser(const MeasLaserVec &z,
                                     const MeasLaserCov &RnLaser,
-                                    const ros::Time &time) {
+                                    const rclcpp::Time &time) {
   // Init
   if (!init_process_ || !init_meas_) {
     std::cout << "MeasurementUpdateLaser:" << std::endl;
@@ -248,7 +248,7 @@ bool FLAUKF::MeasurementUpdateLaser(const MeasLaserVec &z,
 }
 
 bool FLAUKF::MeasurementUpdateSE3(const MeasCamVec &z, const MeasCamCov &RnCam,
-                                  const ros::Time &time) {
+                                  const rclcpp::Time &time) {
   // Init
   if (!init_process_ || !init_meas_) {
     std::cout << "Not initialized yet (probably no IMU received),"
@@ -341,7 +341,7 @@ FLAUKF::MeasCamVec FLAUKF::MeasurementModelSE3(const StateVec &x) {
 
 bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
                                      const MeasHeightCov &RnHeight,
-                                     const ros::Time &time) {
+                                     const rclcpp::Time &time) {
   // ROS_INFO("GOT HEIGHT");
   if (!init_process_ || !init_meas_) return false;
 
@@ -369,7 +369,9 @@ bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
       height_hist_.size() > 0 ? height_hist_.back().second : h_meas;
 
   if (std::abs(h_meas - h_prev) > floor_change_threshold_ / 4.0) {
-    ROS_WARN_THROTTLE(1, "Height measurement changing too fast, ignoring!");
+    RCLCPP_WARN_THROTTLE(rclcpp::get_logger("fla_ukf"),
+                         *rclcpp::Clock::make_shared(), 1000,
+                         "Height measurement changing too fast, ignoring!");
     return false;
   }
 #endif
@@ -378,7 +380,7 @@ bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
 
 #if 0
   // Remove old height estimates
-  while ((time - height_hist_[0].first).toSec() > height_hist_duration_) {
+  while ((time - height_hist_[0].first).seconds() > height_hist_duration_) {
     height_hist_.pop_front();
   }
 #else
@@ -396,7 +398,7 @@ bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
   // ROS_INFO_STREAM("z: " << z(0) << ", h_meas: " << h_meas
   //                      << ", h_ref: " << h_ref);
   if (std::abs(h_ref - h_meas) >= floor_change_threshold_) {
-    ROS_WARN("----- Floor Level Changed -----");
+    RCLCPP_WARN(rclcpp::get_logger("fla_ukf"), "----- Floor Level Changed -----");
     height_hist_ = decltype(height_hist_)();  // Clear queue
     height_hist_.push_back(std::make_pair(time, h_meas));
 
@@ -407,8 +409,9 @@ bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
     for (const auto &floor_height : known_floor_heights_) {
       if (std::abs(curr_floor_height_ - floor_height) <
           floor_merge_threshold_) {
-        ROS_WARN_STREAM("Setting current floor height to known floor height: "
-                        << floor_height);
+        RCLCPP_WARN_STREAM(rclcpp::get_logger("fla_ukf"),
+                           "Setting current floor height to known floor height: "
+                               << floor_height);
         curr_floor_height_ = floor_height;
         set_to_known_floor_height = true;
         break;
@@ -417,7 +420,7 @@ bool FLAUKF::MeasurementUpdateHeight(const MeasHeightVec &z,
     if (!set_to_known_floor_height)
       known_floor_heights_.push_back(curr_floor_height_);
 
-    ROS_WARN("New floor height: %f", curr_floor_height_);
+    RCLCPP_WARN(rclcpp::get_logger("fla_ukf"), "New floor height: %f", curr_floor_height_);
 
     // Recalculate z_pred
     for (unsigned int k = 0; k < Xa.cols(); k++)
@@ -456,7 +459,7 @@ FLAUKF::MeasHeightVec FLAUKF::MeasurementModelHeight(const StateVec &x) {
 }
 
 bool FLAUKF::MeasurementUpdateGps(const MeasGpsVec &z, const MeasGpsCov &RnGps,
-                                  const ros::Time &time) {
+                                  const rclcpp::Time &time) {
   // Init
   if (!init_process_ || !init_meas_) {
     std::cout << "MeasurementUpdateGps:" << std::endl;
@@ -488,7 +491,7 @@ bool FLAUKF::MeasurementUpdateGps(const MeasGpsVec &z, const MeasGpsCov &RnGps,
 }
 
 bool FLAUKF::MeasurementUpdateYaw(const MeasYawVec &z, const MeasYawCov &RnYaw,
-                                  const ros::Time &time) {
+                                  const rclcpp::Time &time) {
   // Init
   if (!init_process_ || !init_meas_) {
     std::cout << "MeasurementUpdateYaw:" << std::endl;
@@ -521,7 +524,7 @@ bool FLAUKF::MeasurementUpdateYaw(const MeasYawVec &z, const MeasYawCov &RnYaw,
 }
 
 bool FLAUKF::MeasurementUpdateVio(const MeasVioVec &z, const MeasVioCov &RnVio,
-                                  const ros::Time &time) {
+                                  const rclcpp::Time &time) {
   // Init
   if (!init_process_ || !init_meas_) {
     std::cout << "MeasurementUpdateVio:" << std::endl;

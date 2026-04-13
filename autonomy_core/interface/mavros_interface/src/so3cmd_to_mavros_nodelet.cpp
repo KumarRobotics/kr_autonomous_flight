@@ -1,26 +1,33 @@
-#include <geometry_msgs/PoseStamped.h>
-#include <mavros_msgs/AttitudeTarget.h>
-#include <nav_msgs/Odometry.h>
-#include <nodelet/nodelet.h>
-#include <kr_mav_msgs/SO3Command.h>
-#include <ros/ros.h>
-#include <sensor_msgs/BatteryState.h>
-#include <sensor_msgs/Imu.h>
-#include <tf/transform_datatypes.h>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <mavros_msgs/msg/attitude_target.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <kr_mav_msgs/msg/so3_command.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/battery_state.hpp>
+#include <sensor_msgs/msg/imu.hpp>
+#include <tf2/LinearMath/Matrix3x3.hpp>
+#include <tf2/LinearMath/Quaternion.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include <Eigen/Geometry>
 
+#include <algorithm>
+#include <memory>
+#include <utility>
+
+namespace mavros_interface {
+
 enum ThrustModels { TM_KARTIK, TM_MIKE };
 
-class SO3CmdToMavros : public nodelet::Nodelet {
+class SO3CmdToMavros : public rclcpp::Node {
  public:
-  void onInit(void);
+  explicit SO3CmdToMavros(const rclcpp::NodeOptions & options);
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
  private:
-  void so3_cmd_callback(const kr_mav_msgs::SO3Command::ConstPtr &msg);
-  void odom_callback(const nav_msgs::Odometry::ConstPtr &odom);
-  void imu_callback(const sensor_msgs::Imu::ConstPtr &pose);
-  void battery_callback(const sensor_msgs::BatteryState::ConstPtr &msg);
+  void so3_cmd_callback(const kr_mav_msgs::msg::SO3Command::ConstSharedPtr msg);
+  void odom_callback(const nav_msgs::msg::Odometry::ConstSharedPtr odom);
+  void imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr pose);
+  void battery_callback(const sensor_msgs::msg::BatteryState::ConstSharedPtr msg);
 
   double thrust_model_kartik(double thrust);
   double thrust_model_mike(double thrust);
@@ -33,28 +40,29 @@ class SO3CmdToMavros : public nodelet::Nodelet {
 
   double bat_cof_, throttle_cof_, const_cof_;  // for mike model
 
-  ros::Publisher attitude_raw_pub_;
-  ros::Publisher odom_pose_pub_;  // For sending PoseStamped to firmware
+  rclcpp::Publisher<mavros_msgs::msg::AttitudeTarget>::SharedPtr attitude_raw_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr odom_pose_pub_;  // For sending PoseStamped to firmware
 
-  ros::Subscriber so3_cmd_sub_;
-  ros::Subscriber odom_sub_;
-  ros::Subscriber imu_sub_;
-  ros::Subscriber battery_sub_;
+  rclcpp::Subscription<kr_mav_msgs::msg::SO3Command>::SharedPtr so3_cmd_sub_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr battery_sub_;
 
   bool check_psi_;
   double battery_voltage_;
   double so3_cmd_timeout_;
-  ros::Time last_so3_cmd_time_;
-  kr_mav_msgs::SO3Command last_so3_cmd_;
+  rclcpp::Time last_so3_cmd_time_;
+  kr_mav_msgs::msg::SO3Command last_so3_cmd_;
 
   ThrustModels thrust_model_{TM_KARTIK};
 };
+
 void SO3CmdToMavros::battery_callback(
-    const sensor_msgs::BatteryState::ConstPtr &msg) {
+    const sensor_msgs::msg::BatteryState::ConstSharedPtr msg) {
   battery_voltage_ = msg->voltage;
 }
 
-void SO3CmdToMavros::odom_callback(const nav_msgs::Odometry::ConstPtr &odom) {
+void SO3CmdToMavros::odom_callback(const nav_msgs::msg::Odometry::ConstSharedPtr odom) {
   if (!odom_set_) odom_set_ = true;
 
   odom_q_ = Eigen::Quaterniond(
@@ -62,24 +70,24 @@ void SO3CmdToMavros::odom_callback(const nav_msgs::Odometry::ConstPtr &odom) {
       odom->pose.pose.orientation.y, odom->pose.pose.orientation.z);
 
   // Publish PoseStamped for mavros vision_pose plugin
-  auto odom_pose_msg = boost::make_shared<geometry_msgs::PoseStamped>();
+  auto odom_pose_msg = std::make_unique<geometry_msgs::msg::PoseStamped>();
   odom_pose_msg->header = odom->header;
   odom_pose_msg->pose = odom->pose.pose;
-  odom_pose_pub_.publish(odom_pose_msg);
+  odom_pose_pub_->publish(std::move(odom_pose_msg));
 }
 
-void SO3CmdToMavros::imu_callback(const sensor_msgs::Imu::ConstPtr &pose) {
+void SO3CmdToMavros::imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr pose) {
   if (!imu_set_) imu_set_ = true;
 
   imu_q_ = Eigen::Quaterniond(pose->orientation.w, pose->orientation.x,
                               pose->orientation.y, pose->orientation.z);
 
   if (so3_cmd_set_ &&
-      ((ros::Time::now() - last_so3_cmd_time_).toSec() >= so3_cmd_timeout_)) {
-    ROS_INFO("so3_cmd timeout. %f seconds since last command",
-             (ros::Time::now() - last_so3_cmd_time_).toSec());
+      ((this->now() - last_so3_cmd_time_).seconds() >= so3_cmd_timeout_)) {
+    RCLCPP_INFO(this->get_logger(), "so3_cmd timeout. %f seconds since last command",
+             (this->now() - last_so3_cmd_time_).seconds());
     const auto last_so3_cmd_ptr =
-        boost::make_shared<kr_mav_msgs::SO3Command>(last_so3_cmd_);
+        std::make_shared<kr_mav_msgs::msg::SO3Command>(last_so3_cmd_);
 
     so3_cmd_callback(last_so3_cmd_ptr);
   }
@@ -111,7 +119,7 @@ double SO3CmdToMavros::thrust_model_mike(double thrust) {
 }
 
 void SO3CmdToMavros::so3_cmd_callback(
-    const kr_mav_msgs::SO3Command::ConstPtr &msg) {
+    const kr_mav_msgs::msg::SO3Command::ConstSharedPtr msg) {
   if (!so3_cmd_set_) so3_cmd_set_ = true;
 
   // grab desired forces and rotation from so3
@@ -120,24 +128,24 @@ void SO3CmdToMavros::so3_cmd_callback(
   const Eigen::Quaterniond q_des(msg->orientation.w, msg->orientation.x,
                                  msg->orientation.y, msg->orientation.z);
 
-  // convert to tf::Quaternion
-  tf::Quaternion imu_tf =
-      tf::Quaternion(imu_q_.x(), imu_q_.y(), imu_q_.z(), imu_q_.w());
-  tf::Quaternion odom_tf =
-      tf::Quaternion(odom_q_.x(), odom_q_.y(), odom_q_.z(), odom_q_.w());
+  // convert to tf2::Quaternion
+  tf2::Quaternion imu_tf =
+      tf2::Quaternion(imu_q_.x(), imu_q_.y(), imu_q_.z(), imu_q_.w());
+  tf2::Quaternion odom_tf =
+      tf2::Quaternion(odom_q_.x(), odom_q_.y(), odom_q_.z(), odom_q_.w());
 
   // extract RPY's
   double imu_roll, imu_pitch, imu_yaw;
   double odom_roll, odom_pitch, odom_yaw;
-  tf::Matrix3x3(imu_tf).getRPY(imu_roll, imu_pitch, imu_yaw);
-  tf::Matrix3x3(odom_tf).getRPY(odom_roll, odom_pitch, odom_yaw);
+  tf2::Matrix3x3(imu_tf).getRPY(imu_roll, imu_pitch, imu_yaw);
+  tf2::Matrix3x3(odom_tf).getRPY(odom_roll, odom_pitch, odom_yaw);
 
-  // create only yaw tf:Quaternions
-  tf::Quaternion imu_tf_yaw;
-  tf::Quaternion odom_tf_yaw;
+  // create only yaw tf2:Quaternions
+  tf2::Quaternion imu_tf_yaw;
+  tf2::Quaternion odom_tf_yaw;
   imu_tf_yaw.setRPY(0.0, 0.0, imu_yaw);
   odom_tf_yaw.setRPY(0.0, 0.0, odom_yaw);
-  const tf::Quaternion tf_imu_odom_yaw = imu_tf_yaw * odom_tf_yaw.inverse();
+  const tf2::Quaternion tf_imu_odom_yaw = imu_tf_yaw * odom_tf_yaw.inverse();
 
   // transform!
   const Eigen::Quaterniond q_des_transformed =
@@ -163,7 +171,8 @@ void SO3CmdToMavros::so3_cmd_callback(
     thrust = f_des(0) * R_cur(0, 2) + f_des(1) * R_cur(1, 2) +
              f_des(2) * R_cur(2, 2);
   } else {
-    ROS_WARN_THROTTLE(1, "psi > 1.0, thrust set to 0.0 in mavros_interface.");
+    RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
+                         "psi > 1.0, thrust set to 0.0 in mavros_interface.");
   }
 
   double throttle = 0.0;
@@ -172,7 +181,8 @@ void SO3CmdToMavros::so3_cmd_callback(
   else if (thrust_model_ == TM_MIKE)
     throttle = thrust_model_mike(thrust);
   else
-    ROS_ERROR_THROTTLE(1, "Unimplemented Thrust Model!!");
+    RCLCPP_ERROR_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
+                          "Unimplemented Thrust Model!!");
 
   // clamp from 0.0 to 1.0
   throttle = std::min(1.0, throttle);
@@ -181,7 +191,7 @@ void SO3CmdToMavros::so3_cmd_callback(
   if (!msg->aux.enable_motors) throttle = 0;
 
   // publish messages
-  auto setpoint_msg = boost::make_shared<mavros_msgs::AttitudeTarget>();
+  auto setpoint_msg = std::make_unique<mavros_msgs::msg::AttitudeTarget>();
   setpoint_msg->header = msg->header;
   setpoint_msg->type_mask = 0;
   setpoint_msg->orientation.w = q_des_transformed.w();
@@ -193,99 +203,103 @@ void SO3CmdToMavros::so3_cmd_callback(
   setpoint_msg->body_rate.z = msg->angular_velocity.z;
   setpoint_msg->thrust = throttle;
 
-  attitude_raw_pub_.publish(setpoint_msg);
+  attitude_raw_pub_->publish(std::move(setpoint_msg));
 
   // save last so3_cmd
   last_so3_cmd_ = *msg;
-  last_so3_cmd_time_ = ros::Time::now();
+  last_so3_cmd_time_ = this->now();
 }
 
-void SO3CmdToMavros::onInit(void) {
-  ros::NodeHandle priv_nh(getPrivateNodeHandle());
-
-  if (!priv_nh.getParam("check_psi", check_psi_)) check_psi_ = true;
+SO3CmdToMavros::SO3CmdToMavros(const rclcpp::NodeOptions & options)
+    : rclcpp::Node("so3cmd_to_mavros", options),
+      odom_set_(false),
+      imu_set_(false),
+      so3_cmd_set_(false),
+      num_props_(0.0),
+      thrust_vs_rpm_cof_a_(0.0),
+      thrust_vs_rpm_cof_b_(0.0),
+      thrust_vs_rpm_cof_c_(0.0),
+      rpm_vs_throttle_coeff_a_(1.0),
+      rpm_vs_throttle_coeff_b_(0.0),
+      bat_cof_(0.0),
+      throttle_cof_(0.0),
+      const_cof_(0.0),
+      check_psi_(true),
+      battery_voltage_(0.0),
+      so3_cmd_timeout_(0.25),
+      last_so3_cmd_time_(0, 0, RCL_ROS_TIME) {
+  check_psi_ = this->declare_parameter("check_psi", true);
   if (!check_psi_)
-    ROS_WARN(
-        "Turning off Psi check. You should not need this unless doing "
-        "really aggressive manuvers.  Talk to Mike.");
+    RCLCPP_WARN(this->get_logger(),
+                "Turning off Psi check. You should not need this unless doing "
+                "really aggressive manuvers.  Talk to Mike.");
 
-  bool use_kartik_model;
-  priv_nh.param("use_kartik_thrust_model", use_kartik_model, true);
+  const bool use_kartik_model = this->declare_parameter("use_kartik_thrust_model", true);
   if (use_kartik_model) {
     thrust_model_ = TM_KARTIK;
-    if (priv_nh.getParam("num_props", num_props_))
-      ROS_INFO("Got number of props: %f", num_props_);
+    num_props_ = this->declare_parameter("num_props", 0.0);
+    if (num_props_ > 0.0)
+      RCLCPP_INFO(this->get_logger(), "Got number of props: %f", num_props_);
     else
-      ROS_ERROR("Must set num_props param");
+      RCLCPP_ERROR(this->get_logger(), "Must set num_props param");
 
     // get thrust scaling parameters
-    if (priv_nh.getParam("thrust_vs_rpm_coeff_a", thrust_vs_rpm_cof_a_) &&
-        priv_nh.getParam("thrust_vs_rpm_coeff_b", thrust_vs_rpm_cof_b_) &&
-        priv_nh.getParam("thrust_vs_rpm_coeff_c", thrust_vs_rpm_cof_c_)) {
-      ROS_ASSERT_MSG(
-          thrust_vs_rpm_cof_a_ > 0,
-          "thrust_vs_rpm_cof_a must be positive. thrust_vs_rpm_cof_a = %g",
-          thrust_vs_rpm_cof_a_);
-
-      ROS_INFO(
-          "Using Thrust = %g*RPM^2 + %g*RPM + %g to scale thrust to prop "
-          "speed.",
-          thrust_vs_rpm_cof_a_, thrust_vs_rpm_cof_b_, thrust_vs_rpm_cof_c_);
+    thrust_vs_rpm_cof_a_ = this->declare_parameter("thrust_vs_rpm_coeff_a", 0.0);
+    thrust_vs_rpm_cof_b_ = this->declare_parameter("thrust_vs_rpm_coeff_b", 0.0);
+    thrust_vs_rpm_cof_c_ = this->declare_parameter("thrust_vs_rpm_coeff_c", 0.0);
+    if (thrust_vs_rpm_cof_a_ > 0) {
+      RCLCPP_INFO(this->get_logger(),
+                  "Using Thrust = %g*RPM^2 + %g*RPM + %g to scale thrust to prop "
+                  "speed.",
+                  thrust_vs_rpm_cof_a_, thrust_vs_rpm_cof_b_, thrust_vs_rpm_cof_c_);
     } else {
-      ROS_ERROR(
-          "Must set coefficients for thrust vs rpm (scaling from rotor "
-          "velocity (RPM) to thrust produced)");
+      RCLCPP_ERROR(this->get_logger(),
+                   "Must set coefficients for thrust vs rpm (scaling from rotor "
+                   "velocity (RPM) to thrust produced)");
     }
 
-    if (priv_nh.getParam("rpm_vs_throttle_coeff_a", rpm_vs_throttle_coeff_a_) &&
-        priv_nh.getParam("rpm_vs_throttle_coeff_b", rpm_vs_throttle_coeff_b_))
-
-      ROS_INFO(
-          "Using RPM = %g*throttle + %g to scale prop speed to att_throttle.",
-          rpm_vs_throttle_coeff_a_, rpm_vs_throttle_coeff_b_);
-    else
-      ROS_ERROR(
-          "Must set coefficients for thrust scaling (scaling from rotor "
-          "velocity (RPM) to att_throttle for pixhawk)");
+    rpm_vs_throttle_coeff_a_ = this->declare_parameter("rpm_vs_throttle_coeff_a", 1.0);
+    rpm_vs_throttle_coeff_b_ = this->declare_parameter("rpm_vs_throttle_coeff_b", 0.0);
+    RCLCPP_INFO(this->get_logger(),
+                "Using RPM = %g*throttle + %g to scale prop speed to att_throttle.",
+                rpm_vs_throttle_coeff_a_, rpm_vs_throttle_coeff_b_);
   } else {
     thrust_model_ = TM_MIKE;
-    if (priv_nh.getParam("thrust_vs_throttle", throttle_cof_) &&
-        priv_nh.getParam("thrust_vs_battery", bat_cof_) &&
-        priv_nh.getParam("thrust_constant", const_cof_)) {
-      ROS_INFO_STREAM("Using thrust_vs_throttle: "
-                      << throttle_cof_ << ", thrust_vs_battery: " << bat_cof_
-                      << " , thrust_constant: " << const_cof_);
-    } else
-      ROS_ERROR("Must set parameters for thrust");
+    throttle_cof_ = this->declare_parameter("thrust_vs_throttle", 0.0);
+    bat_cof_ = this->declare_parameter("thrust_vs_battery", 0.0);
+    const_cof_ = this->declare_parameter("thrust_constant", 0.0);
+    RCLCPP_INFO(this->get_logger(),
+                "Using thrust_vs_throttle: %g, thrust_vs_battery: %g, thrust_constant: %g",
+                throttle_cof_, bat_cof_, const_cof_);
   }
 
   // get param for so3 command timeout duration
-  priv_nh.param("so3_cmd_timeout", so3_cmd_timeout_, 0.25);
-
-  odom_set_ = false;
-  imu_set_ = false;
-  so3_cmd_set_ = false;
+  so3_cmd_timeout_ = this->declare_parameter("so3_cmd_timeout", 0.25);
 
   attitude_raw_pub_ =
-      priv_nh.advertise<mavros_msgs::AttitudeTarget>("attitude_raw", 10);
+      this->create_publisher<mavros_msgs::msg::AttitudeTarget>("attitude_raw", 10);
 
   odom_pose_pub_ =
-      priv_nh.advertise<geometry_msgs::PoseStamped>("odom_pose", 10);
+      this->create_publisher<geometry_msgs::msg::PoseStamped>("odom_pose", 10);
 
-  so3_cmd_sub_ =
-      priv_nh.subscribe("so3_cmd", 10, &SO3CmdToMavros::so3_cmd_callback, this,
-                        ros::TransportHints().tcpNoDelay());
+  so3_cmd_sub_ = this->create_subscription<kr_mav_msgs::msg::SO3Command>(
+      "so3_cmd", 10,
+      std::bind(&SO3CmdToMavros::so3_cmd_callback, this, std::placeholders::_1));
 
-  odom_sub_ = priv_nh.subscribe("odom", 10, &SO3CmdToMavros::odom_callback,
-                                this, ros::TransportHints().tcpNoDelay());
+  odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+      "odom", 10,
+      std::bind(&SO3CmdToMavros::odom_callback, this, std::placeholders::_1));
 
-  imu_sub_ = priv_nh.subscribe("imu", 10, &SO3CmdToMavros::imu_callback, this,
-                               ros::TransportHints().tcpNoDelay());
+  imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
+      "imu", 10,
+      std::bind(&SO3CmdToMavros::imu_callback, this, std::placeholders::_1));
 
-  battery_sub_ =
-      priv_nh.subscribe("battery", 10, &SO3CmdToMavros::battery_callback, this,
-                        ros::TransportHints().tcpNoDelay());
+  battery_sub_ = this->create_subscription<sensor_msgs::msg::BatteryState>(
+      "battery", 10,
+      std::bind(&SO3CmdToMavros::battery_callback, this, std::placeholders::_1));
 }
 
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(SO3CmdToMavros, nodelet::Nodelet);
+}  // namespace mavros_interface
+
+#include <rclcpp_components/register_node_macro.hpp>
+RCLCPP_COMPONENTS_REGISTER_NODE(mavros_interface::SO3CmdToMavros)

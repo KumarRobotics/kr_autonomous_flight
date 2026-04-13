@@ -1,8 +1,11 @@
-n_beams: 64
-rpm: 600
-sample_freq: 10240 
-min_angle: deg(-22.5)
-max_angle: deg(22.5)
-min_range: 0.0
-max_range: 30.0
-model: "os1"
+/**:
+  ros__parameters:
+    n_beams: 64
+    rpm: 600
+    sample_freq: 10240
+    # min_angle and max_angle are in radians. deg(-22.5) ~= -0.3927
+    min_angle: -0.39269908
+    max_angle: 0.39269908
+    min_range: 0.0
+    max_range: 30.0
+    model: "os1"

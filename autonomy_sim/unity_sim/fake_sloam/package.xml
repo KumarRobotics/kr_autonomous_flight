@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
-<package format="2">
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>fake_sloam</name>
-  <version>0.0.0</version>
+  <version>0.0.1</version>
   <description>The fake_sloam package</description>
 
   <maintainer email="liuxu@seas.upenn.edu">Xu Liu</maintainer>
@@ -9,6 +10,23 @@
   <maintainer email="guilhermenardari@gmail.com">Guilherme Nardari</maintainer>
   <license>Penn Software License</license>
 
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-scipy</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
   <export>
+    <build_type>ament_python</build_type>
   </export>
 </package>

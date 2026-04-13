@@ -1,8 +1,11 @@
-n_beams: 16
-rpm: 300
-sample_freq: 18000 
-min_angle: deg(-15)
-max_angle: deg(15)
-min_range: 0.0
-max_range: 100.0
-model: "vlp16"
+/**:
+  ros__parameters:
+    n_beams: 16
+    rpm: 300
+    sample_freq: 18000
+    # deg(-15) ~= -0.2617993878
+    min_angle: -0.2617993878
+    max_angle: 0.2617993878
+    min_range: 0.0
+    max_range: 100.0
+    model: "vlp16"

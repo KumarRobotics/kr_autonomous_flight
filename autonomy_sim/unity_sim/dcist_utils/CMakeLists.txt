@@ -1,25 +1,49 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 project(dcist_utils)
 
-set(CMAKE_CXX_STANDARD 17)
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
 
-find_package(catkin REQUIRED COMPONENTS roscpp nav_msgs tf2_ros)
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_eigen REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 find_package(Eigen3 REQUIRED NO_MODULE)
 find_package(yaml-cpp REQUIRED)
 
-catkin_package()
+set(DCIST_DEPS
+  rclcpp
+  nav_msgs
+  sensor_msgs
+  geometry_msgs
+  tf2
+  tf2_ros
+  tf2_eigen
+  tf2_geometry_msgs)
 
 add_executable(odom2tf src/odom2tf.cpp)
-target_include_directories(odom2tf PRIVATE ${catkin_INCLUDE_DIRS})
-target_link_libraries(odom2tf PRIVATE ${catkin_LIBRARIES} Eigen3::Eigen)
+ament_target_dependencies(odom2tf ${DCIST_DEPS})
+target_link_libraries(odom2tf Eigen3::Eigen)
 
 add_executable(msckf_calib_gen src/msckf_calib_gen.cpp)
-target_include_directories(msckf_calib_gen PRIVATE ${YAML_CPP_INCLUDE_DIR}
-                                                   ${catkin_INCLUDE_DIRS})
-target_link_libraries(
-  msckf_calib_gen PRIVATE ${catkin_LIBRARIES} ${YAML_CPP_LIBRARIES}
-                          Eigen3::Eigen)
+target_include_directories(msckf_calib_gen PRIVATE ${YAML_CPP_INCLUDE_DIR})
+ament_target_dependencies(msckf_calib_gen ${DCIST_DEPS})
+target_link_libraries(msckf_calib_gen ${YAML_CPP_LIBRARIES} Eigen3::Eigen)
 
 add_executable(playground src/playground.cpp)
-target_include_directories(playground PRIVATE ${catkin_INCLUDE_DIRS})
-target_link_libraries(playground PRIVATE ${catkin_LIBRARIES})
+ament_target_dependencies(playground rclcpp)
+
+install(TARGETS odom2tf msckf_calib_gen playground
+  DESTINATION lib/${PROJECT_NAME})
+
+install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY rviz DESTINATION share/${PROJECT_NAME})
+
+ament_package()

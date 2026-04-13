@@ -1,10 +1,14 @@
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "playground");
+  rclcpp::init(argc, argv);
+  auto node = rclcpp::Node::make_shared("playground");
 
-  ROS_INFO_STREAM(ros::names::append("", "right"));
-  ROS_INFO_STREAM(ros::names::append("left", "right"));
+  // ros::names::append has no direct equivalent in ROS 2; use simple string
+  // concatenation similar to what it did.
+  RCLCPP_INFO_STREAM(node->get_logger(), std::string("") + "right");
+  RCLCPP_INFO_STREAM(node->get_logger(), std::string("left/") + "right");
 
+  rclcpp::shutdown();
   return 0;
 }

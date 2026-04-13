@@ -1,14 +1,17 @@
-#include <geometry_msgs/TransformStamped.h>
-#include <ros/ros.h>
-#include <sensor_msgs/CameraInfo.h>
-#include <sensor_msgs/Imu.h>
-#include <tf2_eigen/tf2_eigen.h>
-#include <tf2_ros/transform_listener.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
+#include <sensor_msgs/msg/imu.hpp>
+#include <tf2_eigen/tf2_eigen.hpp>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.hpp>
 #include <yaml-cpp/yaml.h>
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <optional>
+#include <string>
 
 namespace dcist {
 
@@ -41,7 +44,7 @@ void EmitMatrixRowwise(YAML::Emitter* out,
 }
 
 void EmitCamera(YAML::Emitter* out,
-                const sensor_msgs::CameraInfo& cinfo,
+                const sensor_msgs::msg::CameraInfo& cinfo,
                 const Eigen::Matrix4d& T_cam_imu,
                 const std::optional<Eigen::Matrix4d> T_cn_cnm1 = std::nullopt) {
   *out << YAML::Value;
@@ -52,7 +55,7 @@ void EmitCamera(YAML::Emitter* out,
 
   *out << YAML::Key << "camera_model" << YAML::Value << "pinhole";
   EmitStdVector<double>(
-      out, "intrinsics", {cinfo.K[0], cinfo.K[4], cinfo.K[2], cinfo.K[5]});
+      out, "intrinsics", {cinfo.k[0], cinfo.k[4], cinfo.k[2], cinfo.k[5]});
   *out << YAML::Key << "distortion_model" << YAML::Value << "radtan";
   EmitStdVector(out, "distortion_coeffs", std::vector<double>(4, 0.0));
   EmitStdVector<int>(
@@ -70,62 +73,82 @@ void EmitCamera(YAML::Emitter* out,
   *out << YAML::EndMap;
 }
 
-geometry_msgs::TransformStamped LookupTransform(
+geometry_msgs::msg::TransformStamped LookupTransform(
     const tf2_ros::Buffer& buffer,
     const std::string& target_frame,
     const std::string& source_frame) {
-  return buffer.lookupTransform(target_frame, source_frame, ros::Time(0));
+  return buffer.lookupTransform(target_frame, source_frame,
+                                tf2::TimePointZero);
 }
 
 /**
- * @brief This class subscribe to camera info topics of a pair of stereo cameras
- * and tf and output a calib.yaml file which can be used with msckf_vio
+ * @brief This class subscribes to camera info topics of a pair of stereo
+ * cameras and tf and outputs a calib.yaml file which can be used with
+ * msckf_vio.
  */
-class CalibGenerator {
+class CalibGenerator : public rclcpp::Node {
  public:
-  CalibGenerator(const ros::NodeHandle& pnh)
-      : pnh_(pnh),
-        sub_cinfo0_(pnh_.subscribe(
-            "cam0/camera_info", 1, &CalibGenerator::Cinfo0Cb, this)),
-        sub_cinfo1_(pnh_.subscribe(
-            "cam1/camera_info", 1, &CalibGenerator::Cinfo1Cb, this)),
-        sub_imu_(pnh_.subscribe("imu", 1, &CalibGenerator::ImuCb, this)),
-        listener_(buffer_),
-        output_file_(pnh_.param<std::string>("output", "/tmp/calib.yaml")) {}
+  CalibGenerator()
+      : Node("msckf_calib_gen"),
+        buffer_(this->get_clock()),
+        listener_(buffer_) {
+    output_file_ = this->declare_parameter<std::string>(
+        "output", "/tmp/calib.yaml");
 
-  void Cinfo0Cb(const sensor_msgs::CameraInfo& cinfo_msg) {
-    ROS_INFO("Got cinfo0");
-    cinfo0_ = cinfo_msg;
-    sub_cinfo0_.shutdown();
+    sub_cinfo0_ =
+        this->create_subscription<sensor_msgs::msg::CameraInfo>(
+            "cam0/camera_info", 1,
+            std::bind(&CalibGenerator::Cinfo0Cb, this,
+                      std::placeholders::_1));
+    sub_cinfo1_ =
+        this->create_subscription<sensor_msgs::msg::CameraInfo>(
+            "cam1/camera_info", 1,
+            std::bind(&CalibGenerator::Cinfo1Cb, this,
+                      std::placeholders::_1));
+    sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>(
+        "imu", 1,
+        std::bind(&CalibGenerator::ImuCb, this, std::placeholders::_1));
   }
 
-  void Cinfo1Cb(const sensor_msgs::CameraInfo& cinfo_msg) {
-    ROS_INFO("Got cinfo1");
-    cinfo1_ = cinfo_msg;
-    sub_cinfo1_.shutdown();
+  void Cinfo0Cb(const sensor_msgs::msg::CameraInfo::ConstSharedPtr cinfo_msg) {
+    RCLCPP_INFO(this->get_logger(), "Got cinfo0");
+    cinfo0_ = *cinfo_msg;
+    sub_cinfo0_.reset();
   }
 
-  void ImuCb(const sensor_msgs::Imu& imu_msg) {
+  void Cinfo1Cb(const sensor_msgs::msg::CameraInfo::ConstSharedPtr cinfo_msg) {
+    RCLCPP_INFO(this->get_logger(), "Got cinfo1");
+    cinfo1_ = *cinfo_msg;
+    sub_cinfo1_.reset();
+  }
+
+  void ImuCb(const sensor_msgs::msg::Imu::ConstSharedPtr imu_msg) {
     if (cinfo0_.header.frame_id.empty() || cinfo1_.header.frame_id.empty()) {
-      ROS_INFO_THROTTLE(1,
-                        "Waiting for camera info, maybe you need to add a rqt "
-                        "to visualize image topic so that it gets published!");
+      RCLCPP_INFO_THROTTLE(
+          this->get_logger(), *this->get_clock(), 1000,
+          "Waiting for camera info, maybe you need to add a rqt to visualize "
+          "image topic so that it gets published!");
       return;
     }
 
     tf_cam0_imu_ = LookupTransform(
-        buffer_, cinfo0_.header.frame_id, imu_msg.header.frame_id);
-    ROS_INFO_STREAM("T_cam0_imu: \n"
-                    << tf2::transformToEigen(tf_cam0_imu_.transform).matrix());
+        buffer_, cinfo0_.header.frame_id, imu_msg->header.frame_id);
+    RCLCPP_INFO_STREAM(
+        this->get_logger(),
+        "T_cam0_imu: \n"
+            << tf2::transformToEigen(tf_cam0_imu_.transform).matrix());
 
     tf_cam1_imu_ = LookupTransform(
-        buffer_, cinfo1_.header.frame_id, imu_msg.header.frame_id);
-    ROS_INFO_STREAM("T_cam1_imu: \n"
-                    << tf2::transformToEigen(tf_cam1_imu_.transform).matrix());
+        buffer_, cinfo1_.header.frame_id, imu_msg->header.frame_id);
+    RCLCPP_INFO_STREAM(
+        this->get_logger(),
+        "T_cam1_imu: \n"
+            << tf2::transformToEigen(tf_cam1_imu_.transform).matrix());
 
     WriteYaml(output_file_);
-    ROS_WARN("Write calib file to: %s", output_file_.c_str());
-    ros::shutdown();
+    RCLCPP_WARN(this->get_logger(), "Write calib file to: %s",
+                output_file_.c_str());
+    rclcpp::shutdown();
   }
 
   void WriteYaml(const std::string& filename) const {
@@ -140,35 +163,30 @@ class CalibGenerator {
     EmitCamera(&out, cinfo0_, T_cam0_imu.matrix());
 
     out << YAML::Key << "cam1";
-    // compute T_cam1_cam0
     const auto T_cam1_imu = tf2::transformToEigen(tf_cam1_imu_.transform);
     const auto T_cam1_cam0 = T_cam1_imu * T_cam0_imu.inverse();
     EmitCamera(&out, cinfo1_, T_cam1_imu.matrix(), {T_cam1_cam0.matrix()});
     out << YAML::EndMap;
   }
 
-  ros::NodeHandle pnh_;
-  ros::Subscriber sub_cinfo0_, sub_cinfo1_;
-  ros::Subscriber sub_imu_;
+ private:
+  rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr sub_cinfo0_;
+  rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr sub_cinfo1_;
+  rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr sub_imu_;
   tf2_ros::Buffer buffer_;
   tf2_ros::TransformListener listener_;
 
   std::string output_file_;
   std::string robot_;
-  sensor_msgs::CameraInfo cinfo0_, cinfo1_;
-  geometry_msgs::TransformStamped tf_cam0_imu_, tf_cam1_imu_;
+  sensor_msgs::msg::CameraInfo cinfo0_, cinfo1_;
+  geometry_msgs::msg::TransformStamped tf_cam0_imu_, tf_cam1_imu_;
 };
 
 }  // namespace dcist
 
-using namespace dcist;
-
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "msckf_calib_gen");
-
-  ros::NodeHandle pnh("~");
-  CalibGenerator gen(pnh);
-  ros::spin();
-
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<dcist::CalibGenerator>());
+  rclcpp::shutdown();
   return 0;
 }

@@ -1,9 +1,25 @@
-import ruamel.yaml
+import argparse
 import copy
+import os
 
-# TODO: maybe make those as input args
-in_folder_name = "/home/dcist/multicam_calibration/calib/example/"
-out_folder_name = "../config/"
+import ruamel.yaml
+
+# Override the defaults via SLIDESLAM_MULTICAM_CALIB_DIR environment variable
+# or the --in-folder / --out-folder command-line arguments. The hard-coded
+# default (~/multicam_calibration/calib/example/) is a convention on the
+# original author's machine and will not exist on a fresh clone.
+_default_in_folder = os.environ.get(
+    "SLIDESLAM_MULTICAM_CALIB_DIR",
+    os.path.expanduser("~/multicam_calibration/calib/example/"),
+)
+
+_parser = argparse.ArgumentParser(description=__doc__)
+_parser.add_argument("--in-folder", default=_default_in_folder)
+_parser.add_argument("--out-folder", default="../config/")
+_args, _ = _parser.parse_known_args()
+
+in_folder_name = _args.in_folder
+out_folder_name = _args.out_folder
 input_fname = 'ovc-latest.yaml'
 output_fname = 'msckf_calib.yaml'
 output_calib = None

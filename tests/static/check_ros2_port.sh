@@ -888,6 +888,35 @@ check_l_node_executables() {
     return 1
   }
 
+  # Helper: for ament_python packages (no CMakeLists in the tree but a
+  # setup.py with console_scripts entry_points), resolve <exe> against the
+  # package's console_scripts list.
+  resolves_in_ament_python_pkg() {
+    local pkg="$1"
+    local exe="$2"
+    # Find a setup.py under autonomy_*/*/<pkg>/ or autonomy_*/*/*/<pkg>/ that
+    # declares the package name. Match by the package name appearing in a
+    # `name='<pkg>'` line near the top of the file.
+    local setup_py
+    setup_py="$(find "$REPO_ROOT/autonomy_core" "$REPO_ROOT/autonomy_real" "$REPO_ROOT/autonomy_sim" \
+                  -maxdepth 5 -type f -name setup.py 2>/dev/null \
+                | while IFS= read -r sp; do
+                    if grep -qE "name[[:space:]]*=[[:space:]]*['\"]${pkg}['\"]" "$sp"; then
+                      echo "$sp"
+                      break
+                    fi
+                  done)"
+    [[ -z "$setup_py" ]] && return 1
+    # Match an entry_points console_scripts entry of the form
+    #   '<exe> = something:main'
+    # Tolerate leading whitespace and surrounding quotes (single or double).
+    local exe_no_py="${exe%.py}"
+    if grep -qE "['\"](${exe}|${exe_no_py})[[:space:]]*=[[:space:]]*[A-Za-z0-9_.]+:" "$setup_py"; then
+      return 0
+    fi
+    return 1
+  }
+
   local tmp_fail
   tmp_fail="$(mktemp)"
 
@@ -921,8 +950,12 @@ check_l_node_executables() {
         continue
       fi
       if ! resolves_in_pkg "$pkg" "$exe"; then
-        printf "%s: Node(package='%s', executable='%s') not found in %s CMakeLists\n" \
-          "$lf" "$pkg" "$exe" "$pkg" >>"$tmp_fail"
+        # Fall back to ament_python setup.py console_scripts resolution for
+        # pure-Python packages that ship no CMakeLists.txt.
+        if ! resolves_in_ament_python_pkg "$pkg" "$exe"; then
+          printf "%s: Node(package='%s', executable='%s') not found in %s CMakeLists or setup.py console_scripts\n" \
+            "$lf" "$pkg" "$exe" "$pkg" >>"$tmp_fail"
+        fi
       fi
     done <<<"$nodes"
   done <<<"$launch_files"

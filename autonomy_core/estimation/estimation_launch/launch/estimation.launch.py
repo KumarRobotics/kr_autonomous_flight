@@ -2,7 +2,8 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, EnvironmentVariable
-from launch_ros.actions import Node, PushRosNamespace
+from launch_ros.actions import ComposableNodeContainer, Node, PushRosNamespace
+from launch_ros.descriptions import ComposableNode
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -55,37 +56,47 @@ def generate_launch_description():
 
         GroupAction(actions=[
             PushRosNamespace(robot),
-            Node(
-                package='fla_ukf',
-                executable='fla_ukf_node',
-                name='fla_ukf',
+            # fla_ukf is a rclcpp_components composable node, not a
+            # standalone executable. Host it in a component_container.
+            ComposableNodeContainer(
+                name='fla_ukf_container',
+                namespace='',
+                package='rclcpp_components',
+                executable='component_container',
+                composable_node_descriptions=[
+                    ComposableNode(
+                        package='fla_ukf',
+                        plugin='fla_ukf::FLAUKFNodelet',
+                        name='fla_ukf',
+                        parameters=[
+                            ukf_params,
+                            {
+                                'world_frame_id': ukf_ref_frame_id,
+                                'robot_frame_id': robot_frame_id,
+                                'cam_frame_id': vio_imu_frame_id,
+                                'lidar_frame_id': lidar_frame_id,
+                                'enable_vio_odom': enable_vio_odom,
+                                'enable_lidar': enable_lidar,
+                                'vision_frame_id': vio_ref_frame_id,
+                                'enable_laser': False,
+                                'enable_gps': False,
+                                'enable_height': False,
+                                'enable_mag': False,
+                                'enable_yaw': False,
+                                'publish_tf': publish_odom_tf,
+                            },
+                        ],
+                        remappings=[
+                            ('~/imu', imu),
+                            ('~/mag', mag),
+                            ('~/height', 'mavros/distance_sensor/lidarlite_pub'),
+                            ('~/vio_odom', '/Odometry'),
+                            ('~/pose_lidar', '/quadrotor/llol_odom/pose_cov'),
+                            ('~/odom_out', output_odom),
+                        ],
+                    ),
+                ],
                 output='screen',
-                parameters=[
-                    ukf_params,
-                    {
-                        'world_frame_id': ukf_ref_frame_id,
-                        'robot_frame_id': robot_frame_id,
-                        'cam_frame_id': vio_imu_frame_id,
-                        'lidar_frame_id': lidar_frame_id,
-                        'enable_vio_odom': enable_vio_odom,
-                        'enable_lidar': enable_lidar,
-                        'vision_frame_id': vio_ref_frame_id,
-                        'enable_laser': False,
-                        'enable_gps': False,
-                        'enable_height': False,
-                        'enable_mag': False,
-                        'enable_yaw': False,
-                        'publish_tf': publish_odom_tf,
-                    },
-                ],
-                remappings=[
-                    ('~/imu', imu),
-                    ('~/mag', mag),
-                    ('~/height', 'mavros/distance_sensor/lidarlite_pub'),
-                    ('~/vio_odom', '/Odometry'),
-                    ('~/pose_lidar', '/quadrotor/llol_odom/pose_cov'),
-                    ('~/odom_out', output_odom),
-                ],
             ),
         ]),
 

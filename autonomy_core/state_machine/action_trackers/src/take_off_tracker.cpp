@@ -1,3 +1,4 @@
+#include <action_trackers/gain_params.hpp>
 #include <action_trackers/action/take_off.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
@@ -110,12 +111,7 @@ void TakeOffTracker::halfGains(PositionCommand& cmd) {
 
 void TakeOffTracker::Initialize(const rclcpp::Node::SharedPtr& parent_nh) {
   nh_ = parent_nh;
-  nh_->declare_parameter("gains.pos.x", 2.5);
-  nh_->declare_parameter("gains.pos.y", 2.5);
-  nh_->declare_parameter("gains.pos.z", 5.0);
-  nh_->declare_parameter("gains.vel.x", 2.2);
-  nh_->declare_parameter("gains.vel.y", 2.2);
-  nh_->declare_parameter("gains.vel.z", 4.0);
+  action_trackers::declare_shared_gain_params(nh_);
   nh_->get_parameter("gains.pos.x", kx_[0]);
   nh_->get_parameter("gains.pos.y", kx_[1]);
   nh_->get_parameter("gains.pos.z", kx_[2]);

@@ -1,26 +1,24 @@
+# Deprecated launch stub.
+#
+# The original ROS1 path_replanner C++ node (src/path_replanner.cpp in
+# state_machine_core) was dead code in master — it was commented out in
+# the old CMakeLists and depended on a JPS stack that no longer exists in
+# the tree. The ROS2 port dropped the source file entirely, so this
+# launch file can no longer instantiate it.
+#
+# The launch file is kept as a stub (returning an empty LaunchDescription)
+# so that any tmux / bringup script that still tries to `ros2 launch
+# state_machine_launch replanner.launch.py` fails gracefully with an
+# empty graph instead of crashing with "executable 'path_replanner' not
+# found in package 'state_machine'".
+#
+# If someone needs a ROS2 path replanner node, port the original
+# src/path_replanner.cpp from the historical ROS1 source and add the
+# executable to state_machine_core's CMakeLists, then reinstate the Node()
+# call below.
+
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    max_horizon = LaunchConfiguration('max_horizon')
-
-    return LaunchDescription([
-        DeclareLaunchArgument('max_horizon', default_value='5'),
-
-        Node(
-            package='state_machine',
-            executable='path_replanner',
-            name='replanner',
-            output='screen',
-            parameters=[{'max_horizon': max_horizon}],
-            remappings=[
-                ('~/epoch', 'epoch'),
-                ('~/plan_path', 'tpplanner/plan_path'),
-                ('~/execute_path', 'trackers_manager/execute_path'),
-                ('~/position_cmd', 'position_cmd'),
-            ],
-        ),
-    ])
+    return LaunchDescription([])

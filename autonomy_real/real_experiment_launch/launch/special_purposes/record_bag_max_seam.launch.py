@@ -18,7 +18,7 @@ def generate_launch_description():
     ]
 
     return LaunchDescription([
-        DeclareLaunchArgument('dir', default_value='/home/dcist/bags/falcon_pennovation_max_seam'),
+        DeclareLaunchArgument('dir', default_value='/tmp/kr_bags/falcon_pennovation_max_seam'),
         ExecuteProcess(
             cmd=['ros2', 'bag', 'record', '-o', bag_dir, *topics],
             output='screen',

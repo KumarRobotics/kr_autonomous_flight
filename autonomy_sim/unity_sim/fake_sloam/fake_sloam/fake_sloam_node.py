@@ -21,10 +21,12 @@ class FakeSloamNode(Node):
     def __init__(self):
         super().__init__("fake_sloam_node")
 
-        self.declare_parameter(
-            "input_file",
-            "/home/sam/LRS-SLAM/simulator_data_process/treeposition_nn_radius_5.txt",
-        )
+        # REQUIRED: path to the tree-position dataset (.txt). There is no
+        # sensible filesystem default that works on a fresh clone; pass this
+        # via launch arg or ros2 CLI, e.g.:
+        #   ros2 run fake_sloam fake_sloam_node --ros-args \
+        #     -p input_file:=/absolute/path/to/treeposition_nn_radius_5.txt
+        self.declare_parameter("input_file", "")
         self.declare_parameter("perception_range", 20.0)
         self.declare_parameter("publish_interval", 1.0)
         self.declare_parameter("robot_frame_id", "quadrotor")

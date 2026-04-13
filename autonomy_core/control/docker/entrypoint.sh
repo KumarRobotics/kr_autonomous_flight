@@ -1,12 +1,12 @@
 #!/bin/bash
 
-if [ -f /root/control_ws/devel/setup.bash ]; then
+if [ -f /root/control_ws/install/setup.bash ]; then
     echo "Setting up control_ws"
-    echo "source /root/control_ws/devel/setup.bash" >> /$HOME/.bashrc
+    echo "source /root/control_ws/install/setup.bash" >> /$HOME/.bashrc
     source /$HOME/.bashrc
 fi
 
-source /root/control_ws/devel/setup.bash
+source /root/control_ws/install/setup.bash
 
 if [ "$#" -eq 0 ]; then
     exec bash

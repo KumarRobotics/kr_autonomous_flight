@@ -1,7 +1,8 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction
 from launch.substitutions import LaunchConfiguration, EnvironmentVariable
-from launch_ros.actions import Node, PushRosNamespace
+from launch_ros.actions import ComposableNodeContainer, PushRosNamespace
+from launch_ros.descriptions import ComposableNode
 
 
 def generate_launch_description():
@@ -36,26 +37,37 @@ def generate_launch_description():
 
         GroupAction(actions=[
             PushRosNamespace(robot),
-            Node(
-                package='mavros_interface',
-                executable='so3cmd_to_mavros_node',
-                name='so3cmd_to_mavros',
-                output='screen',
-                parameters=[{
-                    'num_props': num_props,
-                    'thrust_vs_rpm_coeff_a': thrust_vs_rpm_coeff_a,
-                    'thrust_vs_rpm_coeff_b': thrust_vs_rpm_coeff_b,
-                    'thrust_vs_rpm_coeff_c': thrust_vs_rpm_coeff_c,
-                    'rpm_vs_throttle_coeff_a': rpm_vs_throttle_coeff_a,
-                    'rpm_vs_throttle_coeff_b': rpm_vs_throttle_coeff_b,
-                }],
-                remappings=[
-                    ('~/odom', odom),
-                    ('~/so3_cmd', so3_cmd),
-                    ('~/imu', 'mavros/imu/data'),
-                    ('~/attitude_raw', 'mavros/setpoint_raw/attitude'),
-                    ('~/odom_pose', 'mavros/vision_pose/pose'),
+            # mavros_interface's SO3CmdToMavros is a rclcpp_components
+            # composable node, not a standalone executable. Host it in a
+            # component_container.
+            ComposableNodeContainer(
+                name='so3cmd_to_mavros_container',
+                namespace='',
+                package='rclcpp_components',
+                executable='component_container',
+                composable_node_descriptions=[
+                    ComposableNode(
+                        package='mavros_interface',
+                        plugin='mavros_interface::SO3CmdToMavros',
+                        name='so3cmd_to_mavros',
+                        parameters=[{
+                            'num_props': num_props,
+                            'thrust_vs_rpm_coeff_a': thrust_vs_rpm_coeff_a,
+                            'thrust_vs_rpm_coeff_b': thrust_vs_rpm_coeff_b,
+                            'thrust_vs_rpm_coeff_c': thrust_vs_rpm_coeff_c,
+                            'rpm_vs_throttle_coeff_a': rpm_vs_throttle_coeff_a,
+                            'rpm_vs_throttle_coeff_b': rpm_vs_throttle_coeff_b,
+                        }],
+                        remappings=[
+                            ('~/odom', odom),
+                            ('~/so3_cmd', so3_cmd),
+                            ('~/imu', 'mavros/imu/data'),
+                            ('~/attitude_raw', 'mavros/setpoint_raw/attitude'),
+                            ('~/odom_pose', 'mavros/vision_pose/pose'),
+                        ],
+                    ),
                 ],
+                output='screen',
             ),
         ]),
     ])

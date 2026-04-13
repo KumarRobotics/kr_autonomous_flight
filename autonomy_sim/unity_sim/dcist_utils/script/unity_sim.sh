@@ -29,7 +29,7 @@ fi
 tmux setw -g mouse on
 
 tmux rename-window -t $SESSION_NAME "Core/Client"
-tmux send-keys -t $SESSION_NAME "echo "ROS2: no roscore needed"" Enter
+tmux send-keys -t $SESSION_NAME "echo "ROS2 uses no global master daemon"" Enter
 tmux split-window -t $SESSION_NAME
 tmux send-keys -t $SESSION_NAME "$SETUP_ROS_STRING; sleep 1; export DISPLAY=${CURRENT_DISPLAY}; ros2 launch client_launch client.launch.py robot:=${MAV_NAME}" Enter
 tmux select-layout -t $SESSION_NAME tiled

@@ -170,7 +170,7 @@ def generate_launch_description():
     ]
 
     return LaunchDescription([
-        DeclareLaunchArgument('dir', default_value='/home/dcist/bags/spencer-wind-est-falcon-pennovation'),
+        DeclareLaunchArgument('dir', default_value='/tmp/kr_bags/spencer-wind-est-falcon-pennovation'),
         ExecuteProcess(
             cmd=['ros2', 'bag', 'record', '-o', bag_dir, *topics],
             output='screen',

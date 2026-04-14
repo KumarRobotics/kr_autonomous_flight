@@ -415,22 +415,25 @@ bash tests/static/check_ros2_port.sh
 
 *(Typical output is a colorized list of `[PASS]` / `[FAIL]` / `[SKIP]` lines followed by a summary of the form `N checks, P passed, F failed, S skipped`. Run the command above locally to get the current count — the numbers shift as the port progresses.)*
 
-The runner is organized into 14 sections labeled A–N. Each section guards one family of regressions that the port could reintroduce:
+The runner is organized into 17 sections labeled A–Q plus a handful of regression guards. Each section guards one family of regressions that the port could reintroduce:
 
-- **A. `package.xml` build_type** — every in-tree manifest is `format="3"` and declares `<build_type>ament_cmake\|ament_python</build_type>`.
-- **B. `CMakeLists.txt` ament scaffold** — every `CMakeLists.txt` calls `find_package(ament_cmake REQUIRED)` and ends with `ament_package()`; no `catkin_package()` / `catkin REQUIRED COMPONENTS` remnants.
-- **C. C++ header hygiene** — no `#include <ros/ros.h>` / `<nodelet/nodelet.h>` / `<tf/transform_listener.h>` / `<actionlib/*>` / `<dynamic_reconfigure/*>` in any in-tree source.
-- **D. C++ API hygiene** — no `ros::NodeHandle`, `ros::Publisher`, `ros::Time::now()`, `ROS_INFO`, `ROS_WARN`, etc. in stripped (comment-free) source.
-- **E. Python `rospy` hygiene** — no `import rospy`, `rospy.init_node`, `rospy.get_param`, `rospy.Time.now()`, etc. in stripped Python source.
-- **F. `tf` → `tf2` hygiene** — no `import tf` (without the `2`) in Python; no `tf/transform_*` C++ headers.
-- **G. Launch files** — every `*.launch` XML is accompanied by a `*.launch.py`; no stray legacy XML launches.
-- **H. `.action` interface generation** — every `.action` file lives in a package whose `CMakeLists.txt` calls `rosidl_generate_interfaces(...)` and whose `package.xml` declares `rosidl_default_generators` / `rosidl_default_runtime` / the `rosidl_interface_packages` group.
-- **I. Pluginlib plugins** — every `PLUGINLIB_EXPORT_CLASS` call has a matching `pluginlib_export_plugin_description_file(...)`.
-- **J. Components** — every `RCLCPP_COMPONENTS_REGISTER_NODE` has a matching `rclcpp_components_register_nodes(...)`.
-- **K. Docker hygiene** — no `FROM nvidia/cudagl:*` or `FROM ros:noetic-*` in any Dockerfile; no `catkin build` / `source /opt/ros/noetic/setup.bash` in any in-tree shell script.
-- **L. GitHub Actions** — every `docker-build-*.yaml` triggers off `branches: [ros2_dev]` and produces a `-jazzy` tag.
-- **M. `external_*.yaml` TODOs** — every vcstool manifest has a top-of-file TODO comment flagging that its entries are still ROS1-only.
-- **N. Dangling launch includes** — every `IncludeLaunchDescription(...)` that references a local `*.launch.py` points at a file that actually exists.
+- **A. ROS1 C++ idioms in active source** — no `ros/ros.h`, `ros/package.h`, old-style message includes (`<pkg/Type.h>`), `tf/transform_*` headers, `nodelet/`, `pluginlib/`, `actionlib/`, `ros::NodeHandle`, `ros::Publisher`, `ros::Subscriber`, `ros::Time::now()`, `ros::Duration`, `ros::Rate`, `ros::init`, `ros::spin[Once]`, `ros::ok`, `ROS_INFO|WARN|ERROR|DEBUG|FATAL`, `nodelet::Nodelet`, `PLUGINLIB_EXPORT_CLASS`, `actionlib::` in any in-tree source.
+- **B. ROS1 Python idioms** — no `import rospy`, `rospy.*` attribute access, no `import tf` / `from tf.*`, no `ros_numpy`, no `rospkg`.
+- **C. `package.xml` format 3 + ament** — every in-tree manifest is `format="3"`, declares `ament_cmake` / `ament_python` as buildtool, declares `<build_type>` in `<export>`, contains no `catkin` / `message_generation` / `message_runtime`.
+- **D. `CMakeLists.txt` catkin leftovers + ament_package** — no `find_package(catkin)`, no `catkin_package`, no `${catkin_INCLUDE_DIRS}` / `${catkin_LIBRARIES}`, no `add_message_files` / `add_service_files` / `add_action_files` / `generate_messages`, and every `CMakeLists.txt` calls `ament_package()` at the end.
+- **E. Launch files** — every `*.launch.py` imports `LaunchDescription`, defines `generate_launch_description`, contains no literal `<launch>` XML tag; no XML `*.launch` files under in-tree source.
+- **F. `.action` interface files** — every `.action` file lives in a package whose `CMakeLists.txt` calls `rosidl_generate_interfaces(...)` and whose `package.xml` declares `rosidl_default_generators` / `rosidl_default_runtime` / the `rosidl_interface_packages` group.
+- **G. `install(PROGRAMS ...)` targets exist on disk** — every file listed in every `install(PROGRAMS ...)` block exists on disk relative to that `CMakeLists.txt`.
+- **H. `nodelet_plugins.xml` gone** — no `nodelet_plugins.xml` remains anywhere. Replaced by `rclcpp_components::RCLCPP_COMPONENTS_REGISTER_NODE`.
+- **I. No legacy `*.launch` XML** — no `*.launch` XML files outside `tests/` / `tools/`.
+- **J. Launch-argument consistency** — within each `*.launch.py`, every `LaunchConfiguration('x')` has a matching `DeclareLaunchArgument('x', ...)` in the same file. Exempts the ROS2-injected launch builtins.
+- **K. Hardcoded absolute paths** — no hardcoded user-specific absolute paths (`/home/<user>/`, `/root/`, `/opt/kr_ws`, `/opt/bags/`, etc.) in `.cpp` / `.h` / `.hpp` / `.py` source. Strips C and Python comments before matching.
+- **L. `Node(package, executable)` resolves** — every `Node(package='<managed>', executable='<y>')` call in every `*.launch.py` resolves to either an `add_executable(<y> ...)` target or an `install(PROGRAMS .../<y>)` entry in the target package's `CMakeLists.txt`.
+- **M. Duplicate raw `declare_parameter`** — no raw `declare_parameter("key", ...)` call appears in 2+ source files within the same package (ROS2 throws `rclcpp::exceptions::ParameterAlreadyDeclared` at runtime). `has_parameter`-guarded shared helpers (e.g. `declare_shared_gain_params`) are exempt.
+- **N. Dockerfiles + CI + shell scripts ROS1 leftovers** — no `FROM nvidia/cudagl:*` or `FROM ros:noetic-*` in Dockerfiles; no `catkin build` / `source /opt/ros/noetic/setup.bash` in any in-tree shell script; every `docker-build-*.yaml` triggers off `branches: [ros2_dev]` and produces a `-jazzy` tag; `external_*.yaml` TODOs in place.
+- **O. Cross-package `#include` vs `<depend>`** — every `#include <pkg/...>` in a managed package's C/C++ sources resolves to a `<depend>` entry in that package's `package.xml`. System libraries (Eigen, Boost, PCL, GTSAM, Sophus, OpenCV, yaml-cpp, fmt, glog, tbb, gtest, POSIX headers) are exempt.
+- **P. Launch dict-parameter keys declared in target package source** — for every `Node(package='<managed>', parameters=[{...}])` in a `*.launch.py`, every literal dict key is declared in the target package's source via `declare_parameter`, the `declare_or_get<T>` wrapper family, `get_param_or`, or `declare_parameter_if_not_declared`. Catches the classic ROS2 silent-ignore bug where a launch file passes a parameter the target node never calls `declare_parameter` on.
+- **Q. Shell script syntax (`bash -n`)** — every `*.sh` / `*.bash` under in-tree directories passes `bash -n`. Skipped cleanly when `bash` is not on `PATH`.
 
 Options:
 

@@ -21,6 +21,21 @@ def generate_launch_description():
     estimation_launch = PathJoinSubstitution([
         FindPackageShare('estimation_launch'), 'launch', 'estimation.launch.py'
     ])
+    # NOTE: the upstream ROS1 system.launch included
+    # control_launch/launch/control.launch — a generic (non-motion-primitive)
+    # controller launch that was DELETED in Dec 2021 (commit f8c2f1b "clean
+    # up control_launch") along with its companion configs trackers.yaml and
+    # tracker_params.yaml. The ROS2 port inherits this broken reference.
+    #
+    # control_launch today only ships control_mp.launch.py, which uses the
+    # motion-primitive tracker configs (trackers_mp.yaml, tracker_params_mp.yaml).
+    # Silently redirecting the include to control_mp.launch.py is a semantic
+    # change (non-MP controller -> MP controller) that the original author
+    # did not intend, so the include below is commented out rather than
+    # auto-substituted. If you want the MP controller, uncomment and change
+    # the filename to control_mp.launch.py; if you want the original non-MP
+    # controller, you will need to resurrect control.launch + trackers.yaml +
+    # tracker_params.yaml from the pre-f8c2f1b tree.
     control_launch = PathJoinSubstitution([
         FindPackageShare('control_launch'), 'launch', 'control_mp.launch.py'
     ])
@@ -49,7 +64,11 @@ def generate_launch_description():
         ),
 
         # Controller
-        IncludeLaunchDescription(PythonLaunchDescriptionSource([control_launch])),
+        # IncludeLaunchDescription(PythonLaunchDescriptionSource([control_launch])),
+        # ^ disabled: the original 'control.launch' (non-motion-primitive) no
+        # longer exists; see the control_launch note above. Uncomment and
+        # change the variable definition to point at control_mp.launch.py
+        # if you want the motion-primitive controller loaded automatically.
 
         # Use RGBD
         GroupAction(

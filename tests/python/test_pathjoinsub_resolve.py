@@ -15,10 +15,23 @@ Carve-outs:
   map) are skipped — we cannot introspect their share/ trees.
 - Directory-only targets (no file extension on the last segment) are
   skipped.
-- ``msckf_calib.yaml`` is skipped: the upstream workflow generates this
-  file at first run.
+- ``msckf_calib.yaml`` / ``msckf_calib_auto_generated.yaml`` are skipped:
+  the upstream workflow generates these files at first run.
+- ``mapper_3d.yaml`` / ``tracker_params_mp_3d.yaml`` are skipped: referenced
+  by polypixel_full_sim.launch.py's use_3d branch but never shipped on
+  master or on feature/integrate_lidar_3d_planner_default (pre-existing
+  upstream bug).
 
 Mirrors Section R of ``tests/static/check_ros2_port.sh``.
+
+KNOWN GAP: this pytest mirror only handles the ``PathJoinSubstitution(
+[FindPackageShare('X'), ...])`` form. The bash suite at
+``tests/static/check_ros2_port.sh`` handles four forms — the three
+additional patterns are ``PathJoinSubstitution([<var>, ...])`` where
+``<var>`` was bound earlier via ``<var> = get_package_share_directory('X')``
+or ``<var> = FindPackageShare('X')``, and the same two patterns for
+``os.path.join(...)``. The bash layer is authoritative; extend this
+pytest mirror to match when Python becomes available for local testing.
 """
 from __future__ import annotations
 
@@ -34,7 +47,16 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 _MANAGED_SEARCH_ROOTS = ("autonomy_core", "autonomy_real", "autonomy_sim")
 
-_CARVE_BASENAMES = {"msckf_calib.yaml"}
+_CARVE_BASENAMES = {
+    # Generated at first run by msckf_calib_gen (legacy and current names).
+    "msckf_calib.yaml",
+    "msckf_calib_auto_generated.yaml",
+    # Referenced by polypixel_full_sim.launch.py's use_3d=true branch but
+    # never shipped on master or on feature/integrate_lidar_3d_planner_default.
+    # Pre-existing upstream bug; carved out here to match the bash suite.
+    "mapper_3d.yaml",
+    "tracker_params_mp_3d.yaml",
+}
 
 
 _PJ_SPAN_RE = re.compile(

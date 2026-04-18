@@ -1534,9 +1534,16 @@ check_q_shell_syntax() {
 #     share/ trees.
 #   * Directory-only targets (no file extension in the last segment) are
 #     skipped — those resolve at runtime by convention.
-#   * msckf_calib.yaml is explicitly carved out: the upstream workflow
-#     expects users to run msckf_calib_gen to generate this file before
-#     launch; the reference is "intentionally missing" per ROS1 tradition.
+#   * msckf_calib.yaml (and msckf_calib_auto_generated.yaml) are carved out:
+#     the upstream workflow expects users to run msckf_calib_gen to generate
+#     these files before launch; the reference is "intentionally missing".
+#   * mapper_3d.yaml and tracker_params_mp_3d.yaml are carved out: referenced
+#     by polypixel_full_sim.launch.py in its IfCondition(use_3d) branch, but
+#     neither file was ever shipped with map_plan_launch / control_launch on
+#     master or on feature/integrate_lidar_3d_planner_default (pre-existing
+#     upstream bug). Default path (use_3d=false) resolves fine; use_3d:=true
+#     will fail at launch with a file-not-found error until someone ships
+#     real 3D tuning configs.
 check_r_pathjoinsub_resolve() {
   section "R. Cross-package PathJoinSubstitution targets resolve"
   #
@@ -1576,10 +1583,19 @@ check_r_pathjoinsub_resolve() {
   done < <(find "$REPO_ROOT/autonomy_core" "$REPO_ROOT/autonomy_real" "$REPO_ROOT/autonomy_sim" \
             -type f -name 'package.xml' 2>/dev/null)
 
-  # Known carve-outs: files that are generated at first run.
-  # msckf_calib.yaml             : output of msckf_calib_gen (legacy name).
-  # msckf_calib_auto_generated.yaml: output of msckf_calib_gen (current default).
-  local carve=$'msckf_calib.yaml\nmsckf_calib_auto_generated.yaml'
+  # Known carve-outs:
+  #   msckf_calib.yaml                : output of msckf_calib_gen (legacy name).
+  #   msckf_calib_auto_generated.yaml : output of msckf_calib_gen (current default).
+  #   mapper_3d.yaml,
+  #   tracker_params_mp_3d.yaml       : referenced by polypixel_full_sim.launch.py
+  #                                     in its IfCondition(use_3d) branch. Neither
+  #                                     file was ever shipped with map_plan_launch
+  #                                     / control_launch on master or on
+  #                                     feature/integrate_lidar_3d_planner_default
+  #                                     — pre-existing upstream bug. Launch with
+  #                                     use_3d:=true fails with a file-not-found
+  #                                     error until someone ships real 3D tuning.
+  local carve=$'msckf_calib.yaml\nmsckf_calib_auto_generated.yaml\nmapper_3d.yaml\ntracker_params_mp_3d.yaml'
 
   # Write the awk extractor to a temp file (the program is long and quotes
   # both ' and ", so embedding it in a single-quoted bash string is ugly).

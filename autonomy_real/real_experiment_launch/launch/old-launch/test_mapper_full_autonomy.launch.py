@@ -30,6 +30,15 @@ def generate_launch_description():
     so3_launch = PathJoinSubstitution([
         FindPackageShare('px4_interface_launch'), 'launch', 'SO3_command_to_mavros.launch.py'
     ])
+    # NOTE: the upstream ROS1 test_mapper_full_autonomy.launch included
+    # control_launch/launch/control.launch — a generic (non-motion-primitive)
+    # controller that was DELETED in Dec 2021 (commit f8c2f1b "clean up
+    # control_launch") along with its companion configs trackers.yaml and
+    # tracker_params.yaml. The ROS2 port inherits this broken reference.
+    # Since this launch file lives under 'old-launch/' (already deprecated)
+    # and the referenced control.launch no longer exists, the include below
+    # is commented out. See autonomy_core/state_machine/state_machine_launch/
+    # launch/system.launch.py for the same caveat in more detail.
     control_launch = PathJoinSubstitution([
         FindPackageShare('control_launch'), 'launch', 'control_mp.launch.py'
     ])
@@ -83,14 +92,16 @@ def generate_launch_description():
             launch_arguments={'robot': robot, 'odom': odom_topic}.items(),
         ),
 
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([control_launch]),
-            launch_arguments={
-                'mass': mass,
-                'robot': robot,
-                'simulation': 'false',
-            }.items(),
-        ),
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource([control_launch]),
+        #     launch_arguments={
+        #         'mass': mass,
+        #         'robot': robot,
+        #         'simulation': 'false',
+        #     }.items(),
+        # ),
+        # ^ disabled: the original 'control.launch' (non-motion-primitive) no
+        # longer exists; see the control_launch note above.
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([state_machine_launch]),

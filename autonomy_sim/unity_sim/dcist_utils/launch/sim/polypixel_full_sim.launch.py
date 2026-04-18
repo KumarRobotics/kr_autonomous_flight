@@ -98,6 +98,17 @@ def generate_launch_description():
                     "takeoff_height": "8",
                     "min_dispersion_planner": min_dispersion_planner,
                     "lidar_cloud_topic": "fake_lidar/points",
+                    # NOTE: 'mapper_3d.yaml' and 'tracker_params_mp_3d.yaml'
+                    # are NOT shipped with map_plan_launch / control_launch on
+                    # master or feature/integrate_lidar_3d_planner_default —
+                    # this is a pre-existing upstream bug that the ROS2 port
+                    # faithfully preserves. `ros2 launch ... use_3d:=true` WILL
+                    # fail with a file-not-found error at startup until
+                    # someone ships real 3D tuning configs. Left as-is (rather
+                    # than substituting 2D configs) to avoid silently running
+                    # 3D motion-primitive code with 2D planner parameters.
+                    # Section R of the static suite carves these two filenames
+                    # out so the suite stays green.
                     "mapper_config": os.path.join(
                         map_plan_launch_share, "config", "mapper_3d.yaml"
                     ),

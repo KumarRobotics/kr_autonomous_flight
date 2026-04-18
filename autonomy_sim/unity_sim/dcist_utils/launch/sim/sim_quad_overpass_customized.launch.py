@@ -60,8 +60,15 @@ def generate_launch_description():
                 ),
                 launch_arguments={
                     "robot": robot,
+                    # NOTE: upstream ROS1 referenced 'config/emu_stereo_rgbd.yaml'
+                    # which was never shipped with dcist_utils on master or
+                    # feature/integrate_lidar_3d_planner_default. The only RGBD
+                    # variant that exists is 'emu_stereo_rgbd_360_FOV.yaml', so
+                    # use that here. If a narrower-FOV RGBD config is needed,
+                    # add a new yaml alongside the existing one and update
+                    # this reference.
                     "description": os.path.join(
-                        dcist_share, "config", "emu_stereo_rgbd.yaml"
+                        dcist_share, "config", "emu_stereo_rgbd_360_FOV.yaml"
                     ),
                     "x": "-40.0",
                     "y": "5.0",

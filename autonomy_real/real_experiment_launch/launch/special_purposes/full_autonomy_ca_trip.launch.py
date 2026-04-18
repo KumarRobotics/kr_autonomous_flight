@@ -109,8 +109,13 @@ def generate_launch_description():
                 'cam1': '/ovc/right',
                 'robot_frame_id': [robot, '/base_link'],
                 'vio_imu_frame_id': [robot, '/ovc_camera_link'],
-                'imu': '/ovc/vectornav/imu_throttled',
-                'mag': '/ovc/vectornav/mag_throttled',
+                # Using un-throttled IMU/mag: throttle_imu.launch was deleted
+                # upstream in Oct 2023 (commit 42c0f1482, "disabling the
+                # throttling of imu topics to avoid dropping imu packets in
+                # high computation situation"). full_autonomy.launch was
+                # updated in that commit but this launch file was not.
+                'imu': '/ovc/vectornav/imu',
+                'mag': '/ovc/vectornav/mag',
                 'publish_body_camera_tf': 'false',
                 'lidar_cloud_topic': 'os_cloud_node/points',
                 'lidar_frame': [robot, '/lidar'],

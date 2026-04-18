@@ -22,7 +22,7 @@ def generate_launch_description():
         FindPackageShare('estimation_launch'), 'launch', 'estimation.launch.py'
     ])
     control_launch = PathJoinSubstitution([
-        FindPackageShare('control_launch'), 'launch', 'control.launch.py'
+        FindPackageShare('control_launch'), 'launch', 'control_mp.launch.py'
     ])
     depth_to_cloud_launch = PathJoinSubstitution([
         FindPackageShare('map_plan_launch'), 'launch', 'depth_to_cloud.launch.py'

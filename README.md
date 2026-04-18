@@ -415,7 +415,7 @@ bash tests/static/check_ros2_port.sh
 
 *(Typical output is a colorized list of `[PASS]` / `[FAIL]` / `[SKIP]` lines followed by a summary of the form `N checks, P passed, F failed, S skipped`. Run the command above locally to get the current count — the numbers shift as the port progresses.)*
 
-The runner is organized into 17 sections labeled A–Q plus a handful of regression guards. Each section guards one family of regressions that the port could reintroduce:
+The runner is organized into 18 sections labeled A–R plus a handful of regression guards. Each section guards one family of regressions that the port could reintroduce:
 
 - **A. ROS1 C++ idioms in active source** — no `ros/ros.h`, `ros/package.h`, old-style message includes (`<pkg/Type.h>`), `tf/transform_*` headers, `nodelet/`, `pluginlib/`, `actionlib/`, `ros::NodeHandle`, `ros::Publisher`, `ros::Subscriber`, `ros::Time::now()`, `ros::Duration`, `ros::Rate`, `ros::init`, `ros::spin[Once]`, `ros::ok`, `ROS_INFO|WARN|ERROR|DEBUG|FATAL`, `nodelet::Nodelet`, `PLUGINLIB_EXPORT_CLASS`, `actionlib::` in any in-tree source.
 - **B. ROS1 Python idioms** — no `import rospy`, `rospy.*` attribute access, no `import tf` / `from tf.*`, no `ros_numpy`, no `rospkg`.
@@ -434,6 +434,7 @@ The runner is organized into 17 sections labeled A–Q plus a handful of regress
 - **O. Cross-package `#include` vs `<depend>`** — every `#include <pkg/...>` in a managed package's C/C++ sources resolves to a `<depend>` entry in that package's `package.xml`. System libraries (Eigen, Boost, PCL, GTSAM, Sophus, OpenCV, yaml-cpp, fmt, glog, tbb, gtest, POSIX headers) are exempt.
 - **P. Launch dict-parameter keys declared in target package source** — for every `Node(package='<managed>', parameters=[{...}])` in a `*.launch.py`, every literal dict key is declared in the target package's source via `declare_parameter`, the `declare_or_get<T>` wrapper family, `get_param_or`, or `declare_parameter_if_not_declared`. Catches the classic ROS2 silent-ignore bug where a launch file passes a parameter the target node never calls `declare_parameter` on.
 - **Q. Shell script syntax (`bash -n`)** — every `*.sh` / `*.bash` under in-tree directories passes `bash -n`. Skipped cleanly when `bash` is not on `PATH`.
+- **R. Cross-package PathJoinSubstitution targets resolve** — for every `PathJoinSubstitution([FindPackageShare('<managed>'), 'seg', ...])` in a `*.launch.py`, the resolved path exists in `<managed>`'s source tree. Catches launch files whose config / rviz / sub-launch path references went stale during the port. External packages (not in the 22-package managed map) are skipped; directory-only targets (no file extension) are skipped; `msckf_calib.yaml` is carved out because the upstream workflow generates it at first run.
 
 Options:
 

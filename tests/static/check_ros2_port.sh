@@ -1517,6 +1517,268 @@ check_q_shell_syntax() {
 }
 
 # -----------------------------------------------------------------------------
+# Section R: Cross-package PathJoinSubstitution target resolution
+# -----------------------------------------------------------------------------
+# For every *.launch.py, every
+#   PathJoinSubstitution([FindPackageShare('<pkg>'), 'seg1', 'seg2', ...])
+# where <pkg> is one of the 22 managed packages in this repo must resolve
+# to a file that exists in <pkg>'s source tree. This catches launch files
+# whose config / rviz / sub-launch path references went stale during the
+# port (e.g. a config renamed on master but still referenced under the
+# old name in a launch file, or an upstream reference that simply never
+# pointed at a real file).
+#
+# Carve-outs:
+#   * External packages (FindPackageShare('X') where X is not in the
+#     22-package managed map) are skipped — we cannot introspect their
+#     share/ trees.
+#   * Directory-only targets (no file extension in the last segment) are
+#     skipped — those resolve at runtime by convention.
+#   * msckf_calib.yaml is explicitly carved out: the upstream workflow
+#     expects users to run msckf_calib_gen to generate this file before
+#     launch; the reference is "intentionally missing" per ROS1 tradition.
+check_r_pathjoinsub_resolve() {
+  section "R. Cross-package PathJoinSubstitution targets resolve"
+  #
+  # For every *.launch.py, every cross-package file reference whose resolved
+  # package is one of the 22 managed packages in this repo must point at a
+  # file that exists in that package's source tree. Four reference forms
+  # are handled:
+  #   1. PathJoinSubstitution([FindPackageShare('X'), 'seg1', 'seg2', ...])
+  #   2. PathJoinSubstitution([<var>, 'seg1', ...]) where earlier:
+  #        <var> = get_package_share_directory('X')   OR
+  #        <var> = FindPackageShare('X')
+  #   3. os.path.join(get_package_share_directory('X'), 'seg1', ...)
+  #   4. os.path.join(<var>, 'seg1', ...) with the same var bindings as (2).
+  # External packages (where X is not in the managed map) and directory-only
+  # targets (no '.' in the last segment) are silently skipped, as is the
+  # msckf_calib.yaml carve-out.
+  if ! command -v awk >/dev/null 2>&1; then
+    skip "awk not available"
+    return
+  fi
+
+  local pkgmap missing rows awkfile filelist
+  pkgmap="$(mktemp)"
+  missing="$(mktemp)"
+  rows="$(mktemp)"
+  awkfile="$(mktemp)"
+  filelist="$(mktemp)"
+
+  # Build pkg_name -> pkg_root map from every managed package.xml.
+  local xml pname pdir
+  while IFS= read -r xml; do
+    [[ -z "$xml" ]] && continue
+    pname="$(package_xml_name "$xml")"
+    [[ -z "$pname" ]] && continue
+    pdir="$(dirname "$xml")"
+    printf "%s\t%s\n" "$pname" "$pdir" >>"$pkgmap"
+  done < <(find "$REPO_ROOT/autonomy_core" "$REPO_ROOT/autonomy_real" "$REPO_ROOT/autonomy_sim" \
+            -type f -name 'package.xml' 2>/dev/null)
+
+  # Known carve-outs: files that are generated at first run.
+  # msckf_calib.yaml             : output of msckf_calib_gen (legacy name).
+  # msckf_calib_auto_generated.yaml: output of msckf_calib_gen (current default).
+  local carve=$'msckf_calib.yaml\nmsckf_calib_auto_generated.yaml'
+
+  # Write the awk extractor to a temp file (the program is long and quotes
+  # both ' and ", so embedding it in a single-quoted bash string is ugly).
+  cat >"$awkfile" <<'R_AWK_EOF'
+# Input: one or more .launch.py files as arguments.
+# Produces a pipe-separated row per resolved managed-package reference:
+#   rel_path|pkg|seg1/seg2/...|absolute_target_path
+# Skips references whose pkg is not in pkg_root (external packages),
+# references whose last segment has no '.' (directory targets), and
+# references whose basename appears in `carve`. Handles 4 reference
+# forms documented in the bash caller.
+
+BEGIN {
+    if (pkgmap_file != "") {
+        while ((getline line < pkgmap_file) > 0) {
+            np = split(line, parts, "\t")
+            if (np >= 2 && parts[1] != "") pkg_root[parts[1]] = parts[2]
+        }
+        close(pkgmap_file)
+    }
+    if (carve != "") {
+        nc = split(carve, carr, /[\r\n]+/)
+        for (cc = 1; cc <= nc; cc++) if (carr[cc] != "") carved[carr[cc]] = 1
+    }
+    buf = ""
+    prevfile = ""
+}
+
+FNR == 1 && NR > 1 {
+    if (prevfile != "") process(prevfile, buf)
+    buf = ""
+}
+
+{ buf = buf $0 " "; prevfile = FILENAME }
+
+END {
+    if (buf != "" && prevfile != "") process(prevfile, buf)
+}
+
+function process(fname, flat,
+                 s, nvars, i, k, R_s, R_l, chunk, name, pkg,
+                 n, rem, p1, p2, startrel, taglen, start, j, depth, in_sq, in_dq, c,
+                 span, span_begin, span_end, tmp, head, ident,
+                 clean, segs, s2, qq, inner, base, rel, q, m, p)
+{
+    gsub(/[\n\r\t]+/, " ", flat)
+    gsub(/  +/, " ", flat)
+
+    # Pass 1: var bindings name = (FindPackageShare|get_package_share_directory)("X")
+    delete varname
+    delete varpkg
+    nvars = 0
+    s = flat
+    while (match(s, /[A-Za-z_][A-Za-z0-9_]*[ ]*=[ ]*(FindPackageShare|get_package_share_directory)[ ]*\([ ]*["'\''][^"'\'']+["'\'']/)) {
+        R_s = RSTART; R_l = RLENGTH
+        chunk = substr(s, R_s, R_l)
+        name = ""
+        if (match(chunk, /^[A-Za-z_][A-Za-z0-9_]*/) > 0) name = substr(chunk, RSTART, RLENGTH)
+        pkg = ""
+        if (match(chunk, /["'\''][^"'\'']+["'\'']/) > 0) pkg = substr(chunk, RSTART + 1, RLENGTH - 2)
+        if (name != "" && pkg != "") {
+            nvars++
+            varname[nvars] = name
+            varpkg[nvars] = pkg
+        }
+        s = substr(s, R_s + R_l)
+    }
+
+    # Pass 2: for each PathJoinSubstitution(...) or os.path.join(...) span,
+    # resolve pkg + segments and emit.
+    n = length(flat)
+    i = 1
+    while (i <= n) {
+        rem = substr(flat, i)
+        p1 = index(rem, "PathJoinSubstitution(")
+        p2 = index(rem, "os.path.join(")
+        if (p1 == 0 && p2 == 0) break
+        if (p1 == 0)              { startrel = p2; taglen = length("os.path.join(") }
+        else if (p2 == 0)         { startrel = p1; taglen = length("PathJoinSubstitution(") }
+        else if (p1 < p2)         { startrel = p1; taglen = length("PathJoinSubstitution(") }
+        else                      { startrel = p2; taglen = length("os.path.join(") }
+
+        start = i + startrel - 1
+        j = start + taglen
+        depth = 1; in_sq = 0; in_dq = 0
+        while (j <= n && depth > 0) {
+            c = substr(flat, j, 1)
+            if (in_sq) {
+                if (c == "\\" && j < n) { j += 2; continue }
+                if (c == "'") in_sq = 0
+                j++; continue
+            }
+            if (in_dq) {
+                if (c == "\\" && j < n) { j += 2; continue }
+                if (c == "\"") in_dq = 0
+                j++; continue
+            }
+            if (c == "'")  { in_sq = 1; j++; continue }
+            if (c == "\"") { in_dq = 1; j++; continue }
+            if (c == "(")  { depth++; j++; continue }
+            if (c == ")")  { depth--; j++; continue }
+            j++
+        }
+        span_begin = start + taglen
+        span_end = j - 2
+        if (span_end < span_begin) { i = j; continue }
+        span = substr(flat, span_begin, span_end - span_begin + 1)
+
+        pkg = ""
+        tmp = span
+        if (match(tmp, /FindPackageShare[ ]*\([ ]*["'\''][^"'\'']+["'\'']/)) {
+            chunk = substr(tmp, RSTART, RLENGTH)
+            if (match(chunk, /["'\''][^"'\'']+["'\'']/) > 0) pkg = substr(chunk, RSTART + 1, RLENGTH - 2)
+        }
+        if (pkg == "" && match(tmp, /get_package_share_directory[ ]*\([ ]*["'\''][^"'\'']+["'\'']/)) {
+            chunk = substr(tmp, RSTART, RLENGTH)
+            if (match(chunk, /["'\''][^"'\'']+["'\'']/) > 0) pkg = substr(chunk, RSTART + 1, RLENGTH - 2)
+        }
+        if (pkg == "") {
+            head = span
+            sub(/^[ ]+/, "", head)
+            sub(/^\[[ ]*/, "", head)
+            if (match(head, /^[A-Za-z_][A-Za-z0-9_]*/) > 0) {
+                ident = substr(head, RSTART, RLENGTH)
+                for (k = 1; k <= nvars; k++) if (varname[k] == ident) { pkg = varpkg[k]; break }
+            }
+        }
+
+        if (pkg != "" && (pkg in pkg_root)) {
+            clean = span
+            gsub(/FindPackageShare[ ]*\([ ]*["'\''][^"'\'']+["'\''][ ]*\)/, " ", clean)
+            gsub(/get_package_share_directory[ ]*\([ ]*["'\''][^"'\'']+["'\''][ ]*\)/, " ", clean)
+            segs = ""
+            s2 = clean
+            while (match(s2, /["'\''][^"'\'']*["'\'']/)) {
+                R_s = RSTART; R_l = RLENGTH
+                qq = substr(s2, R_s, R_l)
+                inner = substr(qq, 2, R_l - 2)
+                if (inner != "") {
+                    if (segs == "") segs = inner
+                    else segs = segs "/" inner
+                }
+                s2 = substr(s2, R_s + R_l)
+            }
+            if (segs != "") {
+                base = segs
+                if (index(base, "/") > 0) {
+                    q = 0
+                    for (m = length(base); m >= 1; m--) if (substr(base, m, 1) == "/") { q = m; break }
+                    if (q > 0) base = substr(base, q + 1)
+                }
+                # skip directory-only and carved-out basenames
+                if (index(base, ".") == 0) { i = j; continue }
+                if (base in carved)        { i = j; continue }
+                rel = fname
+                if (repo_root != "") {
+                    p = index(rel, repo_root)
+                    if (p == 1) rel = substr(rel, length(repo_root) + 2)
+                }
+                print rel "|" pkg "|" segs "|" pkg_root[pkg] "/" segs
+            }
+        }
+        i = j
+    }
+}
+R_AWK_EOF
+
+  # Single awk invocation processes every launch file in the managed roots.
+  find "$REPO_ROOT/autonomy_core" "$REPO_ROOT/autonomy_real" "$REPO_ROOT/autonomy_sim" \
+      -type f -name '*.launch.py' 2>/dev/null >"$filelist"
+  if [[ -s "$filelist" ]]; then
+    # shellcheck disable=SC2046
+    awk -v pkgmap_file="$pkgmap" -v carve="$carve" -v repo_root="$REPO_ROOT" \
+        -f "$awkfile" $(cat "$filelist") >"$rows" 2>/dev/null
+  fi
+
+  local checked=0 rel pkg path absfile
+  while IFS='|' read -r rel pkg path absfile; do
+    [[ -z "$rel" ]] && continue
+    checked=$((checked + 1))
+    if [[ ! -e "$absfile" ]]; then
+      printf "%s|%s|%s\n" "$rel" "$pkg" "$path" >>"$missing"
+    fi
+  done <"$rows"
+
+  if [[ -s "$missing" ]]; then
+    local miss_count
+    miss_count="$(awk 'END { print NR }' "$missing")"
+    fail "$miss_count of $checked cross-package path-reference target(s) missing in managed packages"
+    awk -F'|' '{ printf "         %s: pkg=%s -> %s (not found)\n", $1, $2, $3 }' "$missing" \
+      | verbose_dump 20
+  else
+    pass "all $checked cross-package path-reference target(s) resolve"
+  fi
+
+  rm -f "$pkgmap" "$missing" "$rows" "$awkfile" "$filelist"
+}
+
+# -----------------------------------------------------------------------------
 # Regression guards (sub-checks)
 # -----------------------------------------------------------------------------
 check_rg1_dynamic_reconfigure_cfg() {
@@ -1583,6 +1845,7 @@ main() {
   check_o_include_depends
   check_p_launch_param_keys
   check_q_shell_syntax
+  check_r_pathjoinsub_resolve
   check_rg1_dynamic_reconfigure_cfg
   check_rg2_package_readme
 

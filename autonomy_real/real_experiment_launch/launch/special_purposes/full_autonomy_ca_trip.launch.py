@@ -18,9 +18,14 @@ def generate_launch_description():
     default_mapper_config = PathJoinSubstitution([
         FindPackageShare('map_plan_launch'), 'config', 'mapper.yaml'
     ])
-    throttle_imu_launch = PathJoinSubstitution([
-        FindPackageShare('real_experiment_launch'), 'launch', 'throttle_imu.launch.py'
-    ])
+    # NOTE: throttle_imu.launch.py was referenced in the upstream ROS1 source
+    # but the file never existed in the real_experiment_launch package on
+    # master or on feature/integrate_lidar_3d_planner_default. The ROS2 port
+    # faithfully preserves this gap; the include is commented out below so
+    # that `ros2 launch` can at least resolve this file. If someone needs
+    # IMU throttling, port the original ROS1 logic (topic_tools throttle
+    # node on the IMU topic) into a new throttle_imu.launch.py and re-add
+    # the include.
     drivers_launch = PathJoinSubstitution([
         FindPackageShare('real_experiment_launch'), 'launch', 'drivers_for_faster_lio.launch.py'
     ])
@@ -59,7 +64,9 @@ def generate_launch_description():
         DeclareLaunchArgument('record_bag', default_value='true'),
         DeclareLaunchArgument('poll_period', default_value='1.0'),
 
-        IncludeLaunchDescription(PythonLaunchDescriptionSource([throttle_imu_launch])),
+        # IncludeLaunchDescription(PythonLaunchDescriptionSource([throttle_imu_launch])),
+        # ^ disabled: throttle_imu.launch does not exist in the package; see
+        # the note where throttle_imu_launch was defined (now removed).
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([drivers_launch]),

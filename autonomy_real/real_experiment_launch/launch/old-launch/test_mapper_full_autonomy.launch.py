@@ -31,7 +31,7 @@ def generate_launch_description():
         FindPackageShare('px4_interface_launch'), 'launch', 'SO3_command_to_mavros.launch.py'
     ])
     control_launch = PathJoinSubstitution([
-        FindPackageShare('control_launch'), 'launch', 'control.launch.py'
+        FindPackageShare('control_launch'), 'launch', 'control_mp.launch.py'
     ])
     state_machine_launch = PathJoinSubstitution([
         FindPackageShare('state_machine_launch'), 'launch', 'state_machine.launch.py'

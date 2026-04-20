@@ -128,6 +128,7 @@ class LocalGlobalMapperNode {
   bool global_use_robot_dim_xy_;
   bool global_use_robot_dim_z_;
   double global_map_dim_d_x_, global_map_dim_d_y_, global_map_dim_d_z_;
+  double global_map_cx_, global_map_cy_, global_map_cz_;
   double local_map_dim_d_x_, local_map_dim_d_y_, local_map_dim_d_z_;
 
   double local_max_raycast_, global_max_raycast_;  // maximum raycasting range

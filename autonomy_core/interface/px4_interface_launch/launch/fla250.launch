@@ -18,7 +18,7 @@
   <group ns="$(arg robot)">
     <node pkg="nodelet"
       type="nodelet"
-      args="standalone mavros_interface/SO3CmdToMavros"
+      args="standalone kr_mavros_interface/SO3CmdToMavros"
       name="so3cmd_to_mavros"
       required="true"
       clear_params="true"

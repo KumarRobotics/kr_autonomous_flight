@@ -29,7 +29,7 @@
   <!-- <arg name="rpm_vs_throttle_coeff_a" default="6478.1337706"/> -->
   <!-- <arg name="rpm_vs_throttle_coeff_b" default="1807.3243354"/> -->
   <group ns="$(arg robot)">
-    <node pkg="nodelet" type="nodelet" args="standalone mavros_interface/SO3CmdToMavros" name="so3cmd_to_mavros" required="true" clear_params="true" output="screen">
+    <node pkg="nodelet" type="nodelet" args="standalone kr_mavros_interface/SO3CmdToMavros" name="so3cmd_to_mavros" required="true" clear_params="true" output="screen">
       <param name="num_props" value="$(arg num_props)"/>
       <param name="thrust_vs_rpm_coeff_a" value="$(arg thrust_vs_rpm_coeff_a)"/>
       <param name="thrust_vs_rpm_coeff_b" value="$(arg thrust_vs_rpm_coeff_b)"/>
